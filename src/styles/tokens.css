@@ -1,0 +1,215 @@
+/*
+ * Token di design — mondo "Atlante in falso colore".
+ * Chiaro: un foglio da rilievo alla luce del giorno (carta fredda, inchiostro blu-notte, campi di falso colore).
+ * Scuro: un passaggio notturno del satellite (acqua profonda, campi che si accendono).
+ * I colori dei grafici sono CALCOLATI, non scelti a occhio: validati per daltonismo (protan/deutan), contrasto
+ * e visione normale con il validatore della skill dataviz, separatamente per i due temi (vedi docs/DESIGN-NOTES.md).
+ * Nei componenti non si scrivono colori letterali: solo questi token.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* superfici e inchiostro */
+  --bg: #f3f5f1;
+  --surface: #fbfcfa;
+  --surface-2: #e6ebe5;
+  --border: #c3ccc6;
+  --border-strong: #0b1d3a;
+  --text: #0b1d3a;
+  --text-muted: #3f5068;
+  --text-faint: #5c6b7e;
+
+  /* azione, collegamenti, spillo */
+  --accent: #0b1d3a;
+  --accent-contrast: #f3f5f1;
+  --link: #0a6b63;
+  --pin: #f2b632;
+  --pin-contrast: #0b1d3a;
+  --focus: #0b1d3a;
+
+  /* stato: sempre con icona ed etichetta, mai solo colore */
+  --ok: #17703f;
+  --warn: #8a4b00;
+  --error: #b3261e;
+  --info: #1b57b0;
+  --ok-bg: #e4f1e8;
+  --warn-bg: #f6ead9;
+  --error-bg: #f9e3e1;
+  --info-bg: #e2ebf8;
+
+  /* le tre regioni dell'atlante: campo + inchiostro leggibile sul campo */
+  --course-melgani: #d7263d;
+  --course-melgani-ink: #ffffff;
+  --course-passerini: #19b5a5;
+  --course-passerini-ink: #0b1d3a;
+  --course-ricci: #f2b632;
+  --course-ricci-ink: #0b1d3a;
+
+  /* grafici: classi (segni: punti, linee). 1-4 distinguibili a coppie anche nei piani 2D; 5-6 sempre con forma del marcatore */
+  --viz-class-1: #ec5258;
+  --viz-class-2: #004fb1;
+  --viz-class-3: #835600;
+  --viz-class-4: #009f8c;
+  --viz-class-5: #682dac;
+  --viz-class-6: #d14693;
+  /* grafici: campi (regioni di decisione, territori): stessa tinta della classe, confini e etichette a inchiostro */
+  --viz-field-1: #ffbebb;
+  --viz-field-2: #b6d3fd;
+  --viz-field-3: #eecb9a;
+  --viz-field-4: #9ae2d3;
+  --viz-field-5: #d8c6fc;
+  --viz-field-6: #f8bdd8;
+  /* grafici: ruoli */
+  --viz-sample: #0b1d3a;
+  --viz-estimate: #ec5258;
+  --viz-truth: #3f5068;
+  --viz-kernel: #009f8c;
+  --viz-boundary: #0b1d3a;
+  --viz-grid: #d5dcd6;
+  --viz-axis: #5c6b7e;
+  --viz-highlight: #f2b632;
+  --viz-negative: #004fb1;
+  --viz-positive: #ec5258;
+  /* rampa sequenziale a una tinta (batimetria), chiaro -> scuro = poco -> tanto */
+  --viz-seq-1: #5bc1d9;
+  --viz-seq-2: #3fa8bf;
+  --viz-seq-3: #1b8fa5;
+  --viz-seq-4: #00768a;
+  --viz-seq-5: #065d6d;
+  --viz-seq-6: #004552;
+  --viz-seq-7: #022f38;
+  /* rampa divergente: negativo <- grigio neutro -> positivo */
+  --viz-div-1: #01489f;
+  --viz-div-2: #3177dc;
+  --viz-div-3: #80b3fd;
+  --viz-div-4: #dedede;
+  --viz-div-5: #fd9693;
+  --viz-div-6: #e54b52;
+  --viz-div-7: #b7162d;
+
+  /* elevazione: le cornici usano il bordo, solo ciò che si sovrappone (dialoghi, fogli a scomparsa) usa l'ombra */
+  --shadow-1: 0 1px 2px rgb(11 29 58 / 0.14);
+  --shadow-2: 0 12px 32px -12px rgb(11 29 58 / 0.32), 0 2px 6px rgb(11 29 58 / 0.1);
+
+  /* tipografia: una superfamiglia, la classe dell'informazione è codificata da larghezza, maiuscolo, corsivo e spaziatura */
+  --font-body: 'Sofia Sans Variable', 'Segoe UI', system-ui, sans-serif;
+  --font-label: 'Sofia Sans Condensed Variable', 'Arial Narrow', 'Segoe UI', sans-serif;
+  --font-display: 'Sofia Sans Extra Condensed Variable', 'Arial Narrow', 'Segoe UI', sans-serif;
+  --font-mono: 'Overpass Mono Variable', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+
+  --step--1: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
+  --step-0: clamp(1.0625rem, 1.03rem + 0.15vw, 1.125rem);
+  --step-1: clamp(1.25rem, 1.2rem + 0.3vw, 1.4rem);
+  --step-2: clamp(1.5rem, 1.4rem + 0.6vw, 1.85rem);
+  --step-3: clamp(1.9rem, 1.7rem + 1.1vw, 2.5rem);
+  --step-4: clamp(2.4rem, 2rem + 2vw, 3.5rem);
+  --step-5: clamp(3.2rem, 2.4rem + 4vw, 6rem);
+  --measure: 68ch;
+
+  /* spazi (base 4 px) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 6rem;
+  --space-10: 8rem;
+
+  /* un foglio di carta ha gli angoli vivi: raggio solo sui piccoli controlli */
+  --radius-s: 0;
+  --radius-m: 2px;
+  --radius-l: 4px;
+
+  /* moto */
+  --dur-fast: 150ms;
+  --dur-base: 240ms;
+  --dur-slow: 420ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* reticolo del foglio */
+  --sheet-max: 90rem;
+  --sheet-gutter: clamp(1rem, 0.5rem + 2vw, 2rem);
+  --frame-height: 4.5rem;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #081428;
+  --surface: #0e2344;
+  --surface-2: #15305a;
+  --border: #2a4674;
+  --border-strong: #e9eef5;
+  --text: #e9eef5;
+  --text-muted: #a9b8ce;
+  --text-faint: #8fa0ba;
+
+  --accent: #e9eef5;
+  --accent-contrast: #081428;
+  --link: #5cd6c6;
+  --pin: #f5c04a;
+  --pin-contrast: #081428;
+  --focus: #f5c04a;
+
+  --ok: #4cc38a;
+  --warn: #f0a63a;
+  --error: #ff8a80;
+  --info: #7fb2ff;
+  --ok-bg: #123a3c;
+  --warn-bg: #3a3026;
+  --error-bg: #3f2a3a;
+  --info-bg: #1b3561;
+
+  --course-melgani: #ff6b7a;
+  --course-melgani-ink: #0b1d3a;
+  --course-passerini: #22c4b2;
+  --course-passerini-ink: #0b1d3a;
+  --course-ricci: #f5c04a;
+  --course-ricci-ink: #0b1d3a;
+
+  --viz-class-1: #cc323e;
+  --viz-class-2: #1069da;
+  --viz-class-3: #c38300;
+  --viz-class-4: #018e7d;
+  --viz-class-5: #8851d1;
+  --viz-class-6: #e356a2;
+  --viz-field-1: #742d2e;
+  --viz-field-2: #22477d;
+  --viz-field-3: #624001;
+  --viz-field-4: #025449;
+  --viz-field-5: #503975;
+  --viz-field-6: #6e2e4f;
+  --viz-sample: #e9eef5;
+  --viz-estimate: #ff6b7a;
+  --viz-truth: #a9b8ce;
+  --viz-kernel: #22c4b2;
+  --viz-boundary: #e9eef5;
+  --viz-grid: #1d3a66;
+  --viz-axis: #8fa0ba;
+  --viz-highlight: #f5c04a;
+  --viz-negative: #69a5fe;
+  --viz-positive: #fd7273;
+  /* in scuro la rampa si ribalta: scuro -> chiaro = poco -> tanto */
+  --viz-seq-1: #056374;
+  --viz-seq-2: #0d7b8f;
+  --viz-seq-3: #2393aa;
+  --viz-seq-4: #42abc2;
+  --viz-seq-5: #5dc3db;
+  --viz-seq-6: #77dcf4;
+  --viz-seq-7: #b7f0fe;
+  --viz-div-1: #69a5fe;
+  --viz-div-2: #3177dc;
+  --viz-div-3: #004dab;
+  --viz-div-4: #3d3d3d;
+  --viz-div-5: #a70123;
+  --viz-div-6: #d33944;
+  --viz-div-7: #fd7273;
+
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.5);
+  --shadow-2: 0 16px 40px -12px rgb(0 0 0 / 0.7), 0 2px 8px rgb(0 0 0 / 0.4);
+}

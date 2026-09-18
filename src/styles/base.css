@@ -1,0 +1,145 @@
+/* Base: il documento, e le superfici del browser che nessuno disegna ma che portano comunque il mondo. */
+
+html {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 100%;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+  scroll-padding-top: calc(var(--frame-height) + var(--space-4));
+  scrollbar-color: var(--text-faint) var(--surface-2);
+  scrollbar-width: thin;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--bg);
+  font-size: var(--step-0);
+  font-weight: 400;
+  font-optical-sizing: auto;
+}
+
+::selection {
+  background: var(--pin);
+  color: var(--pin-contrast);
+}
+
+:where(input, textarea, [contenteditable]) {
+  caret-color: var(--link);
+}
+
+/* fuoco: doppio tratto come un punto trigonometrico, mai rimosso */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--bg);
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+a {
+  color: var(--link);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  transition: text-decoration-thickness var(--dur-fast) var(--ease-out);
+}
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  text-wrap: balance;
+  line-height: 1.15;
+  margin: 0;
+}
+
+p,
+li {
+  text-wrap: pretty;
+}
+
+/* cifre, coordinate, letture degli strumenti */
+.num,
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+img,
+svg,
+canvas,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: var(--space-6) 0;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* lettering cartografico: etichette di cornice e di legenda */
+.label {
+  font-family: var(--font-label);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  html {
+    background: #fff;
+    color: #000;
+  }
+}

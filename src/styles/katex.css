@@ -1,0 +1,49 @@
+/* KaTeX dentro il foglio: le formule sono il contenuto più importante dell'app, non devono mai tagliarsi né far scorrere la pagina. */
+
+.katex {
+  /* l'occhio di Sofia Sans è alto: 1.21em (predefinito di KaTeX) rende le formule in linea troppo grandi rispetto al testo */
+  font-size: 1.08em;
+  color: inherit;
+}
+
+/* formula in display: scorre nel proprio contenitore su schermi stretti */
+.katex-display {
+  margin-block: var(--space-5);
+  padding-block: var(--space-1);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+.katex-display > .katex {
+  font-size: 1.16em;
+  white-space: nowrap;
+}
+
+/* formula in display fuori dall'MDX (componente M, formule vive dei widget): come elemento di griglia o di flex
+   avrebbe min-width: auto e allargherebbe il contenitore su un telefono; così scorre dentro la sua colonna */
+.math-display {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+/* errore di LaTeX a runtime: deve vedersi in sviluppo, senza rompere la riga */
+.katex-error {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  color: var(--error);
+  background: var(--error-bg);
+}
+
+/* simboli collegati alla legenda viva: il tassello acceso evidenzia i suoi simboli nella formula */
+.katex .sym-live {
+  border-block-end: 2px solid var(--viz-highlight);
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+.katex .sym-live[data-active='true'] {
+  background: var(--viz-highlight);
+  color: var(--pin-contrast);
+}

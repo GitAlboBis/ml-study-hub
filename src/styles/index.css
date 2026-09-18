@@ -1,0 +1,75 @@
+/* Ingresso degli stili: Tailwind legge i token del progetto, non porta una sua palette. */
+@import 'tailwindcss';
+
+@import './tokens.css';
+@import './base.css' layer(base);
+@import './prose.css' layer(components);
+/* fuori dai layer: deve poter correggere katex.min.css, che non è in un layer */
+@import './katex.css';
+
+/* il tema è un attributo su <html> (impostato prima del primo paint da index.html) */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+@theme {
+  /* via la palette predefinita di Tailwind: nei componenti esistono solo i colori del mondo */
+  --color-*: initial;
+  --font-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-faint: var(--text-faint);
+  --color-accent: var(--accent);
+  --color-accent-contrast: var(--accent-contrast);
+  --color-link: var(--link);
+  --color-pin: var(--pin);
+  --color-pin-contrast: var(--pin-contrast);
+  --color-focus: var(--focus);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-error: var(--error);
+  --color-info: var(--info);
+  --color-ok-bg: var(--ok-bg);
+  --color-warn-bg: var(--warn-bg);
+  --color-error-bg: var(--error-bg);
+  --color-info-bg: var(--info-bg);
+  --color-melgani: var(--course-melgani);
+  --color-melgani-ink: var(--course-melgani-ink);
+  --color-passerini: var(--course-passerini);
+  --color-passerini-ink: var(--course-passerini-ink);
+  --color-ricci: var(--course-ricci);
+  --color-ricci-ink: var(--course-ricci-ink);
+  --color-viz-1: var(--viz-class-1);
+  --color-viz-2: var(--viz-class-2);
+  --color-viz-3: var(--viz-class-3);
+  --color-viz-4: var(--viz-class-4);
+  --color-viz-5: var(--viz-class-5);
+  --color-viz-6: var(--viz-class-6);
+  --color-viz-grid: var(--viz-grid);
+  --color-viz-highlight: var(--viz-highlight);
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  --font-body: var(--font-body);
+  --font-label: var(--font-label);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
+
+  --radius-s: var(--radius-s);
+  --radius-m: var(--radius-m);
+  --radius-l: var(--radius-l);
+
+  --shadow-1: var(--shadow-1);
+  --shadow-2: var(--shadow-2);
+
+  --ease-out: var(--ease-out);
+  --ease-in-out: var(--ease-in-out);
+}
