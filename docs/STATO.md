@@ -33,6 +33,8 @@ Aggiornare questo file a ogni fase chiusa o workflow lanciato. Date e ore assolu
   - Verifica visiva: `node scripts/snap.mjs <percorso senza / iniziale> <file.png> [--dark --width 390 --scroll sel --eval js]` (Chrome headless, niente Playwright). Screenshot in `.impeccable/review/`. Attenzione: in Git Bash un percorso che inizia con `/m/` diventa `M:/`.
   - Gate alle 12:48: build ✓, 1.371 test ✓, lint ✓.
 
+- **Git** (2026-09-18): repository privato https://github.com/GitAlboBis/ml-study-hub creato su richiesta dell'utente, 9 commit per argomento su `main`, push fatto. Da qui: un commit e un push per ogni fase chiusa.
+
 ## In corso
 
 - **Inventario** (run `wf_3a16f9a2-230`, lanciato il 2026-09-18 alle 12:50): 3 corsie, prima il resto del Cap. 2 (m03 → m05 → m06 → m07 → m10), poi Cap. 1 e gli altri. Completi finora: m04, m08, m09.
@@ -47,5 +49,4 @@ Aggiornare questo file a ogni fase chiusa o workflow lanciato. Date e ore assolu
 
 ## Decisioni aperte (da portare all'utente)
 
-- **Commit git**: il piano li prevede per task, l'utente non li ha ancora chiesti. Consigliati come punti di ripristino.
 - **Architettura dei widget**: circa 1.200 widget scritti a mano non sono sostenibili con i limiti di utilizzo. Proposta: 40-60 "motori" parametrici (esploratore di densità, di confini di decisione, di discesa del gradiente, di reti bayesiane, gridworld, mappe di attenzione…) configurati dall'inventario, così ogni concetto ha comunque la sua istanza animata con scenario, storyboard, formule vive e sfida, e restano scritti a mano solo i widget che lo meritano. Da decidere dopo aver visto il pilota.
