@@ -1,0 +1,1298 @@
+## Panoramica
+
+Le finestre di Parzen (*Parzen windows*, o *kernel density estimation*, KDE) sono il secondo metodo di stima non parametrica della densità di probabilità (*probability density function*, pdf) del Cap. 2, dopo il K-NN (*K-nearest neighbor*). La slide p42 li elenca uno dopo l'altro: «K-nearest neighbor (K-NN) method» e «Parzen windows method». <SourceRef doc="ch2" page={42} />
+
+Perché serve una <Term en="nonparametric estimation">stima non parametrica</Term>? La slide p41 dà due motivi. Primo: non hai alcuna conoscenza a priori sulla forma funzionale (*functional form*) della pdf del fenomeno osservato. Secondo: i modelli parametrici che conosci non approssimano bene la pdf che ti interessa. In entrambi i casi rinunci al vettore di parametri della stima a massima verosimiglianza o bayesiana e lavori direttamente sulle osservazioni disponibili, i campioni di addestramento (*training samples*). <SourceRef doc="ch2" page={41} /> Il contrasto con la stima parametrica è il tema di <ModLink to="m03-stima-intro-parametrica">introduzione alla stima parametrica</ModLink>.
+
+Le note riassumono l'obiettivo in una riga: stimare la pdf senza assumere alcun modello parametrico specifico. L'idea di base è posare una finestra (*window*, o *kernel*) attorno a ogni dato e calcolare la densità dalla proporzione di punti che cadono nella finestra. Lo scopo primario è **contare** quanti training samples cadono in una regione di volume $V$ centrata sul punto $\mathbf{x}^*$: la densità in $\mathbf{x}^*$ dipende da quanti punti stanno nella regione rispetto al numero totale $N$ di campioni. <SourceRef doc="part1" page={36} />
+
+<Formula id="f-c01" />
+
+Qui $\mathbf{x}^*$ è il punto dello spazio delle feature in cui vuoi la densità, $K$ il numero di campioni che cadono nella regione $R$, $N$ il numero totale di campioni, $V$ il volume di $R$.
+
+<Callout kind="intuizione">
+Un impianto fotovoltaico registra la radiazione solare giornaliera, tra 0 e 9 kWh/m². Le giornate nuvolose si ammucchiano attorno a 2, quelle serene attorno a 6.5: la densità ha due gobbe ed è asimmetrica. Una gaussiana stimata a massima verosimiglianza mette un'unica campana in mezzo, dove quasi nessuna giornata cade. Parzen non impone forme: ricostruisce le due gobbe dai soli campioni. Non parametrico significa «senza una forma imposta», non «senza parametri»: resta da decidere quanto lisciare.
+</Callout>
+
+<Widget id="m09-scatola-nera-non-parametrica" />
+
+<KeyIdea>
+Il foglio segue la catena delle slide p51-66: conti i campioni in un ipercubo, scrivi il conteggio come somma di funzioni finestra, sostituisci l'ipercubo con un kernel qualsiasi, studi l'effetto della larghezza $h$, poi giudichi lo stimatore (bias, varianza, consistenza) e chiudi con il kernel gaussiano sferico di Specht.
+</KeyIdea>
+
+<Callout kind="esame">
+Melgani chiede Parzen in quasi ogni sessione. L'apertura tipica è «general context: what we want to do, why they are non parametric estimation». Rispondi con tre elementi: che cosa vuoi (stimare $p(\mathbf{x})$ senza ipotizzarne la forma), perché non parametrico (nessuna conoscenza a priori, oppure modelli parametrici inadeguati), come lo fai (una finestra attorno ai dati e la stima $K/(NV)$). Le quattro domande della banca sono raccolte in fondo, nella sezione per l'orale.
+</Callout>
+
+## Parzen e K-NN: stessa stima, scelta opposta
+
+La formula $K/(NV)$ viene dal modulo precedente, <ModLink to="m08-non-parametrica-knn">stima non parametrica e K-NN</ModLink>. La probabilità $P_R$ che un campione cada nella regione $R$ è l'integrale della pdf su $R$. Se $p(\mathbf{x})$ è continua e $R$ è così piccola che $p$ non varia molto al suo interno, l'integrale vale circa $p(\mathbf{x}^*)\,V$. La slide p43 scrive il segno di uguale anche in quest'ultimo passaggio, ma si tratta di un'approssimazione. La frequenza relativa $K/N$ stima $P_R$ e diventa affidabile per la <Term en="law of large numbers">legge dei grandi numeri</Term>. <SourceRef doc="ch2" page={43} />
+
+<Formula id="f-c70" />
+
+Dividendo la frequenza relativa per il volume ottieni la stima di base:
+
+<Formula id="f-c70-2" />
+
+La slide p44 aggiunge due osservazioni che torneranno più avanti. La regione $R$ deve essere abbastanza grande da contenere abbastanza campioni per applicare la legge dei grandi numeri, e allo stesso tempo abbastanza piccola da limitare la variabilità di $p(\mathbf{x})$ al suo interno. <SourceRef doc="ch2" page={44} />
+
+Nella stima $K/(NV)$ ci sono due quantità libere, $K$ e $V$. Ciascun metodo ne blocca una e calcola l'altra.
+
+<Formula id="f-c02" />
+
+<Columns>
+<Col title="K-NN">
+
+**$K$ fissato, $V$ misurato.** Allarghi la cella centrata su $\mathbf{x}^*$ finché contiene $K$ campioni («expand the cell up to spanning K training samples», slide p47). Il volume che ne risulta è $V_K(\mathbf{x}^*)$.
+
+</Col>
+<Col title="Parzen">
+
+**$V$ fissato, $K$ contato.** Fissi la regione $R$, quindi il volume, e calcoli $K$ dai training samples. La slide p51 cerca proprio «an analytic expression for K, the number of samples falling in the hypercube».
+
+</Col>
+</Columns>
+
+<Formula id="f-c02-2" />
+
+La stima di Parzen con volume fissato $V = h^n$ prende questa forma, che ricaverai passo per passo nelle prossime sezioni:
+
+<Formula id="f-c02-3" />
+
+L'illustrazione di slide p46 mette i due metodi uno sopra l'altro. Nella riga di Parzen la cella ha volume $V = 1/\sqrt{N}$: si restringe al crescere di $N$ in modo deterministico, dovunque cadano i campioni, e il numero di punti catturati è casuale (può essere zero). Nella riga del K-NN $K = \sqrt{N}$: la cella si allarga o si stringe finché contiene esattamente $K$ campioni, cioè si adatta ai dati. <SourceRef doc="ch2" page={46} />
+
+<Formula id="f-c02-4" />
+
+<Figure id="fig15" />
+
+Le note di p32 confrontano i due metodi. Parzen dà stime lisce ed è meno sensibile al rumore del K-NN, ma la scelta della larghezza della finestra (*bandwidth*) è critica: troppo piccola porta a *overfitting*, troppo grande a *oversmoothing*. Il K-NN si adatta alla densità locale ma dipende in modo critico da $K$. Entrambi convergono alla pdf vera per $N \to \infty$ (slide p45: «Both of these methods do in fact converge»), ma sul comportamento a campione finito (*finite-sample behavior*) è difficile dire qualcosa di significativo. <SourceRef doc="part1" page={32} /> <SourceRef doc="ch2" page={45} />
+
+Da qui segue una differenza pratica, ricostruita e non scritta nella fonte. Con una finestra a supporto limitato, dove non cade alcun campione hai $K = 0$ e la stima di Parzen vale zero: sono i «gaps in the density representation» delle note p39. Il K-NN non si annulla mai, perché la cella si allarga finché trova $K$ campioni. In compenso la stima di Parzen con un kernel che è una densità ha sempre area 1; la stima K-NN no (in 1-D le sue code scendono come $1/\vert x \vert$ e l'integrale diverge, risultato di Duda-Hart).
+
+In cima a p36 le note chiudono l'esempio K-NN del modulo precedente, la slide p50 («Several K-NN estimates of two 1-D densities: a Gaussian and a bimodal distribution»). La figura ha due colonne, densità gaussiana a sinistra e bimodale triangolo più rettangolo a destra, e quattro righe $N = 1, 16, 256, \infty$. Per la bimodale con $N = 16$ i due picchi iniziano ad apparire ma c'è ancora rumore; con $N = 256$ la forma bimodale è più chiara, anche se resta del rumore; nel limite $N = \infty$ la stima mostra due picchi distinti, coerenti con la distribuzione vera. Le stime K-NN sono appuntite e hanno code che non scendono a zero. Tienile a mente: le griglie di Parzen di slide p62-63 usano la stessa coppia di densità e le confronterai direttamente. <SourceRef doc="part1" page={36} /> <SourceRef doc="ch2" page={50} />
+
+<Figure id="fig16" />
+
+<Widget id="m09-parzen-contro-knn" />
+
+<Check id="chk-01" />
+
+<Callout kind="esame">
+Una domanda reale sul K-NN chiude così: «Last question what are the difference with parzen window». Parti da $\hat{p}(\mathbf{x}^*) = K/(NV)$ e di' che cosa fissa ciascun metodo, quale parametro devi scegliere ($h$ oppure $K$), che aspetto hanno le stime (lisce e di area 1 contro appuntite e con code pesanti) e che cosa succede dove non ci sono campioni.
+</Callout>
+
+## L'ipercubo e la funzione finestra
+
+**Ipotesi** (*Hypotheses*, slide p51). Per introdurre il metodo assumi *temporaneamente* che la regione $R$ sia un <Term en="n-dimensional hypercube">ipercubo</Term> $n$-dimensionale. Se $h$ è la lunghezza di un lato (*edge*) dell'ipercubo centrato su $\mathbf{x}^*$, il suo volume è $h^n$. <SourceRef doc="ch2" page={51} />
+
+<Formula id="f-c04" />
+
+Qui $n$ è la dimensione dello spazio delle feature. Con $n = 1$ l'ipercubo è un intervallo di lunghezza $h$, con $n = 2$ un quadrato di area $h^2$, con $n = 3$ un cubo di volume $h^3$. L'avverbio «temporaneamente» annuncia la mossa successiva: l'ipercubo verrà sostituito da una classe più generale di finestre.
+
+**Metodologia** (*Methodology*). Per scrivere $K$ in forma analitica definisci la <Term en="window function">funzione finestra</Term> $\gamma$.
+
+<Definition term="Funzione finestra" en="window function">
+Funzione indicatrice dell'ipercubo: vale 1 se il suo argomento appartiene all'ipercubo e 0 altrimenti. Le note la descrivono così: «questa funzione in sostanza conta se un training sample $\mathbf{x}_k$ cade dentro l'ipercubo oppure no».
+</Definition>
+
+<Formula id="f-c05" />
+
+<Reveal label="Com'è scritta sulla slide">
+<Figure id="fig02" />
+</Reveal>
+
+La slide non dice quale ipercubo. La convenzione di Duda-Hart, coerente con il grafico di $\Pi(x)$ di slide p58, è l'ipercubo unitario centrato nell'origine: ogni componente dell'argomento sta tra $-1/2$ e $1/2$.
+
+<Formula id="f-c05-2" />
+
+### Il test di appartenenza
+
+Con una sola $\gamma$ riferita all'ipercubo unitario controlli qualunque ipercubo. Il training sample $\mathbf{x}_k$ appartiene a $R$, di centro $\mathbf{x}^*$ e lato $h$, se $\gamma[(\mathbf{x}_k - \mathbf{x}^*)/h] = 1$; altrimenti $\gamma[(\mathbf{x}_k - \mathbf{x}^*)/h] = 0$ e il campione è fuori. <SourceRef doc="ch2" page={51} /> <SourceRef doc="part1" page={36} />
+
+<Formula id="f-c06" />
+
+<Formula id="f-c06-2" />
+
+Due operazioni fanno il lavoro. Sottrarre $\mathbf{x}^*$ trasla l'ipercubo nell'origine; dividere per $h$ lo riscala a lato unitario. In 1-D la condizione diventa $\vert x_k - x^* \vert \le h/2$. Siccome $\gamma$ vale solo 0 o 1, le due frasi della slide («… belongs to R if γ[·] = 1. Otherwise, γ[·] = 0») formano una doppia implicazione. La slide usa le parentesi quadre nel testo e le tonde nelle formule di p52: indicano la stessa cosa.
+
+<Callout kind="intuizione">
+Nell'impianto di confezionamento del pesce la telecamera misura luminosità e larghezza di 40 salmoni, riscalate tra 0 e 10 così che un unico lato $h$ abbia senso su tutti e due gli assi. Vuoi $p(\mathbf{x} \mid \text{salmone})$ nel punto $\mathbf{x}^* = (5, 5)$ per il classificatore salmone contro spigola. Posi un quadrato di lato $h$ centrato in $\mathbf{x}^*$ e accendi $\gamma$ per ogni salmone che ci cade dentro.
+</Callout>
+
+<Widget id="m09-ipercubo-che-conta" />
+
+<Check id="chk-02" />
+
+## Contare con una formula
+
+### Il numero di campioni K
+
+Il numero di campioni nell'ipercubo è la somma dei valori della funzione finestra su tutti gli $N$ training samples (slide p52): ogni campione dentro aggiunge 1, ogni campione fuori aggiunge 0. <SourceRef doc="ch2" page={52} />
+
+<Formula id="f-c07" />
+
+Le note elencano i simboli: $N$ numero totale di training samples; $\gamma$ funzione finestra che definisce la regione attorno a $\mathbf{x}^*$; $h$ parametro di finestra (*window* o *bandwidth parameter*); $\mathbf{x}^*$ punto in cui stimi la densità; $\mathbf{x}_k$ i training samples. Rispetto al conteggio a mano guadagni una cosa: $K$ diventa una funzione analitica di $\mathbf{x}^*$ e di $h$. <SourceRef doc="part1" page={37} />
+
+### La stima con la finestra a ipercubo
+
+Sostituisci $K$ e $V = h^n$ nella stima di base. La slide scrive il risultato in due forme equivalenti, con argomento $(\mathbf{x}_k - \mathbf{x}^*)/h$ e con argomento $(\mathbf{x}^* - \mathbf{x}_k)/h$:
+
+<Formula id="f-c08" />
+
+Nelle note: $N$ è il numero totale di training samples, $h^n$ il volume dell'ipercubo (se usi una finestra rettangolare), $\gamma$ valuta se $\mathbf{x}_k$ sta nella finestra attorno a $\mathbf{x}^*$, $n$ è la dimensionalità dello spazio delle feature. Portare $1/h^n$ dentro la somma cambia la lettura: la stima diventa una media, sugli $N$ campioni, di finestre riscalate di $1/h^n$. <SourceRef doc="part1" page={37} />
+
+### Una finestra sul punto o una finestra per campione
+
+L'ultima uguaglianza della slide p52 scambia $\mathbf{x}_k - \mathbf{x}^*$ con $\mathbf{x}^* - \mathbf{x}_k$.
+
+<Formula id="f-c09" />
+
+Lo scambio è lecito perché l'ipercubo è simmetrico rispetto al centro: $\gamma(\mathbf{u}) = \gamma(-\mathbf{u})$. La slide non commenta il passaggio; la giustificazione per simmetria è ricostruita. Il cambio di segno cambia però il punto di vista.
+
+- Prima forma: c'è **una** finestra centrata sul punto di stima $\mathbf{x}^*$, che «guarda» i campioni.
+- Seconda forma: ci sono **N** finestre, una centrata su ciascun campione $\mathbf{x}_k$, tutte valutate in $\mathbf{x}^*$.
+
+La seconda lettura ti permette di vedere la stima come funzione di $\mathbf{x}$, cioè come somma di funzioni centrate sui campioni, e quindi di generalizzarla a kernel qualsiasi. I sei kernel di slide p58-59 sono tutti funzioni pari, quindi le due forme restano equivalenti anche dopo la generalizzazione. La formula generale di slide p53 adotta la seconda forma, con argomento $(\mathbf{x} - \mathbf{x}_k)/h$.
+
+<Check id="chk-03" />
+
+### Somma di rettangoli e semplice conteggio
+
+La slide p52 dà due letture della stessa formula. <SourceRef doc="ch2" page={52} />
+
+La prima: «Such estimate is thus as a collection of contributions coming from rectangular functions, each associated with a single training sample». La stima è la somma, divisa per $N$, di $N$ funzioni rettangolari di larghezza $h$ e altezza $1/h^n$, ognuna associata a un singolo training sample. In 1-D ogni campione porta un mattoncino di base $h$ e area $1/N$; dove i mattoncini si sovrappongono la stima sale. Il risultato è costante a tratti, con salti ai bordi dei rettangoli, in $x_k \pm h/2$. La formula qui sotto non è sulla slide: è il caso $n = 1$ della seconda forma con $\gamma = \Pi$, la funzione rettangolo di slide p58.
+
+<Formula id="f-c10" />
+
+La seconda: «It is also equivalent to a simple count of the number of training samples falling in the predefined hypercube». Letta nella prima forma, la stessa formula è un puro meccanismo di conteggio (*counting mechanism*, nelle note) dei campioni che cadono nell'ipercubo predefinito centrato in $\mathbf{x}^*$. <SourceRef doc="part1" page={37} />
+
+<Formula id="f-c11" />
+
+Conteggio e somma di rettangoli sono due letture della stessa quantità $K/(N h^n)$. Con la finestra rettangolare ogni campione conta 1 oppure 0, senza gradazioni: è il «counting» della domanda d'esame sulla rappresentazione grafica con una coppia di campioni.
+
+<Callout kind="intuizione">
+Otto salmoni hanno luminosità 2.1, 2.9, 3.4, 3.9, 4.3, 5.0, 6.2, 7.5. Puoi chiederti «quanti salmoni cadono nella finestra centrata su $x^*$?» oppure «quanto vale in $x^*$ la pila di mattoncini posati su ogni salmone?». Esce lo stesso numero. Solo la seconda domanda sopravvive quando il mattoncino diventa una campana.
+</Callout>
+
+<Widget id="m09-due-viste-stessa-stima" />
+
+## Verso finestre più generali
+
+### Una classe più ampia di finestre
+
+La slide p52 chiude con un riquadro in grassetto indicato da una mano: «Rather than limiting ourselves to the hypercube window function, suppose we allow a more general class of window functions». Il motivo sta nella seconda forma della stima: $\gamma$ compare solo come funzione di $(\mathbf{x} - \mathbf{x}_k)/h$. Nulla ti obbliga a usare l'indicatrice dell'ipercubo; puoi sostituirla con qualunque funzione finestra opportuna. <SourceRef doc="ch2" page={52} />
+
+Le note elencano tre esempi della classe più ampia. <SourceRef doc="part1" page={37} />
+
+- **Finestre gaussiane** (*Gaussian windows*): kernel lisci che riducono le discontinuità e danno una stima più raffinata.
+- **Kernel di Epanechnikov** (*Epanechnikov kernels*): una finestra alternativa che minimizza l'errore quadratico medio integrato (*mean integrated squared error*).
+- **Finestre triangolari** (*Triangular windows*): una funzione lineare a tratti che può lisciare la stima.
+
+Il kernel di Epanechnikov compare solo nelle note e senza formula. Quella qui sotto è la forma standard della letteratura: un profilo parabolico sul supporto $\vert x \vert \le 1$, con il fattore $3/4$ che porta l'area a 1.
+
+<Formula id="f-c13" />
+
+<Callout kind="attenzione">
+Le note affermano che Epanechnikov minimizza il *mean integrated squared error* e poco dopo (p41) che il gaussiano offre «generally the best balance between bias and variance». Le due frasi non sono armonizzate e nessuna delle due è nelle slide. All'orale cita il gaussiano come kernel più usato; Epanechnikov è un dettaglio delle note.
+</Callout>
+
+Con finestre più flessibili, come i kernel gaussiani, ottieni stime più lisce (*smoother*: le note scrivono «summation of gaussians», somma di gaussiane) e più continue, senza gli spigoli vivi e le discontinuità (*sharp edges and discontinuities*) delle finestre rettangolari. Secondo le note il metodo diventa più adattabile a diversi tipi di distribuzione e più accurato, specialmente in spazi ad alta dimensionalità (*higher-dimensional spaces*). La regolarità della stima viene da quella del kernel: un kernel discontinuo dà una stima a gradini, un kernel liscio una stima liscia. <SourceRef doc="part1" page={38} />
+
+<Callout kind="attenzione">
+Prendi con cautela la frase delle note sull'alta dimensionalità. Il kernel gaussiano porta vantaggi di forma: è liscio, ha simmetria sferica e lascia un solo iperparametro (*hyperparameter*), $\sigma$, in qualunque dimensione. Il numero di campioni che ti servono, invece, cresce in fretta con $n$: una finestra di lato $h < 1$ ha volume $h^n$, che crolla, e resta quasi vuota. È la maledizione della dimensionalità (*curse of dimensionality*) che ritrovi nella sezione sul bound della varianza. All'orale non dire che Parzen funziona bene in alta dimensione.
+</Callout>
+
+### La stima di Parzen generale
+
+Ammettendo finestre generali, la stima di $p(\mathbf{x})$ diventa «an average of functions of x and the samples $\mathbf{x}_i$» (slide p53); le note dicono «an average of kernel functions applied to the sample points». Ora la stima è definita in un $\mathbf{x}$ generico, non più solo in $\mathbf{x}^*$. È **la** formula da saper scrivere all'esame. <SourceRef doc="ch2" page={53} />
+
+<Formula id="f-c15" />
+
+I simboli, dalle note: $N$ numero totale di training samples; $V(h)$ volume della finestra (kernel) di larghezza $h$, che con l'ipercubo vale $h^n$; $\gamma$ funzione kernel (*Parzen window*) che misura il contributo di ciascun $\mathbf{x}_k$ alla stima in base alla sua distanza da $\mathbf{x}$; $h$ <Term en="bandwidth">larghezza</Term> della finestra, detta anche *smoothing parameter*. La slide parla di campioni $\mathbf{x}_i$ e poi usa l'indice $k$ nella formula: è solo un'incoerenza di indici. <SourceRef doc="part1" page={38} />
+
+<Definition term="Finestra di Parzen, o kernel" en="Parzen window, kernel">
+La funzione $\gamma(\cdot)$ della stima generale. Il parametro $h$ è la larghezza della finestra (*width of the window*), detta anche *bandwidth* o *smoothing parameter* perché controlla quanto la stima viene lisciata.
+</Definition>
+
+Le note spiegano il nome: $\gamma$ si chiama più comunemente *kernel function* perché liscia, o interpola, i dati. Da qui il nome alternativo del metodo, *kernel density estimation*. Attenzione al doppio significato: questo kernel è una densità che pesa i campioni per distanza, mentre nelle SVM di Passerini il kernel è un prodotto scalare in uno spazio di feature (<ModLink to="p10-kernel-trick">kernel trick</ModLink>). Il kernel gaussiano compare in entrambi con ruoli diversi.
+
+<Derivation id="der01" />
+
+<Callout kind="intuizione">
+La telecamera misura la luminosità di 12 salmoni: 2.6, 3.1, 3.3, 3.8, 4.0, 4.1, 4.4, 4.9, 5.2, 5.6, 6.3, 7.1. Su ogni valore posi una campana gaussiana di area $1/12$ e sommi. Muovendo $h$ non sposti nessuna campana: decidi solo quanto ciascun salmone si spalma sui vicini.
+</Callout>
+
+<Widget id="m09-somma-dei-kernel" />
+
+### La finestra come interpolatore
+
+La slide p53 dà la chiave di lettura: «In essence, the window function is being used for interpolation - each sample contributing to the estimate in accordance with its distance from x». Nelle note: $\gamma$ interpola in modo liscio la stima in $\mathbf{x}$ in base alla distanza tra $\mathbf{x}$ e i campioni $\mathbf{x}_k$; ogni campione contribuisce secondo quanto è vicino a $\mathbf{x}$, e il contributo cala al crescere della distanza. <SourceRef doc="ch2" page={53} /> <SourceRef doc="part1" page={38} />
+
+Passi così dal **conteggio** (contributo 0 oppure 1) all'**interpolazione** (contributo graduato). Tra un campione e l'altro le code dei kernel riempiono la densità, e i salti della stima a rettangoli spariscono.
+
+<Callout kind="intuizione">
+Un sensore IoT in una cella frigorifera registra tre temperature: 3.2, 4.1 e 6.0 °C. Con tre letture conta moltissimo come ciascuna contribuisce ai punti vicini. Il rettangolo chiede «sei dentro o fuori?», il kernel liscio chiede «quanto sei vicino?».
+</Callout>
+
+<Widget id="m09-conteggio-vs-interpolazione" />
+
+<Check id="chk-05" />
+
+### Il disegno d'esame con due campioni
+
+Melgani chiede all'orale la «Graphical representation of how the counting/interpolation works with a couple of samples». La fonte descrive i due meccanismi a parole (slide p52-53) ma non contiene il disegno: la procedura qui sotto è costruita su quelle due slide.
+
+1. Traccia un asse $x$ con due campioni $x_1$ e $x_2$ ($N = 2$) e scegli una larghezza $h$.
+2. **Conteggio** (slide p52). Su ogni campione posa un rettangolo di base $h$ e altezza $1/(Nh)$, cioè di area $1/N$. La stima è la somma punto per punto: vale 0 dove non arriva nessun rettangolo, $1/(Nh)$ dove ne arriva uno, $2/(Nh)$ dove si sovrappongono. È lo stesso che far scorrere una finestra di lato $h$ centrata su $x^*$, contare $K$ (0, 1 oppure 2) e dividere per $Nh$. Ne esce una scaletta con salti in $x_k \pm h/2$.
+3. **Interpolazione** (slide p53). Sostituisci ogni rettangolo con una campana gaussiana di area $1/N$ centrata sul campione. Ogni campione contribuisce in $x$ secondo la sua distanza da $x$ e la somma è una curva liscia. Se i due campioni distano al più $2h$, le campane si fondono in un'unica gobba con il massimo a metà strada; se distano di più restano due gobbe con una valle in mezzo.
+4. **Commento a voce.** In entrambi i disegni l'area totale è 1, perché ogni campione porta massa $1/N$. Passando dal rettangolo alla gaussiana il contributo smette di essere «dentro o fuori» e diventa graduato con la distanza: per questo spariscono i salti.
+
+<Formula id="f-c71" />
+
+<Formula id="f-c71-2" />
+
+<Formula id="f-c71-3" />
+
+<Example id="ex07" title="Due campioni: la scaletta del conteggio e la curva dell'interpolazione">
+
+Numeri inventati per l'esempio: la fonte non ne dà. Due campioni 1-D, $x_1 = 2$ e $x_2 = 3$, quindi $N = 2$.
+
+<Step title="Conteggio con il rettangolo, h = 2">
+
+Ogni campione porta un rettangolo di base 2 e altezza $1/(Nh) = 1/4 = 0.25$: il primo su $[1, 3]$, il secondo su $[2, 4]$. Sommando:
+
+$$
+\hat{p}(x) = \begin{cases} 0 & x < 1 \\ 0.25 & 1 \le x < 2 \\ 0.5 & 2 \le x \le 3 \\ 0.25 & 3 < x \le 4 \\ 0 & x > 4 \end{cases}
+$$
+
+L'area vale $0.25 + 0.5 + 0.25 = 1$.
+
+</Step>
+
+<Step title="Verifica con la finestra che conta">
+
+In $x^* = 2.5$ la finestra $[1.5, 3.5]$ contiene entrambi i campioni: $K = 2$ e $\hat{p} = 2/(2 \cdot 2) = 0.5$. In $x^* = 1.2$ la finestra $[0.2, 2.2]$ contiene solo $x_1$: $K = 1$ e $\hat{p} = 0.25$. In $x^* = 4.5$ la finestra $[3.5, 5.5]$ è vuota: $K = 0$ e $\hat{p} = 0$. Le due letture danno gli stessi valori.
+
+</Step>
+
+<Step title="Interpolazione con il kernel gaussiano, h = 1">
+
+Ora $\hat{p}(x)$ è la media di due normali di deviazione standard 1 centrate in 2 e in 3:
+
+$$
+\hat{p}(2.5) = 0.3989 \cdot e^{-0.125} = 0.352
+$$
+
+$$
+\hat{p}(2) = \hat{p}(3) = \frac{0.3989 + 0.2420}{2} = 0.320, \qquad \hat{p}(1) = \hat{p}(4) = \frac{0.2420 + 0.0540}{2} = 0.148, \qquad \hat{p}(0) = \hat{p}(5) = 0.029
+$$
+
+Il massimo sta a metà strada, in 2.5. Una sola gobba, perché la distanza tra i campioni (1) è minore di $2h = 2$. Nessun salto e nessun punto in cui la stima vale esattamente zero.
+
+</Step>
+
+<Step title="Con h = 0.3 le campane si separano">
+
+$$
+\hat{p}(2) = \hat{p}(3) \approx 0.667, \qquad \hat{p}(2.5) \approx 0.332
+$$
+
+Due gobbe con una valle in mezzo, perché $1 > 2h = 0.6$.
+
+</Step>
+
+<Step title="La morale da dire all'orale">
+
+Il rettangolo chiede «dentro o fuori?» e produce gradini; la gaussiana pesa ogni campione con la sua distanza da $x$ e produce una curva liscia. In entrambi i casi ogni campione porta area $1/N = 1/2$.
+
+</Step>
+
+</Example>
+
+<Callout kind="intuizione">
+All'apertura del turno l'impianto ha misurato la luminosità di due soli salmoni, 2 e 3. Prima disegna tu la stima a mano, poi confrontala con la somma vera.
+</Callout>
+
+<Widget id="m09-disegna-la-somma" />
+
+<Check id="chk-04" />
+
+<Callout kind="esame">
+Richiesta reale: «Graphical representation of how the counting/interpolation works with a couple of samples». Disegna due assi uno sotto l'altro con gli stessi due campioni: sopra i due rettangoli impilati (scaletta a tre livelli), sotto le due campane e la loro somma. Scrivi l'altezza $1/(Nh)$ e di' ad alta voce che l'area resta 1.
+</Callout>
+
+### Il ruolo di h in breve
+
+Le note di p38 anticipano l'effetto della larghezza, che le slide p55-57 studieranno per bene. Il parametro $h$ controlla il livello di smoothing. Un $h$ più piccolo dà una stima più sensibile: il kernel si concentra strettamente sui singoli dati, con rischio di *overfitting*. Un $h$ più grande distribuisce il kernel su un'area più ampia e porta a una stima più liscia, che fa *underfitting* se $h$ è troppo grande. <SourceRef doc="part1" page={38} />
+
+
+## Quando la stima è una densità legittima
+
+### Il kernel deve essere una densità
+
+La slide p53 pone la domanda naturale: «It is natural to ask that the estimate p(x) be a legitimate density function, i.e., that it be nonnegative and integrate to one». La slide scrive $p(\mathbf{x})$ senza cappello, ma il soggetto è la stima $\hat{p}(\mathbf{x})$, come precisano le note. <SourceRef doc="ch2" page={53} />
+
+Le note esplicitano le due condizioni. **Non negatività** (*Non-negativity*): $\hat{p}(x) \ge 0$ in ogni punto. **Normalizzazione** (*Normalization*): l'integrale di $\hat{p}$ su tutto lo spazio vale 1. Le note le scrivono nel caso scalare, con l'integrale da $-\infty$ a $+\infty$: <SourceRef doc="part1" page={38} />
+
+<Formula id="f-c19" />
+
+<Formula id="f-c19-2" />
+
+In $n$ dimensioni l'integrale si estende a tutto $\Re^n$, coerente con la condizione sul kernel di slide p54:
+
+<Formula id="f-c19-3" />
+
+Senza queste proprietà non potresti calcolare probabilità integrando $\hat{p}$, per esempio $P(60 \le \text{bpm} \le 80)$ su una stima della frequenza cardiaca, né usare $\hat{p}$ come densità condizionata alla classe in un classificatore bayesiano (<ModLink to="m17-bayes-map-ml">criteri MAP e ML</ModLink>).
+
+La slide p54 dice come garantirle: «This can be assured by requiring the window function itself be a density function». Più precisamente richiedi che $\gamma$ sia non negativa in ogni punto di $\Re^n$ e che il suo integrale su $\Re^n$ valga 1. <SourceRef doc="ch2" page={54} />
+
+<Formula id="f-c20" />
+
+La non negatività deve valere in ogni punto dello spazio delle feature, non solo sui campioni. Tutti e sei i kernel di slide p58-59 sono costruiti per soddisfare le due condizioni: il fattore $1/\sqrt{2\pi}$ del gaussiano e il fattore $1/\pi$ del Cauchy sono costanti di normalizzazione. Nella slide p54 (e nelle note p38) l'argomento è composto in corsivo non grassetto, $\gamma(x)$ e $dx$, benché $\mathbf{x}$ sia un vettore di $\Re^n$: qui lo trovi in grassetto, come nel resto del capitolo.
+
+La conclusione della slide è rapida: se in più mantieni la relazione $V = h^n$, «it follows at once that p(x) also satisfies these conditions». La slide non dà i passaggi. Ogni termine $(1/h^n)\,\gamma((\mathbf{x} - \mathbf{x}_k)/h)$ è non negativo e, con il cambio di variabile (*change of variables*) $\mathbf{u} = (\mathbf{x} - \mathbf{x}_k)/h$, che porta $d\mathbf{x} = h^n\,d\mathbf{u}$, ha integrale 1:
+
+<Formula id="f-c21" />
+
+La media di $N$ funzioni non negative di area 1 è non negativa e ha area 1:
+
+<Formula id="f-c21-2" />
+
+Il fattore $1/V = 1/h^n$ compensa esattamente l'allargamento della finestra, cioè lo Jacobiano (*Jacobian*) $h^n$ del cambio di variabile. Se cambiassi $h$ senza riscalare l'altezza, l'area smetterebbe di valere 1: dimenticando $1/h^n$ otterresti area $h^n$. <SourceRef doc="part1" page={39} />
+
+<Derivation id="der02" />
+
+<Callout kind="intuizione">
+Con la frequenza cardiaca a riposo di 15 pazienti, tra 52 e 96 bpm, vuoi tarare un allarme di tachicardia integrando la curva stimata. Se $\hat{p}$ non fosse una densità, quella probabilità potrebbe superare 1 o diventare negativa.
+</Callout>
+
+<Widget id="m09-densita-legittima" />
+
+<Check id="chk-06" />
+
+### Tre condizioni per una buona stima
+
+Essere una densità rende la stima legittima, non ancora sensata. La slide p54 aggiunge tre «additional conditions to get a good estimate». <SourceRef doc="ch2" page={54} /> <SourceRef doc="part1" page={39} />
+
+**1. Massimo nell'origine.** $\gamma(\cdot)$ assume il valore massimo nell'origine. Le note precisano: il massimo cade in $\mathbf{x} - \mathbf{x}_k = 0$, perché i punti più vicini al campione devono contribuire di più alla stima. Questa condizione segna il passaggio dai metodi di semplice conteggio a metodi che tengono conto della similarità (*similarity*, o prossimità) tra i punti. La slide la enuncia a parole; le due formule sono la traduzione. La seconda usa «appartiene all'argmax» e non «è uguale» perché il massimo può non essere unico: il kernel rettangolare vale 1 su tutto il supporto.
+
+<Formula id="f-c22" />
+
+<Formula id="f-c22-2" />
+
+**2. Continuità.** $\gamma(\cdot)$ è continua. Le note danno il motivo: stai stimando una pdf liscia, per sua natura continua, quindi conviene che lo sia anche il kernel. Il kernel rettangolare è una densità valida ma non rispetta questa condizione, e infatti produce stime a gradini.
+
+**3. Decadimento a zero.** $\gamma(\mathbf{x}) \to 0$ per $\mathbf{x} \to +\infty$. La slide scrive il limite sul vettore in grassetto (le note: «γ(x) → 0 as x → ∞»): va letto come norma di $\mathbf{x}$ che tende a infinito, come nella seconda formula. Così i punti distanti hanno un'influenza trascurabile sulla stima in una data posizione.
+
+<Formula id="f-c24" />
+
+<Formula id="f-c24-2" />
+
+<Callout kind="intuizione">
+Un sensore industriale segna anomala una lettura quando la densità stimata in quel punto scende sotto una soglia. Trenta letture stanno attorno a 40 °C e una sola a 80 °C. Un kernel con il massimo fuori dall'origine sposta la massa lontano dai dati e genera falsi allarmi proprio dove i dati sono fitti; un kernel che non decade lascia a 80 °C una densità alta e nasconde il guasto.
+</Callout>
+
+<Widget id="m09-tre-condizioni-buon-kernel" />
+
+## L'effetto della larghezza h
+
+### La finestra riscalata
+
+La slide p55 si chiede quale effetto abbia la larghezza sulla stima: «Let us examine the effect that the window width h has on p(x)», dove $p(\mathbf{x})$ senza cappello indica ancora la stima. Per rispondere definisci la funzione $\delta(\mathbf{x})$: <SourceRef doc="ch2" page={55} />
+
+<Formula id="f-c25" />
+
+$\delta$ è il kernel riscalato due volte: in larghezza, con l'argomento $\mathbf{x}/h$, e in altezza, con il fattore $1/V(h)$. Nelle note $V(h)$ è il volume della finestra e $\gamma$ la funzione finestra. <SourceRef doc="part1" page={39} />
+
+<Callout kind="attenzione">
+Qui $\delta(\mathbf{x})$ **non** è la delta di Dirac: è la finestra riscalata a $h$ finito. Diventa la delta di Dirac solo nel limite $h \to 0$, e con quel significato lo stesso simbolo ricompare nella slide p60. La slide non segnala il cambio di significato.
+</Callout>
+
+Con questa definizione la stima si scrive come media aritmetica di $N$ copie di $\delta$, ciascuna traslata su un training sample:
+
+<Formula id="f-c26" />
+
+Tutta la dipendenza da $h$ sta nella forma di $\delta$. Per capire come cambia la stima ti basta capire come cambia una singola $\delta$ e poi sovrapporne $N$.
+
+### Ampiezza e larghezza cambiano insieme
+
+Siccome $V(h) = h^n$, $h$ agisce insieme sull'ampiezza di $\delta$ (il fattore $1/h^n$) e sulla sua larghezza (l'argomento $\mathbf{x}/h$), mantenendone l'area uguale a 1. La lettura ampiezza e larghezza è quella di Duda-Hart, da cui vengono le figure.
+
+<Formula id="f-c27" />
+
+<Formula id="f-c27-2" />
+
+- **$h$ grande**: $\delta$ ha ampiezza piccola, è larga e varia lentamente. $\hat{p}$ è la sovrapposizione di $N$ funzioni larghe, una versione molto liscia.
+- **$h$ piccolo**: $\delta$ ha un picco alto e stretto. $\hat{p}$ è la sovrapposizione di $N$ impulsi stretti centrati sui campioni.
+- **$h \to 0$**: $\delta(\mathbf{x} - \mathbf{x}_k)$ tende a una delta di Dirac centrata in $\mathbf{x}_k$.
+
+La slide p56 lo mostra con tre grafici 3-D di $\delta(\mathbf{x})$ sul dominio $[-2, 2] \times [-2, 2]$, per una finestra normale bidimensionale a simmetria circolare (*2-D circularly symmetric normal Parzen windows*). Con $h = 1$ la campana è larga e bassa, con l'asse verticale fino a 0.15; con $h = 0.5$ è più stretta e alta, asse fino a 0.6; con $h = 0.2$ è un ago molto stretto, asse fino a 4. Il volume sotto ciascuna superficie resta 1. <SourceRef doc="ch2" page={56} />
+
+<Figure id="fig03" />
+
+La slide mostra solo i grafici, con l'asse verticale etichettato $\delta(\mathbf{x})$. Le due formule qui sotto sono ricostruite: applicano $\delta(\mathbf{x}) = (1/V(h))\,\gamma(\mathbf{x}/h)$ alla normale standard bidimensionale con $V(h) = h^2$ e riproducono le scale lette sui grafici.
+
+<Formula id="f-c31" />
+
+<Formula id="f-c31-2" />
+
+<Example id="ex01" title="Finestre normali 2-D per h = 1, 0.5, 0.2: valori di picco">
+
+Finestra normale bidimensionale a simmetria circolare, $n = 2$, $V(h) = h^2$. Il picco della normale standard 2-D vale $1/(2\pi)$.
+
+<Step title="Il picco in funzione di h">
+
+$$
+\delta(\mathbf{0}) = \frac{1}{h^2} \cdot \frac{1}{2\pi} = \frac{1}{2\pi h^2}
+$$
+
+</Step>
+
+<Step title="h = 1">
+
+$$
+\delta(\mathbf{0}) = \frac{1}{2\pi} = 0.159
+$$
+
+Sulla slide l'asse verticale arriva a circa 0.15.
+
+</Step>
+
+<Step title="h = 0.5">
+
+$$
+\delta(\mathbf{0}) = \frac{1}{2\pi \cdot 0.25} = 0.637
+$$
+
+Sulla slide l'asse arriva a circa 0.6.
+
+</Step>
+
+<Step title="h = 0.2">
+
+$$
+\delta(\mathbf{0}) = \frac{1}{2\pi \cdot 0.04} = 3.98
+$$
+
+Sulla slide l'asse arriva a circa 4.
+
+</Step>
+
+<Step title="Il rapporto">
+
+Riducendo $h$ di 5 volte, da 1 a 0.2, il picco cresce di $5^2 = 25$ volte ($n = 2$), mentre il volume sotto la superficie resta 1. In dimensione $n$, dimezzare $h$ moltiplica il picco per $2^n$.
+
+</Step>
+
+</Example>
+
+<Derivation id="der03" />
+
+<Callout kind="intuizione">
+Un pixel di training della classe «vegetazione» in un'immagine multispettrale da drone, nel piano (rosso, vicino infrarosso) in unità normalizzate. La finestra $\delta$ attorno al pixel dice quanto quel pixel garantisce per le firme spettrali vicine: collina larga e bassa oppure ago stretto e alto, sempre di volume 1.
+</Callout>
+
+<Widget id="m09-delta-ampiezza-larghezza" />
+
+<Check id="chk-08" />
+
+### Cinque campioni e tre larghezze
+
+La slide p57 applica le tre finestre agli stessi cinque campioni 2-D: «Three Parzen window density estimates based on the same set of five samples». Il dominio è $[0, 10] \times [0, 8]$; tre campioni sono ravvicinati a sinistra, uno sta in fondo a destra, uno davanti a destra. Le posizioni esatte non sono leggibili dal grafico. <SourceRef doc="ch2" page={57} />
+
+<Figure id="fig04" />
+
+- **$h = 1$**: superficie liscia con rilievi fusi, scala verticale circa 0.2.
+- **$h = 0.5$**: cinque campane distinte, le tre vicine parzialmente sovrapposte, scala circa 0.6.
+- **$h = 0.2$**: cinque aghi isolati, scala circa 3.
+
+La slide mostra solo i tre grafici, con l'asse verticale etichettato $p(\mathbf{x})$ senza cappello. La formula è la media di slide p55 scritta per $N = 5$ con le finestre normali 2-D della figura precedente (ricostruita):
+
+<Formula id="f-c32" />
+
+Stessi dati, stime completamente diverse. Con $N$ così piccolo nessun $h$ è quello giusto: $h$ grande sfoca, $h$ piccolo mostra solo i campioni. Le note danno un nome ai due estremi. <SourceRef doc="part1" page={39} />
+
+<Definition term="Oversmoothing" en="oversmoothing">
+Aumentando $h$ la stima diventa più liscia, ma rischi di perdere dettagli importanti della distribuzione, specialmente quando la densità ha strutture con picchi stretti (*sharply peaked features*). Nella slide p57 è il pannello $h = 1$: i cinque campioni si fondono in due rilievi larghi e bassi e non si distinguono più.
+</Definition>
+
+<Definition term="Stima troppo variabile" en="highly variable estimate, overfitting">
+Se $h$ è troppo piccolo la stima è molto variabile e spesso fa *overfitting* sui campioni specifici: cattura il rumore invece della vera distribuzione sottostante. Nella slide p57 è il pannello $h = 0.2$: cinque aghi isolati, uno per campione, con densità praticamente nulla tra l'uno e l'altro.
+</Definition>
+
+<Example id="ex02" title="Tre stime di Parzen sugli stessi cinque campioni 2-D">
+
+Cinque campioni nel dominio $[0, 10] \times [0, 8]$, tre ravvicinati a sinistra, uno in fondo a destra, uno davanti a destra, stimati con le tre finestre normali 2-D dell'esempio precedente.
+
+<Step title="h = 1">
+
+Superficie liscia a rilievi fusi, massimo sull'asse circa 0.2. Le tre campane vicine diventano un solo rilievo.
+
+</Step>
+
+<Step title="h = 0.5">
+
+Cinque campane riconoscibili, con sovrapposizione parziale tra le tre vicine; massimo circa 0.6.
+
+</Step>
+
+<Step title="h = 0.2">
+
+Cinque aghi separati, massimo circa 3.
+
+</Step>
+
+<Step title="Una nota sulle scale">
+
+Con $N = 5$ un ago isolato dovrebbe valere $\frac{1}{5} \cdot 3.98 \approx 0.8$; analogamente $\frac{1}{5} \cdot 0.637 \approx 0.13$ per $h = 0.5$ e $\frac{1}{5} \cdot 0.159 \approx 0.03$ per $h = 1$. Nella figura originale di Duda-Hart gli assi verticali sono riscalati per mostrare la struttura: non usare quei numeri (0.2, 0.6, 3) come valori di $\hat{p}$.
+
+</Step>
+
+<Step title="Conclusione">
+
+A parità di dati la stima dipende fortemente da $h$: il pannello a sinistra è *oversmoothed*, quello a destra insegue i campioni.
+
+</Step>
+
+</Example>
+
+<Callout kind="intuizione">
+In telerilevamento i pixel etichettati sono spesso pochissimi, perché l'etichettatura a terra costa. Con cinque pixel «acqua» in due bande spettrali ottieni un'immagine fuori fuoco oppure cinque puntini: la scelta di $h$ decide che cosa vedi.
+</Callout>
+
+<Widget id="m09-cinque-campioni-tre-h" />
+
+<Check id="chk-09" />
+
+### Più campioni, finestra più stretta
+
+Le note di p39 danno una regola generale: al crescere del numero $N$ di training samples puoi diminuire $h$. Con più campioni, finestre più piccole danno stime accurate senza *overfitting*. Con pochi campioni devi aumentare $h$ per lisciare la stima ed evitare buchi (*gaps*) nella rappresentazione della densità. È l'anticipazione informale delle condizioni di consistenza su $h_N$ di slide p61. <SourceRef doc="part1" page={39} />
+
+<Callout kind="intuizione">
+Il consumo elettrico orario di un'abitazione ha due modi, la notte attorno a 0.35 kWh e il giorno attorno a 1.4 kWh. Con una settimana di dati ti serve una finestra larga per non lasciare buchi; con un anno puoi permetterti una finestra stretta che separa i due modi.
+</Callout>
+
+<Widget id="m09-piu-campioni-h-piu-stretto" />
+
+## Esempi di kernel
+
+Le slide p58-59 (*Kernel Examples*) mostrano sei kernel scalari, ciascuno con la sua formula e il suo grafico. Le note p40-41 aggiungono un commento per ciascuno. <SourceRef doc="ch2" page={58} /> <SourceRef doc="part1" page={40} />
+
+### Rettangolare, triangolare, gaussiano
+
+**Kernel rettangolare** (*Rectangular kernel*). È la funzione rettangolo $\Pi(x)$, il caso 1-D della finestra a ipercubo. Assegna peso uguale a tutti i punti dentro la finestra e peso zero a quelli fuori: le note la chiamano una scelta semplice ma spesso rozza (*crude*). La definizione esplicita di $\Pi$ non è sulla slide; quella riportata è la standard.
+
+<Formula id="f-c33" />
+
+<Formula id="f-c33-2" />
+
+<Callout kind="attenzione">
+Il grafico della slide p58 mostra il supporto tra $-1/2$ e $1/2$ e l'etichetta $1/2$ accanto all'altezza. Con questi valori l'area sarebbe $1/2$, non 1, in contrasto con la condizione $\int \gamma = 1$ di slide p54. La $\Pi$ standard ha altezza 1 su $[-1/2, 1/2]$ (oppure altezza $1/2$ su $[-1, 1]$): leggi l'etichetta con cautela.
+</Callout>
+
+**Kernel triangolare** (*Triangular kernel*). È la funzione triangolo $\Lambda(x)$: nel grafico ha supporto tra $-1$ e $1$ e picco 1 nell'origine, quindi area $\frac{1}{2} \cdot 2 \cdot 1 = 1$. Le note parlano di attenuazione lineare (*linear tapering*): dà più peso ai punti vicini al centro e produce stime più lisce del rettangolare. Anche qui la definizione esplicita è quella standard, coerente con il grafico.
+
+<Formula id="f-c34" />
+
+<Formula id="f-c34-2" />
+
+**Kernel gaussiano** (*Gaussian kernel*). $\gamma$ è la densità normale standard, media 0 e varianza 1: la classica campana. Secondo le note è il kernel più usato, per la sua regolarità (*smoothness*) e perché produce stime continue e derivabili. Dà più peso ai punti vicini al centro, e l'influenza di un punto cala in modo esponenziale con la distanza (per la precisione con il quadrato della distanza nell'esponente). <SourceRef doc="part1" page={41} />
+
+<Formula id="f-c35" />
+
+È la risposta alla domanda d'esame «Which is the most common window function (write the formula)?». Conviene saper scrivere anche la stima che ne segue. La seconda formula non è sulla slide p58: sostituisce questo kernel nella formula generale di slide p53 con $n = 1$ e $V(h) = h$, e coincide con la formula di Specht di slide p65 per $n = 1$ e $\sigma = h$. Nella stima $h$ fa da deviazione standard di ciascuna campana.
+
+<Formula id="f-c35-2" />
+
+<Figure id="fig05" />
+
+<Callout kind="intuizione">
+Per la classe «0» delle cifre scritte a mano 8×8 misuri la frazione di pixel accesi su 25 immagini, tra 0.30 e 0.55. Tre kernel sugli stessi 25 valori danno tre stime diverse: gradini dal rettangolo, spigoli dal triangolo, morbidezza dalla gaussiana.
+</Callout>
+
+<Widget id="m09-galleria-kernel-base" />
+
+### Esponenziale, Cauchy e sinc al quadrato
+
+**Kernel esponenziale** (*Exponential kernel*). È la densità di Laplace: una cuspide nell'origine con valore massimo $1/2$ e code esponenziali simmetriche. Decade in fretta dal centro, quindi va bene quando vuoi che l'influenza di un campione cali rapidamente; non ha la regolarità del gaussiano, perché nell'origine non è derivabile. <SourceRef doc="ch2" page={59} /> <SourceRef doc="part1" page={41} />
+
+<Formula id="f-c36" />
+
+**Kernel di Cauchy** (*Cauchy kernel*). Campana bassa e larga, con picco $1/\pi \approx 0.318$. Ha code pesanti (*heavy tails*): dà ai punti lontani dal centro un peso relativamente maggiore del gaussiano. Per questo è utile con distribuzioni che hanno *outlier* o code pesanti. Il fattore $1/\pi$ normalizza perché l'arcotangente varia di $\pi$ su tutta la retta.
+
+<Formula id="f-c37" />
+
+**Kernel sinc al quadrato** (*«sinc²(·)» kernel*). Un lobo principale nell'origine, con picco $1/(2\pi) \approx 0.159$, e lobi laterali via via più piccoli che toccano lo zero in $x = \pm 2\pi, \pm 4\pi, \dots$ Le note ricordano che si usa spesso nell'elaborazione dei segnali per l'interpolazione liscia, ma è meno comune nella stima di densità per la sua natura oscillatoria. Il quadrato garantisce la non negatività: un sinc semplice avrebbe lobi negativi e non sarebbe una densità.
+
+<Formula id="f-c38" />
+
+<Figure id="fig06" />
+
+<Derivation id="der09" />
+
+<Callout kind="intuizione">
+Gli importi delle spese con carta di un cliente, in scala logaritmica, stanno tra 10 e 200 euro; poi arriva una transazione da 5000 euro, forse una frode. Il punteggio di anomalia $-\log \hat{p}$ cambia molto con il kernel: le code pesanti del Cauchy danno ancora un po' di densità all'importo estremo, le code leggere del gaussiano lo isolano.
+</Callout>
+
+<Widget id="m09-galleria-kernel-code" />
+
+<Check id="chk-10" />
+
+### Perché il gaussiano è il più usato
+
+Le note di p41 chiudono la galleria: il kernel gaussiano è il più usato nella stima non parametrica di densità per la sua regolarità, le sue proprietà matematiche e l'efficacia con distribuzioni di tanti tipi. Altri kernel possono servire in casi d'uso specifici, ma il gaussiano offre in genere il miglior equilibrio tra bias e varianza. <SourceRef doc="part1" page={41} />
+
+| Kernel | Estremo superiore | Continuo | Carattere |
+|---|---|---|---|
+| rettangolare $\Pi(x)$ | $1$ | no | semplice, rozzo, stima a gradini |
+| triangolare $\Lambda(x)$ | $1$ | sì | lineare a tratti, spigoli nella stima |
+| gaussiano | $1/\sqrt{2\pi} \approx 0.399$ | sì | liscio e derivabile |
+| esponenziale | $1/2$ | sì | decadimento rapido, cuspide nell'origine |
+| Cauchy | $1/\pi \approx 0.318$ | sì | code pesanti, tollera gli *outlier* |
+| sinc al quadrato | $1/(2\pi) \approx 0.159$ | sì | oscillatorio, lobi laterali |
+
+Tutti e sei sono densità valide, hanno il massimo nell'origine e decadono a zero; solo il rettangolare non è continuo. L'estremo superiore ti servirà nel bound sulla varianza di slide p61.
+
+<Check id="chk-07" />
+
+
+## Proprietà della stima di Parzen
+
+### Una scatola nera da giudicare
+
+Le note aprono le proprietà con un'immagine: la finestra di Parzen si può vedere come una «black box» che fornisce una stima non parametrica della densità sottostante a partire dai campioni osservati. Entrano i training samples, esce una funzione $\hat{p}(\mathbf{x})$, senza alcuna ipotesi sulla forma funzionale. <SourceRef doc="part1" page={42} />
+
+Proprio perché non hai un modello, devi chiederti quanto è buona la stima, con gli stessi strumenti usati per gli stimatori parametrici in <ModLink to="m04-bonta-stimatori">bontà degli stimatori</ModLink>: bias, varianza, consistenza. La differenza è che qui lo stimatore produce una funzione e non un numero, quindi bias e varianza si valutano punto per punto, in ogni $\mathbf{x}$.
+
+### Bias: la media della stima è una convoluzione
+
+**Bias** (slide p60). «Since the samples $\mathbf{x}_i$ are i.i.d. according to the (unknown) density $p(\mathbf{x})$, we have»: <SourceRef doc="ch2" page={60} />
+
+<Formula id="f-c41" />
+
+<Reveal label="Lo schema della slide">
+<Figure id="fig07" />
+</Reveal>
+
+Il simbolo $*$ è la <Term en="convolution">convoluzione</Term>. La slide scrive solo la forma compatta con l'asterisco; la forma esplicita è la definizione di convoluzione, che ricavi passo per passo nella derivazione qui sotto:
+
+<Formula id="f-c41-2" />
+
+Leggila così: la media della stima in $\mathbf{x}$ è una media pesata dei valori di $p$ attorno a $\mathbf{x}$, con i pesi dati dalla finestra. Le note: «in media la pdf stimata è una convoluzione della pdf vera con la funzione kernel». Il valore atteso non dipende da $N$, solo da $h$ e dalla forma di $\gamma$. <SourceRef doc="part1" page={42} />
+
+<Derivation id="der04" />
+
+Il riquadro evidenziato della slide dice: «The estimate mean is a blurred version of the true p(x)!». Le note spiegano: il kernel agisce come un <Term en="blurring filter">filtro di sfocatura</Term>, quindi la stima non è esatta ma lisciata secondo il kernel; l'entità della sfocatura dipende dalla larghezza $h$ e dalla forma di $\gamma$. Vedi tre effetti: i picchi si abbassano, le valli si riempiono, le discontinuità si arrotondano.
+
+Conclusione della slide: «Parzen estimate is thus biased». Poiché $E\{\hat{p}(\mathbf{x})\}$ è la pdf vera convoluta con il kernel e non la pdf vera, per ogni $h > 0$ finito hai in generale:
+
+<Formula id="f-c44" />
+
+Il bias, $E\{\hat{p}(\mathbf{x})\} - p(\mathbf{x})$, è la differenza tra la versione sfocata e $p(\mathbf{x})$, e non si riduce aumentando $N$ se $h$ resta fisso. Guarda il caso limite $N \to +\infty$ con $h$ fisso: il bound sulla varianza, proporzionale a $1/N$, va a zero, quindi $\hat{p}(\mathbf{x})$ si concentra attorno alla propria media, cioè attorno alla versione sfocata e non attorno a $p(\mathbf{x})$. Con $h$ fisso, più dati ti danno una stima sempre più stabile della cosa sbagliata. Per togliere il bias devi far tendere a zero $h$.
+
+Le note legano $h$ al bias e alla varianza. Kernel più larghi ($h$ grande) portano più smoothing e quindi un bias maggiore. Kernel più stretti ($h$ piccolo) riducono smoothing e bias ma possono aumentare la varianza, in particolare con pochi campioni (*small sample sizes*). È il compromesso bias-varianza visto da Parzen. <SourceRef doc="part1" page={42} />
+
+<Callout kind="intuizione">
+Gli intervalli RR di un ECG, cioè i millisecondi tra due battiti, in un paziente con extrasistoli hanno due modi: battiti normali attorno a 850 ms e battiti prematuri attorno a 560 ms. Se ripeti l'esame molte volte e fai la media delle stime di Parzen, ottieni la densità vera vista attraverso un vetro smerigliato largo $h$: il picco dei battiti prematuri si abbassa e si allarga.
+</Callout>
+
+<Widget id="m09-media-sfocata" />
+
+<Check id="chk-11" />
+
+### Quanto sfoca la finestra
+
+La fonte dice che la media è «blurred» ma non dice di quanto. Un caso in forma chiusa lo rende misurabile: pdf vera gaussiana e kernel gaussiano, in 1-D. Esempio costruito, non presente nella fonte. Chiamo $\sigma_p$ la deviazione standard della pdf vera, per non confonderla con la $\sigma$ del kernel di Specht di slide p65: qui la larghezza del kernel è $h$.
+
+<Derivation id="der11" />
+
+<Example id="ex08" title="Quanto sfoca la finestra: pdf vera normale standard e kernel gaussiano">
+
+Densità vera normale standard: $\mu = 0$, $\sigma_p = 1$, picco $p(0) = 0.399$. Con kernel gaussiano di larghezza $h$ la media della stima è una normale di varianza $1 + h^2$.
+
+<Step title="Il picco medio">
+
+$$
+E\{\hat{p}(0)\} = \frac{0.399}{\sqrt{1 + h^2}}
+$$
+
+</Step>
+
+<Step title="Tre larghezze fisse">
+
+Con $h = 1$: varianza 2, picco medio $0.282$ ($-29\%$). Con $h = 0.5$: varianza 1.25, picco medio $0.357$ ($-10.6\%$). Con $h = 0.1$: varianza 1.01, picco medio $0.397$ ($-0.5\%$). Questi valori non dipendono da $N$: a $h$ fisso il bias resta.
+
+</Step>
+
+<Step title="La legge della prima colonna di slide p62">
+
+Con $h_N = 1/\sqrt{N}$: $N = 1$ dà $h = 1$ e picco medio $0.282$; $N = 10$ dà $h = 0.316$ e picco medio $0.380$ ($-4.7\%$); $N = 100$ dà $h = 0.1$ e picco medio $0.397$ ($-0.5\%$). Il bias si spegne perché $h_N \to 0$.
+
+</Step>
+
+<Step title="Attenzione a come leggi le slide">
+
+I pannelli della slide p62 mostrano una singola realizzazione della stima, non la sua media: con $N = 1$ vedi il kernel centrato sull'unico campione, non la campana allargata.
+
+</Step>
+
+</Example>
+
+### Non distorsione asintotica
+
+La slide continua: «However, it can be shown that it is asymptotically unbiased if the kernel width is chosen opportunely, i.e., $h_N \to 0$ as $N \to +\infty$». La larghezza diventa una successione $h_N$ che dipende dal numero di campioni: al crescere di $N$ la finestra deve restringersi per evitare uno smoothing eccessivo (note). Sotto questa condizione la stima è <Term en="asymptotically unbiased">asintoticamente non distorta</Term>: <SourceRef doc="ch2" page={60} /> <SourceRef doc="part1" page={42} />
+
+<Formula id="f-c45" />
+
+<Formula id="f-c45-2" />
+
+Il meccanismo sta nella parte bassa della slide. Se $h_N \to 0$, il kernel riscalato $(1/h_N^n)\,\gamma(\mathbf{x}/h_N)$ mantiene area 1 mentre si restringe e si alza, e tende alla delta di Dirac $\delta(\mathbf{x})$. La convoluzione di $p(\mathbf{x})$ con la delta di Dirac restituisce $p(\mathbf{x})$ (proprietà di campionamento, *sifting property*): da qui la freccia verde della slide verso $\lim E\{\hat{p}(\mathbf{x})\} = p(\mathbf{x})$.
+
+<Formula id="f-c46" />
+
+<Formula id="f-c46-2" />
+
+In questa slide $\delta(\mathbf{x})$ è proprio la delta di Dirac; nella slide p55 lo stesso simbolo indicava la finestra riscalata a $h$ finito. Le due notazioni si raccordano nel limite.
+
+Tre precisazioni che la fonte non scrive:
+
+- **Il limite va inteso nel senso delle distribuzioni**, sotto il segno di integrale. La successione $(1/h_N^n)\,\gamma(\mathbf{x}/h_N)$ non converge a una funzione ordinaria: nell'origine tende a $+\infty$ (se $\gamma(\mathbf{0}) > 0$), e per $\mathbf{x} \ne \mathbf{0}$ tende a 0 purché $\gamma$ decada più in fretta di $\Vert \mathbf{u} \Vert^{-n}$. Con $\mathbf{u} = \mathbf{x}/h_N$ vale infatti $1/h_N^n = \Vert \mathbf{u} \Vert^n / \Vert \mathbf{x} \Vert^n$, quindi serve $\Vert \mathbf{u} \Vert^n \gamma(\mathbf{u}) \to 0$. È un'ipotesi più forte del decadimento a zero di slide p54, che chiede solo $\gamma(\mathbf{x}) \to 0$; in 1-D è l'ipotesi $\vert u \vert\,\gamma(u) \to 0$ del teorema di Parzen. Ciò che converge è l'integrale del kernel contro una funzione continua, che tende al valore di quella funzione nell'origine.
+- **Il limite vale dove $p$ è continua.** La proprietà di campionamento richiede la continuità di $p$ in $\mathbf{x}$. In un punto di discontinuità, con un kernel simmetrico, la media della stima tende alla media dei limiti destro e sinistro di $p$: sui bordi verticali del rettangolo della bimodale di slide p63 la stima vale in media circa metà dell'altezza.
+- **Il risultato riguarda la media**, in ogni singolo punto, non la singola realizzazione. Da solo non dice che $\hat{p}$ converge a $p$: per questo serve anche la condizione sulla varianza.
+
+<Derivation id="der05" />
+
+<Callout kind="intuizione">
+L'archivio degli ECG dell'ospedale cresce da 10 a 100 000 battiti. Man mano puoi restringere la finestra: il kernel riscalato diventa un ago sempre più alto e la media della stima si avvicina alla densità vera. Non è $N$ a togliere il bias: è $h$ che va a zero.
+</Callout>
+
+<Widget id="m09-h-a-zero-dirac" />
+
+### Varianza: il bound
+
+**Varianza** (slide p61). «Since the observed distribution is the sum of functions of statistically independent random variables, it can be shown that the estimate variance is bounded by»: <SourceRef doc="ch2" page={61} />
+
+<Formula id="f-c47" />
+
+Il simbolo $\bar{\hat{p}}(\mathbf{x})$, con barra e cappello, indica la media della stima, cioè $E\{\hat{p}(\mathbf{x})\}$: la slide non lo definisce, lo si interpreta come in Duda-Hart. $\sup(\gamma(\cdot))$ è l'estremo superiore del kernel, per esempio $1/\sqrt{2\pi}$ per il gaussiano 1-D. Le note definiscono la varianza come il grado di fluttuazione della stima dovuto alle variazioni casuali del training set. <SourceRef doc="part1" page={42} />
+
+La slide dà solo il risultato («it can be shown»). La dimostrazione, che segue Duda-Hart, usa il fatto che la varianza di una somma di variabili indipendenti è la somma delle varianze. Leggi il bound con attenzione:
+
+1. Il membro sinistro è per definizione la varianza della stima, perché $\bar{\hat{p}}(\mathbf{x}) = E\{\hat{p}(\mathbf{x})\}$.
+2. Il bound vale per ogni $N$ finito, non è un risultato asintotico. Richiede campioni indipendenti e un kernel non negativo e limitato ($\sup \gamma < +\infty$, vero per tutti i kernel di slide p58-59). Il passaggio chiave $\gamma^2 \le \sup(\gamma)\,\gamma$ è lecito solo perché $\gamma \ge 0$.
+3. A destra compare la media della stima $\bar{\hat{p}}(\mathbf{x})$, non la pdf vera.
+4. Casi limite: $h_N \to 0$ a $N$ fisso fa esplodere il bound (la stima è fatta di impulsi); $N \to +\infty$ a $h$ fisso lo annulla, ma resta il bias.
+
+<Derivation id="der06" />
+
+Le note di p42-43 leggono la disuguaglianza così: la varianza è inversamente proporzionale sia al numero di campioni $N$ sia al volume del kernel $h_N^n$, dove $h_N$ è la larghezza della finestra e $n$ la dimensionalità dello spazio delle feature. Il limite superiore dipende da tre quantità: $\sup(\gamma(\cdot))$, che controlla quanto un singolo campione può influenzare la stima; $N$, il numero totale di training samples; $h_N^n$, il volume della finestra, che scala con la larghezza $h_N$. <SourceRef doc="part1" page={43} />
+
+<Formula id="f-c48" />
+
+A rigore è il **bound** a essere inversamente proporzionale a $N h_N^n$, e la formula con $\propto$ va letta in questo senso. La varianza stessa si comporta così solo asintoticamente: per $N$ grande e $h$ piccolo vale circa $p(\mathbf{x}) \int \gamma^2(\mathbf{u})\,d\mathbf{u} / (N h^n)$, risultato standard della letteratura sulla *kernel density estimation*, non presente nella fonte.
+
+Il prodotto $N h_N^n$, moltiplicato per $p(\mathbf{x})$, dà circa il numero atteso di campioni che cadono nella finestra centrata in $\mathbf{x}$. Da qui un'osservazione che la fonte non scrive ma che segue dal bound. La dimensione $n$ entra nel bound attraverso il rapporto $\sup(\gamma)/h^n$, e anche $\sup\gamma$ può cambiare con $n$. Con la finestra a ipercubo $\sup\gamma = 1$ in ogni dimensione: a parità di $N$, di media della stima e di lato $h < 1$, al crescere di $n$ il volume $h^n$ crolla e il bound esplode. Con il kernel gaussiano sferico $\sup\gamma = (2\pi)^{-n/2}$ scende anch'esso, e il bound cresce con $n$ solo se $h < 1/\sqrt{2\pi} \approx 0.4$ (lo verifica la dimostrazione sul kernel sferico, più avanti). L'ipercubo di lato $h < 1$ contiene inoltre sempre meno campioni: a parità di densità nel punto, per tenerne lo stesso numero $N$ deve crescere come $h^{-n}$. È la <Term en="curse of dimensionality">maledizione della dimensionalità</Term> vista da Parzen, la stessa radice dell'effetto Hughes di <ModLink to="m11-hughes-feature-selection">effetto Hughes e selezione delle feature</ModLink>.
+
+<Callout kind="intuizione">
+Un sensore di temperatura in una serra: ogni giorno raccogli $N$ letture e stimi la densità nel punto sonda 22 °C. Da un giorno all'altro la stima in quel punto cambia, perché cambiano i campioni. Quel tremolio è la varianza: cresce se restringi $h$, perché la finestra si svuota.
+</Callout>
+
+<Widget id="m09-varianza-e-bound" />
+
+<Check id="chk-12" />
+
+### Consistenza
+
+La slide p61 prosegue: «It can be demonstrated that the Parzen estimate is consistent if»: <SourceRef doc="ch2" page={61} />
+
+<Formula id="f-c49" />
+
+<Definition term="Stima consistente" en="consistent estimate">
+Al crescere del numero di campioni la stima converge alla pdf vera $p(\mathbf{x})$ (note p43). Nel senso dei moduli sulla stima parametrica: per ogni $\delta > 0$, $\lim_{N \to +\infty} P\{\vert \hat{p}(\mathbf{x}) - p(\mathbf{x}) \vert < \delta\} = 1$.
+</Definition>
+
+Le due condizioni devono valere **insieme**. La slide dice «consistent if», cioè enuncia una condizione sufficiente; per il K-NN la slide p47 parla invece di condizione «necessary and sufficient». La formula qui sotto esplicita l'implicazione, che la slide non scrive: la convergenza va intesa in media quadratica (*mean-square convergence*), perché bias e varianza tendono entrambi a zero.
+
+<Formula id="f-c49-2" />
+
+La slide elenca solo le condizioni su $h_N$. Il teorema dimostrato in letteratura (Parzen 1962 in 1-D, Duda-Hart in $n$ dimensioni) assume anche che $p$ sia continua nel punto $\mathbf{x}$, che il kernel sia limitato ($\sup \gamma < +\infty$, la stessa quantità del bound sulla varianza) e che decada abbastanza in fretta all'infinito (Duda-Hart: $\lim \gamma(\mathbf{u}) \prod_j u_j = 0$ per $\Vert \mathbf{u} \Vert \to +\infty$, un'ipotesi tecnica sulla velocità di decadimento, diversa dalla semplice terza condizione di slide p54). Il legame con la definizione di consistenza passa per la disuguaglianza di Chebyshev: la convergenza in media quadratica implica quella in probabilità (*convergence in probability*), con $\varepsilon = \hat{p}(\mathbf{x}) - p(\mathbf{x})$ nel punto $\mathbf{x}$.
+
+Le note spiegano il ruolo di ciascuna condizione. $h_N \to 0$: la finestra si restringe per eliminare il bias (il kernel tende alla delta di Dirac e la sfocatura sparisce). $N h_N^n \to +\infty$: il prodotto tra numero di campioni e volume della finestra cresce per ridurre la varianza (il bound $\sup(\gamma)\,\bar{\hat{p}}(\mathbf{x})/(N h_N^n)$ tende a zero). <SourceRef doc="part1" page={43} />
+
+<Formula id="f-c50" />
+
+<Formula id="f-c50-2" />
+
+Le due richieste tirano $h$ in direzioni opposte: $h$ deve andare a zero, ma più lentamente di $N^{-1/n}$. Le note lo dicono in termini pratici. Se la larghezza $h_N$ si restringe troppo in fretta rispetto alla crescita di $N$, la stima diventa molto variabile (varianza alta). Se si restringe troppo lentamente, la stima resta distorta (*over-smoothed*). Serve un equilibrio accurato per avere una stima consistente.
+
+<Derivation id="der07" />
+
+<Callout kind="intuizione">
+L'impianto continua a misurare salmoni, da 10 a 100 000 pesci. Metti in gara diverse leggi $h_N = N^{-a}$: con $a$ troppo piccolo la stima resta sfocata, con $a$ troppo grande trema sempre di più. Vince chi sta dentro la finestra giusta di esponenti.
+</Callout>
+
+<Widget id="m09-gara-di-consistenza" />
+
+### Quali leggi per la larghezza funzionano
+
+Il riquadro «Example» della slide p61, a forma di pergamena, propone una legge concreta (nelle note: un esempio per uno spazio $n$-dimensionale): $h_N$ uguale a 1 diviso la radice $2n$-esima di $N$. <SourceRef doc="ch2" page={61} /> <SourceRef doc="part1" page={43} />
+
+<Formula id="f-c53" />
+
+<Reveal label="Il riquadro «Example» della slide">
+<Figure id="fig08" />
+</Reveal>
+
+Verifica: $h_N = N^{-1/(2n)} \to 0$, e il prodotto con il volume cresce come $\sqrt{N}$.
+
+<Formula id="f-c53-2" />
+
+Le note commentano: al crescere di $N$ la larghezza si restringe per ridurre il bias, e $N h_N^n$ cresce abbastanza da mantenere bassa la varianza. In 1-D la legge è $h_N = 1/\sqrt{N}$, quella usata negli esempi di slide p62-63.
+
+Puoi generalizzare. Per una legge a potenza $h_N = h_1 N^{-a}$ la prima condizione chiede $a > 0$; la seconda, con $N h_N^n = h_1^n N^{1 - an}$, chiede $a < 1/n$. L'intervallo valido è $0 < a < 1/n$, e si restringe al crescere di $n$. L'esempio di Melgani sceglie il punto medio, $a = 1/(2n)$. La fonte dà solo le condizioni e l'esempio: la derivazione è una verifica ricostruita.
+
+<Derivation id="der10" />
+
+<Example id="ex06" title="La legge h_N = 1/N^(1/(2n)): verifica numerica">
+
+Riquadro «Example» della slide p61, con due dimensioni diverse.
+
+<Step title="n = 1">
+
+$h_N = 1/\sqrt{N}$. Con $N = 100$: $h_N = 0.1$ e $N h_N = 10$. Con $N = 10000$: $h_N = 0.01$ e $N h_N = 100$.
+
+</Step>
+
+<Step title="n = 2">
+
+$h_N = N^{-1/4}$. Con $N = 100$: $h_N = 100^{-1/4} \approx 0.316$ e $N h_N^2 = 10$. Con $N = 10000$: $h_N = 0.1$ e $N h_N^2 = 100$.
+
+</Step>
+
+<Step title="Che cosa cambia con la dimensione">
+
+In entrambi i casi $h_N \to 0$ e $N h_N^n = \sqrt{N} \to +\infty$. In dimensione più alta però $h_N$ si restringe molto più lentamente: con $N = 100$ la finestra è 0.1 in 1-D e 0.316 in 2-D. Per la stessa risoluzione servono molti più campioni.
+
+</Step>
+
+</Example>
+
+<Check id="chk-13" />
+
+### Il compromesso bias-varianza
+
+Le note di p43 tirano le fila. Per ridurre la varianza vuoi $N h_N^n$ grande. Se aumenti $h_N$ la finestra si allarga, c'è più smoothing, la varianza cala ma il bias può crescere. Se $h_N$ è piccolo la stima è molto variabile (*overfitting*), a meno di avere un $N$ abbastanza grande da compensare. L'obiettivo è minimizzare la varianza senza introdurre un bias eccessivo: un $N$ grande con un $h_N$ che si restringe in modo appropriato rende lo stimatore non distorto e a bassa varianza per $N \to +\infty$. <SourceRef doc="part1" page={43} />
+
+<Callout kind="attenzione">
+Le note chiudono con «to eliminate both bias and variance, we need h → 0 as N → +∞». La frase è incompleta: per la varianza serve anche $N h_N^n \to +\infty$, come la stessa pagina afferma poche righe sopra.
+</Callout>
+
+A $N$ finito nessun $h$ azzera tutto: puoi solo cercare il punto più basso della somma bias al quadrato più varianza, e quel punto si sposta verso $h$ piccoli quando i dati aumentano. In pratica la larghezza $h$ (o $\sigma$) è un iperparametro: la scegli con *cross-validation* o *leave-one-out*, non massimizzando la verosimiglianza sui dati di training, che spingerebbe $h$ verso zero. Quest'ultimo punto non è nella fonte; lo ritrovi in <ModLink to="m21-errore-generalizzazione">errore di generalizzazione</ModLink>.
+
+<Callout kind="intuizione">
+Nel *credit scoring* stimi la densità del reddito mensile dei clienti solvibili da $N$ pratiche. Una finestra larga dà una stima stabile ma sfocata, una stretta una stima nitida che cambia a ogni nuova pratica. Il minimo della curva a U dell'errore ti dice quale $h$ conviene con quei dati.
+</Callout>
+
+<Widget id="m09-bilancia-bias-varianza" />
+
+### Il dilemma della regione R
+
+Questo passaggio lega la stima di base del modulo precedente alle proprietà di Parzen. Le slide p55-61 non richiamano la slide p44: il collegamento è ricostruito. <SourceRef doc="ch2" page={44} />
+
+La stima $K/(NV)$ nasce da due approssimazioni: $P_R \approx p(\mathbf{x}^*)\,V$, che vale se $R$ è piccola, e $\hat{P}_R = K/N$, affidabile per la legge dei grandi numeri se $R$ contiene tanti campioni. Da qui le due richieste di slide p44: $R$ abbastanza grande da contenere molti campioni, e abbastanza piccola da limitare la variabilità di $p(\mathbf{x})$. Nel metodo di Parzen $R$ è fissata da $h$, quindi il dilemma diventa la scelta della larghezza.
+
+<Formula id="f-c70-3" />
+
+- **$h$ grande.** Nella finestra cadono molti campioni ($N h^n$ grande): stima stabile, varianza bassa. Ma $p$ varia dentro la finestra e la stima ne restituisce una media locale, cioè la versione sfocata: bias, *oversmoothing*.
+- **$h$ piccolo.** $p$ è quasi costante nella finestra: bias piccolo. Ma i campioni che vi cadono sono pochi o nessuno, la frequenza relativa $K/N$ è inaffidabile e la stima è molto variabile: varianza alta, *overfitting*.
+
+Le condizioni di consistenza $h_N \to 0$ e $N h_N^n \to +\infty$ sono la versione asintotica delle due richieste di slide p44: la regione si restringe, ma contiene sempre più campioni.
+
+<Callout kind="intuizione">
+Stimi la densità dei redditi nel punto 2.4 mila euro, sul fianco tra i due modi, dove la densità vera vale 0.313. Allarga $R$ e la spia della legge dei grandi numeri si accende, ma $R$ comincia a coprire tutti e due i modi e la stima scivola verso la loro media. Stringi $R$ e succede il contrario.
+</Callout>
+
+<Widget id="m09-dilemma-della-regione" />
+
+### Parzen e K-NN convergono entrambi
+
+La domanda d'esame «explain both KNN and Parzen windows, do they tend to the optimal solution?» si risponde mettendo accanto le due coppie di condizioni. La slide p45 lo anticipa: «Both of these methods do in fact converge». <SourceRef doc="ch2" page={45} />
+
+<Formula id="f-c69" />
+
+Per il K-NN (slide p47) la condizione necessaria e sufficiente per una stima consistente in tutti i punti in cui $p(\mathbf{x})$ è continua, quando $K$ dipende da $N$, è questa, con l'esempio $K(N) = \sqrt{N}$: <SourceRef doc="ch2" page={47} />
+
+<Formula id="f-c69-2" />
+
+Poiché il volume della finestra di Parzen è $V_N = h_N^n$, le due condizioni di Parzen dicono $V_N \to 0$ e $N V_N \to +\infty$:
+
+<Formula id="f-c69-3" />
+
+Le due coppie sono la stessa richiesta vista dai due lati della relazione $K \approx N V p(\mathbf{x}^*)$ (lettura ricostruita, la fonte non la esplicita). La regione deve restringersi ($V_N \to 0$, ovvero $K_N/N \to 0$) perché $p$ non vari al suo interno; deve contenere sempre più campioni ($N V_N \to +\infty$, ovvero $K_N \to +\infty$) perché valga la legge dei grandi numeri.
+
+Anche gli esempi del docente coincidono. $h_N = 1/N^{1/(2n)}$ dà $V_N = h_N^n = 1/\sqrt{N}$, esattamente la legge «$V = 1/\sqrt{N}$» della riga di Parzen nell'illustrazione di slide p46, accanto a «$K = \sqrt{N}$» della riga del K-NN. Con $V_N = 1/\sqrt{N}$ il numero atteso di campioni nella finestra è circa $\sqrt{N}\,p(\mathbf{x}^*)$, dello stesso ordine di $K_N = \sqrt{N}$.
+
+<Formula id="f-c69-4" />
+
+Resta una differenza: in Parzen la cella si restringe in modo deterministico qualunque siano i dati, nel K-NN si adatta ai dati.
+
+<Callout kind="intuizione">
+Una campagna di etichettatura a terra fa crescere i pixel «suolo nudo» da 1 a 100. Nel punto fisso $\mathbf{x}^* = (0.5, 0.5)$ l'area del cerchio di Parzen, cioè il volume $V$, si stringe come $1/\sqrt{N}$ (il raggio come $N^{-1/4}$) e il cerchio cattura un numero casuale di pixel; il cerchio del K-NN si adatta fino a contenerne $\sqrt{N}$.
+</Callout>
+
+<Widget id="m09-convergenza-parzen-knn" />
+
+<Check id="chk-17" />
+
+
+## Gli esempi delle slide
+
+Le slide p62-64 (*Parzen Windows Estimation: Examples*) mostrano tre griglie 4 × 3 tratte da Duda-Hart: in riga il numero di campioni $N$, in colonna la larghezza iniziale $h_1$. Due avvertenze prima di leggerle. Le slide non dichiarano il kernel: dalla riga $N = 1$, una singola campana centrata sul campione, si riconosce un kernel gaussiano, come nella figura originale. E ogni pannello è una singola realizzazione della stima per quella coppia $(N, h_1)$, non la sua media: non leggerli come grafici del bias. Le note riportano le stesse griglie in formato ridotto. <SourceRef doc="part1" page={44} />
+
+### Densità normale 1-D
+
+«1-D normal density using different window widths and numbers of samples» (slide p62). Asse da $-2$ a $2$; colonne $h_N = 1/\sqrt{N}$, $0.5/\sqrt{N}$, $0.1/\sqrt{N}$; righe $N = 1, 10, 100, \infty$. <SourceRef doc="ch2" page={62} />
+
+<Formula id="f-c54" />
+
+<Formula id="f-c54-2" />
+
+La legge $h_N = h_1/\sqrt{N}$ è l'esempio di slide p61 con $n = 1$, a meno della costante $h_1$, cioè la larghezza usata con un solo campione. Soddisfa quindi le due condizioni di consistenza.
+
+<Figure id="fig09" />
+
+<Example id="ex03" title="Densità normale 1-D: la griglia N per h_1">
+
+Kernel gaussiano, $h_N = h_1/\sqrt{N}$ con $h_1 = 1, 0.5, 0.1$.
+
+<Step title="Le larghezze effettive">
+
+| $N$ | $h_1 = 1$ | $h_1 = 0.5$ | $h_1 = 0.1$ |
+|---|---|---|---|
+| 1 | 1 | 0.5 | 0.1 |
+| 10 | 0.316 | 0.158 | 0.032 |
+| 100 | 0.1 | 0.05 | 0.01 |
+
+</Step>
+
+<Step title="N = 1">
+
+La stima è il solo kernel gaussiano centrato sull'unico campione, spostato a sinistra dello zero: largo, medio o ad ago a seconda della colonna. Questa riga dice più della finestra che della densità.
+
+</Step>
+
+<Step title="N = 10">
+
+Le prime due colonne danno già una campana liscia. La terza, con $h_N \approx 0.03$, è un pettine di picchi separati.
+
+</Step>
+
+<Step title="N = 100">
+
+Le prime due colonne sono vicine alla normale vera. La terza, con $h_N = 0.01$, resta irregolare e rumorosa.
+
+</Step>
+
+<Step title="N = infinito">
+
+Le tre colonne coincidono con la normale vera.
+
+</Step>
+
+</Example>
+
+### Densità bimodale 1-D
+
+«1-D bimodal distribution using different window widths and numbers of samples» (slide p63). La densità vera non è gaussiana: un triangolo tra circa 0.5 e 2.5 con vertice in 1.5 e un rettangolo tra circa 3 e 3.5, entrambi alti circa 0.67; asse $x$ da 0 a 4, asse $y$ fino a 1. Stesse colonne, righe $N = 1, 16, 256, \infty$. <SourceRef doc="ch2" page={63} />
+
+<Formula id="f-c55" />
+
+<Formula id="f-c55-2" />
+
+<Figure id="fig10" />
+
+<Example id="ex04" title="Distribuzione bimodale 1-D (triangolo più rettangolo): la griglia N per h_1">
+
+Densità vera: triangolo tra circa 0.5 e 2.5 con vertice in 1.5 (area circa 2/3) più rettangolo tra circa 3 e 3.5 (area circa 1/3), altezza comune circa 0.67. Kernel gaussiano, $h_N = h_1/\sqrt{N}$.
+
+<Step title="Le larghezze effettive">
+
+| $N$ | $h_1 = 1$ | $h_1 = 0.5$ | $h_1 = 0.1$ |
+|---|---|---|---|
+| 16 | 0.25 | 0.125 | 0.025 |
+| 256 | 0.0625 | 0.031 | 0.006 |
+
+</Step>
+
+<Step title="N = 1">
+
+Solo il kernel sul singolo campione.
+
+</Step>
+
+<Step title="N = 16">
+
+Con $h_1 = 1$ compaiono già due gobbe lisce; con $h_1 = 0.5$ sotto-picchi spuri; con $h_1 = 0.1$ aghi isolati.
+
+</Step>
+
+<Step title="N = 256">
+
+Con $h_1 = 1$ riconosci triangolo e rettangolo, con i bordi arrotondati. Con $h_1 = 0.5$ e $0.1$ la stima è sempre più frastagliata.
+
+</Step>
+
+<Step title="N = infinito">
+
+Le tre colonne coincidono con la densità vera, spigoli compresi.
+
+</Step>
+
+</Example>
+
+Lo stesso metodo, senza cambiare nulla, stima una densità multimodale e discontinua che nessun modello gaussiano unimodale potrebbe rappresentare. Il prezzo è un numero di campioni elevato. Confronta questa griglia con le stime K-NN della stessa bimodale (slide p50), che trovi più sopra nella sezione sul confronto con il K-NN: lì le stime restano appuntite e con code lente.
+
+<Widget id="m09-griglia-esempi-1d" />
+
+### Densità normale 2-D e la legge sulla slide
+
+«2-D normal distribution using different window widths and numbers of samples» (slide p64). Superfici 3-D sul dominio $[-2, 2] \times [-2, 2]$, righe $N = 1, 10, 100, \infty$. Le colonne sono etichettate $h_N = 1/N$, $0.5/N$, $0.1/N$, senza radice, a differenza delle slide 1-D. Questa è la trascrizione letterale delle intestazioni, con le righe: <SourceRef doc="ch2" page={64} />
+
+<Formula id="f-c56" />
+
+<Formula id="f-c56-2" />
+
+<Figure id="fig11" />
+
+Con $N = 1$ vedi una sola campana 2-D centrata sul campione, sempre più stretta da sinistra a destra. Con $N = 10$ rilievi separati, e nella terza colonna picchi isolati. Con $N = 100$ la prima colonna è una superficie irregolare ma già a cupola, la seconda e la terza una foresta di picchi. Con $N = \infty$ le tre colonne coincidono con la cupola della normale vera, scala verticale circa $0.15 \approx 1/(2\pi)$. A parità di $N$ la stima in 2-D è visibilmente più rumorosa che in 1-D.
+
+<Callout kind="attenzione" title="Il giallo della legge h_N">
+Con $n = 2$ la legge stampata viola la seconda condizione di consistenza di slide p61: $N h_N^2 = h_1^2/N \to 0$. La figura viene da Duda-Hart, che usa $h_1$ diviso la radice del numero di campioni (attenzione: Duda-Hart chiama $n$ il numero di campioni e $d$ la dimensione, l'opposto di Melgani). È la lettura corretta più probabile, ma nemmeno lei basta in 2-D: dà $N h_N^2 = h_1^2$ costante, e il bound sulla varianza resta fermo a $\sup(\gamma)\,\bar{\hat{p}}(\mathbf{x})/h_1^2$. Una legge 2-D davvero consistente, nello spirito dell'esempio di slide p61, è $h_N = h_1/N^{1/4}$ (ricostruita). Leggi la riga $N = \infty$ come illustrazione del limite ideale, non come verifica della legge stampata.
+</Callout>
+
+<Formula id="f-c56-3" />
+
+<Formula id="f-c56-4" />
+
+<Formula id="f-c56-5" />
+
+<Example id="ex05" title="Distribuzione normale 2-D: la griglia N per h_1">
+
+Superfici 3-D su $[-2, 2]^2$, larghezze iniziali 1, 0.5, 0.1; la slide scrive $h_N = 1/N$, $0.5/N$, $0.1/N$.
+
+<Step title="N = 1">
+
+Una sola campana, sempre più stretta da sinistra a destra.
+
+</Step>
+
+<Step title="N = 10">
+
+Rilievi separati; nella terza colonna picchi isolati.
+
+</Step>
+
+<Step title="N = 100">
+
+Cupola irregolare nella prima colonna, foresta di picchi nelle altre due.
+
+</Step>
+
+<Step title="N = infinito">
+
+Cupola normale identica nelle tre colonne, picco circa 0.15.
+
+</Step>
+
+<Step title="Il controllo sulla legge">
+
+Con $n = 2$ e $h_N = h_1/N$: $N h_N^2 = h_1^2/N \to 0$, la seconda condizione è violata. Con $h_N = h_1/\sqrt{N}$: $N h_N^2 = h_1^2$, costante. Con $h_N = h_1/\sqrt[4]{N}$: $N h_N^2 = h_1^2 \sqrt{N} \to +\infty$, entrambe le condizioni valgono.
+
+</Step>
+
+</Example>
+
+<Widget id="m09-griglia-normale-2d" />
+
+<Check id="chk-14" />
+
+### Che cosa insegnano le tre griglie
+
+In tutti e tre gli esempi l'ultima riga ($N = \infty$) è identica nelle tre colonne e coincide con la densità vera. Con $h_N$ che si restringe opportunamente la stima converge a $p(\mathbf{x})$ qualunque sia la costante iniziale $h_1$ e qualunque sia la forma della densità: unimodale o bimodale, 1-D o 2-D. A campione finito la scelta di $h_1$ pesa invece molto. La prima riga ($N = 1$) mostra solo il kernel centrato sull'unico campione; $h_1$ piccolo dà stime rumorose, $h_1$ grande stime lisce.
+
+Leggi la griglia in verticale e vedi la convergenza; leggila in orizzontale e vedi il prezzo di un $h_1$ sbagliato a campione finito. È la risposta grafica alla domanda «do they tend to the optimal solution?». Per l'esempio 2-D prendila con cautela: la legge stampata $h_1/N$, e anche $h_1/\sqrt{N}$, non soddisfa $N h_N^2 \to +\infty$, quindi la convergenza della riga $N = \infty$ è garantita solo per leggi che rispettano entrambe le condizioni di slide p61.
+
+## Il kernel gaussiano a simmetria sferica
+
+### La formula di Specht
+
+«A commonly used kernel in the Parzen windows estimation is the Gaussian kernel with spherical symmetry (Specht method)» (slide p65). In questo caso la pdf si scrive: <SourceRef doc="ch2" page={65} />
+
+<Formula id="f-c58" />
+
+La stima è la media di $N$ gaussiane $n$-dimensionali, una centrata su ogni training sample $\mathbf{x}_k$, tutte con la stessa matrice di covarianza $\sigma^2 \mathbf{I}$: le curve di livello (*level curves*, o *contours*) sono sfere. Corrisponde alla formula generale con $\gamma$ normale standard $n$-dimensionale, $h = \sigma$ e $V(h) = \sigma^n$. I simboli, dalle note: $\sigma$ deviazione standard del kernel gaussiano, che fa da parametro di smoothing; $N$ numero di training samples; $n$ dimensionalità dello spazio delle feature; $\Vert \mathbf{x} - \mathbf{x}_k \Vert$ distanza euclidea tra il punto $\mathbf{x}$ e il training sample $\mathbf{x}_k$. Le note lo annoverano tra i kernel più usati, per la regolarità e per la capacità di trattare dati ad alta dimensionalità con simmetria sferica. Leggila come un vantaggio di forma: la simmetria sferica lascia un solo parametro, $\sigma$, in qualunque dimensione. I campioni necessari crescono comunque in fretta con $n$, come avverte il riquadro nella sezione sulle finestre generali. <SourceRef doc="part1" page={44} />
+
+Ogni addendo è la normale multivariata di <ModLink to="m06-modelli-pdf-gaussiana">modelli di pdf e gaussiana</ModLink> con la media posta sul campione. La stima è quindi una <Term en="Gaussian mixture">mistura di gaussiane</Term>: $N$ componenti con pesi uguali $1/N$ e un solo parametro libero, $\sigma$.
+
+Il salto tra il kernel gaussiano scalare di slide p58 e questa formula non è esplicito nella fonte. Il kernel sferico è il prodotto di $n$ campane 1-D, una per feature: il prodotto di esponenziali diventa l'esponenziale della somma dei quadrati, cioè della norma al quadrato. Per questo il kernel dipende da $\mathbf{u}$ solo attraverso $\Vert \mathbf{u} \Vert$, e le curve di livello sono ipersfere.
+
+<Derivation id="der12" />
+
+<Derivation id="der08" />
+
+<Callout kind="esame">
+Domanda reale: «gaussian kernel with spherical symmetry with formula and some drawing to represent it». Scrivi la formula e disegna, in 2-D, i campioni come punti con attorno cerchi concentrici dello stesso raggio (le curve di livello di ciascuna gaussiana, raggio proporzionale a $\sigma$); accanto, in 1-D, le campane uguali e la loro somma. Di' che $\sigma$ fa da $h$ e che le feature vanno normalizzate.
+</Callout>
+
+<Callout kind="intuizione">
+Quaranta pixel di «vegetazione» in due bande normalizzate con z-score formano una nuvola curva, a banana, per niente gaussiana. Una gaussiana rotonda su ogni pixel, tutte con la stessa $\sigma$, ricostruisce la banana: la flessibilità viene dalle posizioni dei campioni, il controllo da un solo numero.
+</Callout>
+
+<Widget id="m09-specht-gaussiano-sferico" />
+
+### Sigma come parametro di smoothing
+
+«The standard deviation σ of the kernel represents thus a smoothing parameter whose setting should be made carefully to avoid both over- and under-fitting» (slide p65). Le note: $\sigma$ è cruciale per controllare la regolarità della stima. Se $\sigma$ è troppo grande il kernel liscia troppo i dati (*over-smooth*) e porta a *underfitting*; se è troppo piccola la stima è molto variabile e può portare a *overfitting*. <SourceRef doc="part1" page={45} />
+
+I casi limite, non scritti nella fonte: con $\sigma \to 0$ la stima si riduce a $N$ impulsi sui campioni (*overfitting* estremo, varianza che esplode); con $\sigma \to +\infty$ ogni gaussiana si spalma su tutto lo spazio, la stima diventa piatta e tende a zero ovunque, senza più alcuna struttura (*underfitting* estremo). Sono gli stessi limiti di $h \to 0$ e $h \to +\infty$, perché $\sigma$ gioca il ruolo di $h$.
+
+Le note aggiungono una conseguenza pratica: «At this point, the only hyperparameter we need to tune is σ». Scelto il kernel gaussiano sferico e normalizzate le feature, l'intero stimatore dipende da un solo numero, qualunque sia la dimensione $n$. È il vantaggio pratico del metodo di Specht rispetto a una covarianza piena per ogni kernel.
+
+### Normalizzare le feature
+
+«Since σ is the same along all features, it is important to normalize them before undertaking the pdf estimation process» (slide p65). Le note: la formulazione a kernel gaussiano sferico assume che tutte le feature abbiano la stessa varianza, e per mantenere questa ipotesi devi normalizzare le feature prima di stimare la pdf. La normalizzazione fa contribuire ogni feature in modo uguale al calcolo delle distanze e permette al kernel di formare ipersfere accurate attorno ai dati. <SourceRef doc="ch2" page={65} /> <SourceRef doc="part1" page={45} />
+
+Senza normalizzazione la feature con la scala numerica più grande domina $\Vert \mathbf{x} - \mathbf{x}_k \Vert$.
+
+<Callout kind="intuizione">
+Trenta salmoni descritti da luminosità (scala 0-10, deviazione standard circa 1.2) e lunghezza in millimetri (300-900, deviazione standard circa 110). Con la stessa $\sigma$ su entrambi gli assi, nelle unità originali la distanza euclidea è quasi tutta lunghezza: la stima di $p(\mathbf{x} \mid \text{salmone})$ ignora la luminosità. Dopo lo z-score le due feature pesano uguale.
+</Callout>
+
+<Widget id="m09-normalizza-le-feature" />
+
+<Check id="chk-15" />
+
+### Sigma adattiva
+
+«Furthermore, one may think to compute σ in an adaptive way, i.e. by associating a $\sigma_k$ to each training sample $\mathbf{x}_k$ (k = 1, 2, ..., N)» (slide p65). Le note parlano di approccio adattivo alla larghezza del kernel, con una $\sigma_k$ unica per ogni campione.
+
+<Formula id="f-c62" />
+
+La fonte non riscrive la stima. Sostituendo $\sigma$ con $\sigma_k$ nella formula di Specht ottieni una somma di gaussiane sferiche di larghezza diversa; ogni addendo ha la propria costante di normalizzazione $(2\pi\sigma_k^2)^{n/2}$, quindi l'area totale resta 1.
+
+<Formula id="f-c62-2" />
+
+La slide p66 propone una definizione: «$\sigma_k$ could be defined as the mean Euclidean distance between $\mathbf{x}_k$ and the related L nearest training samples $\mathbf{y}_1, \mathbf{y}_2, ..., \mathbf{y}_L$». Nella slide l'indice della somma è la lettera $l$, quasi identica alla cifra 1. <SourceRef doc="ch2" page={66} />
+
+<Formula id="f-c63" />
+
+$L$ è un nuovo parametro, il numero di vicini, che sostituisce la scelta diretta di $\sigma$. Le note: questa strategia permette allo stimatore di regolare il parametro di smoothing secondo la densità locale dei campioni. È un'idea ibrida: usa i vicini più prossimi, come il K-NN, per fissare la larghezza dei kernel di Parzen. Tre precisazioni che la fonte non scrive:
+
+- I vicini $\mathbf{y}_1, \dots, \mathbf{y}_L$ si cercano tra gli altri training samples, escluso $\mathbf{x}_k$ (altrimenti la prima distanza sarebbe nulla), ordinati per distanza crescente da $\mathbf{x}_k$.
+- Con $L = 1$ ottieni la distanza dal vicino più prossimo. Con $L = N - 1$ ottieni la distanza media da tutti gli altri campioni: le $\sigma_k$ restano diverse, ma misurano quanto $\mathbf{x}_k$ è periferico rispetto all'intero insieme e non più la densità locale. Con i campioni 0, 1, …, 9 e un campione isolato in 100 vale $\sigma = 14.5$ per il campione in 0 e $\sigma = 95.5$ per quello in 100. L'adattamento locale si perde.
+- Se $\mathbf{x}_k$ ha $L$ copie identiche, $\sigma_k = 0$ e il kernel degenera in un impulso: in pratica serve un $L$ sufficiente o una soglia minima su $\sigma_k$.
+
+Il razionale sta nelle note di p45. Conviene una $\sigma$ più piccola dove ci sono molti campioni, perché lo scopo è un'interpolazione accurata: dove i campioni sono fitti ci sono meno vuoti da riempire e una varianza grande non serve. Per stimare la varianza localmente guardi la densità dei campioni: dove sono tanti usi una varianza più piccola, per riflettere con precisione la densità in quella regione; dove sono pochi può servire una varianza più grande, per tenere conto della maggiore incertezza. Questo adattamento locale della varianza (*local adaptation of the variance*) può migliorare l'accuratezza della stima. <SourceRef doc="part1" page={45} />
+
+<Callout kind="intuizione">
+In una serra registri 60 coppie (temperatura, umidità) in unità normalizzate: un ammasso fitto di 50 condizioni normali e 10 letture sparse, raccolte durante i guasti. Una $\sigma$ unica è troppo larga per l'ammasso o troppo stretta per le letture sparse. Con $\sigma_k$ pari alla distanza media dagli $L$ vicini, ogni kernel si adatta: stretto nell'ammasso, largo attorno ai guasti.
+</Callout>
+
+<Widget id="m09-sigma-adattiva" />
+
+<Check id="chk-16" />
+
+### Probabilistic Neural Networks
+
+«The Specht method can be implemented by means of Probabilistic Neural Networks (PNN)» (slide p66). Le note aggiungono che questo approccio permette una modellazione flessibile di densità complesse ed è adatto a varie applicazioni di machine learning e statistica. <SourceRef doc="ch2" page={66} />
+
+La fonte non descrive l'architettura. Nella formulazione classica di Specht, che non è nella fonte, la rete ha tre strati:
+
+1. **Strato dei pattern** (*pattern layer*): un neurone per ogni training sample, che calcola il kernel gaussiano tra l'ingresso $\mathbf{x}$ e il suo campione.
+2. **Strato di somma** (*summation layer*): un neurone per classe, che fa la media di Parzen dei neuroni della sua classe, cioè $\hat{p}(\mathbf{x} \mid \omega_i)$.
+3. **Strato di decisione** (*decision layer*): applica la regola di Bayes alle densità di classe.
+
+Una PNN non impara pesi con la discesa del gradiente: è la formula di Parzen disegnata come rete. Le densità di classe che produce sono quelle richieste dai criteri MAP e ML di <ModLink to="m17-bayes-map-ml">criteri MAP e ML</ModLink>.
+
+Le note chiudono con i vantaggi del kernel gaussiano. Si adatta bene a vari tipi di densità; la sua regolarità lo rende adatto a modellare le distribuzioni dei dati; e un aspetto essenziale del suo uso è l'adattività (*adaptiveness*) di $\sigma$. Già a p44 le note ne citavano la regolarità e la capacità di gestire dati ad alta dimensionalità con simmetria sferica: la simmetria sferica lascia un solo iperparametro in qualunque dimensione, ma il costo in campioni resta quello della maledizione della dimensionalità. <SourceRef doc="part1" page={45} />
+
+<Callout kind="intuizione">
+Salmone contro spigola, due feature normalizzate (luminosità, larghezza), 20 pesci per classe. La PNN ha 40 neuroni di pattern, uno per pesce, due neuroni di somma e un neurone di decisione. Aggiungere un pesce al training set significa aggiungere un neurone.
+</Callout>
+
+<Widget id="m09-pnn-rete-probabilistica" />
+
+## Collegamenti
+
+- <ModLink to="m08-non-parametrica-knn">Stima non parametrica e K-NN</ModLink>: stessa stima di base $K/(NV)$ e stessa condizione su $R$, abbastanza grande per la legge dei grandi numeri e abbastanza piccola perché $p$ vari poco. Il K-NN fissa $K$ e calcola $V$, Parzen fissa $V$ e calcola $K$. Il confronto diretto è una domanda d'esame reale.
+- <ModLink to="m04-bonta-stimatori">Bontà degli stimatori</ModLink>: bias, varianza, non distorsione asintotica e consistenza sono definiti lì per gli stimatori parametrici; qui li applichi a uno stimatore di funzione, con la scomposizione dell'errore quadratico medio in bias al quadrato più varianza.
+- <ModLink to="m03-stima-intro-parametrica">Introduzione alla stima parametrica</ModLink>: stima parametrica (forma funzionale assunta, pochi parametri) contro non parametrica (nessuna forma, si lavora sui campioni).
+- <ModLink to="m06-modelli-pdf-gaussiana">Modelli di pdf e gaussiana</ModLink>: il kernel di Specht è una gaussiana multivariata con covarianza $\sigma^2 \mathbf{I}$, con la media posta su ogni campione.
+- <ModLink to="m10-em-dati-incompleti">Dati incompleti ed EM</ModLink>: la stima di Specht è una mistura di $N$ gaussiane con pesi uguali $1/N$ e centri sui campioni; l'EM stima invece una mistura con poche componenti $M$ e parametri liberi.
+- <ModLink to="m11-hughes-feature-selection">Effetto Hughes e selezione delle feature</ModLink>: il termine $N h_N^n$ del bound sulla varianza mostra la maledizione della dimensionalità; al crescere di $n$ servono molti più campioni.
+- <ModLink to="m17-bayes-map-ml">Criteri MAP e ML</ModLink>: le densità di classe $p(\mathbf{x} \mid \omega_i)$ che servono ai criteri MAP e ML si possono stimare con Parzen, ed è ciò che fa una PNN prima della regola di Bayes.
+- <ModLink to="m21-errore-generalizzazione">Errore di generalizzazione</ModLink>: la scelta di $h$ o $\sigma$ è una selezione di iperparametro, da fare con *cross-validation* o *leave-one-out*; stesso linguaggio di *overfitting* e *underfitting*.
+- <ModLink to="p10-kernel-trick">Kernel trick</ModLink>: attenzione al doppio significato di «kernel». Qui è una densità che pesa i campioni per distanza, nelle *kernel machines* è un prodotto scalare in uno spazio di feature.
+- <ModLink to="p12-clustering">Clustering</ModLink>: le misture di gaussiane del clustering sono la controparte parametrica, con poche componenti, della somma di gaussiane di Parzen.
+
+### Verso i dati incompleti
+
+In fondo alla pagina 45 le note aprono la sezione «Estimation with Incomplete Data». Finora hai visto problemi di stima basati per intero su variabili osservabili (*observable variables*); in molti scenari reali i modelli dipendono anche da variabili latenti non osservate (*unobserved latent variables*). È l'inizio di <ModLink to="m10-em-dati-incompleti">dati incompleti ed EM</ModLink>, dove la stessa idea di mistura di gaussiane torna con poche componenti e parametri da stimare. <SourceRef doc="part1" page={45} />
+
+## Per l'orale
+
+Le quattro domande della banca su questo argomento sono tutte di Melgani. Qui trovi il testo originale e lo scheletro della risposta; le risposte complete, con la lista dei punti da toccare, sono nella scheda dell'orale del modulo.
+
+### Contesto, kernel più comune, bias e varianza, disegno
+
+<Callout kind="esame" title="Melgani">
+«Parzen Window Estimation: context, properties etc. Which is the most common window function (write the formula)? Is Parzen a good estimator (bias/variance)? Graphical representation of how the counting/interpolation works with a couple of samples.»
+</Callout>
+
+Parto dal contesto non parametrico e da $\hat{p}(\mathbf{x}^*) = K/(NV)$: fisso il volume con un ipercubo di lato $h$ e conto i campioni con la funzione finestra. Scrivo la formula generale con $V(h)$ e il kernel gaussiano, $\gamma(x) = \frac{1}{\sqrt{2\pi}} \exp(-x^2/2)$, e la sua stima 1-D. Per la bontà dello stimatore seguo lo schema qui sotto (bias come convoluzione, non distorsione asintotica, bound sulla varianza, consistenza). Chiudo con il disegno a due campioni: scaletta di rettangoli per il conteggio, somma di due campane per l'interpolazione.
+
+### Kernel sferico e scelta della larghezza
+
+<Callout kind="esame" title="Melgani">
+«Parzen Windows: general context (what we want to do, why they are non parametric estimation), gaussian kernel with spherical symmetry with formula and some drawing to represent it, How the choice of the width impacts our estimate? Is it a good estimate? (Bias, variance and consideration about the characteristics of the width to have a consistent estimate)»
+</Callout>
+
+Parto dal contesto e dalla scatola nera: entrano i campioni, esce $\hat{p}(\mathbf{x})$ senza forma imposta. Scrivo la formula di Specht, disegno i cerchi di raggio $\sigma$ attorno ai campioni e dico perché normalizzo le feature. Per l'effetto della larghezza uso $\delta(\mathbf{x}) = (1/V(h))\,\gamma(\mathbf{x}/h)$: $h$ cambia insieme ampiezza e larghezza ad area costante, quindi $h$ grande sfoca (*oversmoothing*) e $h$ piccolo produce aghi (*overfitting*); con più campioni posso stringere $h$. Poi bias, varianza e le due condizioni $h_N \to 0$ e $N h_N^n \to +\infty$ con l'esempio $h_N = 1/N^{1/(2n)}$, e il dilemma della regione $R$ come chiave di lettura.
+
+### Differenze con il K-NN
+
+<Callout kind="esame" title="Melgani">
+«K-NN estimation, how does it works, we draw a graph for example and asked how is the distribution, what does it mean overfit and oversmooth. Then he asked how the K-NN classifier works and made an example. Last question what are the difference with parzen window»
+</Callout>
+
+La parte su Parzen è l'ultima domanda. Il K-NN fissa $K$ e misura $V_K(\mathbf{x}^*)$, Parzen fissa $V = h^n$ e conta $K$. Parzen dà stime lisce e di area 1, ma può valere zero dove non ci sono campioni; il K-NN non si annulla mai, si adatta alla densità locale, ha stime appuntite e code pesanti. In Parzen scelgo $h$, nel K-NN scelgo $K$. Per la convergenza servono $V_N \to 0$ e $N V_N \to +\infty$ da una parte, $K_N \to +\infty$ e $K_N/N \to 0$ dall'altra; due leggi che le rispettano sono $V = 1/\sqrt{N}$ e $K = \sqrt{N}$, come nell'illustrazione di slide p46.
+
+### Convergono alla soluzione ottima
+
+<Callout kind="esame" title="Melgani">
+«Explain non-parametric estimation, what non-parametric means and why we use it, explain both KNN and Parzen windows, do they tend to the optimal solution? Explain ML estimation, develop the first derivative for a gaussian and explain the meaning of the result. Explain box classifier»
+</Callout>
+
+Per la parte non parametrica: spiego perché si rinuncia ai parametri, descrivo i due metodi a partire da $K/(NV)$ e rispondo «sì, entrambi convergono» con le condizioni. Per Parzen $h_N \to 0$ e $N h_N^n \to +\infty$ (sufficienti), per il K-NN $K_N \to +\infty$ e $K_N/N \to 0$ (necessarie e sufficienti). Mostro che sono la stessa richiesta vista dai due lati di $K \approx N V p(\mathbf{x}^*)$ e che a campione finito la scelta di $h_1$ pesa, come nelle griglie di slide p62-64. La parte su ML e box classifier appartiene ad altri moduli.
+
+### Schema della risposta: la stima di Parzen è un buon stimatore?
+
+La risposta è una catena con due rami che si ricongiungono, costruita sulle slide p60-61.
+
+1. A $h$ finito la stima è **distorta**: la sua media è $p(\mathbf{x})$ convoluta con il kernel, una versione sfocata.
+2. È **asintoticamente non distorta** se $h_N \to 0$, perché il kernel riscalato tende alla delta di Dirac.
+3. La **varianza** è limitata da $\sup(\gamma)$ per la media della stima diviso $N h_N^n$, quindi si annulla se $N h_N^n \to +\infty$.
+4. Con entrambe le condizioni la stima è **consistente**, cioè converge alla pdf vera; per esempio con $h_N = 1/N^{1/(2n)}$.
+5. **A campione finito** la qualità dipende dalla scelta di $h$ (o $\sigma$): compromesso tra *oversmoothing* e stima rumorosa, e in alta dimensione servono moltissimi campioni.
+
+<Formula id="f-c67" />
+
+<Formula id="f-c67-2" />
+
+<Formula id="f-c67-3" />
+
+<Callout kind="intuizione">
+Una campagna di etichettatura a terra fa crescere i pixel «vegetazione» da 20 a 20 000. Il bias dipende solo da $h$, la varianza da $N h^n$: costruisci la catena un anello alla volta e verifica ciascuno sui dati.
+</Callout>
+
+<Widget id="m09-orale-buon-stimatore" />

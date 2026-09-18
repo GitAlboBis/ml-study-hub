@@ -1,0 +1,537 @@
+{
+  "c01": [
+    "#panoramica",
+    "#contesto-kernel-più-comune-bias-e-varianza-disegno",
+    "formula:f-c01",
+    "widget:m09-scatola-nera-non-parametrica"
+  ],
+  "c02": [
+    "#parzen-e-k-nn-stessa-stima-scelta-opposta",
+    "#differenze-con-il-k-nn",
+    "formula:f-c02",
+    "formula:f-c02-2",
+    "formula:f-c02-3",
+    "formula:f-c02-4",
+    "widget:m09-parzen-contro-knn",
+    "figure:fig15",
+    "quiz:chk-01",
+    "figure:fig16"
+  ],
+  "c03": [
+    "#parzen-e-k-nn-stessa-stima-scelta-opposta",
+    "widget:m09-parzen-contro-knn",
+    "seeAlso:m08-non-parametrica-knn",
+    "figure:fig16"
+  ],
+  "c04": [
+    "#lipercubo-e-la-funzione-finestra",
+    "formula:f-c04",
+    "derivation:der01",
+    "widget:m09-ipercubo-che-conta"
+  ],
+  "c05": [
+    "#lipercubo-e-la-funzione-finestra",
+    "formula:f-c05",
+    "formula:f-c05-2",
+    "derivation:der01",
+    "widget:m09-ipercubo-che-conta"
+  ],
+  "c06": [
+    "#il-test-di-appartenenza",
+    "formula:f-c06",
+    "formula:f-c06-2",
+    "derivation:der01",
+    "widget:m09-ipercubo-che-conta",
+    "quiz:chk-02"
+  ],
+  "c07": [
+    "#il-numero-di-campioni-k",
+    "formula:f-c07",
+    "derivation:der01",
+    "widget:m09-ipercubo-che-conta",
+    "quiz:chk-02"
+  ],
+  "c08": [
+    "#la-stima-con-la-finestra-a-ipercubo",
+    "formula:f-c08",
+    "derivation:der01",
+    "widget:m09-due-viste-stessa-stima",
+    "quiz:chk-02"
+  ],
+  "c09": [
+    "#una-finestra-sul-punto-o-una-finestra-per-campione",
+    "formula:f-c09",
+    "derivation:der01",
+    "widget:m09-due-viste-stessa-stima",
+    "quiz:chk-03"
+  ],
+  "c10": [
+    "#somma-di-rettangoli-e-semplice-conteggio",
+    "#il-disegno-desame-con-due-campioni",
+    "example:ex07",
+    "formula:f-c10",
+    "widget:m09-due-viste-stessa-stima",
+    "widget:m09-disegna-la-somma",
+    "quiz:chk-04"
+  ],
+  "c11": [
+    "#somma-di-rettangoli-e-semplice-conteggio",
+    "#il-disegno-desame-con-due-campioni",
+    "example:ex07",
+    "formula:f-c11",
+    "widget:m09-due-viste-stessa-stima",
+    "quiz:chk-04"
+  ],
+  "c12": [
+    "#una-classe-più-ampia-di-finestre",
+    "derivation:der01",
+    "widget:m09-conteggio-vs-interpolazione"
+  ],
+  "c13": [
+    "#una-classe-più-ampia-di-finestre",
+    "formula:f-c13",
+    "widget:m09-conteggio-vs-interpolazione"
+  ],
+  "c14": [
+    "#una-classe-più-ampia-di-finestre",
+    "widget:m09-conteggio-vs-interpolazione",
+    "quiz:chk-05"
+  ],
+  "c15": [
+    "#la-stima-di-parzen-generale",
+    "#contesto-kernel-più-comune-bias-e-varianza-disegno",
+    "formula:f-c15",
+    "derivation:der01",
+    "widget:m09-somma-dei-kernel"
+  ],
+  "c16": [
+    "#la-finestra-come-interpolatore",
+    "#il-disegno-desame-con-due-campioni",
+    "example:ex07",
+    "widget:m09-conteggio-vs-interpolazione",
+    "widget:m09-disegna-la-somma",
+    "quiz:chk-05"
+  ],
+  "c17": [
+    "#la-stima-di-parzen-generale",
+    "widget:m09-somma-dei-kernel"
+  ],
+  "c18": [
+    "#il-ruolo-di-h-in-breve",
+    "#kernel-sferico-e-scelta-della-larghezza",
+    "widget:m09-somma-dei-kernel"
+  ],
+  "c19": [
+    "#il-kernel-deve-essere-una-densità",
+    "formula:f-c19",
+    "formula:f-c19-2",
+    "formula:f-c19-3",
+    "derivation:der02",
+    "widget:m09-densita-legittima",
+    "quiz:chk-06"
+  ],
+  "c20": [
+    "#il-kernel-deve-essere-una-densità",
+    "formula:f-c20",
+    "derivation:der02",
+    "derivation:der09",
+    "derivation:der12",
+    "widget:m09-densita-legittima",
+    "quiz:chk-06"
+  ],
+  "c21": [
+    "#il-kernel-deve-essere-una-densità",
+    "formula:f-c21",
+    "formula:f-c21-2",
+    "derivation:der02",
+    "widget:m09-densita-legittima",
+    "quiz:chk-06"
+  ],
+  "c22": [
+    "#tre-condizioni-per-una-buona-stima",
+    "formula:f-c22",
+    "formula:f-c22-2",
+    "derivation:der12",
+    "widget:m09-tre-condizioni-buon-kernel"
+  ],
+  "c23": [
+    "#tre-condizioni-per-una-buona-stima",
+    "derivation:der12",
+    "widget:m09-tre-condizioni-buon-kernel",
+    "quiz:chk-07"
+  ],
+  "c24": [
+    "#tre-condizioni-per-una-buona-stima",
+    "formula:f-c24",
+    "formula:f-c24-2",
+    "derivation:der05",
+    "derivation:der12",
+    "widget:m09-tre-condizioni-buon-kernel"
+  ],
+  "c25": [
+    "#la-finestra-riscalata",
+    "formula:f-c25",
+    "derivation:der03",
+    "widget:m09-delta-ampiezza-larghezza"
+  ],
+  "c26": [
+    "#la-finestra-riscalata",
+    "formula:f-c26",
+    "derivation:der03",
+    "widget:m09-somma-dei-kernel"
+  ],
+  "c27": [
+    "#ampiezza-e-larghezza-cambiano-insieme",
+    "#kernel-sferico-e-scelta-della-larghezza",
+    "example:ex01",
+    "formula:f-c27",
+    "formula:f-c27-2",
+    "derivation:der03",
+    "widget:m09-delta-ampiezza-larghezza",
+    "figure:fig03",
+    "quiz:chk-08"
+  ],
+  "c28": [
+    "#cinque-campioni-e-tre-larghezze",
+    "example:ex02",
+    "widget:m09-cinque-campioni-tre-h",
+    "figure:fig04",
+    "quiz:chk-09"
+  ],
+  "c29": [
+    "#cinque-campioni-e-tre-larghezze",
+    "example:ex02",
+    "widget:m09-cinque-campioni-tre-h",
+    "figure:fig04",
+    "quiz:chk-09"
+  ],
+  "c30": [
+    "#più-campioni-finestra-più-stretta",
+    "widget:m09-piu-campioni-h-piu-stretto"
+  ],
+  "c31": [
+    "#ampiezza-e-larghezza-cambiano-insieme",
+    "example:ex01",
+    "formula:f-c31",
+    "formula:f-c31-2",
+    "derivation:der03",
+    "widget:m09-delta-ampiezza-larghezza",
+    "figure:fig03",
+    "quiz:chk-08"
+  ],
+  "c32": [
+    "#cinque-campioni-e-tre-larghezze",
+    "example:ex02",
+    "formula:f-c32",
+    "widget:m09-cinque-campioni-tre-h",
+    "figure:fig04",
+    "quiz:chk-09"
+  ],
+  "c33": [
+    "#rettangolare-triangolare-gaussiano",
+    "formula:f-c33",
+    "formula:f-c33-2",
+    "derivation:der09",
+    "widget:m09-galleria-kernel-base",
+    "figure:fig05",
+    "quiz:chk-07"
+  ],
+  "c34": [
+    "#rettangolare-triangolare-gaussiano",
+    "formula:f-c34",
+    "formula:f-c34-2",
+    "derivation:der09",
+    "widget:m09-galleria-kernel-base",
+    "figure:fig05"
+  ],
+  "c35": [
+    "#rettangolare-triangolare-gaussiano",
+    "#contesto-kernel-più-comune-bias-e-varianza-disegno",
+    "formula:f-c35",
+    "formula:f-c35-2",
+    "derivation:der09",
+    "derivation:der12",
+    "widget:m09-galleria-kernel-base",
+    "figure:fig05"
+  ],
+  "c36": [
+    "#esponenziale-cauchy-e-sinc-al-quadrato",
+    "formula:f-c36",
+    "derivation:der09",
+    "widget:m09-galleria-kernel-code",
+    "figure:fig06"
+  ],
+  "c37": [
+    "#esponenziale-cauchy-e-sinc-al-quadrato",
+    "formula:f-c37",
+    "derivation:der09",
+    "widget:m09-galleria-kernel-code",
+    "figure:fig06",
+    "quiz:chk-10"
+  ],
+  "c38": [
+    "#esponenziale-cauchy-e-sinc-al-quadrato",
+    "formula:f-c38",
+    "derivation:der09",
+    "widget:m09-galleria-kernel-code",
+    "figure:fig06"
+  ],
+  "c39": [
+    "#perché-il-gaussiano-è-il-più-usato",
+    "widget:m09-galleria-kernel-code",
+    "quiz:chk-07",
+    "quiz:chk-10"
+  ],
+  "c40": [
+    "#una-scatola-nera-da-giudicare",
+    "#panoramica",
+    "widget:m09-scatola-nera-non-parametrica"
+  ],
+  "c41": [
+    "#bias-la-media-della-stima-è-una-convoluzione",
+    "#quanto-sfoca-la-finestra",
+    "example:ex08",
+    "formula:f-c41",
+    "formula:f-c41-2",
+    "derivation:der04",
+    "derivation:der11",
+    "widget:m09-media-sfocata",
+    "quiz:chk-11"
+  ],
+  "c42": [
+    "#bias-la-media-della-stima-è-una-convoluzione",
+    "#quanto-sfoca-la-finestra",
+    "example:ex08",
+    "derivation:der04",
+    "derivation:der11",
+    "widget:m09-media-sfocata"
+  ],
+  "c43": [
+    "#bias-la-media-della-stima-è-una-convoluzione",
+    "#il-compromesso-bias-varianza",
+    "widget:m09-h-a-zero-dirac"
+  ],
+  "c44": [
+    "#bias-la-media-della-stima-è-una-convoluzione",
+    "#quanto-sfoca-la-finestra",
+    "example:ex08",
+    "formula:f-c44",
+    "derivation:der04",
+    "derivation:der11",
+    "widget:m09-media-sfocata",
+    "widget:m09-orale-buon-stimatore",
+    "quiz:chk-11"
+  ],
+  "c45": [
+    "#non-distorsione-asintotica",
+    "example:ex08",
+    "formula:f-c45",
+    "formula:f-c45-2",
+    "derivation:der05",
+    "derivation:der11",
+    "widget:m09-h-a-zero-dirac",
+    "widget:m09-orale-buon-stimatore",
+    "quiz:chk-11"
+  ],
+  "c46": [
+    "#non-distorsione-asintotica",
+    "formula:f-c46",
+    "formula:f-c46-2",
+    "derivation:der05",
+    "widget:m09-h-a-zero-dirac"
+  ],
+  "c47": [
+    "#varianza-il-bound",
+    "formula:f-c47",
+    "derivation:der06",
+    "derivation:der12",
+    "widget:m09-varianza-e-bound",
+    "widget:m09-orale-buon-stimatore",
+    "quiz:chk-12"
+  ],
+  "c48": [
+    "#varianza-il-bound",
+    "formula:f-c48",
+    "derivation:der06",
+    "widget:m09-varianza-e-bound",
+    "quiz:chk-12"
+  ],
+  "c49": [
+    "#consistenza",
+    "#convergono-alla-soluzione-ottima",
+    "example:ex06",
+    "formula:f-c49",
+    "formula:f-c49-2",
+    "derivation:der07",
+    "derivation:der10",
+    "widget:m09-gara-di-consistenza",
+    "widget:m09-orale-buon-stimatore",
+    "quiz:chk-13"
+  ],
+  "c50": [
+    "#consistenza",
+    "formula:f-c50",
+    "formula:f-c50-2",
+    "derivation:der07",
+    "derivation:der10",
+    "widget:m09-gara-di-consistenza",
+    "quiz:chk-13"
+  ],
+  "c51": [
+    "#consistenza",
+    "#quali-leggi-per-la-larghezza-funzionano",
+    "derivation:der10",
+    "widget:m09-bilancia-bias-varianza",
+    "quiz:chk-13"
+  ],
+  "c52": [
+    "#il-compromesso-bias-varianza",
+    "widget:m09-bilancia-bias-varianza"
+  ],
+  "c53": [
+    "#quali-leggi-per-la-larghezza-funzionano",
+    "example:ex06",
+    "formula:f-c53",
+    "formula:f-c53-2",
+    "derivation:der07",
+    "derivation:der10",
+    "widget:m09-gara-di-consistenza",
+    "quiz:chk-13"
+  ],
+  "c54": [
+    "#densità-normale-1-d",
+    "example:ex03",
+    "example:ex08",
+    "formula:f-c54",
+    "formula:f-c54-2",
+    "derivation:der07",
+    "widget:m09-griglia-esempi-1d",
+    "figure:fig09"
+  ],
+  "c55": [
+    "#densità-bimodale-1-d",
+    "example:ex04",
+    "formula:f-c55",
+    "formula:f-c55-2",
+    "widget:m09-griglia-esempi-1d",
+    "figure:fig10"
+  ],
+  "c56": [
+    "#densità-normale-2-d-e-la-legge-sulla-slide",
+    "example:ex05",
+    "formula:f-c56",
+    "formula:f-c56-2",
+    "formula:f-c56-3",
+    "formula:f-c56-4",
+    "formula:f-c56-5",
+    "derivation:der07",
+    "derivation:der10",
+    "widget:m09-griglia-normale-2d",
+    "figure:fig11",
+    "quiz:chk-14"
+  ],
+  "c57": [
+    "#che-cosa-insegnano-le-tre-griglie",
+    "#convergono-alla-soluzione-ottima",
+    "example:ex03",
+    "example:ex04",
+    "example:ex05",
+    "widget:m09-griglia-esempi-1d",
+    "figure:fig09",
+    "figure:fig10",
+    "figure:fig11",
+    "quiz:chk-14"
+  ],
+  "c58": [
+    "#la-formula-di-specht",
+    "#kernel-sferico-e-scelta-della-larghezza",
+    "formula:f-c58",
+    "derivation:der08",
+    "derivation:der12",
+    "widget:m09-specht-gaussiano-sferico"
+  ],
+  "c59": [
+    "#sigma-come-parametro-di-smoothing",
+    "derivation:der08",
+    "widget:m09-specht-gaussiano-sferico"
+  ],
+  "c60": [
+    "#normalizzare-le-feature",
+    "derivation:der08",
+    "widget:m09-normalizza-le-feature",
+    "quiz:chk-15"
+  ],
+  "c61": [
+    "#sigma-come-parametro-di-smoothing",
+    "derivation:der08",
+    "widget:m09-specht-gaussiano-sferico"
+  ],
+  "c62": [
+    "#sigma-adattiva",
+    "formula:f-c62",
+    "formula:f-c62-2",
+    "widget:m09-sigma-adattiva",
+    "quiz:chk-16"
+  ],
+  "c63": [
+    "#sigma-adattiva",
+    "formula:f-c63",
+    "widget:m09-sigma-adattiva",
+    "quiz:chk-16"
+  ],
+  "c64": [
+    "#sigma-adattiva",
+    "widget:m09-sigma-adattiva"
+  ],
+  "c65": [
+    "#probabilistic-neural-networks",
+    "widget:m09-pnn-rete-probabilistica"
+  ],
+  "c66": [
+    "#probabilistic-neural-networks",
+    "widget:m09-pnn-rete-probabilistica"
+  ],
+  "c67": [
+    "#schema-della-risposta-la-stima-di-parzen-è-un-buon-stimatore",
+    "formula:f-c67",
+    "formula:f-c67-2",
+    "formula:f-c67-3",
+    "derivation:der07",
+    "widget:m09-gara-di-consistenza",
+    "widget:m09-orale-buon-stimatore"
+  ],
+  "c68": [
+    "#verso-i-dati-incompleti",
+    "seeAlso:m10-em-dati-incompleti"
+  ],
+  "c69": [
+    "#parzen-e-k-nn-convergono-entrambi",
+    "#convergono-alla-soluzione-ottima",
+    "formula:f-c69",
+    "formula:f-c69-2",
+    "formula:f-c69-3",
+    "formula:f-c69-4",
+    "widget:m09-convergenza-parzen-knn",
+    "figure:fig15",
+    "quiz:chk-17"
+  ],
+  "c70": [
+    "#parzen-e-k-nn-stessa-stima-scelta-opposta",
+    "#il-dilemma-della-regione-r",
+    "formula:f-c70",
+    "formula:f-c70-2",
+    "formula:f-c70-3",
+    "widget:m09-dilemma-della-regione",
+    "quiz:chk-17"
+  ],
+  "c71": [
+    "#il-disegno-desame-con-due-campioni",
+    "#contesto-kernel-più-comune-bias-e-varianza-disegno",
+    "example:ex07",
+    "formula:f-c71",
+    "formula:f-c71-2",
+    "formula:f-c71-3",
+    "widget:m09-disegna-la-somma",
+    "quiz:chk-04"
+  ]
+}
