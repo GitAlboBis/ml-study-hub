@@ -1,0 +1,158 @@
+{
+  "title": "Scegli il mondo visivo di ML Study Hub",
+  "question": "Il dado ha assegnato «Atlante in falso colore». Tienilo, prendi un'alternativa o rilancia. Vale per tutta l'app: pagina modulo, giochi, flashcard, simulatore d'orale.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "Atlante in falso colore",
+      "kicker": "THE ROLL",
+      "lineage": "compositi in falso colore da satellite e carte tematiche di classificazione (il mondo di ricerca di Melgani)",
+      "thesis": "In machine learning quasi tutto è già una mappa: ogni modulo è un foglio dell'atlante e ogni concetto un terreno vivo da esplorare.",
+      "palette": ["#0B1D3A", "#D7263D", "#19B5A5", "#F2B632", "#F3F5F1"],
+      "materials": ["campi di falso colore a tutta pagina con isolinee", "cornice del foglio: reticolo, tacche, legenda, scala"],
+      "viewport": "Il Foglio 09 a tutta pagina: il terreno di Parzen in falso colore con isolinee vive, la legenda che fa da indice, titolo IT/EN nella cornice.",
+      "risk": "La metafora diventa costume se cornice e legenda non lavorano davvero; il colore pieno stanca se finisce sotto il testo.",
+      "raised": [
+        { "from": "challenger-crease", "raise": "Un solo reticolo governa tutto il foglio: testo, formule e widget si registrano sulle stesse coordinate." },
+        { "from": "challenger-cloud", "raise": "Il testo resta acromatico: il falso colore vive solo in mappe, legenda e intestazioni, mai dietro la prosa." },
+        { "from": "challenger-centre-rail", "raise": "L'apparato sta nel margine del foglio: pagina della fonte, termine inglese e segnale «da orale» agganciati alla riga a cui appartengono." },
+        { "from": "challenger-bench", "raise": "Il punto in cui ti sei fermato è uno spillo sul foglio, e ciò che rimandi resta appuntato in vista sull'indice dell'atlante." }
+      ],
+      "wireframe": { "cols": 12, "rows": 10, "regions": [
+        { "label": "cornice: Foglio 09 · titolo IT / EN · tacche", "x": 0, "y": 0, "w": 12, "h": 1 },
+        { "label": "legenda = indice dei concetti", "x": 0, "y": 1, "w": 3, "h": 9 },
+        { "label": "terreno vivo in falso colore (widget)", "x": 3, "y": 1, "w": 9, "h": 6, "accent": true },
+        { "label": "formula viva + cursori", "x": 3, "y": 7, "w": 6, "h": 3 },
+        { "label": "margine: fonte · EN · orale", "x": 9, "y": 7, "w": 3, "h": 3 }
+      ] }
+    },
+    {
+      "id": "model-pick",
+      "label": "Banco di misura",
+      "kicker": "IMPECCABLE’S PICK",
+      "lineage": "oscilloscopi, analizzatori di spettro e banchi del laboratorio di elettronica",
+      "thesis": "Ogni concetto è uno strumento sul banco: giri una manopola e la traccia risponde.",
+      "palette": ["#23262B", "#D9D6CC", "#5BE38A", "#FFB000", "#E5484D"],
+      "materials": ["schermo a reticolo con traccia a fosfori", "pannello serigrafato con manopole e selettori"],
+      "viewport": "Lo schermo dello strumento occupa mezza pagina con la stima che si muove; sotto, la fila di manopole h, k, N e la formula con i valori sostituiti.",
+      "risk": "È anche la direzione su cui finiscono più spesso i progetti tecnici: scuro con una traccia luminosa rischia il già visto.",
+      "wireframe": { "cols": 12, "rows": 10, "regions": [
+        { "label": "targhetta del modulo", "x": 0, "y": 0, "w": 12, "h": 1 },
+        { "label": "schermo dello strumento (widget)", "x": 0, "y": 1, "w": 7, "h": 6, "accent": true },
+        { "label": "manopole h · k · N + formula viva", "x": 0, "y": 7, "w": 7, "h": 3 },
+        { "label": "teoria a colonna", "x": 7, "y": 1, "w": 5, "h": 9 }
+      ] }
+    },
+    {
+      "id": "challenger-generative",
+      "label": "Identità a seme",
+      "verdict": "competitive",
+      "lineage": "identità di marca generative e parametriche",
+      "thesis": "Ogni modulo genera il proprio marchio dai suoi parametri: cambi seed e palette, ritmo e accenti si rigenerano insieme.",
+      "palette": ["#1A1A2E", "#3D5AFE", "#00BFA5", "#FF6D00", "#FAFAFA"],
+      "materials": ["vettoriale piatto", "armonie di colore derivate da un seed"],
+      "viewport": "Il marchio parametrico del modulo si ridisegna in testa alla pagina; intestazioni, divisori e pulsanti ne prendono palette e ritmo.",
+      "case": "Parla la lingua del corso (seed, parametri, campioni), ma una palette che varia indebolisce i colori fissi per ruolo nei grafici.",
+      "risk": "Se ogni modulo cambia colori, «rosso = classe 1» smette di valere in tutta l'app.",
+      "hero": "https://impeccable.style/worlds/cards/generative-parametric-identity-hero.webp",
+      "wireframe": { "cols": 12, "rows": 10, "regions": [
+        { "label": "marchio parametrico vivo", "x": 0, "y": 0, "w": 4, "h": 4, "accent": true },
+        { "label": "titolo IT / EN", "x": 4, "y": 0, "w": 8, "h": 4 },
+        { "label": "teoria + widget", "x": 0, "y": 4, "w": 8, "h": 6 },
+        { "label": "pannello parametri / seed", "x": 8, "y": 4, "w": 4, "h": 6 }
+      ] }
+    },
+    {
+      "id": "challenger-emission",
+      "label": "Spettro a righe",
+      "verdict": "competitive",
+      "lineage": "spettrogrammi su lastra e righe di emissione",
+      "thesis": "Il corso è uno spettro: 50 righe su un binario calibrato, e lo stato è la forma della riga, non il colore.",
+      "palette": ["#1C1D1F", "#E8E2D4", "#FFD23F", "#4FC3F7", "#FF5252", "#B388FF"],
+      "materials": ["continuo carbone a bande", "righe sottilissime a sette lunghezze d'onda"],
+      "viewport": "Un binario fuori centro attraversa la pagina: il modulo aperto sboccia in una grande lastra, gli altri restano righe sottili.",
+      "case": "Vicino al mondo dei segnali e delle bande iperspettrali di Melgani; un solo corpo di testo e il fondo carbone pesano sulla lettura lunga e di giorno.",
+      "risk": "Fondo scuro permanente e una sola misura di carattere reggono male 50 moduli di teoria letti ovunque.",
+      "hero": "https://impeccable.style/worlds/cards/operate-c-emission-line-rail-hero.webp",
+      "wireframe": { "cols": 12, "rows": 10, "regions": [
+        { "label": "righe degli altri moduli", "x": 0, "y": 0, "w": 4, "h": 10 },
+        { "label": "binario calibrato", "x": 4, "y": 0, "w": 1, "h": 10, "accent": true },
+        { "label": "lastra del modulo aperto (widget)", "x": 5, "y": 1, "w": 7, "h": 6 },
+        { "label": "prosa su lastra cenere", "x": 5, "y": 7, "w": 7, "h": 3 }
+      ] }
+    },
+    {
+      "id": "challenger-crease",
+      "label": "Piega curva",
+      "verdict": "declined",
+      "lineage": "origami a piega curva",
+      "thesis": "Un foglio che una sola piega curva trasforma in guscio rigido.",
+      "palette": ["#F2EBDD", "#2B2B2B", "#8A8A8A"],
+      "materials": ["carta cotone", "arco tracciato a compasso"],
+      "viewport": "La pagina governata dallo slancio di un arco invece che da una griglia.",
+      "case": "Non è il mondo di uno studente di ingegneria, e l'impaginazione ad arco ostacola formule e testo denso.",
+      "kept": "Una sola linea generatrice governa tutta la composizione.",
+      "risk": "Carta crema e corsivo con grazie: il look predefinito che ogni modello produce.",
+      "hero": "https://impeccable.style/worlds/cards/paper-folds-pleats-deployable-curved-crease-shell-hero.webp"
+    },
+    {
+      "id": "challenger-cloud",
+      "label": "Bordo iridescente",
+      "verdict": "declined",
+      "lineage": "nubi iridescenti e diffrazione",
+      "thesis": "Campo bianco e quieto, con il colore confinato a una frangia sottile sul bordo di ciò che è attivo.",
+      "palette": ["#FFFFFF", "#5B6770", "#9FE3C9", "#F2A7C3", "#B59CF0"],
+      "materials": ["bianco nuvola", "frangia spettrale a filo"],
+      "viewport": "Margini larghi, testo acromatico, una sola banda di colore sull'elemento in studio.",
+      "case": "Campo di testo bianco e acromatico: è il look da PDF impaginato che hai escluso.",
+      "kept": "Il colore sta solo dove c'è il fenomeno, mai sotto il testo.",
+      "risk": "Troppo tenue per dare energia a giochi e sfide.",
+      "hero": "https://impeccable.style/worlds/cards/clouds-storms-auroras-iridescent-cloud-edge-hero.webp"
+    },
+    {
+      "id": "challenger-centre-rail",
+      "label": "Edizione a binario centrale",
+      "verdict": "declined",
+      "lineage": "edizioni critiche a margine largo",
+      "thesis": "Due colonne strette attorno a un binario di chiavi, con l'apparato appeso nel margine.",
+      "palette": ["#1A1714", "#E9E2D0", "#D23B22"],
+      "materials": ["inchiostro ferro su carta avorio", "filetti da un pixel"],
+      "viewport": "Blocco di testo piccolo al centro, dieci centimetri di margine per note e rimandi.",
+      "case": "Ottimo apparato, ma è esattamente il PDF impaginato da evitare, e i widget ci stanno stretti.",
+      "kept": "L'apparato vive nel margine, agganciato alla riga a cui appartiene.",
+      "risk": "Accademico e freddo: l'interattività finisce in secondo piano.",
+      "hero": "https://impeccable.style/worlds/cards/rw-centre-rail-reference-setting-hero.webp"
+    },
+    {
+      "id": "challenger-bench",
+      "label": "Banco di montaggio",
+      "verdict": "declined",
+      "lineage": "moviola e banco di montaggio della pellicola",
+      "thesis": "Un binario perforato attraversa ogni schermata e i passi sono fotogrammi tenuti tra due spilli.",
+      "palette": ["#0A0A0A", "#FF6A13", "#FFFFFF"],
+      "materials": ["grana di pellicola arancione su nero", "binario perforato"],
+      "viewport": "Striscia di fotogrammi a mezza altezza, testo solo dentro finestre bianche punzonate.",
+      "case": "Il montaggio cinematografico non è il mondo dello studente e un solo corpo di testo non regge le formule.",
+      "kept": "Il punto in cui ti sei fermato è marcato fisicamente, e ciò che metti da parte resta raggiungibile.",
+      "risk": "Un terzo dello schermo arancione stanca nelle sessioni lunghe.",
+      "hero": "https://impeccable.style/worlds/cards/operate-a-cutting-bench-select-rail-hero.webp"
+    }
+  ],
+  "reroll": { "registers": ["safer", "bolder"] },
+  "buildPath": { "value": "code" },
+  "canon": true,
+  "canonCard": {
+    "label": "Lo standard di categoria",
+    "thesis": "La piattaforma di corsi che ti aspetti, eseguita a regola d'arte.",
+    "palette": ["#FFFFFF", "#111827", "#2563EB", "#10B981"],
+    "materials": ["griglia pulita di card", "anelli di progresso"],
+    "viewport": "Sidebar dei corsi a sinistra, griglia di card dei moduli con la percentuale, pagina lezione a colonna singola.",
+    "risk": "È il look da dashboard che hai indicato come sbagliato: indistinguibile dalle altre piattaforme, per scelta.",
+    "wireframe": { "cols": 12, "rows": 10, "regions": [
+      { "label": "sidebar corsi", "x": 0, "y": 0, "w": 3, "h": 10 },
+      { "label": "barra superiore", "x": 3, "y": 0, "w": 9, "h": 1 },
+      { "label": "griglia di card dei moduli", "x": 3, "y": 1, "w": 9, "h": 9, "accent": true }
+    ] }
+  },
+  "steer": true
+}
