@@ -1,0 +1,309 @@
+{
+  "moduleId": "m19-funzioni-discriminanti",
+  "title": "Funzioni discriminanti e casi gaussiani",
+  "stages": {},
+  "pagesReviewed": [
+    {"doc": "ch4", "from": 23, "to": 42},
+    {"doc": "part1", "from": 87, "to": 93},
+    {"doc": "examq", "from": 1, "to": 6}
+  ],
+  "overview": "Il modulo introduce le funzioni discriminanti g_i(x): un modo unico di scrivere qualunque classificatore come «calcola C punteggi, scegli il più alto», con le regioni di decisione e i confini che ne derivano, e con la nota che una trasformazione monotona crescente (il logaritmo) non cambia le decisioni. Poi applica l'idea al classificatore a errore minimo con classi gaussiane multivariate N(m_i, Σ_i): dal discriminante generale a quattro termini si ricavano i tre casi del corso. Caso 1 (Σ_i = σ²I): discriminante lineare, iperpiano ortogonale alla congiungente le medie, punto x0 che si sposta con i prior. Caso 2 (Σ_i = Σ): ancora lineare, ma con w = Σ⁻¹(m_i − m_j), quindi iperpiano in generale non ortogonale alla congiungente. Caso 3 (Σ_i arbitraria): discriminante quadratico e confini iperquadrici (rette, parabole, ellissi, iperboli, cerchi e le corrispondenti superfici 3-D), con regioni anche non connesse. Chiude un esempio numerico a tre feature del Caso 2. Per l'orale è il punto in cui Melgani chiede la formula della gaussiana multidimensionale, il confronto ML/MAP/rischio minimo in termini di punteggi e «come i prior spostano la soglia»: qui c'è tutta la matematica, passaggio per passaggio.",
+  "concepts": [
+    {
+      "id": "c01",
+      "name": "Test unificato sul rapporto di verosimiglianza: soglie MAP e rischio minimo (pagina di confine con m18)",
+      "nameEn": "Unified decision rule: choose α1 iff Λ(x) ≥ ζ (MAP and Minimum Risk thresholds)",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "part1", "page": 87}],
+      "detail": "In cima a part1 p87 si chiude il riepilogo del rischio minimo iniziato a p86: a seconda della matrice dei costi, tutti i criteri di decisione a due classi si unificano nella regola «scegli α1 se e solo se Λ(x) = p(x|ω1)/p(x|ω2) ≥ ζ». Il primo caso sta a p86: se P(ω1) = P(ω2) e λ12 = λ21 allora ζ = 1, cioè criterio ML. I due casi stampati a p87: se λ12 = λ21 allora ζ = P(ω2)/P(ω1), criterio MAP; in generale ζ = [P(ω2)/P(ω1)]·[λ12/λ21], criterio Minimum Risk (con costo nullo per le azioni corrette, λ11 = λ22 = 0). Il contenuto appartiene al modulo m18 ed è inventariato qui perché sta nella pagina di confine. Fa anche da ponte verso questo modulo: ogni soglia ζ corrisponde a una diversa scelta del punteggio g_i(x) (vedi c06, c07, c08, c09).",
+      "latex": [
+        "\\Lambda(x)=\\frac{p(x|\\omega_1)}{p(x|\\omega_2)}\\geq\\zeta",
+        "\\lambda_{12}=\\lambda_{21}\\ \\Rightarrow\\ \\zeta=\\frac{P(\\omega_2)}{P(\\omega_1)}\\quad\\text{(MAP)}",
+        "\\zeta=\\frac{P(\\omega_2)}{P(\\omega_1)}\\,\\frac{\\lambda_{12}}{\\lambda_{21}}\\quad\\text{(Minimum Risk)}"
+      ],
+      "symbols": [
+        {"s": "\\Lambda(x)", "meaning": "rapporto di verosimiglianza tra le due classi (likelihood ratio)"},
+        {"s": "\\zeta", "meaning": "soglia con cui si confronta il rapporto di verosimiglianza"},
+        {"s": "\\lambda_{12}", "meaning": "costo dell'azione α1 quando la classe vera è ω2"},
+        {"s": "\\lambda_{21}", "meaning": "costo dell'azione α2 quando la classe vera è ω1"},
+        {"s": "P(\\omega_i)", "meaning": "probabilità a priori della classe ω_i"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c02",
+      "name": "Funzioni discriminanti g_i(x): definizione",
+      "nameEn": "Discriminant functions g_i(x), i = 1, 2, ..., C",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch4", "page": 23}, {"doc": "part1", "page": 87}],
+      "detail": "Slide: «A useful way of representing classifiers is through discriminant functions g_i(x) (i = 1, 2, ..., C)»; le note rafforzano con «a powerful and useful way». Un classificatore a C classi viene descritto da C funzioni scalari del vettore di feature x, una per ogni classe ω_i. Non è un nuovo classificatore ma un modo di rappresentarli tutti: ML, MAP, rischio minimo si riscrivono in questa forma cambiando solo l'espressione di g_i (c06-c09). Lettura operativa (non scritta nella slide): si calcolano C numeri in parallelo e un selettore del massimo sceglie la classe.",
+      "latex": ["g_i(\\mathbf{x}),\\qquad i=1,2,\\dots,C"],
+      "symbols": [
+        {"s": "g_i(\\mathbf{x})", "meaning": "funzione discriminante della classe ω_i valutata nel vettore di feature x"},
+        {"s": "C", "meaning": "numero di classi"},
+        {"s": "\\mathbf{x}", "meaning": "vettore di feature (n componenti)"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c03",
+      "name": "Regola di decisione con i discriminanti: vince il g_i più grande",
+      "nameEn": "Decision rule: assign x to class ω_i if g_i(x) > g_j(x) for all j ≠ i",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch4", "page": 23}, {"doc": "part1", "page": 87}],
+      "detail": "Il classificatore assegna il vettore di feature x alla classe ω_i se g_i(x) è strettamente maggiore di tutti gli altri g_j(x), per ogni j diverso da i. In forma compatta è un argmax sui C punteggi (riscrittura equivalente, non stampata nella slide). La disuguaglianza è stretta: i punti in cui due discriminanti sono uguali e massimi non appartengono a nessuna regione, formano il confine di decisione (c05, c26) e lì la decisione è indifferente.",
+      "latex": [
+        "g_i(\\mathbf{x})>g_j(\\mathbf{x})\\qquad\\forall\\, j\\neq i",
+        "\\mathbf{x}\\rightarrow\\omega_{i^*},\\qquad i^*=\\arg\\max_{i=1,\\dots,C}\\ g_i(\\mathbf{x})"
+      ],
+      "symbols": [
+        {"s": "\\omega_i", "meaning": "classe i-esima"},
+        {"s": "i^*", "meaning": "indice della classe scelta (quella con discriminante massimo)"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c04",
+      "name": "Il discriminante come punteggio assegnato a ogni classe",
+      "nameEn": "The discriminant function assigns a score to each class",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part1", "page": 87}],
+      "detail": "Solo nelle note: «The discriminant function assigns a score to each class, enabling classification based on these scores». L'interpretazione è che g_i(x) misura quanto x è compatibile con la classe ω_i: non deve essere una probabilità, può essere negativo (per esempio un logaritmo o un rischio cambiato di segno), conta solo l'ordinamento tra i C punteggi nello stesso punto x. Le note riprendono la parola «scores» anche per i criteri ML e MAP («the discriminant function scores are as follows») e per il caso gaussiano («comparing the resulting scores for each class»).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c05",
+      "name": "Regioni di decisione e confini di decisione",
+      "nameEn": "Decision regions (ℜ1, ..., ℜC) separated by decision boundaries",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch4", "page": 23}, {"doc": "part1", "page": 87}],
+      "detail": "Slide: «These functions divide the feature space into C decision regions (ℜ1, ..., ℜC), separated by decision boundaries». La regione ℜ_i è l'insieme dei punti dello spazio delle feature in cui g_i è il più grande: ogni x che cade in ℜ_i viene assegnato a ω_i. I confini di decisione sono le superfici che separano regioni adiacenti. La scrittura insiemistica qui sotto è una riscrittura della frase della slide. Attenzione alla notazione: nelle slide la regione è ℜ (R gotica, R calligrafica nelle figure) mentre R(α_i|x) è il rischio condizionale; le note usano R_1, ..., R_C per le regioni, con possibile confusione. Una regione non è necessariamente connessa (vedi c62).",
+      "latex": [
+        "\\mathcal{R}_1,\\dots,\\mathcal{R}_C",
+        "\\mathcal{R}_i=\\{\\mathbf{x}\\ :\\ g_i(\\mathbf{x})>g_j(\\mathbf{x})\\ \\ \\forall\\, j\\neq i\\}"
+      ],
+      "symbols": [
+        {"s": "\\mathcal{R}_i", "meaning": "regione di decisione della classe ω_i nello spazio delle feature"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c06",
+      "name": "Discriminante del classificatore a rischio condizionale minimo",
+      "nameEn": "Discriminant for the classifier that minimizes conditional risk: g_i(x) = −R(α_i|x)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch4", "page": 23}, {"doc": "part1", "page": 87}],
+      "detail": "Slide: «For the classifier that minimizes conditional risk g_i(x) = −R(α_i|x)». Le note precisano che R(α_i|x) è la perdita attesa associata all'assegnare x alla classe ω_i («the expected loss associated with assigning x to class ω_i»). Il segno meno serve perché la regola dei discriminanti sceglie il massimo mentre il rischio va minimizzato: il rischio più piccolo diventa il punteggio più grande. È la forma più generale: tiene conto di likelihood, prior e matrice dei costi (modulo m18).",
+      "latex": ["g_i(\\mathbf{x})=-R(\\alpha_i|\\mathbf{x})"],
+      "symbols": [
+        {"s": "R(\\alpha_i|\\mathbf{x})", "meaning": "rischio condizionale: perdita attesa se si compie l'azione α_i (decidere ω_i) avendo osservato x"},
+        {"s": "\\alpha_i", "meaning": "azione i-esima, qui «decidere per la classe ω_i»"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c07",
+      "name": "Discriminante del classificatore a errore minimo",
+      "nameEn": "Discriminant for the classifier that minimizes error: g_i(x) = P(ω_i|x)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch4", "page": 23}, {"doc": "part1", "page": 87}],
+      "detail": "Slide: «For the classifier that minimizes error g_i(x) = P(ω_i|x)». Note: «For a classifier that minimizes classification error, the discriminant function is based on the posterior probability». Scegliere il massimo della probabilità a posteriori è il criterio MAP, che nel modulo m17 è dimostrato minimizzare la probabilità di errore: per questo la slide 24 parla di «minimum-error-rate discriminant functions». È il caso particolare di c06 con loss 0-1 (vedi c12).",
+      "latex": ["g_i(\\mathbf{x})=P(\\omega_i|\\mathbf{x})"],
+      "symbols": [
+        {"s": "P(\\omega_i|\\mathbf{x})", "meaning": "probabilità a posteriori della classe ω_i dato il vettore osservato x"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c08",
+      "name": "Punteggio del criterio ML",
+      "nameEn": "Maximum Likelihood (ML) score: g_i(x) = p(x|ω_i)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part1", "page": 87}],
+      "detail": "Solo nelle note: «For different decision criteria, the discriminant function scores are as follows. Maximum Likelihood (ML): the score is g_i(x) = p(x|ω_i), where the classifier relies on class-conditional probabilities». Il punteggio è la sola densità condizionata alla classe (likelihood): i prior non compaiono. Coincide con il punteggio MAP (c09) quando tutti i prior sono uguali, perché un fattore comune a tutte le classi non cambia il massimo.",
+      "latex": ["g_i(\\mathbf{x})=p(\\mathbf{x}|\\omega_i)"],
+      "symbols": [
+        {"s": "p(\\mathbf{x}|\\omega_i)", "meaning": "densità di probabilità di x condizionata alla classe ω_i (likelihood)"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c09",
+      "name": "Punteggio del criterio MAP",
+      "nameEn": "Maximum A Posteriori (MAP) score: g_i(x) = p(x|ω_i)P(ω_i)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part1", "page": 87}],
+      "detail": "Solo nelle note: «Maximum A Posteriori (MAP): the score is g_i(x) = p(x|ω_i)P(ω_i), incorporating both the likelihood and prior probability». Le note chiudono con «These scores help distinguish classes effectively in practice». È lo stesso classificatore di c07: per il teorema di Bayes P(ω_i|x) = p(x|ω_i)P(ω_i)/p(x) e il denominatore p(x) è uguale per tutte le classi, quindi si può togliere senza cambiare il massimo (c11).",
+      "latex": ["g_i(\\mathbf{x})=p(\\mathbf{x}|\\omega_i)P(\\omega_i)"],
+      "symbols": [
+        {"s": "P(\\omega_i)", "meaning": "probabilità a priori della classe ω_i"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c10",
+      "name": "Nota: i risultati non cambiano con una funzione monotona crescente",
+      "nameEn": "Nota: results do not change if every g_i(x) is replaced by f(g_i(x)), f monotonically increasing (e.g., logarithm)",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch4", "page": 23}, {"doc": "part1", "page": 87}],
+      "detail": "Sulla slide è una nota scritta in diagonale in basso a destra, con «Nota:» in rosso: «Results do not change even if we replace every g_i(x) by f(g_i(x)) where f(·) is a monotonically increasing function (e.g., logarithm)». Le note la ripetono: «Results remain unchanged if every g_i(x) is replaced by f(g_i(x))». Motivo: una f crescente conserva l'ordinamento, quindi g_i > g_j se e solo se f(g_i) > f(g_j) e le regioni di decisione restano identiche. La stessa f va applicata a tutti i g_i. Conseguenza pratica: si sceglie la forma più comoda da calcolare; con il logaritmo i prodotti diventano somme e l'esponenziale della gaussiana sparisce (c15, c16).",
+      "latex": [
+        "g_i(\\mathbf{x})\\ \\longrightarrow\\ f\\big(g_i(\\mathbf{x})\\big),\\qquad f(\\cdot)\\ \\text{monotonically increasing}",
+        "g_i(\\mathbf{x})>g_j(\\mathbf{x})\\ \\Longleftrightarrow\\ f\\big(g_i(\\mathbf{x})\\big)>f\\big(g_j(\\mathbf{x})\\big)"
+      ],
+      "symbols": [
+        {"s": "f(\\cdot)", "meaning": "funzione monotona crescente applicata a tutti i discriminanti (es. logaritmo naturale)"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c11",
+      "name": "Non unicità: forme equivalenti del discriminante a errore minimo",
+      "nameEn": "Equivalent minimum-error-rate discriminants: P(ω_i|x), p(x|ω_i)P(ω_i), ln p(x|ω_i) + ln P(ω_i)",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch4", "page": 23}, {"doc": "ch4", "page": 24}, {"doc": "part1", "page": 87}],
+      "detail": "Mettendo in fila le formule di p23, p24 e delle note si ottiene la catena di discriminanti equivalenti per l'errore minimo: la posterior P(ω_i|x) (c07); il prodotto p(x|ω_i)P(ω_i) (c09), ottenuto togliendo il denominatore p(x) che non dipende dalla classe; la somma di logaritmi ln p(x|ω_i) + ln P(ω_i) (c15), ottenuta applicando f = ln grazie a c10. Tutte danno le stesse regioni di decisione. Il passaggio è il punto di partenza di tutto il resto del modulo (der02).",
+      "latex": [
+        "P(\\omega_i|\\mathbf{x})=\\frac{p(\\mathbf{x}|\\omega_i)P(\\omega_i)}{p(\\mathbf{x})}\\ \\equiv\\ p(\\mathbf{x}|\\omega_i)P(\\omega_i)\\ \\equiv\\ \\ln p(\\mathbf{x}|\\omega_i)+\\ln P(\\omega_i)",
+        "p(\\mathbf{x})=\\sum_{j=1}^{C}p(\\mathbf{x}|\\omega_j)P(\\omega_j)"
+      ],
+      "symbols": [
+        {"s": "p(\\mathbf{x})", "meaning": "densità non condizionata di x (evidence), uguale per tutte le classi"},
+        {"s": "\\equiv", "meaning": "qui: «dà le stesse decisioni di»"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c12",
+      "name": "Dal rischio minimo all'errore minimo: con loss 0-1 le due definizioni coincidono",
+      "nameEn": "With zero-one loss, −R(α_i|x) is equivalent to P(ω_i|x)",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch4", "page": 23}, {"doc": "part1", "page": 87}],
+      "detail": "La slide 23 mette una sotto l'altra le due definizioni g_i = −R(α_i|x) e g_i = P(ω_i|x) senza scrivere il legame, che viene dal modulo m18 (integrazione, non stampata in queste pagine). Con loss 0-1 (costo 0 per la decisione corretta, 1 per ogni errore) il rischio condizionale vale R(α_i|x) = 1 − P(ω_i|x), quindi −R(α_i|x) = P(ω_i|x) − 1: differisce dalla posterior solo per una costante, che è una trasformazione monotona crescente (c10). Il discriminante a errore minimo è quindi il caso particolare di quello a rischio minimo. È la stessa idea della banca domande: «What happens if the risks are unknown or equal? (we have the MAP criterion)».",
+      "latex": [
+        "R(\\alpha_i|\\mathbf{x})=\\sum_{j=1}^{C}\\lambda(\\alpha_i|\\omega_j)P(\\omega_j|\\mathbf{x})",
+        "\\lambda(\\alpha_i|\\omega_j)=\\begin{cases}0 & i=j\\\\ 1 & i\\neq j\\end{cases}\\ \\Rightarrow\\ R(\\alpha_i|\\mathbf{x})=1-P(\\omega_i|\\mathbf{x})"
+      ],
+      "symbols": [
+        {"s": "\\lambda(\\alpha_i|\\omega_j)", "meaning": "costo dell'azione α_i quando la classe vera è ω_j (elemento λ_ij della matrice dei costi)"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c13",
+      "name": "Ipotesi di lavoro: C classi con distribuzioni gaussiane multivariate",
+      "nameEn": "Minimum-error-rate discriminant functions for C classes with multivariate Gaussian distributions",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch4", "page": 24}, {"doc": "part1", "page": 87}],
+      "detail": "Slide: «In the following, we will study in detail the behavior of the minimum-error-rate discriminant functions for classification problems characterized by C classes with multivariate Gaussian distributions». Due ipotesi insieme: (1) il criterio è l'errore minimo, cioè MAP, quindi non ci sono costi; (2) ogni densità condizionata p(x|ω_i) è una gaussiana multivariata N(m_i, Σ_i) con media e covarianza proprie della classe. Tutto ciò che segue (tre casi, iperpiani, iperquadriche) vale sotto queste ipotesi. Nella pratica m_i e Σ_i si stimano dai campioni di training (modulo m06).",
+      "latex": ["p(\\mathbf{x}|\\omega_i)=N(\\mathbf{m}_i,\\Sigma_i),\\qquad i=1,\\dots,C"],
+      "symbols": [
+        {"s": "N(\\mathbf{m}_i,\\Sigma_i)", "meaning": "gaussiana multivariata con vettore media m_i e matrice di covarianza Σ_i"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c14",
+      "name": "Pdf gaussiana multivariata condizionata alla classe",
+      "nameEn": "Multivariate Gaussian class-conditional pdf p(x|ω_i) = N(m_i, Σ_i)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch4", "page": 24}, {"doc": "part1", "page": 87}],
+      "detail": "La formula stampata sulla slide 24, con la notazione del docente: esponente −½(x − m_i)^t Σ_i⁻¹ (x − m_i), fattore di normalizzazione 1/[(2π)^{n/2} |Σ_i|^{1/2}], «with i = 1, ..., C». Le note: «where m_i and Σ_i are the mean vector and covariance matrix for class ω_i, respectively». n è la dimensione dello spazio delle feature, |Σ_i| il determinante e Σ_i⁻¹ l'inversa della covarianza. È la formula che Melgani chiede all'orale («the formula of the Gaussian curve in a multi dimensional space, with mean vector and covariance matrix»).",
+      "latex": [
+        "p(\\mathbf{x}|\\omega_i)=\\frac{1}{(2\\pi)^{n/2}\\,|\\Sigma_i|^{1/2}}\\exp\\left[-\\frac{1}{2}(\\mathbf{x}-\\mathbf{m}_i)^t\\,\\Sigma_i^{-1}(\\mathbf{x}-\\mathbf{m}_i)\\right]=N(\\mathbf{m}_i,\\Sigma_i)\\qquad\\text{with } i=1,\\dots,C"
+      ],
+      "symbols": [
+        {"s": "n", "meaning": "numero di feature (dimensione di x)"},
+        {"s": "\\mathbf{m}_i", "meaning": "vettore media della classe ω_i"},
+        {"s": "\\Sigma_i", "meaning": "matrice di covarianza n×n della classe ω_i"},
+        {"s": "|\\Sigma_i|", "meaning": "determinante della matrice di covarianza"},
+        {"s": "\\Sigma_i^{-1}", "meaning": "inversa della matrice di covarianza"},
+        {"s": "(\\cdot)^t", "meaning": "trasposto"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c15",
+      "name": "Discriminante logaritmico (criterio MAP)",
+      "nameEn": "g_i(x) = ln p(x|ω_i) + ln P(ω_i)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch4", "page": 24}, {"doc": "part1", "page": 87}],
+      "detail": "Slide: «In this case, the discriminant function is written as g_i(x) = ln p(x|ω_i) + ln P(ω_i)». Le note lo chiamano esplicitamente «the discriminant function for error minimization (MAP criterion)». È il logaritmo del punteggio MAP p(x|ω_i)P(ω_i): lecito per la Nota di c10. Si sceglie il logaritmo naturale perché la densità gaussiana contiene un esponenziale e un prodotto di fattori: il ln li trasforma in una somma di termini semplici.",
+      "latex": ["g_i(\\mathbf{x})=\\ln p(\\mathbf{x}|\\omega_i)+\\ln P(\\omega_i)"],
+      "symbols": [
+        {"s": "\\ln", "meaning": "logaritmo naturale"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c16",
+      "name": "Discriminante gaussiano generale a quattro termini",
+      "nameEn": "General Gaussian discriminant function",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch4", "page": 24}, {"doc": "part1", "page": 88}],
+      "detail": "Sostituendo la gaussiana di c14 nel discriminante logaritmico di c15 (la freccia verde verso il basso sulla slide 24, il simbolo ⇓ nelle note a p88) si ottiene la formula generale da cui discendono i tre casi: una forma quadratica in x cambiata di segno, una costante, il logaritmo del determinante e il logaritmo del prior. Le note commentano: «This form incorporates prior probabilities, Gaussian parameters, and enables decision-making by comparing the resulting scores for each class». Derivazione passo per passo in der03.",
+      "latex": [
+        "g_i(\\mathbf{x})=-\\frac{1}{2}(\\mathbf{x}-\\mathbf{m}_i)^t\\,\\Sigma_i^{-1}(\\mathbf{x}-\\mathbf{m}_i)-\\frac{n}{2}\\ln 2\\pi-\\frac{1}{2}\\ln|\\Sigma_i|+\\ln P(\\omega_i)"
+      ],
+      "symbols": [
+        {"s": "(\\mathbf{x}-\\mathbf{m}_i)^t\\Sigma_i^{-1}(\\mathbf{x}-\\mathbf{m}_i)", "meaning": "forma quadratica: distanza di Mahalanobis al quadrato tra x e la media della classe"},
+        {"s": "\\frac{n}{2}\\ln 2\\pi", "meaning": "costante di normalizzazione, uguale per tutte le classi"},
+        {"s": "\\ln|\\Sigma_i|", "meaning": "logaritmo del determinante della covarianza della classe"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c17",
+      "name": "Anatomia dei quattro termini del discriminante gaussiano",
+      "nameEn": "Roles of the four terms: quadratic (Mahalanobis) term, constant, log-determinant, log-prior",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch4", "page": 24}, {"doc": "part1", "page": 88}],
+      "detail": "Lettura termine per termine della formula di c16 (spiegazione aggiunta; la fonte dice solo che la forma «incorporates prior probabilities, Gaussian parameters»). (1) −½(x − m_i)^t Σ_i⁻¹ (x − m_i): penalizza la lontananza di x dalla media, misurata nella metrica della classe (distanza di Mahalanobis al quadrato); è l'unico termine che dipende da x. (2) −(n/2) ln 2π: costante identica per tutte le classi, non influenza il confronto. (3) −½ ln|Σ_i|: penalizza le classi molto disperse, perché una gaussiana larga ha densità più bassa ovunque; dipende dalla classe solo se le covarianze sono diverse. (4) ln P(ω_i): premia le classi più frequenti; è ≤ 0 e vale lo stesso per tutte se i prior sono uguali. I tre casi del corso nascono chiedendosi quali di questi termini sono comuni a tutte le classi e si possono eliminare.",
+      "latex": [
+        "d_M^2(\\mathbf{x},\\mathbf{m}_i)=(\\mathbf{x}-\\mathbf{m}_i)^t\\,\\Sigma_i^{-1}(\\mathbf{x}-\\mathbf{m}_i)",
+        "g_i(\\mathbf{x})=\\underbrace{-\\tfrac{1}{2}d_M^2(\\mathbf{x},\\mathbf{m}_i)}_{\\text{dipende da } \\mathbf{x}}\\ \\underbrace{-\\tfrac{n}{2}\\ln 2\\pi}_{\\text{costante}}\\ \\underbrace{-\\tfrac{1}{2}\\ln|\\Sigma_i|}_{\\text{dispersione}}\\ \\underbrace{+\\ln P(\\omega_i)}_{\\text{prior}}"
+      ],
+      "symbols": [
+        {"s": "d_M^2", "meaning": "distanza di Mahalanobis al quadrato (nome standard, non usato nelle slide)"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c18",
+      "name": "Eliminazione della costante −(n/2) ln 2π",
+      "nameEn": "Dropping −(n/2) ln 2π since it doesn't depend on the class",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part1", "page": 88}],
+      "detail": "Passaggio presente solo nelle note (p88): «⇓ (since −(n/2) ln 2π doesn't depend on the class)». Il termine è un addendo identico in tutti i g_i, quindi togliere la stessa costante da tutti è una trasformazione monotona crescente (c10) e non cambia le decisioni. Resta il discriminante a tre termini che le note usano come punto di partenza per i tre casi. La slide 24 si ferma invece alla forma a quattro termini.",
+      "latex": [
+        "g_i(\\mathbf{x})=-\\frac{1}{2}(\\mathbf{x}-\\mathbf{m}_i)^t\\,\\Sigma_i^{-1}(\\mathbf{x}-\\mathbf{m}_i)-\\frac{1}{2}\\ln|\\Sigma_i|+\\ln P(\\omega_i)"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c19",
+      "name": "I tre casi: la forma delle gaussiane decide la partizione dello spazio",
+      "nameEn": "Three cases: how the shape of Gaussian distributions affects the partitioning of the feature space",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part1", "page": 88}, {"doc": "ch4", "page": 25}, {"doc": "ch4", "page": 30}, {"doc": "ch4", "page": 34}],
+      "detail": "Note p88: «In this section, we analyze three cases that illustrate how the shape of Gaussian distributions, determined by their mean vectors and covariance matrices, affects the partitioning of the feature space and the discriminant functions used in classification». I tre casi sono i titoli delle slide: Case 1: Σ_i = σ²I (p25-29); Case 2: Σ_i = Σ (p30-33); Case 3: Σ_i = arbitrary (p34-40). Sono ordinati per libertà crescente della matrice di covarianza: il Caso 1 è un caso particolare del Caso 2, che è un caso particolare del Caso 3.",
+      "latex": [
+        "\\text{Case 1: }\\Sigma_i=\\sigma^2 I\\qquad\\text{Case 2: }\\Sigma_i=\\Sigma\\qquad\\text{Case 3: }\\Sigma_i=\\text{arbitrary}"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    }
+  ],
+  "derivations": [],
+  "workedExamples": [],
+  "figures": [],
+  "widgets": [],
+  "exercises": [],
+  "examQuestions": [],
+  "crossLinks": [],
+  "emptyPages": [],
+  "gaps": []
+}

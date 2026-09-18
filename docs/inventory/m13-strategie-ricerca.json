@@ -1,0 +1,1392 @@
+{
+  "moduleId": "m13-strategie-ricerca",
+  "title": "Strategie di ricerca: SFS e SBS",
+  "stages": {"inventario": "done", "completezza": "done", "formule": "done"},
+  "pagesReviewed": [
+    {"doc": "ch3", "from": 28, "to": 36},
+    {"doc": "part1", "from": 63, "to": 66}
+  ],
+  "overview": "Scelto il criterio di separabilità J (divergenza, Bhattacharyya, Jeffries-Matusita: modulo m12), la feature selection ha bisogno di una strategia di ricerca (search strategy) per trovare il sottinsieme di m feature, tra le n disponibili, che ottimizza il criterio. La ricerca esaustiva (exhaustive search) garantisce l'ottimo ma deve valutare C(n,m) sottinsiemi, un numero che esplode (4,09·10^35 per n = 200, m = 30); le strategie subottime esplorano solo parte dello spazio. Il modulo presenta le due strategie subottime del corso: la Sequential Forward Selection (SFS, bottom-up, soggetta all'effetto nesting) e la Sequential Backward Selection (SBS, top-down), con i loro alberi di esempio, pregi (molto veloci anche con n grande) e difetti (processo irreversibile), e la regola per scegliere tra le due in base a n e m (n = 200: m = 20 → SFS, m = 160 → SBS; in caso di pareggio SFS, perché lavora con matrici più piccole). All'orale Melgani chiede SFS e SBS dopo le misure di separabilità, se i loro risultati possono coincidere e in cosa SFS differisce dalla PCA: per questo il modulo include anche i ponti verso JM (part1 p63) e verso l'estrazione di feature (part1 p66).",
+  "concepts": [
+    {
+      "id": "c01",
+      "name": "Perché serve una strategia di ricerca",
+      "nameEn": "Search strategy",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch3", "page": 28}, {"doc": "part1", "page": 63}],
+      "detail": "Slide p28: una volta adottato il criterio di separabilità (separability criterion), è necessario ricorrere a una strategia di ricerca (search strategy) per identificare il miglior sottinsieme di feature (best subset of features) che ottimizza il criterio. Note p63: «once the separability criterion is established, a search strategy is required to identify the optimal subset of features that best satisfies this criterion». È il secondo dei due ingredienti della feature selection annunciati in ch3 p13 (modulo m11): «a separability measure J(·)» e «a search strategy in the solution space». Il criterio assegna un valore a ciascun sottinsieme, ma non dice quali sottinsiemi guardare né in che ordine: questo è il compito della strategia. Formalizzazione (notazione nostra, non scritta nella slide): dato l'insieme Y delle n feature originali e il numero desiderato m < n, si cerca il sottinsieme X* di cardinalità m che massimizza J.",
+      "latex": ["X^{*}=\\arg\\max_{X\\subset Y,\\ |X|=m} J(X)"],
+      "symbols": [
+        {"s": "Y", "meaning": "insieme delle n feature originali disponibili"},
+        {"s": "X", "meaning": "sottinsieme candidato di feature"},
+        {"s": "m", "meaning": "numero desiderato di feature (m < n)"},
+        {"s": "J(\\cdot)", "meaning": "criterio (misura di separabilità tra classi) da ottimizzare"},
+        {"s": "X^{*}", "meaning": "miglior sottinsieme di cardinalità m"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c02",
+      "name": "Il criterio da ottimizzare: la misura di separabilità adottata",
+      "nameEn": "Adopted class separability measure (criterion)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch3", "page": 28}, {"doc": "ch3", "page": 31}, {"doc": "ch3", "page": 32}, {"doc": "ch3", "page": 34}, {"doc": "part1", "page": 64}, {"doc": "part1", "page": 65}, {"doc": "ch3", "page": 25}, {"doc": "ch3", "page": 27}],
+      "detail": "Le slide parlano sempre di «adopted class separability measure» (p32) o «adopted class separability criterion» (p34): SFS cerca la feature che lo ottimizza, SBS misura quanto diminuisce togliendo una feature. Nell'esempio di p31 il criterio sull'asse y si chiama «Distance»: è una distanza statistica tra le due classi calcolata sulla coppia di feature (problema binario). Le candidate sono le misure del modulo m12: divergenza D_ij, distanza di Bhattacharyya B_ij, distanza di Jeffries-Matusita JM_ij; per tutte vale «più grande = classi più separabili». La strategia di ricerca è indipendente dal criterio: SFS e SBS funzionano con qualunque J. Per classi gaussiane, valutare J su un sottinsieme di k feature richiede i vettori medi (k componenti) e le matrici di covarianza k×k delle classi, con inverse e determinanti (formula di Bhattacharyya, ch3 p25): è per questo che la dimensione delle matrici conta nella scelta tra SFS e SBS (part1 p66). Con più di due classi si usa la media delle distanze tra coppie di classi (modulo m12).",
+      "latex": [
+        "B_{ij}=\\mu_{ij}(1/2)=\\frac{1}{8}(\\mathbf{m}_i-\\mathbf{m}_j)^{t}\\left\\{\\frac{\\Sigma_i+\\Sigma_j}{2}\\right\\}^{-1}(\\mathbf{m}_i-\\mathbf{m}_j)+\\frac{1}{2}\\ln\\left\\{\\frac{\\left|\\frac{\\Sigma_i+\\Sigma_j}{2}\\right|}{|\\Sigma_i|^{1/2}\\,|\\Sigma_j|^{1/2}}\\right\\}",
+        "JM_{ij}=\\sqrt{2\\left(1-\\exp(-B_{ij})\\right)}"
+      ],
+      "symbols": [
+        {"s": "\\mathbf{m}_i,\\ \\mathbf{m}_j", "meaning": "vettori medi delle classi ω_i e ω_j calcolati sulle sole feature del sottinsieme"},
+        {"s": "\\Sigma_i,\\ \\Sigma_j", "meaning": "matrici di covarianza delle classi (k×k se il sottinsieme ha k feature)"},
+        {"s": "B_{ij}", "meaning": "distanza di Bhattacharyya tra le classi i e j"},
+        {"s": "JM_{ij}", "meaning": "distanza di Jeffries-Matusita tra le classi i e j"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c03",
+      "name": "Ricerca esaustiva",
+      "nameEn": "Exhaustive search",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch3", "page": 28}, {"doc": "part1", "page": 63}, {"doc": "part1", "page": 64}],
+      "detail": "Slide p28: la strategia più intuitiva (the most intuitive strategy) è quella basata su una ricerca esaustiva (exhaustive search). Note p63: è l'approccio che esplora tutti i possibili sottinsiemi («explores all possible subsets»): si calcola J su ciascuno dei sottinsiemi di m feature e si tiene quello con il valore massimo. Note p64: è l'esempio tipico di strategia ottima («optimal strategies (like the exhaustive search)»).",
+      "latex": ["X^{*}=\\arg\\max_{X\\subset Y,\\ |X|=m} J(X)\\quad\\text{valutando tutti i }\\binom{n}{m}\\text{ sottinsiemi}"],
+      "symbols": [{"s": "\\binom{n}{m}", "meaning": "numero di sottinsiemi di m feature estraibili da n"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c04",
+      "name": "Pregio della ricerca esaustiva: la soluzione ottima",
+      "nameEn": "Optimal solution",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch3", "page": 28}, {"doc": "part1", "page": 63}],
+      "detail": "Slide p28: la ricerca esaustiva ha il vantaggio di trovare la soluzione ottima (optimal solution). Note p63: «this method guarantees an optimal solution». Poiché valuta ogni sottinsieme di cardinalità m, il massimo trovato è il massimo globale del criterio adottato: l'ottimalità è rispetto a J, cioè alla misura di separabilità scelta.",
+      "latex": ["J(X^{*})\\ge J(X)\\quad \\forall X\\subset Y,\\ |X|=m"],
+      "symbols": [{"s": "X^{*}", "meaning": "sottinsieme restituito dalla ricerca esaustiva"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c05",
+      "name": "Difetto della ricerca esaustiva: costo computazionale proibitivo",
+      "nameEn": "Prohibitive computational cost",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch3", "page": 28}, {"doc": "part1", "page": 63}],
+      "detail": "Slide p28: la ricerca esaustiva richiede spesso (often) un costo computazionale proibitivo (prohibitive computational cost). Il «spesso» conta: con n piccolo il costo è accettabile (45 valutazioni per n = 10, m = 2), con n grande diventa impraticabile (4,09·10^35 per n = 200, m = 30). Il costo totale è il numero di sottinsiemi moltiplicato per il costo di una valutazione di J, che per classi gaussiane cresce con la taglia delle matrici di covarianza.",
+      "latex": ["\\text{costo}\\propto\\binom{n}{m}\\times\\text{costo di una valutazione di }J"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c06",
+      "name": "Numero di sottinsiemi da esplorare: il coefficiente binomiale",
+      "nameEn": "Binomial coefficient",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch3", "page": 28}, {"doc": "part1", "page": 63}],
+      "detail": "Slide p28: per un insieme di n feature, il numero di sottinsiemi di m feature (m < n) che vanno esplorati è dato dal coefficiente binomiale (binomial coefficient). L'ordine delle feature in un sottinsieme non conta, quindi si contano combinazioni e non disposizioni (derivazione der01). Proprietà utile (integrazione nostra): il binomiale è simmetrico, C(n,m) = C(n,n−m), e per n fissato è massimo per m = n/2 (n pari; per n dispari il massimo è condiviso da m = (n−1)/2 e m = (n+1)/2). Casi limite: C(n,1) = C(n,n−1) = n, quindi con m = 1 o m = n − 1 la ricerca esaustiva costa solo n valutazioni.",
+      "latex": ["\\binom{n}{m}=\\frac{n!}{m!\\,(n-m)!}", "\\binom{n}{m}=\\binom{n}{n-m}"],
+      "symbols": [
+        {"s": "n", "meaning": "numero totale di feature disponibili"},
+        {"s": "m", "meaning": "numero di feature da selezionare, m < n"},
+        {"s": "n!", "meaning": "fattoriale di n"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c07",
+      "name": "Esempio numerico: n = 10",
+      "nameEn": "Examples: n = 10",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "ch3", "page": 29}, {"doc": "part1", "page": 63}],
+      "detail": "Slide p29, sotto «Examples»: con n = 10 feature, una parentesi graffa raggruppa due casi. Per m = 2 i sottinsiemi sono 10!/(2!8!) = 45; per m = 4 sono 10!/(4!6!) = 210. Passando da 2 a 4 feature da scegliere il numero di sottinsiemi si moltiplica per circa 4,7. Con numeri così piccoli la ricerca esaustiva è ancora praticabile.",
+      "latex": ["\\binom{10}{2}=\\frac{10!}{2!\\,8!}=45\\quad(m=2)", "\\binom{10}{4}=\\frac{10!}{4!\\,6!}=210\\quad(m=4)"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c08",
+      "name": "Esempio numerico: n = 200, m = 30",
+      "nameEn": "Examples: n = 200",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "ch3", "page": 29}, {"doc": "part1", "page": 63}],
+      "detail": "Slide p29: con n = 200 feature e m = 30, il numero di sottinsiemi è 200!/(30!170!) = 4,09·10^35 (la slide usa la virgola decimale). Verifica nostra: il valore esatto è circa 4,097·10^35, quindi la slide tronca alla seconda cifra decimale (arrotondato sarebbe 4,10·10^35); all'orale si riporta 4,09·10^35 come nella slide. n = 200 è un numero realistico nel telerilevamento iperspettrale (sensori con circa 200 bande). Conto nostro per dare la scala: valutando un sottinsieme ogni microsecondo servirebbero circa 1,3·10^22 anni, contro un'età dell'universo di circa 1,4·10^10 anni.",
+      "latex": ["\\binom{200}{30}=\\frac{200!}{30!\\,170!}=4{,}09\\cdot 10^{35}\\quad(m=30)"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c09",
+      "name": "Il messaggio degli esempi: esplosione combinatoria",
+      "nameEn": "Combinatorial explosion",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch3", "page": 29}, {"doc": "ch3", "page": 28}, {"doc": "part1", "page": 63}],
+      "detail": "L'accostamento degli esempi di p29 (45 → 210 → 4,09·10^35) è la giustificazione numerica del «prohibitive computational cost» di p28: il numero di sottinsiemi cresce in modo combinatorio con n e con m, non linearmente. Integrazione nostra: per m fissato C(n,m) cresce come n^m/m!; per n = 200 il massimo si ha a m = 100 (circa 9·10^58); se anche m fosse libero, i sottinsiemi non vuoti sarebbero 2^n − 1 (circa 1,6·10^60 per n = 200). È ciò che motiva le strategie subottime.",
+      "latex": ["\\binom{n}{m}\\approx\\frac{n^{m}}{m!}\\quad (m\\ll n)", "\\sum_{m=1}^{n}\\binom{n}{m}=2^{n}-1"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c10",
+      "name": "Strategie subottime",
+      "nameEn": "Suboptimal strategies",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch3", "page": 30}, {"doc": "part1", "page": 63}],
+      "detail": "Slide p30: le strategie subottime (suboptimal strategies), per risparmiare tempo di calcolo (saving computational time), esplorano solo parzialmente lo spazio delle soluzioni (explore just partially the solution space) e quindi portano a soluzioni subottime (suboptimal solutions). Note p63: «suboptimal strategies explore only a portion of the solution space, leading to near-optimal solutions rather than guaranteed optima». Subottimo non significa cattivo: di solito la soluzione è vicina all'ottimo, ma non c'è garanzia. SFS e SBS appartengono a questa famiglia.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c11",
+      "name": "Strategie ottime",
+      "nameEn": "Optimal strategies",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch3", "page": 30}, {"doc": "part1", "page": 64}],
+      "detail": "Slide p30: le strategie ottime (optimal strategies) garantiscono la convergenza alla soluzione ottima (guarantee a convergence to the optimal solution) ma sono più onerose dal punto di vista computazionale (more computationally demanding). Note p64: «optimal strategies (like the exhaustive search) guarantee convergence to the best solution but are computationally intensive». Nel corso l'unica strategia ottima nominata è la ricerca esaustiva.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c12",
+      "name": "Il compromesso tempo/ottimalità e la scelta del corso",
+      "nameEn": "A popular suboptimal feature selection method",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "ch3", "page": 30}, {"doc": "part1", "page": 64}],
+      "detail": "Le due famiglie di p30 si distinguono per il compromesso tra garanzia di ottimo e tempo di calcolo: le ottime esplorano tutto (costo combinatorio), le subottime una parte (costo ridotto, soluzione non garantita). Slide p30: «In the following, first, we will see a popular suboptimal feature selection method»; note p64: «we will first discuss a popular suboptimal feature selection method». Il metodo annunciato è la SFS, seguita dalla sua controparte SBS. Dopo SFS e SBS il capitolo passa all'estrazione di feature (ch3 p37), senza presentare altre strategie ottime oltre all'esaustiva.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c13",
+      "name": "Esempio: selezione di 2 feature su 5 in un problema binario",
+      "nameEn": "Selection of 2 features among 5 for a binary classification problem",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "ch3", "page": 31}, {"doc": "part1", "page": 64}],
+      "detail": "Slide p31 (titolo «Suboptimal Search Strategies»): esempio di selezione di 2 feature tra 5 per un problema di classificazione binaria. Con n = 5 e m = 2 le coppie possibili sono C(5,2) = 10: (1,2), (1,3), (1,4), (1,5), (2,3), (2,4), (2,5), (3,4), (3,5), (4,5). Per ciascuna si calcola una distanza tra le due classi. Note p64: «which yields 10 possible combinations. Here, we can compare results from both optimal and suboptimal approaches».",
+      "latex": ["\\binom{5}{2}=\\frac{5!}{2!\\,3!}=10"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c14",
+      "name": "Il grafico Distance–coppie: soluzione ottima e soluzione subottima",
+      "nameEn": "Optimal solution vs suboptimal solution",
+      "kind": "figura",
+      "sourcePages": [{"doc": "ch3", "page": 31}, {"doc": "part1", "page": 64}],
+      "detail": "Grafico a linea in prospettiva 3D: asse y «Distance» da 0 a 15, asse x «Couples of features» con le 10 coppie. Valori letti dal revisore sull'immagine ingrandita contro le linee di griglia inclinate della parete di fondo (il grafico è in prospettiva, incertezza circa ±0,5): (1,2) circa 10; (1,3) circa 12,5; (1,4) circa 9; (1,5) circa 8; (2,3) circa 13,5, il massimo, indicato dalla freccia rossa «Optimal solution»; (2,4) circa 11,5; (2,5) circa 11; (3,4) circa 10; (3,5) circa 11,5, picco locale (più alto dei vicini (3,4) e (4,5)) indicato dalla freccia verde «Suboptimal solution»; (4,5) circa 8,5. L'ordine è robusto rispetto all'incertezza di lettura: (2,3) > (1,3) > (2,4) ≈ (3,5) > (2,5) > (3,4) ≈ (1,2) > (1,4) > (1,5) ≈ (4,5). Messaggio: la strategia ottima trova il massimo globale (2,3); una strategia subottima può fermarsi su una coppia buona ma peggiore, (3,5), che non è nemmeno la seconda migliore (lo è (1,3)). La fonte non dice quale metodo subottimo produca (3,5). Verifica nostra con SFS e i valori letti: se la feature migliore da sola fosse la 1, SFS sceglierebbe (1,3); se fosse la 2 o la 3, troverebbe l'ottimo (2,3); se fosse la 4, (2,4); solo se fosse la 5 valuterebbe le coppie (1,5), (2,5), (3,5), (4,5) e sceglierebbe (3,5). L'unica partenza di SFS coerente con la freccia verde è quindi la feature 5, migliore da sola ma non presente nella coppia ottima: è l'effetto nesting della slide p32 visto in anticipo.",
+      "latex": ["J(2,3)=\\max_{(i,j)}J(i,j)>J(3,5)"],
+      "symbols": [{"s": "J(i,j)", "meaning": "distanza tra le classi calcolata sulla coppia di feature (i,j)"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c15",
+      "name": "SFS: strategia di ricerca iterativa bottom-up",
+      "nameEn": "Sequential Forward Selection (SFS)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch3", "page": 32}, {"doc": "part1", "page": 64}],
+      "detail": "Slide p32: la SFS è una strategia di ricerca iterativa «bottom-up» (iterative \"bottom-up\" search strategy). Note p64: è un metodo semplice ma efficace (simple yet effective) che parte da un insieme di feature vuoto (starts with an empty set of features) e aggiunge le feature una alla volta (incrementally adds features one by one), in base a un criterio che massimizza la separabilità tra le classi. È il metodo subottimo popolare annunciato a p30.",
+      "latex": ["X_0=\\emptyset\\ \\longrightarrow\\ X_1\\ \\longrightarrow\\ \\cdots\\ \\longrightarrow\\ X_m,\\qquad |X_k|=k"],
+      "symbols": [{"s": "X_k", "meaning": "sottinsieme selezionato dopo k iterazioni"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c16",
+      "name": "SFS, primo passo: la feature migliore da sola",
+      "nameEn": "Feature that optimizes singularly the adopted class separability measure",
+      "kind": "procedura",
+      "sourcePages": [{"doc": "ch3", "page": 32}, {"doc": "part1", "page": 64}],
+      "detail": "Slide p32: la SFS consiste per prima cosa nel trovare la feature che ottimizza singolarmente (optimizes singularly) la misura di separabilità adottata. Questa feature è la prima inclusa nel sottinsieme desiderato (the first one included in the desired subset of features). Note p64: «First, SFS identifies the single feature that best optimizes singularly the chosen class separability criterion. This feature is then added to the subset». Richiede n valutazioni del criterio, una per feature.",
+      "latex": ["x_1=\\arg\\max_{x\\in Y} J(\\{x\\}),\\qquad X_1=\\{x_1\\}"],
+      "symbols": [{"s": "x_1", "meaning": "prima feature selezionata, la migliore da sola"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c17",
+      "name": "SFS, iterazione: si aggiunge la feature che, insieme alle già scelte, ottimizza il criterio",
+      "nameEn": "Together with those selected in the previous iterations",
+      "kind": "procedura",
+      "sourcePages": [{"doc": "ch3", "page": 32}, {"doc": "part1", "page": 64}],
+      "detail": "Slide p32: a ogni iterazione, la feature che insieme a quelle selezionate nelle iterazioni precedenti (together with those selected in the previous iterations) ottimizza il criterio adottato viene anch'essa selezionata e aggiunta al sottinsieme. Note p64: «the feature that, when combined with the previously selected features, maximizes the criterion is added to the subset. For example, after selecting the first feature, SFS will identify the next feature that, together with the first, provides the greatest improvement». Il criterio si valuta sull'insieme congiunto X_k ∪ {x}, non sulla feature isolata: una feature ottima da sola ma ridondante con quelle già scelte aggiunge poco e viene scavalcata.",
+      "latex": ["x^{+}=\\arg\\max_{x\\in Y\\setminus X_k} J\\left(X_k\\cup\\{x\\}\\right)", "X_{k+1}=X_k\\cup\\{x^{+}\\}"],
+      "symbols": [
+        {"s": "Y\\setminus X_k", "meaning": "feature non ancora selezionate (candidate)"},
+        {"s": "x^{+}", "meaning": "feature aggiunta all'iterazione corrente"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c18",
+      "name": "SFS, arresto: il numero desiderato m di feature",
+      "nameEn": "Desired number m of features",
+      "kind": "procedura",
+      "sourcePages": [{"doc": "ch3", "page": 32}, {"doc": "part1", "page": 64}, {"doc": "ch3", "page": 19}],
+      "detail": "Slide p32: il processo è iterato fino a selezionare il numero desiderato m di feature (desired number m of features). Note p64: «This process continues until the desired number of m features are selected». Servono quindi m iterazioni. Osservazione nostra: m va fissato in anticipo (per esempio in base al numero di campioni di training e all'effetto Hughes, modulo m11), perché criteri come la divergenza non diminuiscono mai aggiungendo feature (ch3 p19: D_ij(f_1,...,f_k) ≤ D_ij(f_1,...,f_k,f_k+1)); fermarsi quando J smette di crescere porterebbe a tenere tutte le feature.",
+      "latex": ["\\text{stop quando } |X_k|=m\\quad(m \\text{ iterazioni})"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c19",
+      "name": "SFS in pseudocodice",
+      "nameEn": "SFS algorithm",
+      "kind": "algoritmo",
+      "sourcePages": [{"doc": "ch3", "page": 32}, {"doc": "ch3", "page": 33}],
+      "detail": "Formalizzazione della procedura descritta a parole nella slide p32 (la slide non la scrive in formule; notazione nostra): si parte dall'insieme vuoto; a ogni passo si valuta J su X_k ∪ {x} per ogni feature x non ancora scelta, si aggiunge quella con il valore massimo e si ripete fino ad avere m feature. È un algoritmo greedy: a ogni passo prende la scelta localmente migliore e non la rimette mai in discussione.",
+      "latex": [
+        "X_0=\\emptyset",
+        "x^{+}=\\arg\\max_{x\\in Y\\setminus X_k} J\\left(X_k\\cup\\{x\\}\\right)",
+        "X_{k+1}=X_k\\cup\\{x^{+}\\},\\quad k=0,1,\\dots,m-1",
+        "\\text{output: } X_m,\\quad |X_m|=m"
+      ],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c20",
+      "name": "Effetto nesting (annidamento)",
+      "nameEn": "Nesting effect",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch3", "page": 32}, {"doc": "part1", "page": 64}],
+      "detail": "Slide p32: la SFS è subottima a causa dell'effetto nesting (nesting effect), cioè una feature selezionata in precedenza non può più essere rimossa dal sottinsieme (a feature previously selected can no more be removed from the subset). Note p64: «once a feature is included in the subset, it cannot be removed, even if a later combination could yield a better outcome. Consequently, SFS may not always find the global optimal subset». Il nome viene dal fatto che i sottinsiemi prodotti sono annidati uno dentro l'altro. Conseguenza: la feature migliore da sola è sempre nella soluzione finale, anche quando il sottinsieme ottimo di taglia m non la contiene.",
+      "latex": ["X_1\\subset X_2\\subset\\cdots\\subset X_m"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c21",
+      "name": "SFS: miglioramento del criterio tipicamente monotono",
+      "nameEn": "Typically monotonic improvement in separability",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part1", "page": 64}, {"doc": "ch3", "page": 19}],
+      "detail": "Note p64: a ogni iterazione la SFS sceglie la feature che dà il massimo aumento possibile del criterio (the largest possible increase in the criterion), il che produce un miglioramento della separabilità tipicamente monotono (typically monotonic improvement in separability); tuttavia l'effetto nesting limita la flessibilità e rende la SFS meno ottima in alcuni casi. Collegamento con m12 (ch3 p19): per la divergenza aggiungere una feature non fa mai diminuire il criterio, quindi la curva J(X_k) lungo le iterazioni non decresce. Prendere il passo più lungo a ogni iterazione non garantisce però il percorso migliore complessivo.",
+      "latex": ["J(X_1)\\le J(X_2)\\le\\cdots\\le J(X_m)", "D_{ij}(f_1,\\dots,f_k)\\le D_{ij}(f_1,\\dots,f_k,f_{k+1})"],
+      "symbols": [{"s": "D_{ij}", "meaning": "divergenza tra le classi ω_i e ω_j"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c22",
+      "name": "Esempio SFS: m = 3, n = 4",
+      "nameEn": "SFS example: m=3 ; n=4",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "ch3", "page": 33}, {"doc": "part1", "page": 65}],
+      "detail": "Slide p33 (ripetuta nelle note p65): albero con radice «1 2 3 4» in cui la feature 2 è cerchiata in rosso (migliore da sola). Frecce verso le tre coppie che contengono 2: (1 2), (2 3), (2 4); (2 3) è cerchiata in rosso. Frecce verso le due terne che contengono {2,3}: (1 2 3) e (2 3 4); (2 3 4) è cerchiata in verde con la scritta «Final solution». Sottinsiemi valutati: 4 + 3 + 2 = 9. Le coppie senza la feature 2, cioè (1,3), (1,4), (3,4), e la terna (1,3,4) non vengono mai esaminate: è l'effetto nesting. Nota nostra: con n = 4 e m = 3 la ricerca esaustiva valuterebbe solo C(4,3) = 4 terne; il vantaggio di SFS sul numero di valutazioni compare solo quando n è grande.",
+      "latex": ["\\{2\\}\\ \\to\\ \\{2,3\\}\\ \\to\\ \\{2,3,4\\}", "4+3+2=9\\ \\text{valutazioni}"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c23",
+      "name": "Costo di SFS: numero di valutazioni del criterio",
+      "nameEn": "Number of criterion evaluations of SFS",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch3", "page": 33}, {"doc": "ch3", "page": 36}],
+      "detail": "Integrazione nostra, non nella fonte: spiega in numeri perché SFS è «very fast even with n >>» (p36). All'iterazione k si provano le n − k + 1 feature non ancora scelte, quindi il totale è una somma aritmetica che cresce come n·m (polinomiale) invece che in modo combinatorio. Esempi: n = 4, m = 3 → 9 (come nell'albero di p33); n = 200, m = 30 → 5565 valutazioni contro 4,09·10^35 dell'esaustiva. Ogni valutazione riguarda un sottinsieme di taglia al massimo m.",
+      "latex": ["N_{SFS}=\\sum_{k=1}^{m}(n-k+1)=mn-\\frac{m(m-1)}{2}"],
+      "symbols": [{"s": "N_{SFS}", "meaning": "numero totale di valutazioni del criterio eseguite da SFS"}],
+      "examRelevance": 1
+    },
+    {
+      "id": "c24",
+      "name": "SBS: strategia di ricerca top-down",
+      "nameEn": "Sequential Backward Selection (SBS)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch3", "page": 34}, {"doc": "part1", "page": 65}],
+      "detail": "Slide p34: la SBS è detta strategia di ricerca «top-down» (\"top-down\" search strategy) perché lavora nella direzione opposta (opposite direction) rispetto alla SFS. Note p65: «A method closely related to SFS is Sequential Backward Selection (SBS), a \"top-down\" search strategy that operates in the opposite direction of SFS». Invece di costruire il sottinsieme aggiungendo, lo ottiene togliendo.",
+      "latex": ["X_0=Y\\ \\longrightarrow\\ X_1\\ \\longrightarrow\\ \\cdots\\ \\longrightarrow\\ X_{n-m},\\qquad |X_k|=n-k"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c25",
+      "name": "SBS, inizio: tutte le feature disponibili",
+      "nameEn": "All available features are included in the subset",
+      "kind": "procedura",
+      "sourcePages": [{"doc": "ch3", "page": 34}, {"doc": "part1", "page": 65}],
+      "detail": "Slide p34: all'inizio tutte le feature disponibili (all available features) sono incluse nel sottinsieme. Note p65: «SBS begins with all available features included in the subset». Il primo passo lavora quindi su sottinsiemi di taglia n − 1, con matrici di covarianza grandi (vedi c39).",
+      "latex": ["X_0=Y,\\qquad |X_0|=n"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c26",
+      "name": "SBS, iterazione: si rimuove la feature che causa la minima diminuzione del criterio",
+      "nameEn": "Lowest decrease of the adopted class separability criterion",
+      "kind": "procedura",
+      "sourcePages": [{"doc": "ch3", "page": 34}, {"doc": "part1", "page": 65}],
+      "detail": "Slide p34: a ogni iterazione si rimuove dal sottinsieme la feature che comporta la diminuzione più bassa (lowest decrease) del criterio di separabilità adottato. Note p65: «SBS removes the feature whose exclusion causes the smallest decrease in the chosen class separability criterion. By minimizing the impact of each removal, SBS gradually refines the subset». Minimizzare la perdita equivale a scegliere il sottinsieme X_k∖{x} con J massimo, perché J(X_k) è lo stesso per tutti i candidati. Di solito le prime a uscire sono le feature ridondanti.",
+      "latex": ["x^{-}=\\arg\\min_{x\\in X_k}\\left[J(X_k)-J\\left(X_k\\setminus\\{x\\}\\right)\\right]=\\arg\\max_{x\\in X_k} J\\left(X_k\\setminus\\{x\\}\\right)", "X_{k+1}=X_k\\setminus\\{x^{-}\\}"],
+      "symbols": [{"s": "x^{-}", "meaning": "feature rimossa all'iterazione corrente"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c27",
+      "name": "SBS, arresto: cardinalità m",
+      "nameEn": "Subset with cardinality equal to m",
+      "kind": "procedura",
+      "sourcePages": [{"doc": "ch3", "page": 34}, {"doc": "part1", "page": 65}],
+      "detail": "Slide p34: il processo di rimozione continua fino a ottenere un sottinsieme di cardinalità pari a m (cardinality equal to m). Note p65: «This elimination process continues until the subset reaches the desired size of m features». Servono quindi n − m iterazioni: poche se m è vicino a n, molte se m è piccolo. È il dato che guida la scelta tra SFS e SBS (c34).",
+      "latex": ["\\text{stop quando } |X_k|=m\\quad(n-m \\text{ iterazioni})"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c28",
+      "name": "SBS in pseudocodice",
+      "nameEn": "SBS algorithm",
+      "kind": "algoritmo",
+      "sourcePages": [{"doc": "ch3", "page": 34}, {"doc": "ch3", "page": 35}],
+      "detail": "Formalizzazione della procedura descritta a parole nella slide p34 (notazione nostra): si parte da tutte le feature; a ogni passo si valuta J su X_k∖{x} per ogni feature x ancora presente, si rimuove quella la cui assenza costa meno e si ripete fino ad avere m feature. È il duale greedy della SFS.",
+      "latex": [
+        "X_0=Y,\\quad |X_0|=n",
+        "x^{-}=\\arg\\max_{x\\in X_k} J\\left(X_k\\setminus\\{x\\}\\right)",
+        "X_{k+1}=X_k\\setminus\\{x^{-}\\},\\quad k=0,1,\\dots,n-m-1",
+        "\\text{output: } X_{n-m},\\quad |X_{n-m}|=m"
+      ],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c29",
+      "name": "Anche SBS è subottima: le feature scartate non vengono riconsiderate",
+      "nameEn": "Previously discarded features are not reconsidered",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part1", "page": 65}],
+      "detail": "Note p65: la SBS è efficace per ridurre l'insieme di feature preservando la separabilità (effective for reducing feature sets while preserving separability), ma come la SFS può essere subottima, perché le feature scartate in precedenza non vengono riconsiderate (previously discarded features are not reconsidered). È l'effetto nesting nella direzione opposta: i sottinsiemi sono annidati in modo decrescente, e una feature tolta presto perché ridondante in un insieme grande non può rientrare anche se sarebbe preziosa in un insieme piccolo.",
+      "latex": ["Y=X_0\\supset X_1\\supset\\cdots\\supset X_{n-m}"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c30",
+      "name": "Esempio SBS: m = 2, n = 4",
+      "nameEn": "SBS example: m=2 ; n=4",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "ch3", "page": 35}, {"doc": "part1", "page": 65}],
+      "detail": "Slide p35 (ripetuta nelle note p65): radice (1, 2, 3, 4) cerchiata in rosso. Frecce verso i quattro sottinsiemi ottenuti togliendo una feature: (1, 2, 3), (1, 2, 4), (1, 3, 4), (2, 3, 4); (1, 3, 4) è cerchiato in rosso, quindi la feature rimossa è la 2 (minima diminuzione). Da (1, 3, 4) frecce verso (1, 3), (1, 4), (3, 4); (1, 3) è cerchiata in verde con la freccia «Final solution» a sinistra. Sottinsiemi valutati: 4 + 3 = 7, contro C(4,2) = 6 dell'esaustiva. Le coppie che contengono 2 non vengono mai esaminate al secondo livello.",
+      "latex": ["\\{1,2,3,4\\}\\ \\to\\ \\{1,3,4\\}\\ \\to\\ \\{1,3\\}", "4+3=7\\ \\text{valutazioni}"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c31",
+      "name": "Costo di SBS: numero di valutazioni del criterio",
+      "nameEn": "Number of criterion evaluations of SBS",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch3", "page": 35}, {"doc": "ch3", "page": 36}],
+      "detail": "Integrazione nostra, non nella fonte. Quando il sottinsieme ha k feature si provano k rimozioni; k va da n fino a m + 1. Il totale cresce come n² se m è piccolo e diventa piccolo se m è vicino a n. Esempi: n = 4, m = 2 → 7 (come nell'albero di p35); n = 200, m = 160 → 7220; n = 200, m = 20 → 19890. Ogni valutazione riguarda un sottinsieme di taglia tra n − 1 e m.",
+      "latex": ["N_{SBS}=\\sum_{k=m+1}^{n}k=\\frac{(n-m)(n+m+1)}{2}"],
+      "symbols": [{"s": "N_{SBS}", "meaning": "numero totale di valutazioni del criterio eseguite da SBS"}],
+      "examRelevance": 1
+    },
+    {
+      "id": "c32",
+      "name": "Pregio di SFS e SBS: molto veloci anche con n molto grande",
+      "nameEn": "Very fast even with n >>",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch3", "page": 36}, {"doc": "part1", "page": 65}],
+      "detail": "Slide p36 (icona pollice in su): «Very fast even with n >>», molto veloci anche con n molto grande. Note p65, «Efficiency»: sia SFS sia SBS sono computazionalmente efficienti anche quando il numero di feature n è grande. Il motivo è che esplorano una sola catena di sottinsiemi annidati: il numero di valutazioni è polinomiale (c23, c31), al massimo n(n+1)/2, contro il coefficiente binomiale dell'esaustiva (per n = 200, m = 30: 5565 valutazioni di SFS contro 4,09·10^35). Precisazione nostra (verificatore): il vantaggio è enorme quando m è lontano da 1 e da n − 1, ma sparisce se si usa la strategia «sbagliata» per il caso: SBS con m = 2 fa (n−2)(n+3)/2 valutazioni, circa quante C(n,2) = n(n−1)/2 dell'esaustiva, e lo stesso vale per SFS con m = n − 2. È un motivo in più per scegliere tra SFS e SBS in base a n e m (c34).",
+      "latex": ["N_{SFS},\\ N_{SBS}\\le\\frac{n(n+1)}{2}=O(n^{2})", "n=200,\\ m=30:\\quad N_{SFS}=5565\\ \\ll\\ \\binom{200}{30}\\approx 4{,}09\\cdot 10^{35}"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c33",
+      "name": "Difetto di SFS e SBS: inserimento e rimozione irreversibili",
+      "nameEn": "Feature insertion/removal process is irreversible",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch3", "page": 36}, {"doc": "part1", "page": 65}],
+      "detail": "Slide p36 (icona pollice in giù): il processo di inserimento/rimozione delle feature è irreversibile (Feature insertion/removal process is irreversible). Note p65, «Irreversibility»: una volta che una feature è stata aggiunta in SFS o rimossa in SBS, non può essere riconsiderata. È la causa comune della subottimalità (effetto nesting, c20 e c29), ed è anche ciò che rende i due metodi veloci: non tornando mai indietro, esplorano pochissimi sottinsiemi.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c34",
+      "name": "La scelta tra SFS e SBS dipende da n e m",
+      "nameEn": "How can I choose between SFS and SBS? It depends on the values of n and m",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch3", "page": 36}, {"doc": "part1", "page": 65}],
+      "detail": "Slide p36, vignetta con due operai di cantiere al telefono. Il primo chiede «How can I choose between SFS and SBS?»; il secondo risponde «It depends on the values of n and m» e poi «For instance: n=200 and m=20, use SFS; n=200 and m=160, choose SBS». Note p65: benché concettualmente simili, la scelta dipende dal rapporto tra n (feature totali) e m (feature desiderate). Lettura: SFS impiega m iterazioni, SBS n − m; conviene partire dal lato più vicino all'obiettivo.",
+      "latex": ["\\text{iterazioni: SFS}=m,\\qquad \\text{SBS}=n-m"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c35",
+      "name": "n = 200 e m = 20: usa SFS",
+      "nameEn": "n=200 and m=20, use SFS",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "ch3", "page": 36}, {"doc": "part1", "page": 65}],
+      "detail": "Note p65: quando n è grande e m relativamente piccolo (es. n = 200 e m = 20), la SFS è generalmente più adatta perché costruisce il sottinsieme in modo incrementale, senza il pesante calcolo iniziale su tutte le feature (without the high initial computation of all features). Numeri nostri: 20 iterazioni contro 180; 3810 valutazioni contro 19890.",
+      "latex": ["n=200,\\ m=20:\\quad N_{SFS}=3810<N_{SBS}=19890"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c36",
+      "name": "n = 200 e m = 160: scegli SBS",
+      "nameEn": "n=200 and m=160, choose SBS",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "ch3", "page": 36}, {"doc": "part1", "page": 65}],
+      "detail": "Note p65: quando m è vicino a n (es. n = 200 e m = 160), la SBS è preferibile perché parte dall'insieme completo e rimuove solo poche feature (removes only a small number of features). Numeri nostri: 40 iterazioni contro 160; 7220 valutazioni contro 19280.",
+      "latex": ["n=200,\\ m=160:\\quad N_{SBS}=7220<N_{SFS}=19280"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c37",
+      "name": "In caso di pareggio la SFS produce matrici più piccole",
+      "nameEn": "In the case of a tie, SFS generally produces smaller matrices",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part1", "page": 66}],
+      "detail": "Note p66: «In the case of a tie, Sequential Forward Selection (SFS) generally produces smaller matrices». La nota non dice di quali matrici si tratti; nel contesto sono le matrici di covarianza (con inverse e determinanti) delle feature del sottinsieme, necessarie per calcolare divergenza, Bhattacharyya o JM su classi gaussiane: la loro taglia è k×k, dove k è il numero di feature del sottinsieme valutato. Il «pareggio» non è definito nella nota: lo leggiamo come il caso m ≈ n/2, in cui SFS e SBS richiedono lo stesso numero di iterazioni (vedi c41).",
+      "latex": ["\\Sigma_i\\in\\mathbb{R}^{k\\times k},\\quad k=|X|"],
+      "symbols": [{"s": "k", "meaning": "numero di feature del sottinsieme su cui si valuta il criterio"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c38",
+      "name": "Perché: la SFS parte dall'insieme vuoto",
+      "nameEn": "SFS starts with an empty set and builds up the feature subset incrementally",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part1", "page": 66}],
+      "detail": "Note p66: la SFS parte da un insieme vuoto e costruisce il sottinsieme in modo incrementale. All'inizio del processo nella matrice ci sono solo poche feature, quindi le matrici intermedie restano più piccole finché il sottinsieme non raggiunge la taglia m (the intermediate matrices remain smaller until the subset reaches size m). Le taglie valutate vanno da 1 a m.",
+      "latex": ["k=1,2,\\dots,m"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c39",
+      "name": "Perché: la SBS parte da tutte le n feature",
+      "nameEn": "SBS starts with all features and removes them one by one",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part1", "page": 66}],
+      "detail": "Note p66: la SBS parte da tutte le feature e le rimuove una alla volta. All'inizio la matrice contiene tutte le n feature, il che la rende più grande e più onerosa nelle prime fasi (larger and more computationally intensive early on); produce matrici più piccole solo più avanti, quando si avvicina alla taglia desiderata m. Le taglie valutate vanno da n − 1 fino a m.",
+      "latex": ["k=n-1,\\,n-2,\\dots,m"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c40",
+      "name": "Conclusione: in pareggio o nel dubbio, SFS",
+      "nameEn": "In cases of a tie or uncertainty, SFS is preferable",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part1", "page": 66}],
+      "detail": "Note p66: in caso di pareggio o di incertezza (in cases of a tie or uncertainty) la SFS è preferibile, perché mantiene più piccole le matrici intermedie per la maggior parte del processo. Matrici intermedie più piccole sono computazionalmente efficienti e più facili da gestire, soprattutto con dataset grandi (especially when dealing with large datasets).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c41",
+      "name": "Il pareggio in numeri: m = n/2",
+      "nameEn": "Tie between SFS and SBS",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part1", "page": 66}, {"doc": "ch3", "page": 36}],
+      "detail": "Integrazione nostra che rende quantitativa la regola di p36 e il pareggio di p66. La differenza tra le valutazioni di SFS e SBS vale (n + 1)(m − n/2): SFS costa meno per m < n/2, SBS per m > n/2, e per m = n/2 il numero di iterazioni (m = n − m) e il numero di valutazioni coincidono esattamente. In quel caso l'unica differenza è la taglia dei sottinsiemi valutati: da 1 a m per SFS, da n − 1 a m per SBS. Se il costo di una valutazione cresce con la taglia della matrice (inversa e determinante costano circa k³ operazioni), SFS vince: per n = 10, m = 5 la somma dei k³ vale 1496 per SFS e 16904 per SBS. Numero per n = 200, m = 100: 15050 valutazioni per entrambi.",
+      "latex": ["N_{SFS}-N_{SBS}=(n+1)\\left(m-\\frac{n}{2}\\right)", "n=2m\\ \\Rightarrow\\ N_{SFS}=\\sum_{j=m+1}^{2m} j=N_{SBS}"],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c42",
+      "name": "SFS e SBS possono dare lo stesso risultato?",
+      "nameEn": "Can SFS and SBS give the same result?",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "ch3", "page": 33}, {"doc": "ch3", "page": 35}, {"doc": "ch3", "page": 36}, {"doc": "part1", "page": 65}, {"doc": "ch3", "page": 19}],
+      "detail": "Domanda d'orale esplicita («if the result of SFS and SBS can be the same»). Dalla fonte: entrambe sono subottime e irreversibili (p36, note p65) e procedono in direzioni opposte, quindi esplorano parti diverse dello spazio delle soluzioni e in generale possono arrivare a sottinsiemi diversi; nessuna delle due domina l'altra. Ragionamento nostro per rispondere: i risultati possono coincidere. Coincidono con certezza, e sono anche ottimi, quando il criterio è additivo sulle feature: per feature indipendenti la divergenza è la somma delle divergenze delle singole feature (ch3 p19), quindi SFS e SBS scelgono entrambe le m feature singolarmente migliori. Inoltre per m = 1 la SFS coincide con l'esaustiva, e per m = n − 1 la SBS coincide con l'esaustiva. Con feature correlate o complementari possono divergere: esiste una stessa tabella di valori J compatibile con entrambi gli alberi delle slide (p33 e p35) in cui, per m = 2, SFS dà (2,3) e SBS dà (1,3). Attenzione (aggiunta del verificatore): coincidere non significa essere ottime. Con la tabella monotona J(1) = 1,0; J(2) = 2,0; J(3) = 1,2; J(4) = 1,5; J(1,2) = 2,8; J(1,3) = 3,6; J(1,4) = 2,6; J(2,3) = 3,0; J(2,4) = 3,2; J(3,4) = 2,4; J(1,2,3) = 3,9; J(1,2,4) = 4,2; J(1,3,4) = 3,8; J(2,3,4) = 3,6; J(1,2,3,4) = 4,5, per m = 2 SFS ({2} → (2,4)) e SBS ((1,2,3,4) → (1,2,4) → (2,4)) danno entrambe (2,4) con J = 3,2, mentre l'ottimo è (1,3) con J = 3,6. Risposta d'orale in una frase: sì, possono coincidere, ma nessuna delle due garantisce né l'ottimo né di coincidere con l'altra.",
+      "latex": ["D_{ij}(f_1,\\dots,f_k)=\\sum_{q=1}^{k}D_{ij}(f_q)\\ \\Rightarrow\\ X_{SFS}=X_{SBS}=X^{*}"],
+      "symbols": [{"s": "X_{SFS},\\ X_{SBS}", "meaning": "sottinsiemi finali restituiti da SFS e SBS"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c43",
+      "name": "Confronto riassuntivo: ricerca esaustiva, SFS, SBS",
+      "nameEn": "Exhaustive search vs SFS vs SBS",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "ch3", "page": 28}, {"doc": "ch3", "page": 30}, {"doc": "ch3", "page": 32}, {"doc": "ch3", "page": 34}, {"doc": "ch3", "page": 36}, {"doc": "part1", "page": 64}, {"doc": "part1", "page": 65}],
+      "detail": "Sintesi delle slide p28-36. Esaustiva: esplora tutti i C(n,m) sottinsiemi, trova l'ottimo, costo proibitivo con n grande. SFS: bottom-up, parte da ∅, aggiunge la feature che insieme alle già scelte massimizza J, m iterazioni, subottima per il nesting, adatta a m piccolo rispetto a n. SBS: top-down, parte da tutte le n feature, rimuove quella che fa diminuire meno J, n − m iterazioni, subottima perché le feature scartate non tornano, adatta a m vicino a n. Entrambe molto veloci anche con n grande ma irreversibili; in caso di pareggio si preferisce SFS (matrici più piccole, note p66).",
+      "latex": ["\\binom{n}{m}\\quad\\text{vs}\\quad mn-\\frac{m(m-1)}{2}\\quad\\text{vs}\\quad\\frac{(n-m)(n+m+1)}{2}"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c44",
+      "name": "JM: comportamento saturante (ponte con m12)",
+      "nameEn": "Saturating behavior of the Jeffries-Matusita distance",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part1", "page": 63}, {"doc": "ch3", "page": 27}],
+      "detail": "In cima a part1 p63, prima della sezione Search Strategies: grafico «Jeffries-Matusita distance» contro «Distance between classes» (stessa figura di ch3 p27). Non c'è una sola curva ma una fascia tratteggiata in rosso delimitata da due curve rosse: la inferiore parte dall'origine, la superiore parte da un valore positivo sull'asse verticale (circa metà altezza); entrambe salgono e si appiattiscono sull'asintoto orizzontale tratteggiato √2, e la fascia si assottiglia fino a sparire quando le classi sono molto distanti. La fonte non spiega la fascia (vedi gaps). Proprietà (note): a differenza della divergenza e della distanza di Bhattacharyya, JM satura a un valore massimo di √2 (saturating behavior), cioè non supera questa soglia qualunque sia la separazione tra le distribuzioni; ciò garantisce stabilità e la rende più interpretabile per classi molto separabili. Formula (ch3 p27, modulo m12): JM_ij = sqrt(2(1 − exp(−B_ij))). Conseguenza nostra per la ricerca: quando le classi sono già ben separate, molti sottinsiemi hanno JM quasi uguale a √2 e il criterio distingue poco tra di loro.",
+      "latex": ["0\\le JM_{ij}\\le\\sqrt{2}", "JM_{ij}=\\sqrt{2\\left(1-\\exp(-B_{ij})\\right)}"],
+      "symbols": [{"s": "JM_{ij}", "meaning": "distanza di Jeffries-Matusita tra le classi ω_i e ω_j"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c45",
+      "name": "JM: simmetria",
+      "nameEn": "Symmetry",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part1", "page": 63}],
+      "detail": "Note p63: la distanza JM è simmetrica (symmetric), cioè JM_ij = JM_ji: scambiare le due classi non cambia il valore. Per la ricerca questo significa che il criterio di un sottinsieme non dipende da quale classe si chiama i e quale j.",
+      "latex": ["JM_{ij}=JM_{ji}"],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c46",
+      "name": "JM: non negatività",
+      "nameEn": "Non-negativity",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part1", "page": 63}],
+      "detail": "Note p63: JM_ij ≥ 0, con JM_ij = 0 se e solo se le due distribuzioni sono identiche (if and only if the two distributions are identical). Un sottinsieme di feature su cui le due classi hanno la stessa distribuzione ha criterio nullo: quelle feature non servono a discriminare.",
+      "latex": ["JM_{ij}\\ge 0", "JM_{ij}=0\\iff p(\\mathbf{x}|\\omega_i)=p(\\mathbf{x}|\\omega_j)"],
+      "symbols": [{"s": "p(\\mathbf{x}|\\omega_i)", "meaning": "densità condizionata della classe ω_i"}],
+      "examRelevance": 1
+    },
+    {
+      "id": "c47",
+      "name": "Estrazione di feature: definizione (ponte con m14)",
+      "nameEn": "Feature extraction",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part1", "page": 66}, {"doc": "ch3", "page": 37}],
+      "detail": "Note p66, subito dopo SFS e SBS: un approccio alternativo alla riduzione delle feature è l'estrazione di feature (feature extraction), che consiste nel combinare le feature per formarne di nuove (combining features to form new ones). A differenza della selezione, l'estrazione mira a conservare quanta più informazione possibile in un insieme limitato di feature. Slide ch3 p37 (modulo m14): il vantaggio potenziale è perdere meno informazione della selezione a parità di numero di feature desiderate.",
+      "latex": ["\\mathbf{y}=T(\\mathbf{x}),\\qquad \\mathbf{x}\\in\\mathbb{R}^{n}\\ \\to\\ \\mathbf{y}\\in\\mathbb{R}^{m}"],
+      "symbols": [{"s": "T(\\cdot)", "meaning": "trasformazione dallo spazio originale a quello delle nuove feature (notazione nostra)"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c48",
+      "name": "Estrazione in due passi: trasformazione e selezione",
+      "nameEn": "Transformation / Selection",
+      "kind": "procedura",
+      "sourcePages": [{"doc": "part1", "page": 66}],
+      "detail": "Note p66: l'estrazione segue in genere un processo in due passi. Trasformazione (Transformation): lo spazio originale delle feature viene trasformato in un nuovo spazio, spesso con tecniche di riduzione della dimensionalità. Selezione (Selection): nello spazio trasformato scegliere le feature diventa più facile, perché le feature trasformate catturano spesso l'informazione più rilevante in modo più efficace. Il secondo passo è ancora una selezione: sulle nuove feature si può applicare lo stesso ragionamento di SFS/SBS.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c49",
+      "name": "Esempio: coordinate polari e la nuova feature R",
+      "nameEn": "New feature R",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "part1", "page": 66}],
+      "detail": "Note p66: due classi difficili da separare perché le singole feature hanno importanza simile (similar importance of individual features). Figura: nello spazio originale (Original space, assi x1 e x2) la classe ω2 sta dentro un cerchio centrato nell'origine e la classe ω1 fuori (sfondo punteggiato); una freccia porta allo spazio trasformato (Transformed space) tramite R = sqrt(x1² + x2²) e Φ = arctg(x2/x1) se x1 ≥ 0, sign(x2)·π + arctg(x2/x1) se x1 < 0. Nello spazio trasformato (R in orizzontale, Φ in verticale tra −π e π) ω2 occupa una striscia per R piccolo e ω1 il resto: la nuova feature R basta a distinguere perfettamente le due classi, mentre Φ non serve. Trasformazione + selezione della sola R. Nessuna selezione tra x1 e x2 avrebbe potuto separare le classi. Lettura della formula di Φ (verificatore): arctg(x2/x1) restituisce valori in (−π/2, π/2), cioè copre solo il primo e il quarto quadrante (x1 ≥ 0); per x1 < 0 si aggiunge sign(x2)·π, che porta l'angolo in (π/2, π) se x2 > 0 e in (−π, −π/2) se x2 < 0. Così Φ copre tutto l'intervallo tra −π e π dell'asse verticale della figura (è l'atan2 dei linguaggi di programmazione).",
+      "latex": ["R=\\sqrt{x_1^{2}+x_2^{2}}", "\\Phi=\\begin{cases}\\operatorname{arctg}(x_2/x_1), & x_1\\ge 0\\\\ \\operatorname{sign}(x_2)\\cdot\\pi+\\operatorname{arctg}(x_2/x_1), & x_1<0\\end{cases}"],
+      "symbols": [
+        {"s": "R", "meaning": "distanza dall'origine (modulo), nuova feature discriminante"},
+        {"s": "\\Phi", "meaning": "angolo polare, tra −π e π come sull'asse verticale della figura; inutile per discriminare in questo esempio"},
+        {"s": "\\operatorname{arctg}", "meaning": "arcotangente (notazione italiana della fonte, = arctan), con valori in (−π/2, π/2)"},
+        {"s": "\\operatorname{sign}(x_2)", "meaning": "segno di x_2 (+1 o −1): sposta l'angolo nel secondo o terzo quadrante quando x_1 < 0"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c50",
+      "name": "Trasformazioni lineari e non lineari",
+      "nameEn": "Linear vs. Nonlinear Transformations",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "part1", "page": 66}],
+      "detail": "Note p66, prima questione chiave dell'estrazione. Trasformazioni lineari (Linear Transformations): in genere più semplici da calcolare e da interpretare, quindi è più facile capire l'effetto della trasformazione sui dati. Trasformazioni non lineari (Nonlinear Transformations): spesso più complesse e più difficili da interpretare, ma possono migliorare molto la separabilità delle classi, quindi sono strumenti potenti quando le classi non sono linearmente separabili. R dell'esempio polare è una trasformazione non lineare; PCA e LDA (moduli m14, m15) sono lineari.",
+      "latex": ["\\mathbf{y}=W^{t}\\mathbf{x}\\ \\ (\\text{lineare})\\qquad \\mathbf{y}=T(\\mathbf{x})\\ \\ (\\text{non lineare, es. } R=\\sqrt{x_1^2+x_2^2})"],
+      "symbols": [{"s": "W", "meaning": "matrice della trasformazione lineare (notazione nostra)"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c51",
+      "name": "Selezione contro estrazione (SFS contro PCA)",
+      "nameEn": "Feature selection vs feature extraction",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "part1", "page": 66}, {"doc": "ch3", "page": 32}, {"doc": "ch3", "page": 28}],
+      "detail": "Domanda d'orale («main differences between sfs and pca»). Dalla fonte: la selezione (SFS/SBS) sceglie un sottinsieme delle feature originali ottimizzando una misura di separabilità tra classi (ch3 p28, p32); l'estrazione combina le feature per crearne di nuove e mira a conservare quanta più informazione possibile (note p66). Conseguenze (ragionamento nostro): la selezione mantiene il significato fisico delle feature (per esempio bande spettrali precise) e permette di misurare solo le m feature scelte; usa le classi, quindi è supervisionata. L'estrazione produce feature che sono combinazioni di tutte le originali (che vanno comunque misurate), meno interpretabili; la PCA è lineare e non usa le etichette (modulo m14), mentre la LDA è lineare e supervisionata (modulo m15).",
+      "latex": ["\\text{selezione: } X\\subset Y,\\ |X|=m\\qquad \\text{estrazione: } \\mathbf{y}=W^{t}\\mathbf{x}"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c52",
+      "name": "Che cosa vede ciascuna strategia: feature da sole contro feature nel contesto",
+      "nameEn": "Forward vs backward: individual merit vs joint contribution",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "ch3", "page": 32}, {"doc": "ch3", "page": 34}, {"doc": "part1", "page": 64}, {"doc": "part1", "page": 65}],
+      "detail": "Integrazione nostra: è un ragionamento sulle definizioni delle slide p32 e p34, non scritto nella fonte, e serve per le domande d'orale sul confronto tra SFS e SBS. La SFS giudica la prima feature da sola («optimizes singularly», p32) e poi solo piccoli gruppi che contengono le scelte precedenti. Una feature che vale poco da sola ma molto insieme a un'altra (feature complementari) rischia quindi di non entrare mai. La SBS invece parte dall'insieme completo e misura la perdita causata dal togliere ciascuna feature in presenza di tutte le altre («lowest decrease», p34). Le feature complementari tendono a sopravvivere e quelle ridondanti escono per prime. Il rischio opposto della SBS è scartare presto una feature che nell'insieme grande sembra ridondante ma che in un insieme piccolo sarebbe preziosa (note p65: «previously discarded features are not reconsidered»). Con la tabella di J del pesce usata nei widget, per m = 2 SFS si lega alla luminosità, la migliore da sola, e trova (2,3) con J = 3,4, mentre SBS trova la coppia complementare (1,3) con J = 3,6, che è l'ottimo. Con altri dati può succedere il contrario: in generale nessuna delle due domina l'altra.",
+      "latex": [
+        "\\text{SFS: } x^{+}=\\arg\\max_{x\\in Y\\setminus X_k} J\\left(X_k\\cup\\{x\\}\\right),\\quad |X_k|=k\\ \\ (\\text{sottinsiemi piccoli})",
+        "\\text{SBS: } x^{-}=\\arg\\min_{x\\in X_k}\\left[J(X_k)-J\\left(X_k\\setminus\\{x\\}\\right)\\right],\\quad |X_k|=n-k\\ \\ (\\text{sottinsiemi grandi})"
+      ],
+      "symbols": [
+        {"s": "X_k", "meaning": "sottinsieme corrente dopo k iterazioni (k feature in SFS, n − k in SBS)"}
+      ],
+      "examRelevance": 2,
+      "addedBy": "revisore"
+    }
+  ],
+  "derivations": [
+    {
+      "id": "der01",
+      "title": "Perché il numero di sottinsiemi è il coefficiente binomiale",
+      "sourcePages": [{"doc": "ch3", "page": 28}],
+      "goal": "Ricavare il numero di sottinsiemi di m feature estraibili da n (la slide p28 dà solo il risultato; derivazione aggiunta da noi).",
+      "steps": [
+        "\\text{sequenze ordinate di } m \\text{ feature distinte: } n\\,(n-1)\\cdots(n-m+1)",
+        "n\\,(n-1)\\cdots(n-m+1)=\\frac{n!}{(n-m)!}",
+        "\\text{ogni sottinsieme compare in } m! \\text{ ordini diversi}",
+        "\\binom{n}{m}=\\frac{n!}{(n-m)!}\\cdot\\frac{1}{m!}=\\frac{n!}{m!\\,(n-m)!}",
+        "\\binom{n}{m}=\\frac{n!}{(n-m)!\\,m!}=\\binom{n}{n-m}"
+      ],
+      "stepWhy": [
+        "Si scelgono le feature una alla volta: n possibilità per la prima, n − 1 per la seconda (una è già stata presa) e così via fino alla m-esima.",
+        "Il prodotto dei primi m fattori decrescenti di n! è n! diviso per il prodotto dei fattori mancanti, cioè (n − m)!.",
+        "Per la separabilità conta solo quali feature ci sono, non l'ordine in cui sono state scelte: {2,3} e {3,2} sono lo stesso sottinsieme, e m oggetti si possono ordinare in m! modi.",
+        "Dividendo le sequenze ordinate per il numero di ordinamenti di ciascun sottinsieme si ottiene il numero di sottinsiemi, cioè la formula della slide p28.",
+        "Scambiando i ruoli di m e n − m la formula non cambia: scegliere le m feature da tenere equivale a scegliere le n − m da scartare (osservazione utile per SBS)."
+      ],
+      "concepts": ["c06", "c03"]
+    },
+    {
+      "id": "der02",
+      "title": "Calcolo degli esempi numerici della slide p29",
+      "sourcePages": [{"doc": "ch3", "page": 29}, {"doc": "part1", "page": 63}],
+      "goal": "Verificare 45, 210 e 4,09·10^35 e tradurre l'ultimo numero in tempo di calcolo.",
+      "steps": [
+        "\\binom{10}{2}=\\frac{10!}{2!\\,8!}=\\frac{10\\cdot 9}{2\\cdot 1}=45",
+        "\\binom{10}{4}=\\frac{10!}{4!\\,6!}=\\frac{10\\cdot 9\\cdot 8\\cdot 7}{4\\cdot 3\\cdot 2\\cdot 1}=\\frac{5040}{24}=210",
+        "\\binom{200}{30}=\\frac{200!}{30!\\,170!}=\\prod_{i=1}^{30}\\frac{170+i}{i}",
+        "\\log_{10}\\binom{200}{30}=\\sum_{i=1}^{30}\\log_{10}\\frac{170+i}{i}\\approx 35{,}612",
+        "\\binom{200}{30}\\approx 10^{35{,}612}\\approx 4{,}09\\cdot 10^{35}",
+        "\\frac{4{,}09\\cdot 10^{35}\\cdot 10^{-6}\\,\\text{s}}{3{,}156\\cdot 10^{7}\\,\\text{s/anno}}\\approx 1{,}3\\cdot 10^{22}\\ \\text{anni}"
+      ],
+      "stepWhy": [
+        "Nel rapporto 10!/8! restano solo i fattori 10 e 9; si divide per 2! = 2.",
+        "10!/6! lascia 10·9·8·7 = 5040, che diviso per 4! = 24 dà 210.",
+        "Semplificando 200!/170! restano i 30 fattori da 171 a 200; accoppiando ciascuno con un fattore di 30! si ottiene un prodotto di 30 rapporti, comodo da calcolare senza overflow.",
+        "Il logaritmo trasforma il prodotto in somma: è così che si calcolano binomiali enormi in pratica (e nel widget).",
+        "Tornando dai logaritmi: 10^0,612 ≈ 4,09, quindi il valore della slide.",
+        "Conto nostro per dare la scala: con un microsecondo per valutazione di J servirebbero circa 10^22 anni, mille miliardi di volte l'età dell'universo."
+      ],
+      "concepts": ["c07", "c08", "c09"]
+    },
+    {
+      "id": "der03",
+      "title": "Numero di valutazioni del criterio in SFS",
+      "sourcePages": [{"doc": "ch3", "page": 32}, {"doc": "ch3", "page": 33}, {"doc": "ch3", "page": 36}],
+      "goal": "Contare le valutazioni di J eseguite da SFS e confrontarle con la ricerca esaustiva (integrazione nostra che giustifica «very fast even with n >>»).",
+      "steps": [
+        "\\text{iterazione } k=1,\\dots,m:\\quad |Y\\setminus X_{k-1}|=n-(k-1)\\ \\text{candidati}",
+        "N_{SFS}=\\sum_{k=1}^{m}(n-k+1)",
+        "N_{SFS}=mn-\\sum_{k=1}^{m}(k-1)=mn-\\frac{m(m-1)}{2}",
+        "n=4,\\ m=3:\\quad N_{SFS}=12-3=9=4+3+2",
+        "n=200,\\ m=30:\\quad N_{SFS}=6000-435=5565\\ \\ll\\ \\binom{200}{30}\\approx 4{,}09\\cdot 10^{35}"
+      ],
+      "stepWhy": [
+        "All'iterazione k sono già state scelte k − 1 feature; ogni feature rimasta va provata insieme a quelle scelte (slide p32).",
+        "Il totale è la somma dei candidati su tutte le m iterazioni.",
+        "Si separa mn dalla somma 0 + 1 + ... + (m − 1), che vale m(m − 1)/2 (somma dei primi interi).",
+        "Verifica sull'albero della slide p33: 4 singoletti, 3 coppie, 2 terne.",
+        "Il costo è polinomiale in n e m invece che combinatorio: da qui la velocità anche con n grande."
+      ],
+      "concepts": ["c23", "c22", "c32"]
+    },
+    {
+      "id": "der04",
+      "title": "Numero di valutazioni del criterio in SBS",
+      "sourcePages": [{"doc": "ch3", "page": 34}, {"doc": "ch3", "page": 35}],
+      "goal": "Contare le valutazioni di J eseguite da SBS (integrazione nostra).",
+      "steps": [
+        "|X|=k\\ \\Rightarrow\\ k\\ \\text{rimozioni candidate},\\qquad k=n,\\,n-1,\\dots,m+1",
+        "N_{SBS}=\\sum_{k=m+1}^{n}k",
+        "N_{SBS}=\\frac{n(n+1)}{2}-\\frac{m(m+1)}{2}",
+        "N_{SBS}=\\frac{n^{2}-m^{2}+n-m}{2}=\\frac{(n-m)(n+m+1)}{2}",
+        "n=4,\\ m=2:\\quad N_{SBS}=\\frac{2\\cdot 7}{2}=7=4+3"
+      ],
+      "stepWhy": [
+        "Con k feature nel sottinsieme si prova a toglierne ciascuna (slide p34); si parte da k = n e ci si ferma quando k = m, quindi l'ultima iterazione ha k = m + 1.",
+        "Il totale è la somma dei candidati su tutte le n − m iterazioni.",
+        "Somma dei primi n interi meno somma dei primi m interi.",
+        "Raccogliendo: n² − m² = (n − m)(n + m) e n − m = (n − m)·1.",
+        "Verifica sull'albero della slide p35: 4 terne, poi 3 coppie."
+      ],
+      "concepts": ["c31", "c30"]
+    },
+    {
+      "id": "der05",
+      "title": "La regola SFS/SBS in numeri e il pareggio a m = n/2",
+      "sourcePages": [{"doc": "ch3", "page": 36}, {"doc": "part1", "page": 65}, {"doc": "part1", "page": 66}],
+      "goal": "Confrontare i costi di SFS e SBS, verificare gli esempi di p36 e mostrare che il pareggio cade a m = n/2 (integrazione nostra).",
+      "steps": [
+        "N_{SFS}-N_{SBS}=mn-\\frac{m^{2}-m}{2}-\\frac{n^{2}+n-m^{2}-m}{2}",
+        "N_{SFS}-N_{SBS}=mn+m-\\frac{n(n+1)}{2}=(n+1)\\left(m-\\frac{n}{2}\\right)",
+        "n=200,\\ m=20:\\quad N_{SFS}=3810,\\ \\ N_{SBS}=19890\\ \\Rightarrow\\ \\text{SFS}",
+        "n=200,\\ m=160:\\quad N_{SFS}=19280,\\ \\ N_{SBS}=7220\\ \\Rightarrow\\ \\text{SBS}",
+        "m=\\frac{n}{2}:\\quad N_{SFS}=N_{SBS}\\quad(n=200,\\ m=100:\\ 15050)",
+        "\\text{taglie valutate: SFS } 1,\\dots,m;\\qquad \\text{SBS } n-1,\\dots,m",
+        "\\sum_{\\text{valutazioni}}k^{3}:\\quad n=10,\\ m=5:\\ \\ 1496\\ (\\text{SFS})\\ \\text{vs}\\ 16904\\ (\\text{SBS})"
+      ],
+      "stepWhy": [
+        "Si sottraggono le due formule di der03 e der04 scritte con lo stesso denominatore.",
+        "I termini in m² si cancellano; resta un'espressione lineare in m che si annulla esattamente per m = n/2.",
+        "Primo esempio della vignetta di p36: m molto più piccolo di n/2, SFS costa circa cinque volte meno.",
+        "Secondo esempio di p36: m più grande di n/2, conviene SBS.",
+        "Nel pareggio anche le iterazioni coincidono (m = n − m): numero di passi e numero di valutazioni non decidono più.",
+        "Resta la differenza indicata dalle note p66: SFS lavora con sottinsiemi piccoli, SBS con sottinsiemi grandi.",
+        "Pesando ogni valutazione con il costo di inversa e determinante di una matrice k×k (circa k³, modello nostro), SFS risulta più di dieci volte meno costosa: è la ragione quantitativa del «in cases of a tie, SFS is preferable»."
+      ],
+      "concepts": ["c41", "c34", "c35", "c36", "c37", "c40"]
+    },
+    {
+      "id": "der06",
+      "title": "Quando SFS e SBS coincidono (e sono ottime)",
+      "sourcePages": [{"doc": "ch3", "page": 19}, {"doc": "ch3", "page": 32}, {"doc": "ch3", "page": 34}],
+      "goal": "Dare la risposta motivata alla domanda d'orale «can the result of SFS and SBS be the same?» (ragionamento nostro basato sulle proprietà della divergenza).",
+      "steps": [
+        "m=1:\\quad \\text{SFS valuta tutti gli } \\binom{n}{1}=n \\text{ singoletti}\\ \\Rightarrow\\ X_{SFS}=X^{*}",
+        "m=n-1:\\quad \\text{SBS valuta tutti gli } \\binom{n}{n-1}=n \\text{ sottinsiemi}\\ \\Rightarrow\\ X_{SBS}=X^{*}",
+        "\\text{feature indipendenti: } D_{ij}(f_1,\\dots,f_k)=\\sum_{q=1}^{k}D_{ij}(f_q)",
+        "\\text{SFS: } \\arg\\max_{x} D_{ij}(X_k\\cup\\{x\\})=\\arg\\max_{x}\\left[D_{ij}(X_k)+D_{ij}(x)\\right]=\\arg\\max_{x}D_{ij}(x)",
+        "\\text{SBS: } \\arg\\min_{x}\\left[D_{ij}(X_k)-D_{ij}(X_k\\setminus\\{x\\})\\right]=\\arg\\min_{x}D_{ij}(x)",
+        "X_{SFS}=X_{SBS}=\\{\\text{le } m \\text{ feature con } D_{ij}(f_q) \\text{ massima}\\}=X^{*}"
+      ],
+      "stepWhy": [
+        "Con m = 1 la SFS si ferma dopo il primo passo, che è già una ricerca esaustiva tra i singoletti.",
+        "Con m = n − 1 la SBS fa un solo passo, in cui prova tutti i sottinsiemi di taglia n − 1: è la ricerca esaustiva.",
+        "Proprietà della divergenza per feature indipendenti (ch3 p19, modulo m12): il criterio si somma feature per feature.",
+        "D_ij(X_k) è uguale per tutti i candidati, quindi SFS aggiunge semplicemente la feature con la divergenza individuale più alta tra quelle rimaste.",
+        "La perdita causata togliendo x è proprio D_ij(x), quindi SBS toglie la feature individualmente peggiore tra quelle rimaste.",
+        "Entrambe finiscono con le m feature individualmente migliori; con un criterio additivo quel sottinsieme massimizza anche la somma, quindi coincide con l'ottimo dell'esaustiva. Con feature correlate l'additività cade e i risultati possono differire (esempio in c42)."
+      ],
+      "concepts": ["c42", "c20", "c29"]
+    }
+  ],
+  "workedExamples": [
+    {
+      "id": "ex01",
+      "title": "Quanti sottinsiemi: n = 10 e n = 200",
+      "sourcePages": [{"doc": "ch3", "page": 29}, {"doc": "part1", "page": 63}],
+      "description": "Slide p29, «Examples». n = 10: C(10,2) = 10!/(2!8!) = 45 per m = 2; C(10,4) = 10!/(4!6!) = 210 per m = 4. n = 200: C(200,30) = 200!/(30!170!) = 4,09·10^35 per m = 30. Messaggio: con n realistico (per esempio 200 bande iperspettrali) la ricerca esaustiva è impraticabile.",
+      "concepts": ["c06", "c07", "c08", "c09"]
+    },
+    {
+      "id": "ex02",
+      "title": "2 feature su 5: soluzione ottima contro subottima",
+      "sourcePages": [{"doc": "ch3", "page": 31}, {"doc": "part1", "page": 64}],
+      "description": "Problema di classificazione binaria con n = 5 feature, si vogliono m = 2 feature: C(5,2) = 10 coppie. Il grafico riporta la «Distance» tra le classi per ogni coppia (valori approssimati letti dal grafico prospettico, ±0,5: (1,2) circa 10; (1,3) 12,5; (1,4) 9; (1,5) 8; (2,3) 13,5; (2,4) 11,5; (2,5) 11; (3,4) 10; (3,5) 11,5; (4,5) 8,5). La soluzione ottima (freccia rossa) è la coppia (2,3) con distanza massima; la soluzione subottima (freccia verde) è la coppia (3,5), un picco locale più basso e nemmeno la seconda coppia migliore (lo è (1,3)). Le note p64 dicono che l'esempio permette di confrontare i risultati degli approcci ottimo e subottimo. Verifica nostra: la ricerca esaustiva valuta tutte le 10 coppie; una SFS partita dalla feature 5 (se fosse la migliore da sola) valuterebbe 5 singoletti e poi solo le 4 coppie con la 5, e finirebbe proprio in (3,5); partendo dalla 2 o dalla 3 troverebbe invece l'ottimo (2,3).",
+      "concepts": ["c13", "c14", "c10", "c11"]
+    },
+    {
+      "id": "ex03",
+      "title": "SFS con m = 3, n = 4",
+      "sourcePages": [{"doc": "ch3", "page": 33}, {"doc": "part1", "page": 65}],
+      "description": "Passo 1: tra le feature 1, 2, 3, 4 la migliore da sola è la 2 (cerchiata in rosso). Passo 2: si valutano (1,2), (2,3), (2,4); vince (2,3). Passo 3: si valutano (1,2,3) e (2,3,4); vince (2,3,4), soluzione finale (cerchio verde). 9 valutazioni del criterio in totale. Le combinazioni senza la feature 2 non vengono mai esaminate.",
+      "concepts": ["c22", "c16", "c17", "c18", "c20"]
+    },
+    {
+      "id": "ex04",
+      "title": "SBS con m = 2, n = 4",
+      "sourcePages": [{"doc": "ch3", "page": 35}, {"doc": "part1", "page": 65}],
+      "description": "Si parte da (1,2,3,4). Passo 1: si valutano (1,2,3), (1,2,4), (1,3,4), (2,3,4); il sottinsieme migliore, cioè quello che si ottiene con la minima diminuzione del criterio, è (1,3,4): viene tolta la feature 2. Passo 2: da (1,3,4) si valutano (1,3), (1,4), (3,4); vince (1,3), soluzione finale (cerchio verde). 7 valutazioni del criterio in totale.",
+      "concepts": ["c30", "c25", "c26", "c27"]
+    },
+    {
+      "id": "ex05",
+      "title": "SFS o SBS? n = 200 con m = 20 e m = 160",
+      "sourcePages": [{"doc": "ch3", "page": 36}, {"doc": "part1", "page": 65}, {"doc": "part1", "page": 66}],
+      "description": "Vignetta di p36: con n = 200 e m = 20 si usa SFS (costruisce il sottinsieme in 20 passi senza il calcolo iniziale su tutte le feature); con n = 200 e m = 160 si sceglie SBS (parte dall'insieme completo e toglie solo 40 feature). Note p66: in caso di pareggio o di incertezza si preferisce SFS, che lavora con matrici intermedie più piccole.",
+      "concepts": ["c34", "c35", "c36", "c40"]
+    },
+    {
+      "id": "ex06",
+      "title": "La feature R che separa due classi concentriche",
+      "sourcePages": [{"doc": "part1", "page": 66}],
+      "description": "Nello spazio (x1, x2) la classe ω2 sta dentro un cerchio centrato nell'origine e ω1 fuori; nessuna delle due feature da sola le separa. Con la trasformazione in coordinate polari R = sqrt(x1² + x2²), Φ = arctg(x2/x1) per x1 ≥ 0 e sign(x2)·π + arctg(x2/x1) per x1 < 0, nello spazio trasformato ω2 occupa i valori piccoli di R e ω1 quelli grandi: la sola R separa perfettamente le classi. Esempio di trasformazione (non lineare) seguita da selezione.",
+      "concepts": ["c49", "c48", "c50"]
+    }
+  ],
+  "figures": [
+    {"id": "fig01", "doc": "ch3", "page": 29, "description": "Blocco di esempi numerici del coefficiente binomiale: n = 10 con parentesi graffa che raggruppa C(10,2) = 10!/(2!8!) = 45 (m=2) e C(10,4) = 10!/(4!6!) = 210 (m=4); sotto, n = 200 con C(200,30) = 200!/(30!170!) = 4,09·10^35 (m=30).", "region": "tutta la pagina sotto il titolo, esempi impilati verticalmente", "concepts": ["c07", "c08", "c09"], "importance": 2},
+    {"id": "fig02", "doc": "ch3", "page": 31, "description": "Grafico a linea prospettico 3D: asse y «Distance» da 0 a 15, asse x «Couples of features» con le 10 coppie da (1,2) a (4,5). Freccia rossa «Optimal solution» sul massimo globale (2,3); freccia verde «Suboptimal solution» sul picco locale (3,5).", "region": "centro della pagina, grafico incorniciato con le etichette delle frecce in alto a destra", "concepts": ["c13", "c14", "c10", "c11"], "importance": 3},
+    {"id": "fig03", "doc": "ch3", "page": 33, "description": "Albero della SFS con m=3, n=4: radice «1 2 3 4» con la feature 2 cerchiata in rosso; secondo livello (1 2), (2 3) cerchiata in rosso, (2 4); terzo livello (1 2 3) e (2 3 4) cerchiata in verde con la freccia «Final solution».", "region": "centro della pagina, albero a tre livelli", "concepts": ["c22", "c16", "c17", "c20"], "importance": 3},
+    {"id": "fig04", "doc": "ch3", "page": 35, "description": "Albero della SBS con m=2, n=4: radice (1, 2, 3, 4) cerchiata in rosso; secondo livello (1,2,3), (1,2,4), (1,3,4) cerchiato in rosso, (2,3,4); terzo livello (1,3) cerchiata in verde, (1,4), (3,4); a sinistra la scritta verde «Final solution» con freccia.", "region": "centro della pagina, albero a tre livelli", "concepts": ["c30", "c25", "c26", "c29"], "importance": 3},
+    {"id": "fig05", "doc": "ch3", "page": 36, "description": "Vignetta «SFS & SBS: Observations»: in alto pollice in su «Very fast even with n >>» e pollice in giù «Feature insertion/removal process is irreversible»; sotto due operai al telefono con una gru sullo sfondo e tre fumetti: «How can I choose between SFS and SBS?», «It depends on the values of n and m.», «For instance: n=200 and m=20, use SFS; n=200 and m=160, choose SBS.»", "region": "tutta la pagina: due righe di pro/contro in alto, vignetta nella metà inferiore", "concepts": ["c32", "c33", "c34", "c35", "c36"], "importance": 2},
+    {"id": "fig06", "doc": "part1", "page": 63, "description": "Distanza di Jeffries-Matusita in funzione della distanza tra le classi (stessa figura di ch3 p27): una fascia tratteggiata in rosso compresa tra due curve rosse, la inferiore che parte dall'origine e la superiore che parte da un valore positivo sull'asse verticale; entrambe salgono rapidamente e saturano sull'asintoto tratteggiato √2, dove la fascia si chiude.", "region": "metà superiore della pagina, sopra l'elenco delle proprietà di JM", "concepts": ["c44"], "importance": 2},
+    {"id": "fig07", "doc": "part1", "page": 64, "description": "Copia nelle note del grafico Distance per coppie di feature della slide ch3 p31, con le frecce «Optimal solution» e «Suboptimal solution».", "region": "metà superiore della pagina", "concepts": ["c13", "c14"], "importance": 1},
+    {"id": "fig08", "doc": "part1", "page": 65, "description": "Copie nelle note dei due alberi di esempio: in alto SFS con m=3, n=4 (soluzione finale 2 3 4), in mezzo SBS con m=2, n=4 (soluzione finale (1,3)).", "region": "albero SFS in alto, albero SBS a metà pagina", "concepts": ["c22", "c30"], "importance": 1},
+    {"id": "fig09", "doc": "part1", "page": 66, "description": "Trasformazione in coordinate polari: a sinistra «Original space» (assi x1, x2) con ω2 dentro un cerchio centrato nell'origine e ω1 fuori; al centro le formule R = sqrt(x1² + x2²) e Φ a due casi; a destra «Transformed space» con asse R orizzontale e Φ verticale tra −π e π, dove ω2 è una striscia a R piccolo e ω1 il resto.", "region": "metà inferiore della pagina, tra il testo sull'estrazione e le questioni chiave", "concepts": ["c49", "c48", "c47"], "importance": 2}
+  ],
+  "widgets": [
+    {
+      "id": "m13-righello-e-mappa",
+      "title": "Il righello e la mappa: criterio J e strategia di ricerca",
+      "concepts": ["c01", "c02"],
+      "scenario": "telerilevamento",
+      "realExample": "Immagine multispettrale di un'area agricola ripresa da drone con 4 bande (blu, rosso, infrarosso vicino NIR, infrarosso a onde corte SWIR); classi vegetazione e suolo nudo. Si vogliono tenere m = 2 bande per un classificatore leggero a bordo del drone. Il criterio J è la distanza di Bhattacharyya (o JM) tra i modelli gaussiani delle due classi stimati dai pixel etichettati. Dati sintetici ispirati a Sentinel-2.",
+      "storyboard": [
+        "Stato iniziale: a sinistra il «righello», un pannello con 4 caselle di spunta delle bande e un grafico che mostra le due nuvole di pixel (vegetazione verde, suolo marrone) nelle bande spuntate, con una barra JM da 0 a √2. A destra la «mappa», il reticolo di tutti i 15 sottinsiemi non vuoti ordinati per taglia (4 singoletti, 6 coppie, 4 terne, 1 insieme completo), tutti grigi = non ancora valutati.",
+        "Trigger: clic su un nodo del reticolo. Il nodo si riempie di colore in 300 ms secondo il valore di J, il righello mostra le nuvole proiettate su quelle bande e la formula di Bhattacharyya con i valori numerici sostituiti.",
+        "Dopo qualche clic compare un contatore «valutazioni: k» e la domanda «qual è la coppia migliore?»: lo studente capisce che il righello da solo non dice dove guardare.",
+        "Trigger: tre pulsanti di anteprima «Esaustiva», «SFS», «SBS». Ognuno disegna sul reticolo, con un tratto animato di 1 s, il percorso che quella strategia seguirebbe: tutte le coppie; singoletti poi coppie che contengono il vincitore; insieme completo poi terne poi coppie.",
+        "Chiusura: didascalia con la frase della slide p28 («once the separability criterion is adopted, it is necessary to resort to a search strategy») e la formula X* = argmax J(X) su |X| = m."
+      ],
+      "interactions": [
+        "caselle di spunta delle 4 bande",
+        "clic sui nodi del reticolo per valutarli",
+        "selettore del criterio: divergenza, Bhattacharyya, JM",
+        "slider m da 1 a 3",
+        "pulsanti di anteprima dei percorsi Esaustiva / SFS / SBS"
+      ],
+      "visual": "SVG. Reticolo dei sottinsiemi a quattro righe con nodi rettangolari arrotondati etichettati con i nomi delle bande e colorati su scala sequenziale secondo J; righello con scatter 2D delle due classi (istogrammi sovrapposti se è spuntata una sola banda) e barra JM con tacca a √2; formula live con i valori. Con prefers-reduced-motion le animazioni diventano istantanee; nodi e caselle raggiungibili da tastiera.",
+      "aha": "La misura di separabilità dice quanto vale un sottinsieme, ma non quale guardare: senza una strategia si vaga nel reticolo.",
+      "formulasShown": [
+        "X^{*}=\\arg\\max_{X\\subset Y,\\ |X|=m} J(X)",
+        "B_{ij}=\\frac{1}{8}(\\mathbf{m}_i-\\mathbf{m}_j)^{t}\\left\\{\\frac{\\Sigma_i+\\Sigma_j}{2}\\right\\}^{-1}(\\mathbf{m}_i-\\mathbf{m}_j)+\\frac{1}{2}\\ln\\left\\{\\frac{\\left|\\frac{\\Sigma_i+\\Sigma_j}{2}\\right|}{|\\Sigma_i|^{1/2}\\,|\\Sigma_j|^{1/2}}\\right\\}",
+        "JM_{ij}=\\sqrt{2(1-\\exp(-B_{ij}))}",
+        "\\text{es.: } B=1{,}20\\ \\Rightarrow\\ JM=\\sqrt{2(1-e^{-1{,}20})}=\\sqrt{2\\cdot 0{,}699}=1{,}18"
+      ],
+      "challenge": "Trova la coppia di bande con JM massimo valutando il minor numero possibile di nodi: il contatore delle valutazioni è il punteggio (il minimo garantito senza fortuna è 6).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m13-esaustiva-gira-tutte-le-carte",
+      "title": "La ricerca esaustiva: girare tutte le C(n,m) carte",
+      "concepts": ["c03", "c04", "c05", "c06"],
+      "scenario": "banca",
+      "realExample": "Rilevamento di frodi con carta di credito: 6 feature per transazione (importo, ora del giorno, distanza dal domicilio, numero di transazioni nelle ultime 24 ore, categoria dell'esercente, scostamento dalla spesa media). Il sistema di scoring in tempo reale può usarne solo m = 3; la ricerca esaustiva valuta la separabilità tra transazioni legittime e fraudolente su tutte le C(6,3) = 20 terne. Dati sintetici.",
+      "storyboard": [
+        "Stato iniziale: una griglia di 20 carte coperte, ciascuna con una terna di feature sul dorso; in alto la formula C(6,3) = 6!/(3!·3!) = 20 e un contatore 0/20.",
+        "Trigger: Play. Le carte si girano una alla volta (150 ms l'una) mostrando il valore di J; sotto la griglia si costruisce un istogramma a barre dei valori; una corona segna il migliore finora e salta su una nuova carta quando compare un valore più alto.",
+        "Fine della scansione: la corona resta sul massimo globale con il badge «ottimo garantito»; contatore 20/20 e tempo simulato totale (numero di carte × costo di una valutazione).",
+        "Trigger: slider n. Le carte si moltiplicano (n = 10, m = 3 → 120; n = 20 → 1140); oltre 2000 la griglia diventa una mappa di densità e la barra del tempo si allunga fuori scala; a n = 40, m = 10 (circa 8,5·10^8 carte) compare la stima in giorni con un microsecondo per carta e in anni con un millisecondo.",
+        "Riquadro laterale: il triangolo di Tartaglia fino a n = 12 con evidenziate la riga n e la voce m; spostando m si vede la simmetria C(n,m) = C(n,n−m) e il massimo a metà riga."
+      ],
+      "interactions": [
+        "slider n da 4 a 40",
+        "slider m da 1 a n−1",
+        "Play / Passo / velocità",
+        "selettore del costo di una valutazione (1 µs, 1 ms)"
+      ],
+      "visual": "SVG con griglia di carte animate (rotazione 3D simulata con scaleX), istogramma dei valori di J, corona per il migliore, barra del tempo su scala logaritmica, triangolo di Tartaglia con celle evidenziate. Numeri live: n, m, C(n,m), carte girate, tempo stimato. Con prefers-reduced-motion le carte si scoprono senza rotazione.",
+      "aha": "L'esaustiva non sbaglia mai, ma il numero di carte da girare esplode: l'ottimo ha un prezzo combinatorio.",
+      "formulasShown": [
+        "\\binom{n}{m}=\\frac{n!}{m!\\,(n-m)!}",
+        "X^{*}=\\arg\\max_{|X|=m}J(X)"
+      ],
+      "challenge": "Prima di muovere lo slider prevedi quante carte ci saranno con n = 12, m = 6 (risposta: 924) e con n = 12, m = 10 (risposta: 66); spiega perché il secondo numero è così piccolo.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m13-contatore-che-esplode",
+      "title": "Da 45 a 4,09·10^35: il contatore che esplode",
+      "concepts": ["c07", "c08", "c09"],
+      "scenario": "telerilevamento",
+      "realExample": "Sensore iperspettrale da satellite con circa 200 bande utili (dopo aver tolto le bande di assorbimento dell'acqua); per classificare le colture si vogliono 30 bande. La ricerca esaustiva richiederebbe 4,09·10^35 valutazioni del criterio: il widget fa sentire perché servono strategie subottime.",
+      "storyboard": [
+        "Stato iniziale: un contatore a rulli (odometro) a zero e tre pulsanti con i casi della slide p29.",
+        "Trigger: preset n = 10, m = 2. Il calcolo compare passo passo (10!/(2!8!) = 10·9/2) e i rulli girano fino a 45 in 600 ms; poi preset m = 4: 10·9·8·7/24 = 210.",
+        "Trigger: preset n = 200, m = 30. I rulli girano sempre più veloci, poi il display passa in notazione scientifica e si ferma su 4,09·10^35; sotto, un righello logaritmico da 10^0 a 10^40 con il punto che vola a 35,6 e la traduzione in tempo: circa 1,3·10^22 anni a un microsecondo per valutazione, contro 1,4·10^10 anni di età dell'universo.",
+        "Trigger: slider m con n = 200. Si disegna la curva di log10 C(200,m) in funzione di m: una campana simmetrica con il massimo a m = 100 (circa 9·10^58); un punto mobile segue m.",
+        "Trigger: interruttore «mostra SFS e SBS». Sullo stesso grafico logaritmico compaiono le curve mn − m(m−1)/2 e (n−m)(n+m+1)/2, quasi piatte tra 10^2 e 10^4: anteprima del perché SFS e SBS sono veloci."
+      ],
+      "interactions": [
+        "pulsanti preset: (10,2), (10,4), (200,30)",
+        "slider n da 2 a 300",
+        "slider m da 1 a n−1",
+        "interruttore «mostra SFS e SBS»",
+        "selettore del tempo per valutazione (1 ns, 1 µs, 1 ms)"
+      ],
+      "visual": "SVG. Odometro a cifre animate, righello logaritmico con il valore corrente, grafico log10 C(n,m) contro m con curva a campana e curve di SFS e SBS sovrapposte in colori distinti. Numeri live: C(n,m) in notazione scientifica, tempo stimato. Il calcolo usa la somma dei logaritmi per non andare in overflow.",
+      "aha": "Non è «tanto», è combinatorio: passare da n = 10 a n = 200 porta il numero dei sottinsiemi da 45 a 10^35.",
+      "formulasShown": [
+        "\\binom{10}{2}=\\frac{10!}{2!\\,8!}=45",
+        "\\binom{10}{4}=\\frac{10!}{4!\\,6!}=210",
+        "\\binom{200}{30}=\\frac{200!}{30!\\,170!}=4{,}09\\cdot10^{35}",
+        "\\log_{10}\\binom{n}{m}=\\sum_{i=1}^{m}\\log_{10}\\frac{n-m+i}{i}"
+      ],
+      "challenge": "Con n = 200 trova il valore di m che rende la ricerca esaustiva più costosa e spiega perché (m = n/2, simmetria del binomiale); poi trova il più grande n pari per cui C(n, n/2) resta sotto un miliardo (n = 32: C(32,16) ≈ 6,0·10^8, mentre C(34,17) ≈ 2,3·10^9).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m13-due-esploratori",
+      "title": "Due esploratori: strategia ottima contro strategia subottima",
+      "concepts": ["c10", "c11", "c12"],
+      "scenario": "telerilevamento",
+      "realExample": "Immagine multispettrale a 16 bande con classi urbano e suolo nudo, spettralmente simili. Si confrontano la ricerca esaustiva e la SFS nel trovare le m bande migliori secondo JM: quanto costa ciascuna e quanto è lontana dall'ottimo la soluzione subottima. Dati sintetici dichiarati: due classi gaussiane con covarianza comune a correlazione tra bande adiacenti Σ_ab = ρ^|a−b| (ρ = 0,8), differenza delle medie δ_b estratta a caso in [0; 1] per ogni banda b; J = JM calcolato dalla formula di Bhattacharyya sul sottinsieme di bande.",
+      "storyboard": [
+        "Stato iniziale (n = 12, m = 4): schermo diviso. A sinistra l'«esploratore ottimo» (esaustiva), a destra quello «subottimo» (SFS). Sotto entrambi lo stesso paesaggio: i C(12,4) = 495 sottinsiemi di taglia 4 come barre verticali sottili alte quanto J, ordinate lessicograficamente; tutte grigie.",
+        "Trigger: Play. L'esploratore di sinistra illumina le barre una dopo l'altra (scansione completa in 3 s, circa 6 ms per barra), con una corona che salta sul migliore finora; a destra si accendono solo i sottinsiemi del percorso greedy di SFS (i 12 + 11 + 10 + 9 = 42 valutati; in paesaggio si vedono solo i 9 di taglia 4 dell'ultimo passo), 150 ms l'uno. Due contatori di valutazioni scorrono in parallelo: 495 contro 42.",
+        "Tabellone finale (compare con dissolvenza di 300 ms): per ciascun esploratore valutazioni, tempo simulato (1 µs per valutazione) e valore di J trovato; a sinistra il badge «ottimo»; a destra «subottimo, gap = (J* − J_SFS)/J* = x%» oppure «ha trovato l'ottimo».",
+        "Trigger: slider n (da 6 a 16) o m. I contatori si aggiornano in 400 ms: l'esaustiva esplode (C(16,8) = 12870 per n = 16, m = 8), SFS cresce piano (100). Sotto, un grafico a due curve si ricalcola su 50 dataset casuali (Web Worker, barra di avanzamento): numero di valutazioni in scala logaritmica e gap medio in funzione di n.",
+        "Chiusura: le due definizioni della slide p30 compaiono accanto ai rispettivi esploratori («Suboptimal strategies: for saving computational time, they explore just partially the solution space…», «Optimal strategies: they guarantee a convergence to the optimal solution but are more computationally demanding»); poi la frase «In the following, first, we will see a popular suboptimal feature selection method» con un pulsante che porta al widget di SFS."
+      ],
+      "interactions": [
+        "slider n da 6 a 16",
+        "slider m da 2 a min(8, n − 1)",
+        "pulsante «nuovo dataset» (seed casuale, il seed è mostrato per riprodurre il caso)",
+        "slider ρ da 0 a 0,95 (correlazione tra bande adiacenti)",
+        "Play / Passo / velocità ×0,5–×4"
+      ],
+      "visual": "SVG. Due pannelli speculari con paesaggio di barre (grigio = non valutato, colore dell'esploratore = valutato, corona sul massimo), contatori, badge; grafico riassuntivo valutazioni/gap con asse logaritmico. I valori di JM sono calcolati in un Web Worker; formule con i valori correnti sostituiti. Con prefers-reduced-motion la scansione mostra direttamente lo stato finale.",
+      "aha": "Rinunciare alla garanzia di ottimo costa di solito poco in qualità e fa risparmiare ordini di grandezza in tempo.",
+      "formulasShown": [
+        "\\binom{n}{m}=\\frac{n!}{m!\\,(n-m)!}\\quad\\text{es. }\\binom{12}{4}=495",
+        "N_{SFS}=mn-\\frac{m(m-1)}{2}\\quad\\text{es. }4\\cdot 12-6=42",
+        "\\text{gap}=\\frac{J(X^{*})-J(X_{SFS})}{J(X^{*})}"
+      ],
+      "challenge": "Trova un seed in cui SFS non trova l'ottimo e uno in cui lo trova; poi prevedi se alzando ρ (bande più correlate, più ridondanza) il gap medio sui 50 dataset cresce o cala, e verificalo con lo slider.",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m13-dieci-coppie-ecg",
+      "title": "Le 10 coppie della slide: dove si ferma la soluzione subottima",
+      "concepts": ["c13", "c14"],
+      "scenario": "medicina",
+      "realExample": "Classificazione ECG normale contro infarto con 5 feature: 1 frequenza cardiaca, 2 durata del QRS, 3 intervallo QT, 4 intervallo PR, 5 sopraslivellamento del tratto ST. Un monitor portatile può usarne solo 2. La distanza tra le classi è calcolata per ognuna delle 10 coppie; i valori riproducono il grafico della slide p31. Dati sintetici.",
+      "storyboard": [
+        "Stato iniziale: il grafico della slide, asse y «Distance» da 0 a 15 e asse x con le 10 coppie; la linea si disegna da sinistra a destra in 1 s.",
+        "Trigger: «Esaustiva». Un cursore verticale scorre su tutti i 10 punti (200 ms per punto, 2 s in tutto), ogni punto visitato si riempie e un contatore sale da 0 a 10 = C(5,2); alla fine la coppia (2,3) si accende in rosso e la freccia «Optimal solution» entra dall'alto in 400 ms come nella slide.",
+        "Trigger: «SFS». In un riquadro compaiono, crescendo una ogni 150 ms, le 5 barre di J delle feature singole: vince la 5 (sopraslivellamento ST, la migliore da sola), che riceve un lucchetto. Sul grafico principale le 6 coppie senza la 5 si sbiadiscono (300 ms) e si accendono solo le 4 coppie che la contengono, (1,5), (2,5), (3,5), (4,5); vince (3,5), che riceve la freccia verde «Suboptimal solution». Contatore di SFS: 5 + 4 = 9 valutazioni.",
+        "Confronto: le due frecce restano insieme e un'etichetta mostra 13,5 contro 11,5 (gap circa 15%); una didascalia spiega che (2,3) non contiene la 5, quindi il percorso di SFS non poteva raggiungerla (anteprima dell'effetto nesting).",
+        "Modalità modifica: lo studente trascina le barre delle feature singole; il percorso di SFS si ricalcola dal vivo. Se la migliore da sola diventa la 2 o la 3, SFS trova l'ottimo (2,3); se diventa la 1 finisce in (1,3), se la 4 in (2,4); solo partendo dalla 5 arriva alla freccia verde (3,5). Una tabellina «feature di partenza → coppia finale» si compila man mano."
+      ],
+      "interactions": [
+        "pulsanti «Esaustiva» e «SFS»",
+        "trascinamento delle 5 barre delle feature singole",
+        "interruttore «valori della slide (approssimati)» / «dati sintetici ECG»"
+      ],
+      "visual": "SVG. Grafico a linea in stile slide ma piatto (niente prospettiva 3D), frecce rossa e verde con etichette, riquadro con le barre delle feature singole, coppie non esaminate sbiadite. Numeri live della distanza per ogni coppia al passaggio del mouse.",
+      "aha": "La soluzione subottima non è sbagliata: è un buon picco locale. L'ottimo stava dove la strategia non ha guardato.",
+      "formulasShown": [
+        "\\binom{5}{2}=10",
+        "x_1=\\arg\\max_{x}J(\\{x\\})",
+        "x_2=\\arg\\max_{x\\ne x_1}J(\\{x_1,x\\})"
+      ],
+      "challenge": "Modifica il valore della feature migliore da sola in modo che SFS trovi l'ottimo (2,3); poi spiega perché con la configurazione della slide non ci riesce.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m13-sfs-bottom-up",
+      "title": "SFS passo a passo: la selezione bottom-up delle bande",
+      "concepts": ["c15", "c16", "c17", "c18"],
+      "scenario": "telerilevamento",
+      "realExample": "Immagine multispettrale in stile Sentinel-2 con 10 bande (B2 blu, B3 verde, B4 rosso, B5-B7 red edge, B8 NIR, B8A NIR stretto, B11 e B12 SWIR); classi suolo nudo e area urbana, difficili da distinguere. Si vogliono m bande per ridurre il volume dei dati da trasmettere. Criterio: JM tra le classi. Dati sintetici con B8 e B8A quasi identiche.",
+      "storyboard": [
+        "Stato iniziale: le 10 bande come tessere su una striscia colorata per lunghezza d'onda; un vassoio vuoto «X_0 = ∅» e un grafico laterale J(X_k) contro k ancora vuoto.",
+        "Iterazione 1: ogni banda viene provata da sola; la tessera si solleva e accanto cresce una barra J({x}) (sfalsate di 80 ms). La barra più alta si illumina e la tessera scende nel vassoio con un lucchetto; la formula x_1 = argmax J({x}) mostra i numeri.",
+        "Iterazione 2: ogni banda rimasta viene provata insieme a quella già scelta; le barre ora mostrano J(X_1 ∪ {x}). La classifica cambia rispetto al passo 1: B8A, ottima da sola, aggiunge pochissimo perché ridondante con B8 e viene scavalcata (etichetta «ridondante»).",
+        "Iterazioni successive fino a |X| = m (Play: un'iterazione ogni 1,5 s; Passo: una alla volta): ogni scelta fa scendere la tessera nel vassoio (400 ms) e aggiunge un punto al grafico J(X_k), che sale in modo monotono con incrementi decrescenti.",
+        "Fine: vassoio con le m bande scelte, valore finale di J, contatore delle valutazioni N_SFS = mn − m(m−1)/2 con i valori sostituiti (es. m = 4: 40 − 6 = 34) accanto a C(n,m) (C(10,4) = 210).",
+        "Trigger: cambio di criterio (divergenza, Bhattacharyya, JM). L'algoritmo riparte da X_0 = ∅ con una transizione di 300 ms e il percorso può cambiare; con JM gli ultimi passi aggiungono pochissimo perché il criterio si avvicina a √2 (linea tratteggiata sul grafico J(X_k))."
+      ],
+      "interactions": [
+        "Play / Passo / Indietro (solo per rivedere, l'algoritmo non torna indietro)",
+        "slider m da 1 a 9",
+        "selettore del criterio",
+        "interruttore «classifica singola / classifica congiunta» per confrontare J({x}) e J(X_k ∪ {x})"
+      ],
+      "visual": "SVG. Striscia spettrale con tessere, barre dei candidati, vassoio con lucchetti, grafico J(X_k) contro k, pseudocodice con la riga corrente evidenziata, formula con valori live. Con prefers-reduced-motion i passaggi sono istantanei e resta il pulsante Passo.",
+      "aha": "SFS non somma le feature migliori da sole: a ogni passo prende quella che aggiunge di più a ciò che ha già, quindi una banda ridondante viene scavalcata.",
+      "formulasShown": [
+        "x_1=\\arg\\max_{x\\in Y}J(\\{x\\})",
+        "x^{+}=\\arg\\max_{x\\in Y\\setminus X_k}J(X_k\\cup\\{x\\})",
+        "X_{k+1}=X_k\\cup\\{x^{+}\\}",
+        "|X_k|=m\\ \\Rightarrow\\ \\text{stop}"
+      ],
+      "challenge": "Prima di ogni Passo prevedi quale banda verrà aggiunta (un punto per ogni previsione giusta). Bonus: individua la banda che è tra le migliori da sola ma non entra mai nel sottinsieme per ridondanza.",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m13-lucchetti-e-cestino",
+      "title": "Lucchetti e cestino: l'effetto nesting in avanti e all'indietro",
+      "concepts": ["c20", "c21", "c29"],
+      "scenario": "pesce",
+      "realExample": "Impianto di confezionamento pesce, salmone contro spigola, 4 feature: 1 larghezza, 2 luminosità, 3 lunghezza, 4 peso. La luminosità è la migliore da sola, ma la coppia migliore è larghezza + lunghezza (la forma del pesce). I valori di J sono gli stessi che rendono coerenti entrambi gli alberi delle slide p33 e p35: J(2) = 2,0 è il singolo migliore, J(2,3) = 3,4, J(1,3) = 3,6 è la coppia ottima, J(2,3,4) = 4,1, J(1,3,4) = 4,3. Dati sintetici.",
+      "storyboard": [
+        "Stato iniziale (dataset «coerente con le slide»): scatter salmone/spigola nelle feature del sottinsieme corrente, tabella dei 15 valori di J e reticolo dei sottinsiemi (4 singoletti, 6 coppie, 4 terne, insieme completo) tutto grigio. Trigger Passo: SFS valuta i 4 singoletti (le celle si colorano in 4 × 150 ms), la luminosità (J = 2,0) scende nel vassoio in 400 ms e le si chiude sopra un lucchetto; Passo: valuta (1,2), (2,3), (2,4) e sceglie (luminosità, lunghezza) con J = 3,4; lo scatter passa a quegli assi con una transizione di 500 ms.",
+        "Trigger: lo studente clicca il lucchetto per togliere la luminosità. Il lucchetto vibra (200 ms, 3 oscillazioni) e compare il messaggio «nesting: a feature previously selected can no more be removed from the subset» (slide p32) con la traduzione.",
+        "Trigger: «Oracolo». La ricerca esaustiva colora in 1 s tutte le 6 coppie e rivela la coppia ottima (larghezza, lunghezza) con J = 3,6; lo scatter in quelle due feature mostra le classi separate lungo la diagonale; sul reticolo le coppie mai visitate da SFS, (1,3), (1,4), (3,4), restano tratteggiate.",
+        "Grafico della curva di SFS: si disegnano in 600 ms i punti J(X_1) = 2,0 ≤ J(X_2) = 3,4 ≤ J(X_3) = 4,1, con sopra la curva tratteggiata dell'ottimo per taglia (2,0; 3,6; 4,3); il divario a k = 2 (0,2) e a k = 3 (0,2) è colorato e etichettato «prezzo del nesting».",
+        "Trigger: interruttore SBS. Si parte da tutte e 4 le feature (J = 4,6); ogni rimozione fa volare la tessera nel cestino in 400 ms e il coperchio si chiude con un sigillo. Con la tabella delle slide SBS arriva a (1,3) = ottimo. Selettore «trappola per SBS» (tabella nostra: J(1) = 1,2; J(2) = 2,0; J(3) = 1,4; J(4) = 1,8; J(1,2) = 3,0; J(1,3) = 3,3; J(1,4) = 2,4; J(2,3) = 3,2; J(2,4) = 3,5; J(3,4) = 2,2; J(1,2,3) = 4,4; J(1,2,4) = 3,9; J(1,3,4) = 3,6; J(2,3,4) = 4,0; J(1,2,3,4) = 4,6): il peso è ridondante quando ci sono larghezza e lunghezza, quindi SBS lo toglie per primo (perdita 0,2) e poi finisce in (1,3) con J = 3,3, mentre la coppia ottima è (luminosità, peso) = (2,4) con J = 3,5, che SFS trova. Clic sul cestino: il sigillo vibra e compare «previously discarded features are not reconsidered» (note p65)."
+      ],
+      "interactions": [
+        "Passo / Play / Reset",
+        "clic sul lucchetto o sul cestino (azione rifiutata con animazione)",
+        "interruttore SFS / SBS",
+        "selettore del dataset: «coerente con le slide» / «trappola per SBS» / «tabella libera»",
+        "pulsante «Oracolo» (ricerca esaustiva)",
+        "in «tabella libera»: trascinamento verticale dei 15 valori di J tra 0 e 6 con monotonia imposta (un sottinsieme non può valere meno dei suoi sottoinsiemi)"
+      ],
+      "visual": "SVG. Scatter delle due classi con assi che cambiano secondo il sottinsieme, vassoio con lucchetti, cestino, reticolo dei sottinsiemi con percorsi, grafico delle curve J(X_k) di SFS/SBS e dell'ottimo per taglia. Colori per ruolo: selezionate, scartate, mai visitate (tratteggio). Formule con i valori sostituiti che si aggiornano a ogni passo.",
+      "aha": "Il greedy prende il massimo guadagno subito ma si lega le mani: il miglior sottinsieme di taglia 2 può non contenere la migliore feature da sola (SFS), oppure una feature scartata presto perché ridondante nell'insieme grande (SBS).",
+      "formulasShown": [
+        "X_1\\subset X_2\\subset\\cdots\\subset X_m\\quad\\text{es. }\\{2\\}\\subset\\{2,3\\}\\subset\\{2,3,4\\}",
+        "Y=X_0\\supset X_1\\supset\\cdots\\supset X_{n-m}\\quad\\text{es. }\\{1,2,3,4\\}\\supset\\{1,3,4\\}\\supset\\{1,3\\}",
+        "J(X_1)\\le J(X_2)\\le\\cdots\\le J(X_m)\\quad\\text{es. }2{,}0\\le 3{,}4\\le 4{,}1",
+        "D_{ij}(f_1,\\dots,f_k)\\le D_{ij}(f_1,\\dots,f_k,f_{k+1})"
+      ],
+      "challenge": "In «tabella libera» costruisci un caso in cui sia SFS sia SBS mancano l'ottimo di taglia 2 (il widget verifica con l'Oracolo). Soluzione di riferimento: la migliore da sola (es. la 2) non deve stare nella coppia ottima (es. (1,3)) e la terna migliore non deve contenere entrambe le feature della coppia ottima (es. (1,2,4)); per esempio J(1) = 1,0; J(2) = 2,0; J(3) = 1,2; J(4) = 1,5; J(1,2) = 2,8; J(1,3) = 3,6; J(1,4) = 2,6; J(2,3) = 3,0; J(2,4) = 3,2; J(3,4) = 2,4; J(1,2,3) = 3,9; J(1,2,4) = 4,2; J(1,3,4) = 3,8; J(2,3,4) = 3,6; J(1,2,3,4) = 4,5: SFS e SBS danno entrambe (2,4) con J = 3,2.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m13-albero-sfs",
+      "title": "L'albero della slide: SFS con m = 3 e n = 4",
+      "concepts": ["c19", "c22", "c23"],
+      "scenario": "pesce",
+      "realExample": "Le stesse 4 feature del pesce (1 larghezza, 2 luminosità, 3 lunghezza, 4 peso) con la stessa tabella di J del widget sui lucchetti: l'albero della slide p33 prende vita con numeri concreti. Dati sintetici.",
+      "storyboard": [
+        "Stato iniziale: la radice «1 2 3 4» (nomi delle feature del pesce al passaggio del mouse); Passo: su ogni feature compare una bolla con J({i}), una ogni 150 ms: 1,1; 2,0; 1,6; 1,3. La bolla più alta pulsa e la feature 2 viene cerchiata in rosso come nella slide (tratto del cerchio disegnato in 400 ms). Il pseudocodice evidenzia la riga x_1 = argmax J({x}).",
+        "Trigger: Passo. Tre frecce crescono dalla radice (300 ms) verso (1 2), (2 3), (2 4); le bolle J = 2,6; 3,4; 2,9 compaiono in sequenza (150 ms l'una); (2 3) cerchiata in rosso; la formula mostra argmax{2,6; 3,4; 2,9} = 3,4 → x⁺ = 3.",
+        "Trigger: Passo. Due frecce verso (1 2 3) e (2 3 4) con J = 3,7 e 4,1; (2 3 4) cerchiata in verde con la freccia «Final solution» che entra da destra (400 ms). Il pseudocodice evidenzia la condizione di arresto |X_k| = m = 3.",
+        "Pannello conteggi (si riempie mentre si procede): 4 + 3 + 2 = 9 valutazioni = mn − m(m−1)/2 = 12 − 3; confronto con C(4,3) = 4: con n piccolo l'esaustiva costa meno. Uno slider n da 4 a 200 (m fisso a 3) ridisegna in tempo reale le due curve N_SFS = 3n − 3 e C(n,3) e segna l'incrocio: per n = 5 l'esaustiva vince ancora (10 contro 12), da n = 6 in poi SFS fa meno valutazioni (15 contro 20; per n = 200: 597 contro 1 313 400).",
+        "Interruttore «mostra i nodi mai visitati»: compaiono sbiaditi, con dissolvenza di 300 ms, (1,3), (1,4), (3,4) e (1,3,4); la bolla di (1,3,4) = 4,3 si accende in arancione con la scritta «migliore della soluzione finale (4,1)»."
+      ],
+      "interactions": [
+        "Passo / Play",
+        "hover sui nodi per leggere J",
+        "slider m da 1 a 3",
+        "slider n da 4 a 200 per il confronto dei conteggi",
+        "interruttore «mostra i nodi mai visitati»"
+      ],
+      "visual": "SVG. Albero con la stessa impaginazione della slide p33 (cerchi rossi per le scelte intermedie, verde per la soluzione finale), bolle con i valori di J, pseudocodice sincronizzato, pannello dei conteggi con formula e grafico N_SFS contro C(n,m).",
+      "aha": "SFS esamina solo i sottinsiemi che contengono le scelte precedenti: pochi e piccoli, e per questo può mancare (1,3,4).",
+      "formulasShown": [
+        "X_0=\\emptyset",
+        "x^{+}=\\arg\\max_{x\\in Y\\setminus X_k}J(X_k\\cup\\{x\\})\\quad\\text{es. }\\arg\\max\\{J(1,2),J(2,3),J(2,4)\\}=\\arg\\max\\{2{,}6;\\,3{,}4;\\,2{,}9\\}\\Rightarrow x^{+}=3",
+        "N_{SFS}=mn-\\frac{m(m-1)}{2}=3\\cdot 4-\\frac{3\\cdot 2}{2}=9"
+      ],
+      "challenge": "Senza guardare, prevedi il numero di valutazioni di SFS per n = 10, m = 4 (34) e confrontalo con C(10,4) = 210.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m13-sbs-top-down",
+      "title": "SBS top-down: togliere la banda che fa meno danno",
+      "concepts": ["c24", "c25", "c26", "c27"],
+      "scenario": "telerilevamento",
+      "realExample": "Sensore iperspettrale ridotto a 12 bande tra 400 e 2400 nm per la dimostrazione, classi vegetazione sana e vegetazione in stress idrico (lo stress si vede soprattutto nel red edge e nello SWIR, dove l'acqua delle foglie assorbe). Si vogliono tenere m bande per un sensore multispettrale economico: SBS parte da tutte e toglie quelle la cui assenza riduce meno la separabilità JM. Dati sintetici dichiarati: due classi gaussiane, 3 coppie di bande adiacenti quasi gemelle (correlazione 0,98), J calcolato con la formula di Bhattacharyya sulle bande rimaste.",
+      "storyboard": [
+        "Stato iniziale: le 12 bande come tessere colorate per lunghezza d'onda nel vassoio, X_0 = Y, con la barra verticale piena di J(Y) e la scritta |X_0| = n = 12.",
+        "Trigger: Passo. Ogni banda viene tolta per prova, una ogni 120 ms: la tessera si sbiadisce al 30% e sotto cresce (200 ms) una barra rossa verso il basso lunga quanto la perdita J(X_k) − J(X_k∖{x}), con il valore numerico. Finita la scansione, la perdita minima pulsa due volte e quella tessera scivola nel cestino (500 ms); le altre tornano opache.",
+        "Le prime bande a uscire sono quelle con una gemella adiacente quasi identica: la loro perdita è quasi zero e la tessera riceve l'etichetta «ridondante» con una linea che la collega alla gemella rimasta.",
+        "Play ripete i passi ogni 1,5 s fino a |X| = m; a ogni rimozione un punto si aggiunge al grafico J(X_k) contro il numero di rimozioni k, che scende piano all'inizio (si tolgono le ridondanti) e più ripido alla fine (si tolgono bande informative).",
+        "Fine: bande rimaste evidenziate sulla striscia spettrale, valore di J, numero di iterazioni n − m e contatore delle valutazioni N_SBS = (n−m)(n+m+1)/2 con i valori sostituiti, confrontato con C(n,m)."
+      ],
+      "interactions": [
+        "Play / Passo / Reset / velocità",
+        "slider m da 1 a 11",
+        "selettore del criterio: divergenza, Bhattacharyya, JM",
+        "interruttore «mostra perdita / mostra J residuo»",
+        "clic su una tessera prima del Passo per scommettere su quale banda uscirà"
+      ],
+      "visual": "SVG. Vassoio di tessere spettrali, barre delle perdite verso il basso, cestino animato, grafico decrescente di J, pseudocodice con la riga corrente, formule con i valori live. Con prefers-reduced-motion le tessere cambiano stato senza scivolare.",
+      "aha": "SBS guarda cosa si perde: toglie prima le bande ridondanti, perché senza di loro la separabilità quasi non cambia.",
+      "formulasShown": [
+        "X_0=Y,\\quad |X_0|=12",
+        "x^{-}=\\arg\\min_{x\\in X_k}\\left[J(X_k)-J(X_k\\setminus\\{x\\})\\right]",
+        "X_{k+1}=X_k\\setminus\\{x^{-}\\}",
+        "|X_k|=m\\ \\Rightarrow\\ \\text{stop}",
+        "N_{SBS}=\\frac{(n-m)(n+m+1)}{2}\\quad\\text{es. }n=12,\\ m=4:\\ \\frac{8\\cdot 17}{2}=68\\ \\text{vs}\\ \\binom{12}{4}=495"
+      ],
+      "challenge": "Prevedi quale banda verrà rimossa per prima (indizio: cerca due bande vicine quasi identiche), poi prevedi l'ultima banda che resterà con m = 1.",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m13-albero-sbs",
+      "title": "L'albero della slide: SBS con m = 2 e n = 4",
+      "concepts": ["c28", "c30", "c31"],
+      "scenario": "pesce",
+      "realExample": "Le stesse 4 feature del pesce e la stessa tabella di J degli altri widget: l'albero della slide p35 con numeri concreti, così lo studente può confrontarlo con quello di SFS. Dati sintetici.",
+      "storyboard": [
+        "Stato iniziale: la radice (1, 2, 3, 4) con la bolla J = 4,6; il cerchio rosso si disegna in 400 ms come nella slide. Il pseudocodice evidenzia X_0 = Y.",
+        "Trigger: Passo. Quattro frecce crescono dalla radice (300 ms) verso (1,2,3), (1,2,4), (1,3,4), (2,3,4); per ciascun nodo, uno ogni 200 ms, compaiono J = 3,7; 3,5; 4,3; 4,1 e un badge rosso con la perdita −0,9; −1,1; −0,3; −0,5 (lunghezza del badge proporzionale alla perdita). Il badge più corto pulsa, (1,3,4) viene cerchiato in rosso e la feature 2 cade dal nodo verso un cestino (500 ms): è quella la cui rimozione costa meno.",
+        "Trigger: Passo. Da (1,3,4) tre frecce verso (1,3), (1,4), (3,4) con J = 3,6; 2,5; 3,0 e perdite −0,7; −1,8; −1,3; (1,3) cerchiata in verde con la freccia «Final solution» che entra da sinistra (400 ms), come nella slide. Il pseudocodice evidenzia l'arresto |X_k| = m = 2.",
+        "Pannello conteggi (si riempie mentre si procede): 4 + 3 = 7 valutazioni = (n−m)(n+m+1)/2 = 2·7/2, contro C(4,2) = 6 dell'esaustiva.",
+        "Interruttore «mostra i nodi mai visitati»: con dissolvenza di 300 ms compaiono sbiadite le coppie con la feature 2, (1,2), (2,3), (2,4); interruttore «confronta con SFS»: accanto si disegna l'albero di SFS con m = 2 sulla stessa tabella ({2} → (2,3), J = 3,4) e il verdetto «SBS 3,6 > SFS 3,4»."
+      ],
+      "interactions": [
+        "Passo / Play / Reset",
+        "hover sui nodi per leggere J e la perdita",
+        "slider m da 1 a 3 (m = 3: un solo passo, (1,3,4); m = 1: tre passi, finisce in {3} con J = 1,6)",
+        "interruttore «mostra i nodi mai visitati»",
+        "interruttore «confronta con SFS»"
+      ],
+      "visual": "SVG. Albero con l'impaginazione della slide p35, badge con le perdite, cerchi rosso/verde, cestino con le feature tolte, pseudocodice sincronizzato e conteggi con i valori sostituiti.",
+      "aha": "Lo stesso albero, capovolto: SBS esamina tutti i sottinsiemi grandi e solo pochi di quelli piccoli.",
+      "formulasShown": [
+        "x^{-}=\\arg\\max_{x\\in X_k}J(X_k\\setminus\\{x\\})\\quad\\text{es. }\\arg\\max\\{3{,}7;\\,3{,}5;\\,4{,}3;\\,4{,}1\\}\\Rightarrow X_1=\\{1,3,4\\},\\ x^{-}=2",
+        "J(X_0)-J(X_0\\setminus\\{2\\})=4{,}6-4{,}3=0{,}3\\ \\ (\\text{perdita minima})",
+        "N_{SBS}=\\frac{(n-m)(n+m+1)}{2}=\\frac{2\\cdot 7}{2}=7"
+      ],
+      "challenge": "Con gli stessi valori esegui a mano SFS per m = 2: ottieni (2,3) con J = 3,4, mentre SBS trova (1,3) con J = 3,6. Quale dei due è l'ottimo? Verificalo con l'interruttore dei nodi mai visitati.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m13-veloci-ma-senza-ritorno",
+      "title": "Veloci ma senza ritorno",
+      "concepts": ["c32", "c33"],
+      "scenario": "cifre",
+      "realExample": "Riconoscimento di cifre scritte a mano in stile MNIST: distinguere il 3 dall'8 usando solo m pixel dei 784 di un'immagine 28×28 (per esempio per un lettore a bassissimo consumo). La ricerca esaustiva con m = 30 richiederebbe circa 1,45·10^54 valutazioni; SFS ne fa 23085. Dati sintetici.",
+      "storyboard": [
+        "Stato iniziale: tre corsie di gara orizzontali, «Esaustiva», «SFS», «SBS»; il traguardo di ogni corsia è il numero di valutazioni necessarie per n = 784 e m = 30 (circa 1,45·10^54; 23085; 307255); la velocità è la stessa per tutti (una valutazione ogni microsecondo, tempo simulato).",
+        "Trigger: Via. In 3 s reali la corsia di SFS arriva al traguardo (23085 valutazioni ≈ 0,023 s simulati), quella di SBS in 3 s successivi (307255 ≈ 0,31 s); il corridore dell'esaustiva si sposta di meno di un pixel e accanto compare, con un contatore che si ferma in 1 s, la stima «circa 4,6·10^40 anni».",
+        "Durante la corsa di SFS, sopra la corsia, una griglia 28×28 accende i pixel nell'ordine in cui vengono scelti (uno ogni 100 ms, con il numero d'ordine): emergono i pixel a sinistra al centro, dove l'8 chiude gli anelli e il 3 resta aperto. Icona del pollice in su con la frase della slide: «Very fast even with n >>».",
+        "Trigger: pulsante «togli questo pixel» su un pixel già scelto. Il pulsante resta disattivato con un lucchetto che vibra (200 ms); icona del pollice in giù: «Feature insertion/removal process is irreversible». In modalità SBS lo stesso vale per il pulsante «rimetti questo pixel» su un pixel già scartato.",
+        "Grafico riassuntivo (appare in 600 ms a fine gara): valutazioni contro n (8×8 = 64, 14×14 = 196, 28×28 = 784) su scala logaritmica per le tre strategie, con il punto corrente evidenziato."
+      ],
+      "interactions": [
+        "slider m da 1 a 60",
+        "selettore della risoluzione: 8×8, 14×14, 28×28",
+        "pulsante «Via»",
+        "pulsante «togli questo pixel» (sempre bloccato durante l'algoritmo)",
+        "interruttore SFS / SBS per la griglia"
+      ],
+      "visual": "SVG/canvas. Corsie animate con contatori, griglia di pixel con intensità della scelta, icone pollice su/giù come nella slide p36, grafico logaritmico delle valutazioni.",
+      "aha": "La velocità nasce proprio dall'irreversibilità: non tornare mai indietro è ciò che taglia lo spazio di ricerca.",
+      "formulasShown": [
+        "N_{SFS}=mn-\\frac{m(m-1)}{2}=30\\cdot 784-\\frac{30\\cdot 29}{2}=23085",
+        "N_{SBS}=\\frac{(n-m)(n+m+1)}{2}=\\frac{754\\cdot 815}{2}=307255",
+        "\\binom{784}{30}\\approx 1{,}45\\cdot10^{54}"
+      ],
+      "challenge": "Per n = 784 trova il valore di m oltre il quale SBS fa meno valutazioni di SFS (m > 392 = n/2).",
+      "size": "M",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "m13-cantiere-sfs-o-sbs",
+      "title": "Il cantiere: SFS o SBS?",
+      "concepts": ["c34", "c35", "c36", "c41"],
+      "scenario": "telerilevamento",
+      "realExample": "Immagine iperspettrale con n = 200 bande, come nell'esempio della slide p36. Due casi d'uso: un classificatore leggero con m = 20 bande e una compressione che conserva m = 160 bande. Il widget riproduce la vignetta dei due operai e rende la regola quantitativa.",
+      "storyboard": [
+        "Stato iniziale: i due operai stilizzati della vignetta p36 con la gru sullo sfondo; il fumetto «How can I choose between SFS and SBS?» si scrive lettera per lettera in 800 ms, poi dopo 400 ms la risposta «It depends on the values of n and m» (con traduzione sotto).",
+        "Trigger: slider m (con n = 200). Il terzo fumetto si aggiorna dal vivo (dissolvenza di 150 ms a ogni cambio di verdetto): «n=200 e m=20: usa SFS (20 iterazioni contro 180)», «n=200 e m=160: scegli SBS (40 iterazioni contro 160)»; ai due valori della slide il fumetto riporta la frase originale «For instance: n=200 and m=20, use SFS; n=200 and m=160, choose SBS».",
+        "Trigger: Play. Due barre di avanzamento corrono in parallelo alla stessa velocità (un'iterazione ogni 20 ms): quella di SFS si riempie da 0 fino a m, quella di SBS si svuota da n fino a m; la prima che arriva riceve la bandierina «viaggio più corto».",
+        "Mappa nel piano (n, m) con m < n: regione m < n/2 in blu (SFS), regione m > n/2 in arancione (SBS), diagonale m = n/2 grigia etichettata «pareggio». Il punto corrente segue gli slider con una transizione di 150 ms; attraversando la diagonale il colore del punto si inverte. I due casi della slide sono marcati con una stella.",
+        "Pannello dei conteggi: N_SFS, N_SBS e la differenza (n+1)(m − n/2) con i valori sostituiti, aggiornati dal vivo; sulla diagonale compare il badge «pareggio → SFS (matrici più piccole, note p66)» che rimanda al widget sulle matrici."
+      ],
+      "interactions": [
+        "slider n da 10 a 300",
+        "slider m da 1 a n−1",
+        "preset (200,20), (200,160), (200,100)"
+      ],
+      "visual": "SVG. Vignetta stilizzata con fumetti dinamici, due barre di avanzamento, mappa (n,m) con regioni colorate e diagonale, formule con valori sostituiti.",
+      "aha": "Si parte dal lato più vicino alla meta: se se ne tengono poche si costruisce, se se ne tengono tante si toglie.",
+      "formulasShown": [
+        "\\text{iterazioni: SFS}=m,\\quad\\text{SBS}=n-m",
+        "N_{SFS}-N_{SBS}=(n+1)\\left(m-\\frac{n}{2}\\right)",
+        "\\text{es. } n=200,\\ m=20:\\ 201\\cdot(20-100)=-16080=3810-19890\\ \\Rightarrow\\ \\text{SFS}",
+        "\\text{es. } n=200,\\ m=160:\\ 201\\cdot(160-100)=12060=19280-7220\\ \\Rightarrow\\ \\text{SBS}"
+      ],
+      "challenge": "Quiz a tempo: 10 coppie (n, m) casuali, rispondi SFS o SBS entro 3 secondi ciascuna; nei casi di pareggio la risposta giusta è SFS.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m13-pareggio-matrici",
+      "title": "Pareggio? Guarda la taglia delle matrici",
+      "concepts": ["c37", "c38", "c39", "c40"],
+      "scenario": "telerilevamento",
+      "realExample": "Immagine multispettrale con n = 10 bande da ridurre a m = 5: SFS e SBS fanno lo stesso numero di iterazioni (5) e di valutazioni (40). Per ogni valutazione del criterio di Bhattacharyya bisogna invertire la matrice di covarianza media delle classi e calcolarne il determinante sulle bande del sottinsieme: la taglia di quella matrice decide il costo.",
+      "storyboard": [
+        "Stato iniziale: due corsie, SFS e SBS, con i contatori di iterazioni (5 e 5) e di valutazioni (10+9+8+7+6 = 40 per entrambe) identici: badge grigio «pareggio».",
+        "Trigger: Play. Le 40 valutazioni di ogni corsia scorrono in parallelo, una ogni 100 ms (4 s in tutto): a ogni valutazione compare la matrice di covarianza media (Σ_i+Σ_j)/2 del sottinsieme come griglia k×k di celle colorate secondo il valore, che cresce o si restringe con un'animazione di scala di 150 ms. Nella corsia SFS le matrici crescono da 1×1 (10 volte) a 5×5 (6 volte), nella corsia SBS partono da 9×9 (10 volte) e scendono fino a 5×5 (6 volte).",
+        "Un contatore di costo per corsia accumula k³ a ogni valutazione (costo indicativo di inversa e determinante di una matrice k×k), con una barra orizzontale che si allunga: alla fine 1496 unità per SFS contro 16904 per SBS; la barra di SBS esce dal riquadro e la scala si ridimensiona in 400 ms.",
+        "Compaiono una dopo l'altra (dissolvenza di 300 ms, 1 s di distanza) le tre frasi delle note p66 con traduzione: SFS parte dall'insieme vuoto e le matrici restano piccole fino a m; SBS parte da tutte le n feature e le matrici sono grandi all'inizio; «in cases of a tie or uncertainty, SFS is preferable».",
+        "Trigger: slider n (pari, con m = n/2). Contatori e rapporto dei costi SBS/SFS si ricalcolano all'istante: circa 4,7 per n = 4, 11 per n = 10, 15 per n = 20, 18 per n = 40; un piccolo grafico del rapporto contro n si allunga punto per punto."
+      ],
+      "interactions": [
+        "Play / Passo",
+        "slider n da 4 a 40 (pari, m = n/2)",
+        "interruttore del modello di costo: k³ oppure k²"
+      ],
+      "visual": "SVG. Due corsie con matrici a griglia che crescono o si restringono con animazione di scala, contatori di costo, formula di Bhattacharyya con la parte da invertire evidenziata, rapporto dei costi live.",
+      "aha": "A parità di passi conta quanto è grande ogni passo: SFS lavora quasi sempre con matrici piccole.",
+      "formulasShown": [
+        "B_{ij}=\\frac{1}{8}(\\mathbf{m}_i-\\mathbf{m}_j)^{t}\\left\\{\\frac{\\Sigma_i+\\Sigma_j}{2}\\right\\}^{-1}(\\mathbf{m}_i-\\mathbf{m}_j)+\\frac{1}{2}\\ln\\left\\{\\frac{\\left|\\frac{\\Sigma_i+\\Sigma_j}{2}\\right|}{|\\Sigma_i|^{1/2}\\,|\\Sigma_j|^{1/2}}\\right\\}",
+        "\\text{costo}\\approx\\sum_{\\text{valutazioni}}k^{3}",
+        "\\text{SFS: }10\\cdot1^{3}+9\\cdot2^{3}+8\\cdot3^{3}+7\\cdot4^{3}+6\\cdot5^{3}=1496",
+        "\\text{SBS: }10\\cdot9^{3}+9\\cdot8^{3}+8\\cdot7^{3}+7\\cdot6^{3}+6\\cdot5^{3}=16904"
+      ],
+      "challenge": "Prima di muovere lo slider stima il rapporto dei costi SBS/SFS per n = 20, m = 10 (circa 15). Poi prevedi se il rapporto continua a crescere senza limite o tende a stabilizzarsi quando n aumenta, e verificalo portando lo slider a n = 40 (si stabilizza: per n grande il rapporto tende a 62/3 ≈ 20,7, perché le somme valgono circa 0,3·m^5 per SFS e 6,2·m^5 per SBS).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m13-stesso-risultato",
+      "title": "SFS e SBS arrivano allo stesso sottinsieme?",
+      "concepts": ["c42", "c43", "c52"],
+      "scenario": "pesce",
+      "realExample": "Le 4 feature del pesce in due versioni del dataset: feature indipendenti (il criterio si somma feature per feature) e feature complementari (larghezza e lunghezza insieme descrivono la forma). È la domanda d'orale «if the result of SFS and SBS can be the same». Dati sintetici.",
+      "storyboard": [
+        "Stato iniziale: due alberi affiancati sulle 4 feature del pesce, SFS che scende da sinistra (dal livello dei singoletti) e SBS che risale da destra (dall'insieme completo), con al centro il riquadro «verdetto» vuoto e sotto la tabella dei 15 valori di J della modalità corrente.",
+        "Trigger: pulsante «cosa vede ciascuna». Nell'albero di SFS si evidenziano in 300 ms i singoletti del primo livello con l'etichetta «giudicate da sole (optimizes singularly, p32)»; in quello di SBS l'insieme completo con l'etichetta «giudicate insieme a tutte le altre (lowest decrease, p34)». Con la tabella del pesce SFS si lega alla luminosità (la migliore da sola, J = 2,0), mentre SBS conserva la coppia complementare larghezza + lunghezza.",
+        "Trigger: modalità «feature indipendenti» (J additivo: J(1) = 1,1; J(2) = 2,0; J(3) = 1,6; J(4) = 1,3 e ogni sottinsieme vale la somma, es. J(2,3) = 3,6). I due alberi si sviluppano in parallelo, un livello ogni 700 ms, e finiscono entrambi in (2,3); il verdetto mostra «=» e il badge «uguale all'ottimo»; la formula dell'additività D_ij(f_1,…,f_k) = Σ D_ij(f_q) (ch3 p19) si evidenzia.",
+        "Trigger: modalità «feature complementari» (tabella coerente con le slide p33 e p35). Con m = 2 SFS arriva a (2,3) con J = 3,4, SBS a (1,3) con J = 3,6; il verdetto mostra «≠» e l'Oracolo indica l'ottimo (1,3). Modalità «trappola per SBS» (tabella del widget sui lucchetti): SFS trova l'ottimo (2,4) = 3,5, SBS si ferma in (1,3) = 3,3. Modalità «coincidono ma sbagliano»: con la tabella J(1) = 1,0; J(2) = 2,0; J(3) = 1,2; J(4) = 1,5; J(1,2) = 2,8; J(1,3) = 3,6; J(1,4) = 2,6; J(2,3) = 3,0; J(2,4) = 3,2; J(3,4) = 2,4; J(1,2,3) = 3,9; J(1,2,4) = 4,2; J(1,3,4) = 3,8; J(2,3,4) = 3,6; J(1,2,3,4) = 4,5 entrambe danno (2,4) = 3,2, il verdetto mostra «=» ma con il badge rosso «entrambe subottime: ottimo (1,3) = 3,6».",
+        "Trigger: slider m. Con m = 1 SFS coincide per costruzione con l'esaustiva (tabella delle slide: SFS {2} = 2,0, SBS {3} = 1,6); con m = 3 = n − 1 SBS coincide con l'esaustiva (SBS (1,3,4) = 4,3, SFS (2,3,4) = 4,1): questi casi vengono evidenziati con il badge «ottimo certo» sulla strategia giusta.",
+        "Chiusura: una tabella riassuntiva si compila riga per riga, una riga ogni 500 ms (direzione, partenza, passo, arresto, numero di valutazioni, ottimalità, quando usarla) per esaustiva, SFS e SBS."
+      ],
+      "interactions": [
+        "selettore della tabella: «indipendenti» / «complementari (slide)» / «trappola per SBS» / «coincidono ma sbagliano»",
+        "slider m da 1 a 3",
+        "Play / Passo per far avanzare i due alberi insieme",
+        "pulsante «tabella casuale» (15 valori tra 0 e 6 con monotonia imposta; contatore dei casi =, ≠, ottimo trovato)",
+        "pulsante «mostra tabella riassuntiva»"
+      ],
+      "visual": "SVG. Due alberi speculari con cerchi rossi per le scelte intermedie e verdi per le soluzioni finali come nelle slide, riquadro del verdetto (=, ≠, ottimo/subottimo), tabella J modificabile, tabella comparativa finale con le celle che si riempiono in sequenza.",
+      "aha": "Possono coincidere, ma nessuna delle due lo garantisce: coincidono di sicuro solo quando il criterio si somma feature per feature, o nei casi estremi m = 1 e m = n − 1.",
+      "formulasShown": [
+        "D_{ij}(f_1,\\dots,f_k)=\\sum_{q=1}^{k}D_{ij}(f_q)\\quad\\text{es. }J(2,3)=J(2)+J(3)=2{,}0+1{,}6=3{,}6",
+        "X_{SFS}\\overset{?}{=}X_{SBS}\\overset{?}{=}X^{*}=\\arg\\max_{|X|=m}J(X)",
+        "\\binom{n}{m}\\ \\text{vs}\\ mn-\\frac{m(m-1)}{2}\\ \\text{vs}\\ \\frac{(n-m)(n+m+1)}{2}"
+      ],
+      "challenge": "Genera tabelle casuali finché trovi un caso in cui SFS batte SBS, uno in cui SBS batte SFS e uno in cui coincidono senza essere ottime; poi scrivi la risposta d'orale in due frasi e confrontala con quella di riferimento («Sì, possono coincidere, e coincidono con certezza, anche con l'ottimo, se il criterio è additivo (feature indipendenti); in generale però esplorano parti diverse dello spazio e nessuna delle due garantisce l'ottimo né di dare lo stesso risultato dell'altra»).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m13-jm-satura",
+      "title": "Il criterio che la ricerca insegue: JM satura a √2",
+      "concepts": ["c44", "c45", "c46"],
+      "scenario": "telerilevamento",
+      "realExample": "Coppie di classi da immagine multispettrale: acqua contro vegetazione (separatissime nell'infrarosso vicino) e suolo nudo contro urbano (poco separate). Usando JM come criterio per la selezione, per la prima coppia quasi tutti i sottinsiemi valgono circa √2, per la seconda i valori sono ben distinti. Dati sintetici.",
+      "storyboard": [
+        "Stato iniziale: a sinistra due gaussiane 1D (classe ω_i e ω_j) con slider della distanza tra le medie; a destra il grafico di JM contro la distanza tra le classi, disegnato come nella figura di p63: asintoto tratteggiato √2 e fascia tratteggiata tra due curve, la inferiore per varianze uguali (parte da 0) e la superiore per varianze diverse (parte da un valore positivo, lettura nostra della fascia), con un punto mobile.",
+        "Trigger: slider Δμ. Le due gaussiane si allontanano in tempo reale e il punto scorre lungo la curva (inseguimento con molla di circa 150 ms), rallentando vicino a √2; accanto, i valori live di B e JM. Trigger: pulsante «Anima» porta Δμ da 0 a 6σ in 3 s. Interruttore «sovrapponi B e D»: in 500 ms si disegnano le curve di Bhattacharyya e divergenza, che continuano a crescere senza limite (nessuna saturazione) ed escono dal grafico in alto.",
+        "Trigger: pulsante «scambia le classi». Le due gaussiane si scambiano colore e posizione in 400 ms; il valore di JM resta identico e lampeggia in verde con la scritta JM_ij = JM_ji.",
+        "Trigger: pulsante «classi identiche» (Δμ = 0 e σ_i = σ_j, transizione di 600 ms): le curve si sovrappongono e JM va a 0; muovendo poi lo slider σ_j con Δμ = 0, JM torna positivo (il termine logaritmico di B non è nullo): vale zero solo per distribuzioni identiche. Il punto sul grafico di destra sale dalla curva inferiore verso quella superiore della fascia.",
+        "Collegamento con la ricerca (selettore della coppia di classi, istogramma ridisegnato in 600 ms): istogramma di JM su tutte le 45 coppie di 10 bande per le due coppie di classi; per acqua/vegetazione le barre sono schiacciate contro la linea √2 (il criterio distingue poco tra i sottinsiemi), per suolo/urbano sono ben distribuite tra 0,3 e 1,2."
+      ],
+      "interactions": [
+        "slider Δμ da 0 a 6σ",
+        "slider σ_i e σ_j",
+        "pulsante «scambia le classi»",
+        "interruttore «sovrapponi B e D»",
+        "selettore della coppia di classi"
+      ],
+      "visual": "SVG. Due densità gaussiane colorate per classe, curva JM con asintoto e punto live, curve B e D opzionali, istogramma dei JM dei sottinsiemi con linea a √2. Numeri live di B, JM e D.",
+      "aha": "JM non esplode: oltre una certa separazione tutti i sottinsiemi buoni valgono quasi √2, il criterio è stabile ma smette di distinguerli.",
+      "formulasShown": [
+        "JM_{ij}=\\sqrt{2(1-\\exp(-B_{ij}))}",
+        "0\\le JM_{ij}\\le\\sqrt{2}",
+        "JM_{ij}=JM_{ji}",
+        "B_{ij}=\\frac{(\\mu_i-\\mu_j)^{2}}{4(\\sigma_i^{2}+\\sigma_j^{2})}+\\frac{1}{2}\\ln\\frac{\\sigma_i^{2}+\\sigma_j^{2}}{2\\sigma_i\\sigma_j}",
+        "\\text{es. }\\sigma_i=\\sigma_j=\\sigma,\\ \\Delta\\mu=2\\sigma:\\ B=\\frac{4\\sigma^{2}}{8\\sigma^{2}}=0{,}5,\\ \\ JM=\\sqrt{2(1-e^{-0{,}5})}=0{,}89"
+      ],
+      "challenge": "Trova la distanza tra le medie (varianze uguali) per cui JM raggiunge il 95% di √2: serve B ≈ 2,33, cioè Δμ ≈ 4,3σ.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m13-estrazione-polare",
+      "title": "Dalla selezione all'estrazione: la feature R che separa tutto",
+      "concepts": ["c47", "c48", "c49"],
+      "scenario": "sensori",
+      "realExample": "Monitoraggio delle vibrazioni di un cuscinetto con un accelerometro a due assi (componenti x1 e x2). In funzionamento normale la vibrazione ha ampiezza piccola (punti dentro un cerchio), con un guasto l'ampiezza cresce (punti in un anello esterno). Le due componenti hanno importanza simile e nessuna delle due da sola separa le classi; l'ampiezza R = sqrt(x1² + x2²) sì. Dati sintetici.",
+      "storyboard": [
+        "Stato iniziale: scatter nel piano (x1, x2) con i punti normali dentro il cerchio (ω2) e i guasti fuori (ω1); sugli assi gli istogrammi delle proiezioni, completamente sovrapposti; J({x1}) ≈ J({x2}), entrambi bassi.",
+        "Tentativo di selezione: SFS con m = 1 sceglie x1 o x2, ma l'istogramma resta sovrapposto: nessun sottinsieme delle feature originali funziona.",
+        "Trigger: «Trasforma». Ogni punto percorre in 1,2 s una traiettoria dalla posizione cartesiana a (R, Φ); gli assi si trasformano in R (orizzontale) e Φ (verticale tra −π e π) come nella figura di p66.",
+        "Nello spazio trasformato: l'istogramma su R mostra due gobbe disgiunte e una soglia le separa perfettamente; quello su Φ è piatto e inutile.",
+        "Trigger: «Selezione». SFS con m = 1 sulle nuove feature {R, Φ} sceglie R (barre J({R}) e J({Φ}) che crescono in 400 ms, J({Φ}) quasi nulla): estrazione = trasformazione + selezione. Clic su un punto: pannello con x1, x2, R e Φ calcolati, con il ramo della formula usato (x1 ≥ 0 oppure x1 < 0) evidenziato; es. (x1, x2) = (−1, 1): R = √2 ≈ 1,41, Φ = sign(1)·π + arctg(−1) = π − π/4 = 3π/4 ≈ 2,36. Nel codice Φ si calcola con atan2(x2, x1), che coincide con la formula della fonte tranne nei casi limite x1 = 0 e x1 < 0 con x2 = 0 (vedi gaps)."
+      ],
+      "interactions": [
+        "pulsanti «Trasforma» / «Torna indietro»",
+        "slider del raggio del cerchio e del rumore",
+        "trascinamento dei punti",
+        "clic su un punto per vedere i calcoli",
+        "interruttore «mostra istogrammi»"
+      ],
+      "visual": "SVG. Scatter con morphing animato tra coordinate cartesiane e polari, istogrammi marginali, soglia su R, formule R e Φ con i valori del punto selezionato. Con prefers-reduced-motion il cambio di spazio è una dissolvenza.",
+      "aha": "Nessuna delle due feature originali basta, ma una loro combinazione sì: la selezione può solo scegliere, l'estrazione può costruire.",
+      "formulasShown": [
+        "R=\\sqrt{x_1^{2}+x_2^{2}}",
+        "\\Phi=\\begin{cases}\\operatorname{arctg}(x_2/x_1), & x_1\\ge 0\\\\ \\operatorname{sign}(x_2)\\cdot\\pi+\\operatorname{arctg}(x_2/x_1), & x_1<0\\end{cases}",
+        "\\text{es. }(x_1,x_2)=(-1,1):\\ R=\\sqrt{2}\\approx1{,}41,\\ \\ \\Phi=\\pi+\\operatorname{arctg}(-1)=\\frac{3\\pi}{4}\\approx2{,}36"
+      ],
+      "challenge": "Aggiungi un punto guasto dentro il cerchio: in quale dei due spazi si vede meglio che è un'anomalia? Poi scegli il preset «due strisce oblique» e scopri che lì R non serve e basta una rotazione lineare.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m13-selezionare-o-combinare",
+      "title": "Selezionare o combinare? Bande, proiezioni e NDVI",
+      "concepts": ["c50", "c51"],
+      "scenario": "telerilevamento",
+      "realExample": "Riflettanza nel rosso e nell'infrarosso vicino (NIR) di pixel di vegetazione e di suolo nudo. Selezione: tenere solo la banda NIR (ha un significato fisico preciso). Estrazione lineare: proiettare su una direzione w (come fanno PCA e LDA). Estrazione non lineare: l'indice NDVI = (NIR − rosso)/(NIR + rosso), usato davvero nel telerilevamento. Dati sintetici con variazione di illuminazione.",
+      "storyboard": [
+        "Stato iniziale: scatter rosso contro NIR, vegetazione (rosso basso, NIR alto) e suolo (entrambi medi), allungati lungo raggi dall'origine per effetto dell'illuminazione.",
+        "Scheda «Selezione (SFS, m = 1)»: SFS sceglie una banda; i punti si proiettano sull'asse scelto con un'animazione di 600 ms; istogramma, valore di JM e l'etichetta «significato fisico: riflettanza nel NIR».",
+        "Scheda «Estrazione lineare»: una freccia w trascinabile ruota attorno all'origine; ogni punto è collegato alla sua proiezione sulla retta di w da un segmento sottile, e proiezione y = w^t x, istogramma e JM si aggiornano a ogni movimento (nessuna animazione, risposta diretta al trascinamento); la direzione di massima varianza è segnata tratteggiata come riferimento (anteprima della PCA, che non guarda le classi), e un pulsante «vai alla massima varianza» ruota w su di essa in 600 ms mostrando che JM può peggiorare.",
+        "Scheda «Estrazione non lineare»: i punti migrano in 1 s dallo scatter all'asse NDVI (ogni punto scivola orizzontalmente al suo valore NDVI); l'istogramma mostra due gobbe ben separate anche con l'illuminazione variabile; la barra JM sale oltre quelle delle altre schede. Clic su un punto: NDVI calcolato con i suoi valori, es. (0,45 − 0,08)/(0,45 + 0,08) = 0,70.",
+        "Scheda finale: tabella selezione contro estrazione (feature originali mantenute? significato fisico? feature da misurare? informazione conservata? usa le classi?) con le celle che si accendono in sequenza, una ogni 300 ms; per ogni riga compaiono le spunte di SFS, PCA (m14) e LDA (m15)."
+      ],
+      "interactions": [
+        "schede Selezione / Lineare / Non lineare / Confronto",
+        "trascinamento dell'angolo di w",
+        "slider della variazione di illuminazione",
+        "selettore di m (1 o 2)"
+      ],
+      "visual": "SVG. Scatter 2D con proiezioni animate, freccia w con angolo in gradi, istogrammi delle feature ottenute, barra JM per ogni metodo, tabella comparativa finale.",
+      "aha": "Selezionare vuol dire scegliere tra le colonne che si hanno; estrarre vuol dire costruire colonne nuove. La seconda conserva più informazione ma si paga in interpretabilità e, se non lineare, in complessità.",
+      "formulasShown": [
+        "y=\\mathbf{w}^{t}\\mathbf{x}",
+        "\\text{NDVI}=\\frac{\\text{NIR}-\\text{R}}{\\text{NIR}+\\text{R}}\\quad\\text{es. }\\frac{0{,}45-0{,}08}{0{,}45+0{,}08}=0{,}70",
+        "JM_{ij}=\\sqrt{2(1-\\exp(-B_{ij}))}"
+      ],
+      "challenge": "Trova l'angolo di proiezione lineare che massimizza JM e confrontalo con NDVI e con la sola banda NIR; poi aumenta la variazione di illuminazione e osserva quale dei tre regge meglio.",
+      "size": "M",
+      "tech": "svg+motion"
+    }
+  ],
+  "exercises": [
+    {"id": "es01", "title": "Contare i sottinsiemi e le valutazioni", "type": "numerico", "description": "Dati n e m, calcolare il numero di sottinsiemi C(n,m) esplorati dalla ricerca esaustiva, il numero di valutazioni di SFS e quello di SBS. Parametri randomizzabili: n tra 5 e 30, m tra 1 e n−1. Soluzione: C(n,m) = n!/(m!(n−m)!); N_SFS = mn − m(m−1)/2; N_SBS = (n−m)(n+m+1)/2. Chiedere quale dei tre è il più piccolo e perché.", "concepts": ["c06", "c23", "c31"]},
+    {"id": "es02", "title": "Quanto tempo per la ricerca esaustiva?", "type": "numerico", "description": "Un calcolatore valuta il criterio J in t secondi per sottinsieme. Stimare il tempo della ricerca esaustiva per n bande e m bande da scegliere, in anni. Parametri randomizzabili: n tra 20 e 300, m tra 2 e 40, t tra 10^-9 e 10^-3 s. Soluzione: tempo = C(n,m)·t / (3,156·10^7) anni, con C(n,m) calcolato via somma di logaritmi. Caso della slide: n = 200, m = 30, t = 1 µs → circa 1,3·10^22 anni.", "concepts": ["c05", "c08", "c09"]},
+    {"id": "es03", "title": "Eseguire a mano SFS e SBS su una tabella di J", "type": "numerico", "description": "Viene data la tabella dei valori di J per tutti i 15 sottinsiemi non vuoti di 4 feature (valori generati casualmente ma monotoni: J non diminuisce aggiungendo feature). Eseguire SFS e SBS per m = 2 e m = 3, disegnare i due alberi come nelle slide p33 e p35, contare le valutazioni e confrontare i risultati con l'ottimo della ricerca esaustiva. Parametri randomizzabili: i 15 valori di J. Soluzione: seguire gli argmax/argmin passo per passo; ottimo = massimo di J tra i sottinsiemi di taglia m.", "concepts": ["c19", "c22", "c28", "c30", "c42"]},
+    {"id": "es04", "title": "Costruire un controesempio all'ottimalità di SFS", "type": "concettuale", "description": "Spiegare l'effetto nesting e costruire un esempio (con tre feature e una tabella di J) in cui la feature migliore da sola non appartiene alla coppia migliore, così che SFS con m = 2 non trovi l'ottimo. Fare lo stesso per SBS con n = 4, m = 2. Soluzione attesa: feature complementari (come larghezza e lunghezza del pesce) che valgono poco da sole e molto insieme.", "concepts": ["c20", "c29", "c33"]},
+    {"id": "es05", "title": "SFS o SBS?", "type": "concettuale", "description": "Per ciascuna coppia (n, m) dire se conviene SFS o SBS e giustificare con il numero di iterazioni (m contro n − m) e di valutazioni. Parametri randomizzabili: 5 coppie con n tra 20 e 500 e m tra 1 e n−1, includendo sempre un caso con m = n/2. Soluzione: SFS se m < n/2, SBS se m > n/2; con m = n/2 (pareggio) SFS perché valuta sottinsiemi più piccoli, cioè matrici di covarianza più piccole (note p66).", "concepts": ["c34", "c35", "c36", "c37", "c40", "c41"]},
+    {"id": "es06", "title": "Dimostrare le formule di costo", "type": "dimostrazione", "description": "Dimostrare che N_SFS = mn − m(m−1)/2 e N_SBS = (n−m)(n+m+1)/2, e che N_SFS − N_SBS = (n+1)(m − n/2). Dedurne che il pareggio avviene esattamente per m = n/2. Soluzione: der03, der04, der05.", "concepts": ["c23", "c31", "c41"]},
+    {"id": "es07", "title": "SFS e SBS possono dare lo stesso risultato?", "type": "concettuale", "description": "Rispondere alla domanda d'orale in modo motivato: in generale no garanzia; casi in cui coincidono con certezza (criterio additivo per feature indipendenti, D_ij(f_1,...,f_k) = Σ D_ij(f_q)); casi in cui una delle due coincide con l'esaustiva (m = 1 per SFS, m = n−1 per SBS); esempio in cui differiscono. Soluzione: der06 e c42.", "concepts": ["c42", "c43"]},
+    {"id": "es08", "title": "Differenze tra SFS e PCA", "type": "concettuale", "description": "Rispondere alla domanda d'orale «main differences between sfs and pca»: selezione contro estrazione, feature originali contro combinazioni, criterio di separabilità tra classi (supervisionato) contro criterio di varianza (non supervisionato), interpretabilità, feature da misurare, informazione conservata. Soluzione: c51, c47, c50.", "concepts": ["c51", "c47", "c50"]},
+    {"id": "es09", "title": "Trasformazione in coordinate polari", "type": "numerico", "description": "Dati alcuni punti (x1, x2), calcolare R e Φ scegliendo il ramo corretto della formula (x1 ≥ 0 oppure x1 < 0) e classificarli con una soglia r su R (ω2 se R < r, ω1 altrimenti). Parametri randomizzabili: 6 punti con coordinate tra −3 e 3 (almeno due con x1 < 0, uno con x2 < 0 e x1 < 0), soglia r tra 1 e 2. Soluzione: R = sqrt(x1² + x2²); Φ = arctg(x2/x1) se x1 ≥ 0, sign(x2)·π + arctg(x2/x1) se x1 < 0.", "concepts": ["c49", "c48"]},
+    {"id": "es10", "title": "Perché m va fissato in anticipo", "type": "concettuale", "description": "Spiegare perché la SFS ha bisogno del numero desiderato m e non può fermarsi da sola quando J smette di crescere, usando la proprietà D_ij(f_1,...,f_k) ≤ D_ij(f_1,...,f_k,f_k+1) (ch3 p19) e l'effetto Hughes (modulo m11). Soluzione: con un criterio monotono non decrescente il massimo assoluto si ha con tutte le feature; il limite viene dal numero finito di campioni di training.", "concepts": ["c18", "c21"]},
+    {"id": "es11", "title": "Da Bhattacharyya a JM: quanto manca alla saturazione", "type": "numerico", "description": "Data la distanza di Bhattacharyya B tra due classi, calcolare JM = sqrt(2(1 − exp(−B))) e la percentuale rispetto a √2. Parametri randomizzabili: B tra 0 e 6. Domanda inversa: per quale B JM raggiunge il 95% di √2? Soluzione: 1 − exp(−B) = 0,9025, quindi B = ln(1/0,0975) ≈ 2,33.", "concepts": ["c44", "c46"]},
+    {"id": "es12", "title": "Leggere il grafico di p31 con gli occhi di SFS", "type": "numerico", "description": "Sono date le distanze tra le classi per le 10 coppie di 5 feature (valori della slide p31, approssimati: (1,2) 10; (1,3) 12,5; (1,4) 9; (1,5) 8; (2,3) 13,5; (2,4) 11,5; (2,5) 11; (3,4) 10; (3,5) 11,5; (4,5) 8,5). Domande: (a) quale coppia trova la ricerca esaustiva e con quante valutazioni; (b) per ciascuna possibile feature di partenza (la migliore da sola) quale coppia finale restituisce SFS con m = 2; (c) quale feature deve essere la migliore da sola perché SFS finisca sulla «Suboptimal solution» (3,5) della slide; (d) quante valutazioni fa SFS in totale. Parametri randomizzabili: i 10 valori (con un massimo unico) e la feature migliore da sola. Soluzione: (a) (2,3), C(5,2) = 10 valutazioni; (b) partenza 1 → (1,3), 2 → (2,3), 3 → (2,3), 4 → (2,4), 5 → (3,5); (c) la feature 5; (d) 5 singoletti + 4 coppie = 9 = mn − m(m−1)/2 con n = 5, m = 2.", "concepts": ["c13", "c14", "c17", "c20", "c23"], "addedBy": "revisore"},
+    {"id": "es13", "title": "SFS contro SBS sulla stessa tabella: chi vince?", "type": "concettuale", "description": "Con la tabella di J del pesce (J(1) = 1,1; J(2) = 2,0; J(3) = 1,6; J(4) = 1,3; J(1,2) = 2,6; J(1,3) = 3,6; J(1,4) = 2,5; J(2,3) = 3,4; J(2,4) = 2,9; J(3,4) = 3,0; J(1,2,3) = 3,7; J(1,2,4) = 3,5; J(1,3,4) = 4,3; J(2,3,4) = 4,1; J(1,2,3,4) = 4,6) eseguire SFS e SBS per m = 2 e spiegare perché SBS trova l'ottimo e SFS no, usando la differenza tra giudicare una feature da sola e giudicarla nel contesto delle altre. Poi costruire una tabella (monotona) in cui succede il contrario. Soluzione: SFS {2} → (2,3), J = 3,4; SBS (1,2,3,4) → (1,3,4) → (1,3), J = 3,6 = ottimo; le feature 1 e 3 sono complementari e poco utili da sole. Per il caso opposto basta una feature che SBS scarta presto perché ridondante nell'insieme grande ma che fa parte della coppia ottima insieme alla migliore da sola. Esempio (verificatore, tabella «trappola per SBS»): J(1) = 1,2; J(2) = 2,0; J(3) = 1,4; J(4) = 1,8; J(1,2) = 3,0; J(1,3) = 3,3; J(1,4) = 2,4; J(2,3) = 3,2; J(2,4) = 3,5; J(3,4) = 2,2; J(1,2,3) = 4,4; J(1,2,4) = 3,9; J(1,3,4) = 3,6; J(2,3,4) = 4,0; J(1,2,3,4) = 4,6. SFS: {2} → (2,4) con J = 3,5 = ottimo; SBS: toglie per primo il peso (4), la cui assenza costa solo 0,2 perché ridondante con larghezza e lunghezza, poi da (1,2,3) sceglie (1,3) con J = 3,3.", "concepts": ["c52", "c42", "c20", "c29"], "addedBy": "revisore"}
+  ],
+  "examQuestions": [
+    {"text": "Meanings of divergence measure and feature selection: He asked about feature selection and difference between extraction then we focused on divergence measure and Matusita distance and formulas. Then We talked about SFS and divergence matrix", "prof": "Melgani", "concepts": ["c01", "c02", "c15", "c16", "c17", "c18", "c19", "c20", "c37", "c44", "c47", "c51"]},
+    {"text": "Asked me to explain PCA. When I started explaining he asked about covariance matrix, how it is created, what is cov matrix and etc. Then also some detailed questions about characteristic equation, eigenvalues/vectors. Lastly, main differences between sfs and pca.", "prof": "Melgani", "concepts": ["c51", "c15", "c47", "c48", "c50"]},
+    {"text": "Asked me about feature selection. While talking about different separability measures he wanted to know in depth about Jeffrey-Matusita, the formula and its graphical meaning, how to compute it when we have 3 classes (average) and how it can be expressed as the Bhattacharyya distance (he only wanted the final result,not the full demonstration). Then we talked about search strategies (both SFS and SBS), and if the result of SFS and SBS can be the same.", "prof": "Melgani", "concepts": ["c01", "c02", "c44", "c45", "c46", "c15", "c24", "c20", "c29", "c42", "c43", "c52"]}
+  ],
+  "crossLinks": [
+    {"moduleId": "m11-hughes-feature-selection", "why": "Lì si introduce la feature selection con i suoi due ingredienti (misura di separabilità J e strategia di ricerca, ch3 p13) e l'effetto Hughes che motiva la riduzione da n a m feature: questo modulo sviluppa il secondo ingrediente."},
+    {"moduleId": "m12-misure-separabilita", "why": "Fornisce il criterio J che SFS e SBS ottimizzano (divergenza, Bhattacharyya, JM con la media sulle coppie di classi). Le proprietà della divergenza (monotonia aggiungendo feature, additività per feature indipendenti, ch3 p19) spiegano il miglioramento monotono di SFS e quando SFS e SBS coincidono; part1 p63 è condivisa (proprietà di JM)."},
+    {"moduleId": "m14-pca", "why": "L'estrazione di feature è l'alternativa alla selezione (part1 p66 condivisa); all'orale si chiedono le differenze tra SFS e PCA."},
+    {"moduleId": "m15-lda", "why": "La LDA è un'estrazione lineare supervisionata: utile per contrastarla con la selezione supervisionata di SFS/SBS e con la PCA."},
+    {"moduleId": "m02-sistema-ml-design", "why": "La riduzione delle feature (selezione o estrazione) è uno dei blocchi del ciclo di progetto di un sistema di ML."}
+  ],
+  "emptyPages": [],
+  "gaps": [
+    "ch3 p31 / part1 p64: il grafico è in prospettiva 3D e non riporta i valori numerici; quelli in c14 ed ex02 sono letti a occhio. La fonte non dice quale metodo subottimo porti alla coppia (3,5); la spiegazione con SFS partita dalla feature 5 è un'ipotesi coerente con il grafico, non un'affermazione della fonte.",
+    "ch3 p30: la slide annuncia «first, we will see a popular suboptimal feature selection method», ma nel capitolo non viene poi presentata alcuna strategia ottima diversa dalla ricerca esaustiva (dopo SBS si passa all'estrazione, ch3 p37).",
+    "part1 p66: il «tie» (pareggio) non è definito; lo interpretiamo come m ≈ n/2, caso in cui SFS e SBS hanno lo stesso numero di iterazioni e di valutazioni (der05). Anche le «matrices» non sono specificate; le interpretiamo come le matrici di covarianza (con inverse e determinanti) usate dalle misure di separabilità per classi gaussiane.",
+    "Integrazioni nostre, non presenti nella fonte e dichiarate come tali nei concetti: formalizzazione di esaustiva, SFS e SBS con argmax/argmin (c01, c19, c28), formule del numero di valutazioni (c23, c31, c41, der03-der05), modello di costo k³ per il pareggio, risposta motivata a «SFS e SBS possono dare lo stesso risultato?» (c42, der06), conversione di 4,09·10^35 in anni.",
+    "Con un modello di costo che pesa ogni valutazione con k³, SFS può risultare meno costosa di SBS anche per m un po' maggiore di n/2 (per n = 200, m = 160 la somma dei k³ vale circa 1,2·10^10 per SFS e 4,3·10^10 per SBS; con quel modello SBS diventa più economica solo per m ≥ 189). La regola della fonte (m vicino a n → SBS) ragiona sul numero di feature da togliere, cioè sulle iterazioni: all'orale va riportata la regola della fonte.",
+    "ch3 p33 e p35: gli alberi di SFS (m = 3) e SBS (m = 2) sono esempi separati e la fonte non dice che usino gli stessi dati. La tabella di J usata nei widget (J(2) = 2,0; J(2,3) = 3,4; J(1,3) = 3,6; J(2,3,4) = 4,1; J(1,3,4) = 4,3 ecc.) è costruita da noi per essere coerente con entrambi gli alberi.",
+    "part1 p63 (parte alta, proprietà di JM) e part1 p66 (parte bassa, estrazione di feature) appartengono per contenuto ai moduli m12 e m14; sono inventariate qui come concetti ponte (c44-c51) e vanno deduplicate con quei moduli.",
+    "Le note p64 parlano di miglioramento «typically monotonic»: il «typically» dipende dal criterio; per la divergenza la monotonia è garantita (ch3 p19), per il JM i valori saturano vicino a √2.",
+    "part1 p63 (e ch3 p27): la figura della JM non è una curva singola ma una fascia tratteggiata tra due curve (la inferiore parte da 0, la superiore da un valore positivo) che si chiude su √2; né la slide né le note spiegano la fascia. Lettura nostra, usata nel widget m13-jm-satura: la «distance between classes» in ascissa è la distanza tra le medie, e a parità di distanza tra le medie la JM è più alta se le covarianze delle classi sono diverse (termine logaritmico della formula di Bhattacharyya), quindi la curva inferiore corrisponde a covarianze uguali e la superiore a covarianze diverse. Da verificare con il modulo m12.",
+    "ch3 p29 / part1 p63: 4,09·10^35 è troncato; il valore calcolato di C(200,30) è circa 4,097·10^35 (log10 ≈ 35,612).",
+    "Revisione di completezza: letture del grafico di p31 ricontrollate sull'immagine ingrandita ((1,2) corretto da 10,5 a circa 10, (4,5) da 8 a circa 8,5); corretta la sfida del widget m13-contatore-che-esplode (il più grande n pari con C(n, n/2) sotto un miliardo è 32, non 34); corretta la descrizione della figura JM (fascia tra due curve, non area sotto una curva).",
+    "part1 p66, formula di Φ (trascritta fedelmente, non è un refuso ma è incompleta nei casi limite): per x1 = 0 il rapporto x2/x1 non è definito (va inteso come limite, Φ = ±π/2 secondo il segno di x2); per x1 < 0 e x2 = 0 si ha sign(0) = 0 e la formula dà Φ = 0 invece di π. L'atan2(x2, x1) dei linguaggi di programmazione coincide con la formula ovunque altrove e risolve questi casi; il widget m13-estrazione-polare usa atan2.",
+    "Verifica finale delle formule (verificatore): tutte le formule delle pagine ch3 p28-36 e part1 p63-66 confrontate con le immagini (binomiale di p28 e p63, esempi di p29 e p63, proprietà di JM di p63, R e Φ di p66, oltre a Bhattacharyya di ch3 p25, JM di ch3 p27 e proprietà della divergenza di ch3 p19 citate come ponte): nessuna discrepanza. Ricalcolati con script tutti i numeri derivati (C(200,30) = 4,0968·10^35, C(200,100) ≈ 9,05·10^58, C(784,30) ≈ 1,45·10^54, N_SFS e N_SBS dei vari esempi, somme dei k³ 1496/16904, soglia m = 189 per n = 200, tabelle di J dei widget simulate con SFS/SBS/esaustiva). Corretto c32: il limite O(n^2) vale sempre, ma «≪ C(n,m)» non vale per ogni m (SBS con m = 2 costa quasi quanto l'esaustiva)."
+  ]
+}

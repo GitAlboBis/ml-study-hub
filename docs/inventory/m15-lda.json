@@ -1,0 +1,1566 @@
+{
+  "moduleId": "m15-lda",
+  "title": "LDA (Fisher) e confronto PCA vs LDA",
+  "stages": {"inventario": "done", "completezza": "done"},
+  "pagesReviewed": [
+    {"doc": "ch3", "from": 50, "to": 60},
+    {"doc": "part1", "from": 71, "to": 76}
+  ],
+  "overview": "Il modulo presenta la Linear Discriminant Analysis (LDA), l'estrazione di feature lineare e supervisionata che, a differenza della PCA (efficiente per la rappresentazione), cerca le direzioni efficienti per la discriminazione. Nel caso a due classi si costruisce il criterio di Fisher J(w) sulle medie e sugli scatter dei campioni proiettati, lo si riscrive con le matrici di scatter intra-classe S_W e inter-classe S_B (derivazione manoscritta delle note p73) e se ne ricava la soluzione chiusa w = S_W^{-1}(m_1 − m_2), con le proprietà di S_W (simmetrica, semidefinita positiva, di solito invertibile se N > n) e di S_B (rango al più 1). Il caso a C classi usa S_B pesata rispetto alla media globale, il criterio a determinanti J(W) e gli autovettori di S_W^{-1}S_B, al più C − 1 non nulli. Chiudono tre esempi PCA vs LDA (due scatter 2D con istogrammi e un'immagine telerilevata con sei bande PCA e sei bande LDA). All'orale di Melgani la LDA è una domanda frequente: supervisionata o no, formule con distanze e con matrici di scatter, soluzione binaria, significato dei C − 1 autovettori, esempi grafici in cui PCA e LDA coincidono o divergono.",
+  "concepts": [
+    {
+      "id": "c01",
+      "name": "Rappresentazione contro discriminazione: l'obiettivo di PCA e di LDA",
+      "nameEn": "Efficient for representation vs efficient for discrimination",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "ch3", "page": 50}, {"doc": "part1", "page": 71}],
+      "detail": "Slide p50: mentre la PCA cerca direzioni efficienti per la rappresentazione (efficient for representation, in rosso), l'analisi discriminante (discriminant analysis) cerca direzioni efficienti per la discriminazione (efficient for discrimination, in rosso). Note p71: la PCA cerca direzioni efficienti per la rappresentazione dei dati «without regard for class labels», la LDA si concentra su direzioni che massimizzano la separazione tra le classi (maximize class separation). Entrambe sono proiezioni lineari: cambia solo l'obiettivo. È la frase d'apertura del modulo e la chiave di ogni confronto PCA/LDA all'orale.",
+      "latex": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c02",
+      "name": "LDA nel quadro dell'estrazione di feature lineare",
+      "nameEn": "Linear Discriminant Analysis as supervised linear feature extraction",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch3", "page": 50}, {"doc": "part1", "page": 71}, {"doc": "ch3", "page": 38}, {"doc": "part1", "page": 67}],
+      "detail": "La LDA è una trasformazione lineare che riduce la dimensione (feature extraction): da x ∈ ℜ^n si passa a y = Φ^t x ∈ ℜ^m con m < n. Nel quadro generale dell'estrazione di feature (ch3 p38, part1 p67, modulo m14) le scelte sono trasformazione lineare o non lineare, uso o meno delle etichette di classe e obiettivo di training; la LDA è l'opzione lineare, supervisionata, con obiettivo «maximizing class separability» (part1 p67: «finding directions that maximize the distance between class means relative to the within-class variance», «optimally separates data classes in a least-squares sense»), mentre la PCA minimizza l'errore di ricostruzione. Sulla slide p50 il termine usato è «discriminant analysis», nelle note p71 «Linear Discriminant Analysis (LDA)».",
+      "latex": ["\\mathbf{y}=\\Phi^{t}\\mathbf{x}\\in\\Re^{m},\\qquad m<n"],
+      "symbols": [{"s": "\\Phi", "meaning": "matrice di trasformazione lineare n×m (per la LDA a due classi è il solo vettore w)"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c03",
+      "name": "La LDA è supervisionata: servono campioni etichettati",
+      "nameEn": "Supervised technique: LDA requires labeled samples",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part1", "page": 71}, {"doc": "part1", "page": 74}],
+      "detail": "Note p71: «As a supervised technique, LDA requires labeled samples to identify directions that improve class discrimination». Note p74: la LDA massimizza la separazione tra le classi «based on their labels». Conseguenza pratica: per stimare m_i, S_i, S_W e S_B bisogna sapere a quale classe appartiene ogni campione di training; senza etichette la LDA non si può calcolare, la PCA sì. Domanda d'orale ricorrente: «Is it a supervised method or unsupervised method? Is PCA supervised or unsupervised?».",
+      "latex": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c04",
+      "name": "Dati del problema a due classi",
+      "nameEn": "Samples x_1,…,x_N ∈ ℜ^n divided into two subsets X_1 and X_2",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch3", "page": 50}, {"doc": "part1", "page": 71}],
+      "detail": "Si hanno N campioni x_1, …, x_N ∈ ℜ^n (vettori di n feature) suddivisi in due sottoinsiemi X_1 e X_2 corrispondenti alle classi ω_1 e ω_2 (slide p50; note p71 «divided into two subset X1 and X2, corresponding to the classes ω1 and ω2»). #(X_i) indica il numero di campioni di X_i (notazione delle formule successive) e N = #(X_1) + #(X_2). Il caso a due classi è quello di Fisher; il caso a C classi viene alle p55-56.",
+      "latex": ["\\mathbf{x}_1,\\mathbf{x}_2,\\ldots,\\mathbf{x}_N\\in\\Re^{n}", "X_1\\leftrightarrow\\omega_1,\\qquad X_2\\leftrightarrow\\omega_2,\\qquad N=\\#(X_1)+\\#(X_2)"],
+      "symbols": [{"s": "X_i", "meaning": "insieme dei campioni di training della classe ω_i"}, {"s": "\\#(X_i)", "meaning": "numero di campioni della classe ω_i"}, {"s": "n", "meaning": "numero di feature originali"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c05",
+      "name": "Proiezione su una retta y = w^t x",
+      "nameEn": "Projection onto a line defined as y = w^t x",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch3", "page": 50}, {"doc": "part1", "page": 71}],
+      "detail": "L'obiettivo è trovare una proiezione su una retta definita da y = w^t x: ogni campione n-dimensionale x diventa un solo scalare y, combinazione lineare delle feature con i pesi w (vettore n×1). È una riduzione da n a 1 dimensione; per due classi è anche il massimo numero di feature che la LDA può dare (C − 1 = 1). Il vettore w fissa la direzione della retta.",
+      "latex": ["y=\\mathbf{w}^{t}\\mathbf{x}=\\sum_{j=1}^{n}w_jx_j"],
+      "symbols": [{"s": "\\mathbf{w}", "meaning": "vettore di proiezione (direzione della retta), n×1"}, {"s": "y", "meaning": "valore proiettato, nuova feature scalare"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c06",
+      "name": "Obiettivo: proiezioni ben separate",
+      "nameEn": "The points corresponding to X_1 and X_2 are well separated",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch3", "page": 50}, {"doc": "part1", "page": 71}],
+      "detail": "La retta va scelta in modo che i punti proiettati di X_1 e di X_2 siano ben separati (well separated, in rosso sulla slide p50; note p71 «such that the projections of X1 and X2 are well separated»). «Ben separati» è per ora un'idea intuitiva: la slide p52 la traduce nel criterio numerico J(w).",
+      "latex": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c07",
+      "name": "Obiettivo in due parti: medie lontane, varianza intra-classe piccola",
+      "nameEn": "Maximize the separation between the class means while minimizing the variance within each class",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part1", "page": 71}],
+      "detail": "Note p71: «The goal of LDA is to find a projection vector w that maximizes the separation between the class means while minimizing the variance within each class». Sono due desiderata da perseguire insieme: allontanare le medie proiettate (between-class) e rendere compatte le classi proiettate (within-class). Il rapporto di Fisher (p52) li combina in un solo numero: il primo al numeratore, il secondo al denominatore. All'orale: «Definition of best case for two distributions, following the two criteria (Compact classes (as impulses) distant one from the other)».",
+      "latex": ["\\max_{\\mathbf{w}}\\ (\\tilde{m}_1-\\tilde{m}_2)^{2}\\quad\\text{e}\\quad\\min_{\\mathbf{w}}\\ (\\tilde{s}_1^{2}+\\tilde{s}_2^{2})"],
+      "examRelevance": 3
+    },
+    {
+      "id": "c08",
+      "name": "Figura: la stessa nuvola proiettata su due rette diverse",
+      "nameEn": "Projection of the same set of samples onto two different lines in the directions marked w",
+      "kind": "figura",
+      "sourcePages": [{"doc": "ch3", "page": 51}, {"doc": "part1", "page": 72}],
+      "detail": "Due grafici nel piano (x1, x2) con gli stessi 15 campioni (6 neri di una classe, 9 rossi dell'altra, conteggio letto dalla figura). A sinistra w punta a circa 45°: i segmenti di proiezione (tratteggiati neri e pieni rosa) portano i punti su una retta grigia dove neri e rossi risultano mescolati. A destra w punta in basso a destra (circa −15°, misurato sui pixel della retta grigia): tre neri (quelli sull'asse x2) cadono su valori negativi, lontani da tutti i rossi, e la maggior parte dei rossi si raccoglie a destra; la separazione è migliore ma NON perfetta (due neri cadono appena dopo i due rossi più a sinistra e un nero finisce oltre l'ultimo rosso: dettagli numerici in ex01). La slide non dice quale sia migliore; la figura è quella di Duda-Hart-Stork (Fig. 3.5), la cui didascalia originale parla di «greater separation» a destra, non di separazione completa. Sui punti digitalizzati nessuna direzione separa perfettamente le due classi (un nero sta dentro l'involucro convesso dei rossi). Messaggio: la separabilità dopo la proiezione dipende interamente dalla direzione di w, e serve un criterio numerico per confrontare le direzioni.",
+      "latex": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c09",
+      "name": "Geometria della proiezione: proiezione ortogonale e ruolo di ||w||",
+      "nameEn": "Orthogonal projection onto the direction of w",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch3", "page": 51}, {"doc": "part1", "page": 72}],
+      "detail": "Nella figura p51 i segmenti che portano ogni campione sulla retta sono perpendicolari alla retta: y = w^t x = ||w|| ||x|| cos θ è, a meno del fattore ||w||, la coordinata del piede della perpendicolare lungo la direzione di w. Con ||w|| = 1, y è esattamente la lunghezza con segno della proiezione ortogonale. La retta passa per l'origine; spostarla parallelamente (un offset) non cambierebbe le distanze tra i punti proiettati e quindi la separazione. Osservazione di supporto aggiunta da noi per leggere la figura.",
+      "latex": ["y=\\mathbf{w}^{t}\\mathbf{x}=\\|\\mathbf{w}\\|\\,\\|\\mathbf{x}\\|\\cos\\theta", "\\|\\mathbf{w}\\|=1\\ \\Rightarrow\\ y\\,\\mathbf{w}=\\text{proiezione ortogonale di }\\mathbf{x}\\text{ sulla retta}"],
+      "examRelevance": 1
+    },
+    {
+      "id": "c10",
+      "name": "Criterio di Fisher J(w) con le distanze proiettate",
+      "nameEn": "Criterion function J(w)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch3", "page": 52}, {"doc": "part1", "page": 72}],
+      "detail": "Un criterio (criterion function, in rosso) per la migliore separazione è J(w) = ||m̃_1 − m̃_2||² / (s̃_1² + s̃_2²): al numeratore il quadrato della distanza tra le medie delle classi proiettate, al denominatore la somma degli scatter delle classi proiettate. Poiché y è scalare, ||m̃_1 − m̃_2||² = (m̃_1 − m̃_2)². Tutte le quantità sono calcolate sui dati proiettati e quindi dipendono da w; si cerca il w che massimizza J. È la «formula con le distanze» richiesta all'orale.",
+      "latex": ["J(\\mathbf{w})=\\frac{\\|\\tilde{m}_1-\\tilde{m}_2\\|^{2}}{\\tilde{s}_1^{2}+\\tilde{s}_2^{2}}"],
+      "symbols": [{"s": "\\tilde{m}_i", "meaning": "media dei campioni proiettati della classe ω_i"}, {"s": "\\tilde{s}_i^{2}", "meaning": "scatter dei campioni proiettati della classe ω_i"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c11",
+      "name": "Media campionaria delle proiezioni m̃_i",
+      "nameEn": "Sample mean of the projected samples",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch3", "page": 52}, {"doc": "part1", "page": 72}],
+      "detail": "m̃_i = (1/#(X_i)) Σ_{y∈ω_i} y è la media campionaria (sample mean) dei valori proiettati y dei campioni della classe ω_i. Note p72: «the mean of the projected samples in class ω_i». La tilde indica una grandezza nello spazio proiettato (scalare), da non confondere con il vettore media m_i dello spazio originale (p53).",
+      "latex": ["\\tilde{m}_i=\\frac{1}{\\#(X_i)}\\sum_{y\\in\\omega_i}y"],
+      "examRelevance": 3
+    },
+    {
+      "id": "c12",
+      "name": "Scatter delle proiezioni s̃_i²",
+      "nameEn": "Scatter for the projected samples labeled ω_i",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch3", "page": 52}, {"doc": "part1", "page": 72}],
+      "detail": "s̃_i² = Σ_{y∈ω_i} (y − m̃_i)² è lo scatter dei campioni proiettati etichettati ω_i. Note p72: «represents the variance (scatter) of the projected samples in class ω_i». Attenzione: è una somma di scarti quadratici non divisa per #(X_i), quindi vale #(X_i) volte la varianza campionaria (ML) della classe proiettata e cresce con il numero di campioni. s̃_1² + s̃_2² è lo scatter intra-classe totale dei dati proiettati.",
+      "latex": ["\\tilde{s}_i^{2}=\\sum_{y\\in\\omega_i}(y-\\tilde{m}_i)^{2}", "\\tilde{s}_i^{2}=\\#(X_i)\\,\\hat{\\sigma}_i^{2}"],
+      "symbols": [{"s": "\\hat{\\sigma}_i^{2}", "meaning": "varianza campionaria (ML) della classe proiettata"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c13",
+      "name": "Numeratore: distanza tra le classi proiettate",
+      "nameEn": "Between-class distance (difference between the projected means)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch3", "page": 52}, {"doc": "part1", "page": 72}],
+      "detail": "Il numeratore (m̃_1 − m̃_2)² misura quanto sono lontane le due classi dopo la proiezione: è la distanza inter-classe (between-class distance). Da solo non basta, perché dipende dalla scala di w e ignora quanto sono sparse le classi. All'orale: «Definition of between-class distance and within-class distance».",
+      "latex": ["(\\tilde{m}_1-\\tilde{m}_2)^{2}"],
+      "examRelevance": 3
+    },
+    {
+      "id": "c14",
+      "name": "Denominatore: dispersione intra-classe proiettata",
+      "nameEn": "Within-class scatter of the projected samples",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch3", "page": 52}, {"doc": "part1", "page": 72}],
+      "detail": "Il denominatore s̃_1² + s̃_2² misura quanto sono disperse le classi attorno alle proprie medie dopo la proiezione: è la distanza (dispersione) intra-classe (within-class distance). Più è piccolo, più le classi sono compatte; è ciò che J penalizza. Nella forma matriciale diventa w^t S_W w (p54).",
+      "latex": ["\\tilde{s}_1^{2}+\\tilde{s}_2^{2}"],
+      "examRelevance": 3
+    },
+    {
+      "id": "c15",
+      "name": "Discriminante lineare di Fisher e sua interpretazione geometrica",
+      "nameEn": "Fisher's linear discriminant",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch3", "page": 52}, {"doc": "part1", "page": 72}],
+      "detail": "Il criterio J(w) si chiama discriminante lineare di Fisher (Fisher's linear discriminant, in rosso). Interpretazione geometrica della slide: la migliore proiezione rende la differenza tra le medie la più grande possibile rispetto alla varianza (relative to the variance). Note p72: «it seeks a projection that maximizes the distance between the projected class means relative to the scatter (variance) within each class». Il w che massimizza J (p54) è la «direzione di Fisher».",
+      "latex": ["\\mathbf{w}^{*}=\\arg\\max_{\\mathbf{w}}J(\\mathbf{w})"],
+      "examRelevance": 3
+    },
+    {
+      "id": "c16",
+      "name": "Perché dividere per lo scatter: allontanare le medie non basta",
+      "nameEn": "Why the difference of the means must be normalized by the scatter",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch3", "page": 52}],
+      "detail": "Massimizzare solo |m̃_1 − m̃_2| = |w^t(m_1 − m_2)| non ha senso: moltiplicando w per α la differenza cresce di |α| senza limite; inoltre ignora la forma delle classi (lungo la congiungente delle medie classi allungate possono sovrapporsi molto). Dividendo per s̃_1² + s̃_2², che scala anch'esso con α², il criterio diventa indipendente dalla scala e tiene conto della dispersione. Osservazione aggiunta da noi (standard in Duda-Hart-Stork) per spiegare il «relative to the variance» della slide.",
+      "latex": ["\\tilde{m}_1-\\tilde{m}_2=\\mathbf{w}^{t}(\\mathbf{m}_1-\\mathbf{m}_2)", "\\mathbf{w}\\to\\alpha\\mathbf{w}:\\quad |\\tilde{m}_1-\\tilde{m}_2|\\to|\\alpha|\\,|\\tilde{m}_1-\\tilde{m}_2|"],
+      "examRelevance": 2
+    },
+    {
+      "id": "c17",
+      "name": "Caso ideale: classi compatte come impulsi e lontane",
+      "nameEn": "Best case: compact classes (as impulses) distant from each other",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch3", "page": 52}],
+      "detail": "Dalla banca domande (Melgani): «Definition of best case for two distributions, following the two criteria (Compact classes (as impulses) distant one from the other)». Nel caso ideale ogni classe proiettata collassa in un solo punto (un impulso, s̃_i² = 0) e i due impulsi sono lontani: il denominatore si annulla e J → ∞. Nella pratica le classi hanno dispersione non nulla e J è finito; più ci si avvicina al caso ideale, più è facile classificare dopo la proiezione. Esempio: nel cubo del corso (part1 p71) proiettando su x1 le classi diventano due impulsi in 1 e in 0.",
+      "latex": ["\\tilde{s}_1^{2}=\\tilde{s}_2^{2}=0,\\ \\ \\tilde{m}_1\\neq\\tilde{m}_2\\ \\Rightarrow\\ J(\\mathbf{w})\\to\\infty"],
+      "examRelevance": 2
+    },
+    {
+      "id": "c18",
+      "name": "Invarianza di scala: conta solo la direzione di w",
+      "nameEn": "Scale invariance of J(w)",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch3", "page": 54}],
+      "detail": "Moltiplicando w per uno scalare α ≠ 0 numeratore e denominatore di J si moltiplicano per α², quindi J(αw) = J(w): il criterio dipende solo dalla direzione della retta, non dalla lunghezza né dal verso di w. Per questo la soluzione w = S_W^{-1}(m_1 − m_2) è definita a meno di un fattore e i fattori scalari che compaiono nella derivazione si possono scartare. Proprietà non scritta sulla slide ma usata implicitamente per arrivare alla formula chiusa.",
+      "latex": ["J(\\alpha\\mathbf{w})=\\frac{\\alpha^{2}\\,\\mathbf{w}^{t}S_B\\mathbf{w}}{\\alpha^{2}\\,\\mathbf{w}^{t}S_W\\mathbf{w}}=J(\\mathbf{w}),\\qquad\\alpha\\neq 0"],
+      "examRelevance": 2
+    },
+    {
+      "id": "c19",
+      "name": "Matrice di scatter della classe S_i",
+      "nameEn": "Scatter matrices S_i",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch3", "page": 53}, {"doc": "part1", "page": 72}],
+      "detail": "Per calcolare il w ottimo (optimal w, in rosso) si definiscono per ogni classe le matrici di scatter S_i = Σ_{x∈X_i} (x − m_i)(x − m_i)^t: somma dei prodotti esterni degli scarti dalla media di classe. È una matrice n×n simmetrica; ogni termine (x − m_i)(x − m_i)^t ha rango 1. Note p72: «For each class X_i, the scatter matrix S_i is computed as».",
+      "latex": ["S_i=\\sum_{\\mathbf{x}\\in X_i}(\\mathbf{x}-\\mathbf{m}_i)(\\mathbf{x}-\\mathbf{m}_i)^{t}"],
+      "symbols": [{"s": "S_i", "meaning": "matrice di scatter n×n della classe ω_i"}, {"s": "(\\cdot)^{t}", "meaning": "trasposto"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c20",
+      "name": "Vettore media della classe m_i",
+      "nameEn": "Class mean vector m_i",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch3", "page": 53}, {"doc": "part1", "page": 72}],
+      "detail": "m_i = (1/#(X_i)) Σ_{x∈X_i} x è la media (vettore n-dimensionale) dei campioni della classe X_i nello spazio originale. Sulla slide p53 manca il numeratore «1» della frazione (c'è solo la linea di frazione sopra #(X_i)): refuso; le note p72 riportano correttamente 1/#(X_i). Da non confondere con la media proiettata m̃_i (scalare).",
+      "latex": ["\\mathbf{m}_i=\\frac{1}{\\#(X_i)}\\sum_{\\mathbf{x}\\in X_i}\\mathbf{x}"],
+      "symbols": [{"s": "\\mathbf{m}_i", "meaning": "vettore media della classe ω_i nello spazio delle feature"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c21",
+      "name": "Matrice di scatter intra-classe S_W (due classi)",
+      "nameEn": "Within-class scatter matrix S_W",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch3", "page": 53}, {"doc": "part1", "page": 72}],
+      "detail": "La matrice di scatter intra-classe (within-class, in rosso) è la somma delle matrici di scatter delle classi: S_W = S_1 + S_2. Misura la dispersione complessiva dei campioni attorno alle rispettive medie di classe, in tutte le direzioni dello spazio. Nel criterio compare al denominatore (w^t S_W w = s̃_1² + s̃_2²).",
+      "latex": ["S_W=S_1+S_2"],
+      "symbols": [{"s": "S_W", "meaning": "matrice di scatter intra-classe (within-class)"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c22",
+      "name": "Matrice di scatter inter-classe S_B (due classi)",
+      "nameEn": "Between-class scatter matrix S_B",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch3", "page": 53}, {"doc": "part1", "page": 72}, {"doc": "part1", "page": 73}],
+      "detail": "La matrice di scatter inter-classe (between-class, in rosso) è S_B = (m_1 − m_2)(m_1 − m_2)^t, prodotto esterno del vettore differenza delle medie con sé stesso. Note p72-73: «captures the separation between class means», dove m_1 e m_2 sono le medie di X_1 e X_2. È n×n ma costruita da un solo vettore, quindi ha rango 1 (0 se le medie coincidono). Nel criterio compare al numeratore (w^t S_B w = (m̃_1 − m̃_2)²).",
+      "latex": ["S_B=(\\mathbf{m}_1-\\mathbf{m}_2)(\\mathbf{m}_1-\\mathbf{m}_2)^{t}"],
+      "symbols": [{"s": "S_B", "meaning": "matrice di scatter inter-classe (between-class)"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c23",
+      "name": "Cosa rappresentano S_W e S_B (e legame con la covarianza)",
+      "nameEn": "What characteristics of the data the scatter matrices represent",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch3", "page": 53}, {"doc": "part1", "page": 72}, {"doc": "part1", "page": 73}],
+      "detail": "Domanda d'orale: «defining scatter matrices (and what characteristics of the data do these represent?)». S_W rappresenta forma ed estensione delle classi attorno alle proprie medie (compattezza intra-classe, con le direzioni di massima e minima dispersione); S_B rappresenta la posizione relativa delle medie (quanto e in che direzione sono lontane; note: «captures the separation between class means»). S_i è legata alla covarianza campionaria ML della classe: S_i = #(X_i) Σ̂_i, quindi S_W è una somma pesata delle covarianze di classe. Il legame con la covarianza è aggiunto da noi (vedi m05, m06).",
+      "latex": ["S_i=\\#(X_i)\\,\\hat{\\Sigma}_i,\\qquad \\hat{\\Sigma}_i=\\frac{1}{\\#(X_i)}\\sum_{\\mathbf{x}\\in X_i}(\\mathbf{x}-\\mathbf{m}_i)(\\mathbf{x}-\\mathbf{m}_i)^{t}"],
+      "symbols": [{"s": "\\hat{\\Sigma}_i", "meaning": "stima ML della matrice di covarianza della classe ω_i"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c24",
+      "name": "Media delle proiezioni = proiezione della media",
+      "nameEn": "The projected mean equals the projection of the class mean",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part1", "page": 73}],
+      "detail": "Nella derivazione manoscritta delle note p73, sotto w^t m_1 e w^t m_2 sono annotati m̃_1 e m̃_2: la media dei campioni proiettati coincide con la proiezione della media di classe, m̃_i = w^t m_i. Motivo: proiezione e media sono entrambe lineari e si possono scambiare. Domanda d'orale testuale: «Specify if the means in the formula are projections of means of classes or means of the projection of points on the chosen direction: are these two objects the same?». Risposta: sì, sono la stessa cosa. Non vale un'analoga scorciatoia per lo scatter: s̃_i² non è la proiezione di un vettore ma la forma quadratica w^t S_i w.",
+      "latex": ["\\tilde{m}_i=\\frac{1}{\\#(X_i)}\\sum_{\\mathbf{x}\\in X_i}\\mathbf{w}^{t}\\mathbf{x}=\\mathbf{w}^{t}\\Big(\\frac{1}{\\#(X_i)}\\sum_{\\mathbf{x}\\in X_i}\\mathbf{x}\\Big)=\\mathbf{w}^{t}\\mathbf{m}_i"],
+      "examRelevance": 3
+    },
+    {
+      "id": "c25",
+      "name": "Numeratore in forma matriciale: w^t S_B w",
+      "nameEn": "w^t S_B w = (m̃_1 − m̃_2)^2",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part1", "page": 73}, {"doc": "ch3", "page": 54}],
+      "detail": "Note p73 (derivazione manoscritta dopo «Now:»): w^t S_B w = w^t (m_1 − m_2)(m_1 − m_2)^t w = (w^t m_1 − w^t m_2)(w^t m_1 − w^t m_2) = (m̃_1 − m̃_2)². Il numeratore di Fisher è una forma quadratica in w con matrice fissa S_B, che dipende solo dai dati. Rende esplicita la dipendenza dalla direzione di proiezione richiesta all'orale («Make clear the dependence of the formula on projection direction»).",
+      "latex": ["\\mathbf{w}^{t}S_B\\mathbf{w}=\\mathbf{w}^{t}(\\mathbf{m}_1-\\mathbf{m}_2)(\\mathbf{m}_1-\\mathbf{m}_2)^{t}\\mathbf{w}=(\\mathbf{w}^{t}\\mathbf{m}_1-\\mathbf{w}^{t}\\mathbf{m}_2)(\\mathbf{w}^{t}\\mathbf{m}_1-\\mathbf{w}^{t}\\mathbf{m}_2)=(\\tilde{m}_1-\\tilde{m}_2)^{2}"],
+      "examRelevance": 3
+    },
+    {
+      "id": "c26",
+      "name": "Scatter proiettato in forma matriciale: w^t S_W w",
+      "nameEn": "w^t S_W w = s̃_1^2 + s̃_2^2",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part1", "page": 73}, {"doc": "ch3", "page": 54}],
+      "detail": "Note p73 (dopo «and:»): w^t S_W w = w^t (S_1 + S_2) w = w^t S_1 w + w^t S_2 w, e per la classe 1: w^t (Σ_{x∈ω1}(x − m_1)(x − m_1)^t) w = Σ_{x∈ω1} w^t (x − m_1)(x − m_1)^t w = Σ_{x∈ω1} (w^t x − w^t m_1)(w^t x − w^t m_1) = Σ_{y∈ω1} (y − m̃_1)² = s̃_1² (nel manoscritto sotto w^t x è annotato y e sotto w^t m_1 è annotato m̃_1; l'ultimo simbolo è scritto «S̃_1» ma si intende s̃_1²). Quindi il denominatore di Fisher è la forma quadratica w^t S_W w.",
+      "latex": ["\\mathbf{w}^{t}S_W\\mathbf{w}=\\mathbf{w}^{t}(S_1+S_2)\\mathbf{w}=\\mathbf{w}^{t}S_1\\mathbf{w}+\\mathbf{w}^{t}S_2\\mathbf{w}", "\\mathbf{w}^{t}S_1\\mathbf{w}=\\sum_{\\mathbf{x}\\in\\omega_1}(\\mathbf{w}^{t}\\mathbf{x}-\\mathbf{w}^{t}\\mathbf{m}_1)(\\mathbf{w}^{t}\\mathbf{x}-\\mathbf{w}^{t}\\mathbf{m}_1)=\\sum_{y\\in\\omega_1}(y-\\tilde{m}_1)^{2}=\\tilde{s}_1^{2}"],
+      "examRelevance": 3
+    },
+    {
+      "id": "c27",
+      "name": "Criterio in forma matriciale (quoziente di Rayleigh generalizzato)",
+      "nameEn": "J(w) = w^t S_B w / w^t S_W w (generalized Rayleigh quotient)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch3", "page": 54}, {"doc": "part1", "page": 73}],
+      "detail": "Sostituendo le due forme quadratiche il criterio diventa J(w) = w^t S_B w / w^t S_W w (slide p54 «Then, the criterion function becomes», note p73 «So, the criterion becomes»). Tutta la dipendenza da w è esplicita; S_B e S_W dipendono solo dai dati etichettati. Un rapporto di due forme quadratiche di questo tipo si chiama quoziente (rapporto) di Rayleigh generalizzato: il termine non compare nelle fonti ma è usato dal docente all'orale («Which is the formula for the w maximizing the Generalized Rayleigh ratio?»). La richiesta «Formula for Fisher Linear Discriminant, both with distances and Scatter Matrices» corrisponde alla coppia c10 + c27.",
+      "latex": ["J(\\mathbf{w})=\\frac{\\mathbf{w}^{t}S_B\\mathbf{w}}{\\mathbf{w}^{t}S_W\\mathbf{w}}"],
+      "examRelevance": 3
+    },
+    {
+      "id": "c28",
+      "name": "Direzione ottima di Fisher w = S_W^{-1}(m_1 − m_2)",
+      "nameEn": "Optimal w",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch3", "page": 54}, {"doc": "part1", "page": 73}],
+      "detail": "Il w ottimo si calcola in forma chiusa: w = S_W^{-1}(m_1 − m_2) (slide p54; note p73 «The optimal w that maximizes J(w) is given by»). Richiede S_W invertibile; è definito a meno di un fattore di scala (J(αw) = J(w)). È la risposta alla domanda d'orale «Write the solution for the binary classification case». Le componenti di w pesano le feature originali; la LDA a due classi produce un'unica nuova feature y = w^t x.",
+      "latex": ["\\mathbf{w}=S_W^{-1}(\\mathbf{m}_1-\\mathbf{m}_2)"],
+      "examRelevance": 3
+    },
+    {
+      "id": "c29",
+      "name": "Come si ottiene: gradiente di J uguale a zero",
+      "nameEn": "Differentiating with respect to w and setting the gradient to zero",
+      "kind": "procedura",
+      "sourcePages": [{"doc": "part1", "page": 73}],
+      "detail": "Note p73: «This can be achieved by differentiating with respect to w and setting the gradient to zero». Le note non riportano i passaggi: derivando il rapporto con la regola del quoziente e usando ∇(w^t A w) = 2Aw per A simmetrica si arriva a (w^t S_W w) S_B w = (w^t S_B w) S_W w (derivazione der03). La slide p54 dà solo il risultato.",
+      "latex": ["\\nabla_{\\mathbf{w}}J(\\mathbf{w})=\\mathbf{0}\\ \\Leftrightarrow\\ (\\mathbf{w}^{t}S_W\\mathbf{w})\\,S_B\\mathbf{w}=(\\mathbf{w}^{t}S_B\\mathbf{w})\\,S_W\\mathbf{w}"],
+      "examRelevance": 3
+    },
+    {
+      "id": "c30",
+      "name": "Problema agli autovalori generalizzato S_B w = λ S_W w",
+      "nameEn": "Generalized eigenvalue problem",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch3", "page": 54}, {"doc": "ch3", "page": 56}],
+      "detail": "Dividendo la condizione di gradiente nullo per w^t S_W w si ottiene S_B w = J(w) S_W w: il w ottimo è autovettore generalizzato della coppia (S_B, S_W) con autovalore λ = J(w); se S_W è invertibile, S_W^{-1} S_B w = λ w e il massimo di J è l'autovalore più grande. È il ponte tra il caso a due classi (p54) e il caso multiclasse (p56), dove le colonne di W sono proprio gli autovettori di S_W^{-1}S_B. Passaggio intermedio non scritto nelle fonti, aggiunto da noi.",
+      "latex": ["S_B\\mathbf{w}=\\lambda\\,S_W\\mathbf{w},\\qquad\\lambda=J(\\mathbf{w})", "S_W^{-1}S_B\\,\\mathbf{w}=\\lambda\\,\\mathbf{w}"],
+      "examRelevance": 2
+    },
+    {
+      "id": "c31",
+      "name": "S_B w è sempre parallelo a m_1 − m_2",
+      "nameEn": "S_B w always lies in the direction of m_1 − m_2",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch3", "page": 54}],
+      "detail": "Per qualunque w, S_B w = (m_1 − m_2)[(m_1 − m_2)^t w]: il termine tra parentesi quadre è uno scalare, quindi S_B w è un multiplo di m_1 − m_2. Sostituito in S_B w = λ S_W w dà λ S_W w = α (m_1 − m_2), cioè w ∝ S_W^{-1}(m_1 − m_2): per questo nel caso a due classi non servono autovettori e la soluzione è in forma chiusa. Passaggio aggiunto da noi (Duda-Hart-Stork).",
+      "latex": ["S_B\\mathbf{w}=(\\mathbf{m}_1-\\mathbf{m}_2)\\,\\big[(\\mathbf{m}_1-\\mathbf{m}_2)^{t}\\mathbf{w}\\big]"],
+      "examRelevance": 2
+    },
+    {
+      "id": "c32",
+      "name": "S_W è simmetrica e semidefinita positiva",
+      "nameEn": "S_W is symmetric and positive semidefinite",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch3", "page": 54}, {"doc": "part1", "page": 73}],
+      "detail": "Slide p54: «S_w is symmetric and positive semidefinite». È simmetrica perché somma di prodotti esterni aa^t, che sono simmetrici; semidefinita positiva perché v^t S_W v è una somma di quadrati (v^t(x − m_i))² ≥ 0 per ogni v. Quindi il denominatore w^t S_W w di J è sempre ≥ 0, ed è > 0 per ogni w ≠ 0 se S_W è definita positiva (non singolare).",
+      "latex": ["S_W^{t}=S_W,\\qquad \\mathbf{v}^{t}S_W\\mathbf{v}=\\sum_{i}\\sum_{\\mathbf{x}\\in X_i}\\big(\\mathbf{v}^{t}(\\mathbf{x}-\\mathbf{m}_i)\\big)^{2}\\ge 0\\quad\\forall\\,\\mathbf{v}"],
+      "examRelevance": 2
+    },
+    {
+      "id": "c33",
+      "name": "S_W è di solito non singolare se N > n",
+      "nameEn": "S_W is usually nonsingular if N > n",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch3", "page": 54}, {"doc": "part1", "page": 73}],
+      "detail": "Slide p54: S_W è di solito non singolare (nonsingular, in rosso) se N > n, cioè se i campioni sono più delle feature; note p73: «typically nonsingular if N > n». È la condizione per calcolare S_W^{-1} nella formula di w. «Di solito» non è «sempre»: ogni S_i ha rango ≤ #(X_i) − 1 (gli scarti dalla media sommano a zero), quindi rank(S_W) ≤ N − C e serve almeno N ≥ n + C; inoltre S_W è singolare se una feature è costante dentro ogni classe o se le feature sono linearmente dipendenti (cubo del corso: N = 6 > n = 3 ma |S_W| = 0). Con N ≤ n (tipico dell'iperspettrale, effetto Hughes, m11) la formula non si applica direttamente. Le precisazioni sul rango sono aggiunte da noi.",
+      "latex": ["N>n\\ \\Rightarrow\\ S_W\\ \\text{di solito invertibile}", "\\operatorname{rank}(S_i)\\le\\#(X_i)-1,\\qquad \\operatorname{rank}(S_W)\\le N-C"],
+      "examRelevance": 2
+    },
+    {
+      "id": "c34",
+      "name": "S_B è simmetrica, semidefinita positiva, di rango al più 1",
+      "nameEn": "S_B is also symmetric and positive semidefinite, but its rank is at most 1",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch3", "page": 54}, {"doc": "part1", "page": 73}],
+      "detail": "Slide p54: anche S_B è simmetrica e semidefinita positiva, ma il suo rango è al massimo 1. Note p73: «as it is based on a single vector formed by the difference between class means». Infatti S_B v = (m_1 − m_2)((m_1 − m_2)^t v): l'immagine è la sola retta generata da m_1 − m_2. Rango 1 se m_1 ≠ m_2, 0 se le medie coincidono (allora J ≡ 0 e la LDA non trova alcuna direzione utile). È il caso C = 2 della proprietà generale rank(S_B) ≤ C − 1.",
+      "latex": ["S_B^{t}=S_B,\\qquad \\mathbf{v}^{t}S_B\\mathbf{v}=\\big((\\mathbf{m}_1-\\mathbf{m}_2)^{t}\\mathbf{v}\\big)^{2}\\ge 0,\\qquad \\operatorname{rank}(S_B)\\le 1"],
+      "examRelevance": 2
+    },
+    {
+      "id": "c35",
+      "name": "Ruolo di S_W^{-1}: correggere la congiungente delle medie",
+      "nameEn": "Interpretation of S_W^{-1}(m_1 − m_2)",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch3", "page": 54}],
+      "detail": "Se le classi sono sferiche con uguale dispersione (S_W ∝ I), w ∝ m_1 − m_2: si proietta sulla congiungente delle medie. In generale S_W^{-1} ruota questa direzione allontanandola dalle direzioni in cui le classi sono molto disperse (autovalori grandi di S_W) e avvicinandola a quelle in cui sono compatte. Equivalentemente, dopo lo sbiancamento z = S_W^{-1/2} x le classi diventano sferiche e la direzione di Fisher è la congiungente delle medie sbiancate. Collegamento: per classi gaussiane con covarianza comune Σ il classificatore bayesiano è lineare con w = Σ^{-1}(μ_1 − μ_2), la stessa direzione di Fisher (m19, p07). Osservazione aggiunta da noi.",
+      "latex": ["S_W=\\sigma^{2}I\\ \\Rightarrow\\ \\mathbf{w}\\propto\\mathbf{m}_1-\\mathbf{m}_2", "\\mathbf{z}=S_W^{-1/2}\\mathbf{x}\\ \\Rightarrow\\ \\mathbf{w}_{\\mathbf{z}}\\propto S_W^{-1/2}(\\mathbf{m}_1-\\mathbf{m}_2)"],
+      "examRelevance": 1
+    },
+    {
+      "id": "c36",
+      "name": "La LDA come estrattore della feature più discriminante",
+      "nameEn": "LDA as feature extraction: the most discriminant linear feature",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch3", "page": 50}, {"doc": "part1", "page": 71}],
+      "detail": "Nel Cap. 3 la LDA è una tecnica di riduzione delle feature: y = w^t x è una nuova feature (una sola per due classi), la più discriminante tra tutte le combinazioni lineari secondo il criterio di Fisher. La decisione di classe richiede poi un classificatore sulla nuova feature (per esempio una soglia su y), argomento del Cap. 4 (MDM, Bayes): la fonte non tratta la scelta della soglia. All'orale la LDA viene citata nello schema a blocchi del sistema di ML alla voce estrazione di feature: «which is the best feature in terms of discrimination, cit. of LDA».",
+      "latex": ["y=\\mathbf{w}^{t}\\mathbf{x}\\in\\Re,\\qquad \\mathbf{x}\\in\\Re^{n}"],
+      "examRelevance": 2
+    },
+    {
+      "id": "c37",
+      "name": "Più di due classi: serve una matrice di proiezione W",
+      "nameEn": "Projection matrix W composed of multiple projection directions w_i",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part1", "page": 73}],
+      "detail": "Note p73: con più di due classi (more than two classes) una sola proiezione è insufficiente; si cerca una matrice di proiezione W composta da più direzioni w_i, ottenendo C − 1 direzioni di proiezione per C classi. Ogni colonna w_i produce una nuova feature y_i = w_i^t x; insieme formano y = W^t x.",
+      "latex": ["\\mathbf{y}=W^{t}\\mathbf{x},\\qquad W=[\\mathbf{w}_1\\ \\mathbf{w}_2\\ \\cdots\\ \\mathbf{w}_{C-1}]"],
+      "examRelevance": 3
+    },
+    {
+      "id": "c38",
+      "name": "C − 1 funzioni discriminanti: da n a C − 1 dimensioni",
+      "nameEn": "C − 1 discriminant functions; projection to a (C−1)-dimensional space (n ≥ C)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch3", "page": 55}, {"doc": "part1", "page": 73}],
+      "detail": "Slide p55: la generalizzazione a C classi comporta C − 1 funzioni discriminanti (in rosso) e la proiezione va da uno spazio n-dimensionale a uno spazio (C − 1)-dimensionale (in rosso), con n ≥ C (se fosse n < C la proiezione non ridurrebbe la dimensione). Note p73: «transforming data from an n-dimensional space to a (C−1)-dimensional space (with n ≥ C)». Con C = 2 si ritrova la singola retta di Fisher. Precisazione del revisore: le C − 1 «funzioni discriminanti» sono le proiezioni lineari y_i = w_i^t x, una per colonna di W (note p73: «projection matrix W composed of multiple projection directions w_i»); servono a ridurre la dimensione e non vanno confuse con le C funzioni discriminanti g_i(x) di un classificatore (una per classe, Cap. 4, m19), con cui si decide la classe dopo la proiezione.",
+      "latex": ["\\Re^{n}\\to\\Re^{C-1},\\qquad n\\ge C", "y_i=\\mathbf{w}_i^{t}\\mathbf{x},\\qquad i=1,\\ldots,C-1"],
+      "examRelevance": 3
+    },
+    {
+      "id": "c39",
+      "name": "S_W nel caso multiclasse",
+      "nameEn": "Within-class scatter matrix S_W (multiclass)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch3", "page": 55}, {"doc": "part1", "page": 74}],
+      "detail": "La matrice di scatter intra-classe diventa S_W = Σ_{i=1}^{C} S_i, dove S_i è la matrice di scatter della classe ω_i definita come nel caso a due classi (note p74: «S_i represents the within-class scatter matrix for class ω_i»). Generalizza S_W = S_1 + S_2.",
+      "latex": ["S_W=\\sum_{i=1}^{C}S_i"],
+      "examRelevance": 3
+    },
+    {
+      "id": "c40",
+      "name": "S_B nel caso multiclasse",
+      "nameEn": "Between-class scatter matrix S_B (multiclass)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch3", "page": 55}, {"doc": "part1", "page": 74}],
+      "detail": "S_B = Σ_{i=1}^{C} [#(X_i)] (m_i − m)(m_i − m)^t: ogni classe contribuisce con il prodotto esterno dello scarto della sua media dalla media globale m, pesato con il numero di campioni della classe. Note p74: «captures the separation between class means». Nel caso multiclasse non si usano le differenze tra coppie di medie ma gli scarti dalla media globale; ogni termine ha rango ≤ 1.",
+      "latex": ["S_B=\\sum_{i=1}^{C}[\\#(X_i)]\\,(\\mathbf{m}_i-\\mathbf{m})(\\mathbf{m}_i-\\mathbf{m})^{t}"],
+      "symbols": [{"s": "\\mathbf{m}", "meaning": "vettore media globale di tutti i campioni"}, {"s": "C", "meaning": "numero di classi"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c41",
+      "name": "Vettore media globale m",
+      "nameEn": "Global mean vector",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch3", "page": 55}, {"doc": "part1", "page": 74}],
+      "detail": "Sulla slide p55 la m dentro S_B è cerchiata in verde con l'etichetta «Global mean vector»: m = (1/N) Σ_{x∈X} x, media di tutti gli N campioni di tutte le classi (X è l'unione degli X_i). Note p74: «the overall (global) mean vector». Equivale alla media delle medie di classe pesata con #(X_i) (relazione aggiunta da noi, usata per dimostrare rank(S_B) ≤ C − 1).",
+      "latex": ["\\mathbf{m}=\\frac{1}{N}\\sum_{\\mathbf{x}\\in X}\\mathbf{x}", "\\mathbf{m}=\\frac{1}{N}\\sum_{i=1}^{C}\\#(X_i)\\,\\mathbf{m}_i"],
+      "examRelevance": 2
+    },
+    {
+      "id": "c42",
+      "name": "#(X_i): il peso di ogni classe in S_B",
+      "nameEn": "#(X_i) is the number of samples in class ω_i",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part1", "page": 74}],
+      "detail": "Note p74: «#(X_i) is the number of samples in class ω_i». In S_B ogni contributo (m_i − m)(m_i − m)^t è moltiplicato per #(X_i): le classi più numerose pesano di più nella misura della separazione e spostano la media globale verso di sé. Conseguenza (osservazione nostra): con classi molto sbilanciate la LDA tende a privilegiare la separazione delle classi grandi.",
+      "latex": ["N=\\sum_{i=1}^{C}\\#(X_i)"],
+      "examRelevance": 2
+    },
+    {
+      "id": "c43",
+      "name": "Coerenza con il caso a due classi",
+      "nameEn": "For C = 2 the multiclass S_B reduces to the two-class S_B up to a positive factor",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch3", "page": 55}, {"doc": "ch3", "page": 53}],
+      "detail": "Con C = 2 la S_B multiclasse vale (#(X_1)#(X_2)/N)(m_1 − m_2)(m_1 − m_2)^t: è la S_B della slide p53 moltiplicata per una costante positiva. J(w) cambia solo di un fattore costante, quindi la direzione ottima è la stessa: le due definizioni sono coerenti. Derivazione aggiunta da noi (der05).",
+      "latex": ["C=2:\\quad \\sum_{i=1}^{2}\\#(X_i)(\\mathbf{m}_i-\\mathbf{m})(\\mathbf{m}_i-\\mathbf{m})^{t}=\\frac{\\#(X_1)\\,\\#(X_2)}{N}(\\mathbf{m}_1-\\mathbf{m}_2)(\\mathbf{m}_1-\\mathbf{m}_2)^{t}"],
+      "examRelevance": 1
+    },
+    {
+      "id": "c44",
+      "name": "Criterio multiclasse J(W) con i determinanti",
+      "nameEn": "Criterion function J(W) = |W^t S_B W| / |W^t S_W W|",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch3", "page": 56}, {"doc": "part1", "page": 74}],
+      "detail": "Slide p56: il criterio è J(W) = |W^t S_B W| / |W^t S_W W|, dove |·| rappresenta il determinante. W^t S_B W e W^t S_W W sono le matrici di scatter inter- e intra-classe dei dati proiettati y = W^t x, di dimensione (C − 1)×(C − 1), analoghe di w^t S_B w e w^t S_W w. Per C = 2, W = w e il determinante di uno scalare è lo scalare stesso: si ritrova J(w).",
+      "latex": ["J(W)=\\frac{|W^{t}S_BW|}{|W^{t}S_WW|}"],
+      "symbols": [{"s": "|\\cdot|", "meaning": "determinante"}, {"s": "W", "meaning": "matrice di trasformazione n×(C−1)"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c45",
+      "name": "W è la matrice di trasformazione n × (C − 1)",
+      "nameEn": "W is the n-by-(C−1) transformation matrix",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch3", "page": 56}, {"doc": "part1", "page": 74}],
+      "detail": "W ha n righe (le feature originali) e C − 1 colonne (le direzioni di proiezione). Le matrici proiettate W^t S_B W e W^t S_W W sono quadrate (C − 1)×(C − 1). Note p74: «W is the n × (C − 1) transformation matrix, and |·| denotes the determinant».",
+      "latex": ["W\\in\\Re^{n\\times(C-1)},\\qquad W^{t}S_BW,\\ W^{t}S_WW\\in\\Re^{(C-1)\\times(C-1)}"],
+      "examRelevance": 2
+    },
+    {
+      "id": "c46",
+      "name": "Perché il determinante: scalarizzare con un volume",
+      "nameEn": "Using the determinant to scalarize the ratio (volume)",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part1", "page": 74}],
+      "detail": "Note p74: poiché W è una matrice e non un vettore, numeratore e denominatore sono matrici ed è necessario un metodo per scalarizzare l'espressione. Il determinante serve a questo: quantifica il volume legato agli autovalori della matrice, che corrispondono alle varianze lungo le direzioni definite da W; così si misura il «volume» che contiene le medie delle classi e si identifica la proiezione migliore. Precisazione nostra: |A| = Π λ_k(A) e per una matrice di scatter √|A| è proporzionale al volume dell'ellissoide di dispersione; il determinante rende inoltre J(W) invariante a trasformazioni invertibili delle colonne (W → WA), per cui conta solo il sottospazio.",
+      "latex": ["|A|=\\prod_{k}\\lambda_k(A)", "J(WA)=\\frac{|A|^{2}\\,|W^{t}S_BW|}{|A|^{2}\\,|W^{t}S_WW|}=J(W)"],
+      "examRelevance": 2
+    },
+    {
+      "id": "c47",
+      "name": "Soluzione multiclasse: autovettori di S_W^{-1}S_B con gli autovalori maggiori",
+      "nameEn": "J(W) is maximized when the columns of W are the eigenvectors of S_W^{-1} S_B having the largest eigenvalues",
+      "kind": "teorema",
+      "sourcePages": [{"doc": "ch3", "page": 56}, {"doc": "part1", "page": 74}],
+      "detail": "Slide p56: si può dimostrare (It can be shown) che J(W) è massimo quando le colonne di W sono gli autovettori di S_W^{-1} S_B con gli autovalori più grandi (note p74: «corresponding to the largest eigenvalues»). Le fonti non danno la dimostrazione (schema in der07). Ogni colonna risolve S_B w_i = λ_i S_W w_i, estensione diretta del caso a due classi; con la normalizzazione W^t S_W W = I si ha J(W) = λ_1 λ_2 ⋯ λ_{C−1}.",
+      "latex": ["S_W^{-1}S_B\\,\\mathbf{w}_i=\\lambda_i\\,\\mathbf{w}_i,\\qquad \\lambda_1\\ge\\lambda_2\\ge\\cdots\\ge\\lambda_{C-1}", "J(W)=\\prod_{i=1}^{C-1}\\lambda_i\\qquad (W^{t}S_WW=I)"],
+      "symbols": [{"s": "\\lambda_i", "meaning": "autovalore di S_W^{-1}S_B associato alla colonna w_i"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c48",
+      "name": "Rango di S_B al più C − 1",
+      "nameEn": "S_B is of rank C−1 or less",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch3", "page": 56}, {"doc": "part1", "page": 74}],
+      "detail": "Slide p56: poiché S_B è la somma di C matrici di rango uno o meno, e poiché solo C − 1 di queste sono indipendenti, S_B ha rango C − 1 o meno. Le C matrici non sono indipendenti perché gli scarti pesati dalla media globale sommano a zero (c50). «Or less»: il rango è minore se le medie di classe sono allineate o giacciono comunque in un sottospazio affine più piccolo.",
+      "latex": ["\\operatorname{rank}(S_B)\\le C-1"],
+      "examRelevance": 3
+    },
+    {
+      "id": "c49",
+      "name": "Al più C − 1 autovalori non nulli: al più C − 1 feature LDA",
+      "nameEn": "No more than C−1 of the eigenvalues are nonzero",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch3", "page": 56}, {"doc": "part1", "page": 74}],
+      "detail": "Conseguenza (slide p56 «Thus»): non più di C − 1 autovalori di S_W^{-1}S_B sono non nulli, perché rank(S_W^{-1}S_B) ≤ rank(S_B) ≤ C − 1. Le direzioni con autovalore nullo non separano per nulla le medie (w^t S_B w = 0), quindi la LDA fornisce al massimo C − 1 feature utili: 1 per due classi, 2 per tre classi, 9 per le dieci cifre. Risponde, insieme a c51, alla domanda d'orale «what do the C-1 eigenvectors found represent?».",
+      "latex": ["\\#\\{i:\\lambda_i\\neq 0\\}\\le\\operatorname{rank}(S_W^{-1}S_B)\\le\\operatorname{rank}(S_B)\\le C-1"],
+      "examRelevance": 3
+    },
+    {
+      "id": "c50",
+      "name": "Perché solo C − 1 indipendenti: gli scarti pesati sommano a zero",
+      "nameEn": "Only C−1 of the rank-one matrices are independent",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch3", "page": 56}],
+      "detail": "Poiché m è la media globale, Σ_i #(X_i)(m_i − m) = Σ_i #(X_i) m_i − N m = N m − N m = 0: i C vettori m_i − m sono linearmente dipendenti e ciascuno è combinazione degli altri. Le colonne di S_B stanno nel sottospazio generato da questi vettori, di dimensione ≤ C − 1. È la giustificazione, non scritta sulla slide, di «only C−1 of these are independent». Derivazione aggiunta da noi (der06).",
+      "latex": ["\\sum_{i=1}^{C}\\#(X_i)(\\mathbf{m}_i-\\mathbf{m})=\\mathbf{0}"],
+      "examRelevance": 2
+    },
+    {
+      "id": "c51",
+      "name": "Significato dei C − 1 autovettori e dei loro autovalori",
+      "nameEn": "Meaning of the C−1 eigenvectors (discriminant directions)",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch3", "page": 56}],
+      "detail": "Domanda d'orale: «what do the C-1 eigenvectors found represent?». Ogni autovettore w_i è una direzione (nuova feature y_i = w_i^t x) lungo cui le medie delle classi sono separate il più possibile rispetto alla dispersione intra-classe; l'autovalore λ_i è proprio il rapporto di Fisher lungo quella direzione e ne misura il potere discriminante (ordine decrescente = importanza). Insieme i C − 1 autovettori generano il sottospazio che contiene tutta l'informazione sulle posizioni relative delle medie; dopo lo sbiancamento di S_W sono gli assi principali delle sole medie di classe. Risposta costruita da noi a partire dalla slide.",
+      "latex": ["\\lambda_i=\\frac{\\mathbf{w}_i^{t}S_B\\mathbf{w}_i}{\\mathbf{w}_i^{t}S_W\\mathbf{w}_i}"],
+      "examRelevance": 3
+    },
+    {
+      "id": "c52",
+      "name": "Gli assi LDA non sono ortogonali, a differenza di quelli PCA",
+      "nameEn": "Eigenvectors of S_W^{-1}S_B are not orthogonal in general",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch3", "page": 56}],
+      "detail": "S_W^{-1}S_B in generale non è simmetrica, quindi i suoi autovettori non sono ortogonali in senso euclideo: sono invece S_W-ortogonali (w_i^t S_W w_j = 0 per i ≠ j), cioè le feature proiettate risultano scorrelate dentro le classi. La PCA usa gli autovettori di una matrice simmetrica e dà assi ortogonali. Osservazione aggiunta da noi, utile per non disegnare all'orale gli assi LDA come perpendicolari.",
+      "latex": ["\\mathbf{w}_i^{t}S_W\\mathbf{w}_j=0\\ (i\\neq j)\\quad\\text{ma in generale}\\quad \\mathbf{w}_i^{t}\\mathbf{w}_j\\neq 0"],
+      "examRelevance": 1
+    },
+    {
+      "id": "c53",
+      "name": "Quante feature: PCA fino a n, LDA fino a C − 1",
+      "nameEn": "Number of extractable features: PCA vs LDA",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "ch3", "page": 56}, {"doc": "part1", "page": 74}],
+      "detail": "Dalla proprietà sul rango: la LDA fornisce al massimo C − 1 feature qualunque sia il numero n di feature originali (in generale al più min(n, C − 1)), mentre la PCA può fornire fino a n componenti (autovalori della matrice di scatter totale). Con due classi la LDA dà una sola feature; con 7 classi (esempio 3, p60) sei bande. È un limite della LDA quando le classi sono poche ma l'informazione discriminante è distribuita in più direzioni. Confronto aggiunto da noi.",
+      "latex": ["m_{\\text{PCA}}\\le n,\\qquad m_{\\text{LDA}}\\le\\min(n,\\,C-1)"],
+      "examRelevance": 2
+    },
+    {
+      "id": "c54",
+      "name": "PCA: non supervisionata, massima varianza, migliore rappresentazione",
+      "nameEn": "PCA operates as an unsupervised method that does not take class labels into account",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "part1", "page": 74}],
+      "detail": "Note p74 (PCA vs LDA): la PCA è un metodo non supervisionato che non tiene conto delle etichette di classe; il suo obiettivo principale è la migliore rappresentazione dei dati massimizzando la varianza nel dataset, non l'ottimizzazione della separazione tra classi. Formalmente (m14) cerca gli autovettori con autovalori più grandi della matrice di scatter S = Σ_k (x_k − m)(x_k − m)^t di tutti i dati.",
+      "latex": ["\\max_{\\|\\mathbf{e}\\|=1}\\ \\mathbf{e}^{t}S\\,\\mathbf{e},\\qquad S=\\sum_{k=1}^{N}(\\mathbf{x}_k-\\mathbf{m})(\\mathbf{x}_k-\\mathbf{m})^{t}"],
+      "examRelevance": 3
+    },
+    {
+      "id": "c55",
+      "name": "LDA: supervisionata, massima separazione tra le classi",
+      "nameEn": "LDA is a supervised method that focuses explicitly on maximizing the separation between different classes",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "part1", "page": 74}],
+      "detail": "Note p74: la LDA è un metodo supervisionato che si concentra esplicitamente sul massimizzare la separazione tra classi diverse in base alle etichette; cerca le proiezioni ottimali che aumentano la discriminabilità delle classi (enhance the discriminability of the classes). Usa separatamente S_W e S_B, entrambe calcolabili solo conoscendo le etichette.",
+      "latex": ["\\max_{\\mathbf{w}}\\ \\frac{\\mathbf{w}^{t}S_B\\mathbf{w}}{\\mathbf{w}^{t}S_W\\mathbf{w}}"],
+      "examRelevance": 3
+    },
+    {
+      "id": "c56",
+      "name": "Esempio 1: la PCA fallisce, la LDA separa",
+      "nameEn": "PCA Versus LDA: Example 1",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "ch3", "page": 57}, {"doc": "part1", "page": 75}],
+      "detail": "Scatter 2D (x1 da −4 a 6, x2 da −4 a 4) di due classi (○ rossi, + blu), ciascuna allungata lungo la diagonale e affiancate l'una all'altra. Sono disegnati i due assi PCA (neri, ortogonali, il primo lungo l'allungamento) e la retta LDA (verde tratteggiata, inclinata verso il basso). Istogrammi a destra: «PCA Projection» su y1 mostra le due classi quasi sovrapposte (picchi a circa 0 e 1); «LDA Projection» su y mostra due campane ben separate (picchi a circa 0 e 5). Messaggio: la direzione di massima varianza è quella dell'allungamento, lungo cui le classi si confondono; la LDA trova la direzione che le separa. Angoli misurati dal revisore sulla figura (assi in scala uguale, circa 49 px per unità): primo asse PCA circa +55°, secondo asse PCA circa −35°, retta LDA circa −22° (pendenza dei pixel verdi 0.39): la LDA dista circa 77° dalla prima componente e circa 13° dalla seconda, e non coincide con nessuno dei due assi PCA. È l'esempio da portare quando all'orale si chiede un caso in cui PCA e LDA danno risultati molto diversi.",
+      "latex": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c57",
+      "name": "Esempio 2: la PCA separa in parte, la LDA meglio",
+      "nameEn": "PCA Versus LDA: Example 2",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "ch3", "page": 58}, {"doc": "part1", "page": 75}],
+      "detail": "Due classi (○ rossi in basso a sinistra, + blu in alto a destra) le cui medie differiscono anche lungo la diagonale di massima varianza. Assi PCA neri e retta LDA verde tratteggiata quasi orizzontale. Istogrammi: la proiezione PCA su y1 separa già in buona parte le classi (blu attorno a −2.7, rosso attorno a 0, con una piccola zona di sovrapposizione tra −2 e −1); la proiezione LDA le separa con picchi attorno a 0 e 4. Messaggio: quando la differenza tra le classi ha una componente lungo la direzione di massima varianza la PCA funziona discretamente, ma la LDA, che ottimizza direttamente la separazione, resta la scelta migliore per discriminare. Angoli misurati dal revisore (scala uguale, circa 65 px per unità): primo asse PCA circa +41°, retta LDA circa −3° (quasi orizzontale): le due direzioni differiscono di circa 45°, quindi «risultato simile» qui significa separabilità simile degli istogrammi, non stessa direzione. Nell'istogramma PCA la classe blu, che nel piano sta in alto a destra, compare su valori negativi di y1: il verso di un autovettore è arbitrario (φ1 e −φ1 sono equivalenti), come quello di w per la LDA (J(−w) = J(w)). È l'esempio da portare quando all'orale si chiede un caso in cui «PCA and LDA produced a much equivalent result»; per un caso di coincidenza esatta vedi c60.",
+      "latex": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c58",
+      "name": "Istogrammi delle proiezioni come verifica della separabilità",
+      "nameEn": "Histograms of the projected samples (PCA Projection y1, LDA Projection y)",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch3", "page": 57}, {"doc": "ch3", "page": 58}, {"doc": "part1", "page": 75}],
+      "detail": "In entrambi gli esempi il risultato di ogni riduzione a 1 feature è mostrato con l'istogramma dei valori proiettati per classe (asse verticale «Histogram», conteggi fino a 70-80; asse orizzontale y1 per la PCA e y per la LDA). La sovrapposizione tra le curve indica quanti campioni verrebbero classificati male con una soglia sulla nuova feature: è il modo visivo per confrontare due proiezioni. Le stesse curve rendono visibile J: medie lontane e curve strette significano J alto.",
+      "latex": ["y_1=\\boldsymbol{\\phi}_1^{t}\\mathbf{x}\\ \\ (\\text{PCA}),\\qquad y=\\mathbf{w}^{t}\\mathbf{x}\\ \\ (\\text{LDA})"],
+      "examRelevance": 2
+    },
+    {
+      "id": "c59",
+      "name": "L'informazione discriminante può stare nella componente a bassa varianza",
+      "nameEn": "Discriminant information may lie in a low-variance direction",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch3", "page": 57}, {"doc": "part1", "page": 75}],
+      "detail": "Nell'esempio 1 la seconda componente PCA (a varianza minore, quella che una riduzione a 1 feature scarterebbe) è molto più vicina alla direzione LDA della prima: l'informazione utile per distinguere le classi sta proprio nella direzione che la PCA tratta come poco importante. Riducendo con la PCA si rischia quindi di eliminare le feature discriminanti. Osservazione ricavata da noi dalla figura.",
+      "latex": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c60",
+      "name": "Quando PCA e LDA danno lo stesso risultato",
+      "nameEn": "When are the results of LDA and PCA the same?",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch3", "page": 57}, {"doc": "ch3", "page": 58}],
+      "detail": "Domanda d'orale: «When are the results of LDA and PCA the same?». La PCA usa la matrice di scatter totale S_T = S_W + S_B (con la S_B multiclasse), la LDA usa S_W^{-1}S_B. Coincidono quando la direzione di massima varianza di tutti i dati è anche quella che separa le medie rispetto alla dispersione intra-classe: per esempio con classi sferiche di uguale dispersione (S_W ∝ I), dove sia w sia φ1 sono paralleli a m_1 − m_2; più in generale quando m_1 − m_2 è autovettore di S_W e la separazione tra le medie domina le altre varianze. Divergono al massimo quando le classi sono allungate perpendicolarmente alla congiungente delle medie (esempio 1). Risposta costruita da noi, coerente con gli esempi 1 e 2.",
+      "latex": ["S_W\\propto I\\ \\Rightarrow\\ \\mathbf{w}_{\\text{LDA}}\\propto\\mathbf{m}_1-\\mathbf{m}_2\\propto\\boldsymbol{\\phi}_1"],
+      "examRelevance": 3
+    },
+    {
+      "id": "c61",
+      "name": "Esempio 3: immagine telerilevata, bande PCA e bande LDA",
+      "nameEn": "PCA Versus LDA: Example 3 (remote sensing image)",
+      "kind": "applicazione",
+      "sourcePages": [{"doc": "ch3", "page": 59}, {"doc": "ch3", "page": 60}, {"doc": "part1", "page": 76}],
+      "detail": "Slide p59: «Remote sensing image and the first six PCA bands»; slide p60: «Remote sensing image and the six LDA bands»; le note p76 riportano le due strisce una sopra l'altra. A sinistra l'immagine a falsi colori (vegetazione in rosso, composizione con l'infrarosso vicino) di un'area urbana con parco, specchi d'acqua ed edifici; accanto sei immagini in scala di grigi, ognuna una nuova feature (banda) calcolata pixel per pixel con la trasformazione PCA o LDA. È un'applicazione reale della riduzione di feature a dati multi/iperspettrali. La fonte non nomina il dataset (sembra la scena iperspettrale Washington DC Mall, ipotesi non confermata).",
+      "latex": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c62",
+      "name": "Bande PCA: ordinate per varianza",
+      "nameEn": "The first six PCA bands",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch3", "page": 59}, {"doc": "part1", "page": 76}],
+      "detail": "Le prime bande PCA mostrano la struttura della scena con forte contrasto (nella prima l'acqua è scura, edifici e strade chiari); scendendo verso la sesta le immagini diventano più rumorose e a chiazze. È coerente con la PCA: componenti ordinate per varianza decrescente, le ultime contengono soprattutto rumore (m14). Le bande PCA descrivono ciò che varia di più nell'immagine, non necessariamente ciò che distingue le classi. Lettura visiva nostra.",
+      "latex": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c63",
+      "name": "Bande LDA: sei bande, cioè C − 1 = 6",
+      "nameEn": "The six LDA bands",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch3", "page": 60}, {"doc": "part1", "page": 76}],
+      "detail": "La slide parla delle «six LDA bands» (non delle «first six»): la LDA fornisce al massimo C − 1 bande, quindi sei bande suggeriscono C = 7 classi di copertura del suolo (inferenza nostra: la fonte non dice quante classi). Le bande LDA mettono in risalto classi specifiche (nella prima l'acqua risulta chiarissima, altre evidenziano vegetazione o superfici artificiali). Il confronto con p59 mostra la differenza tra feature di rappresentazione e feature di discriminazione.",
+      "latex": ["C-1=6\\ \\Rightarrow\\ C=7"],
+      "examRelevance": 2
+    },
+    {
+      "id": "c64",
+      "name": "Equalizzazione dell'istogramma solo per la visualizzazione",
+      "nameEn": "Histogram equalization was applied to all images for better visualization",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch3", "page": 59}, {"doc": "ch3", "page": 60}, {"doc": "part1", "page": 76}],
+      "detail": "Nota verticale su p59, p60 e p76: a tutte le immagini è stata applicata un'equalizzazione dell'istogramma per una migliore visualizzazione. È un'elaborazione solo grafica (ridistribuisce i livelli di grigio per aumentare il contrasto): non fa parte della PCA o della LDA e non cambia l'informazione discriminante; senza di essa molte bande apparirebbero quasi uniformi.",
+      "latex": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c65",
+      "name": "Esempio PCA del corso: i campioni nelle prime due componenti",
+      "nameEn": "Sample distribution in the first two components",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "part1", "page": 71}],
+      "detail": "Parte alta di part1 p71 (esempio PCA del modulo m14, ch3 p44-49, pagina condivisa): i 6 campioni del cubo, classe 1 (pieni: y11, y12, y13) e classe 2 (vuoti: y21, y22, y23), nel piano delle prime due componenti principali (y1, y2). La classe 1 sta a destra (y1 > 0), la classe 2 a sinistra (y1 < 0), in posizioni simmetriche rispetto all'origine.",
+      "latex": ["\\mathbf{y}=(y_1,y_2)^{t}=\\Phi^{t}\\mathbf{x}"],
+      "examRelevance": 1
+    },
+    {
+      "id": "c66",
+      "name": "Step 5': riduzione a 1 feature con Φ = φ1",
+      "nameEn": "Step 5': Reduction to 1 feature",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "part1", "page": 71}],
+      "detail": "Step 5' (part1 p71, identico a ch3 p49): in questo caso Φ = φ1 e si applica z = Φ^t x a tutti i campioni: z11 = 0.79, z12 = 0.23, z13 = 0.56, z21 = −0.56, z22 = −0.23, z23 = −0.79. Sull'asse z l'ordine è z23 < z21 < z22 < 0 < z12 < z13 < z11: tutti i campioni della classe 1 hanno z > 0 e tutti quelli della classe 2 z < 0. Pagina condivisa con m14.",
+      "latex": ["\\Phi=\\boldsymbol{\\phi}_1,\\qquad z=\\Phi^{t}\\mathbf{x}", "z_{11}=0.79,\\ z_{12}=0.23,\\ z_{13}=0.56,\\ z_{21}=-0.56,\\ z_{22}=-0.23,\\ z_{23}=-0.79"],
+      "examRelevance": 1
+    },
+    {
+      "id": "c67",
+      "name": "Ponte: che cosa farebbe la LDA sul cubo del corso",
+      "nameEn": "LDA on the course PCA example (cube data)",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part1", "page": 71}],
+      "detail": "Sui dati del cubo (classe 1: (1,0,0), (1,0,1), (1,1,0); classe 2: (0,0,1), (0,1,0), (0,1,1)) la PCA separa le classi con il segno di z ma senza usare le etichette (gli autovalori delle prime due componenti coincidono, 1/3 e 1/3, quindi φ1 non è nemmeno unica). La LDA: m_1 = (1, 1/3, 1/3), m_2 = (0, 2/3, 2/3); lungo x1 lo scatter intra-classe è nullo (tutti 1 nella classe 1, tutti 0 nella classe 2), quindi proiettando su x1 le classi diventano due impulsi e J = ∞ (caso ideale); però S_W ha prima riga e prima colonna nulle ed è singolare pur con N = 6 > n = 3, e la formula S_W^{-1}(m_1 − m_2) non si applica direttamente. Calcolo aggiunto da noi.",
+      "latex": ["\\mathbf{m}_1=\\big(1,\\tfrac{1}{3},\\tfrac{1}{3}\\big)^{t},\\qquad \\mathbf{m}_2=\\big(0,\\tfrac{2}{3},\\tfrac{2}{3}\\big)^{t}", "S_W=\\begin{pmatrix}0&0&0\\\\0&4/3&-2/3\\\\0&-2/3&4/3\\end{pmatrix},\\qquad |S_W|=0"],
+      "examRelevance": 1
+    },
+    {
+      "id": "c68",
+      "name": "Valore massimo del criterio J*",
+      "nameEn": "Maximum value of the Fisher criterion",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch3", "page": 54}],
+      "detail": "Sostituendo w = S_W^{-1}(m_1 − m_2) in J(w) si ottiene J* = (m_1 − m_2)^t S_W^{-1} (m_1 − m_2): il numeratore è ((m_1 − m_2)^t S_W^{-1}(m_1 − m_2))², il denominatore (m_1 − m_2)^t S_W^{-1} S_W S_W^{-1}(m_1 − m_2). È una distanza di tipo Mahalanobis tra le medie calcolata con la dispersione intra-classe: lo stesso tipo di termine compare nella divergenza e nel primo addendo della distanza di Bhattacharyya (m12). Coincide con l'autovalore λ del problema generalizzato. Formula aggiunta da noi, utile per verificare gli esercizi numerici.",
+      "latex": ["J^{*}=J\\big(S_W^{-1}(\\mathbf{m}_1-\\mathbf{m}_2)\\big)=(\\mathbf{m}_1-\\mathbf{m}_2)^{t}S_W^{-1}(\\mathbf{m}_1-\\mathbf{m}_2)"],
+      "examRelevance": 1
+    },
+    {
+      "id": "c69",
+      "name": "Procedura LDA completa (due classi e C classi)",
+      "nameEn": "LDA procedure",
+      "kind": "procedura",
+      "sourcePages": [{"doc": "ch3", "page": 53}, {"doc": "ch3", "page": 54}, {"doc": "ch3", "page": 55}, {"doc": "ch3", "page": 56}],
+      "detail": "Riassunto operativo ricavato dalle slide p53-56 (ordine dei passi nostro): 1) con i campioni etichettati calcolare le medie di classe m_i (e la media globale m nel caso multiclasse); 2) calcolare le matrici di scatter S_i e S_W = Σ S_i; 3) calcolare S_B (due classi: (m_1 − m_2)(m_1 − m_2)^t; C classi: Σ #(X_i)(m_i − m)(m_i − m)^t); 4) verificare che S_W sia invertibile (N abbastanza maggiore di n); 5a) due classi: w = S_W^{-1}(m_1 − m_2); 5b) C classi: prendere come colonne di W gli autovettori di S_W^{-1}S_B con i C − 1 autovalori più grandi; 6) proiettare ogni campione, di training o nuovo, con y = w^t x (o y = W^t x). Nessuna iterazione: è un calcolo in forma chiusa.",
+      "latex": ["\\mathbf{m}_i\\ \\to\\ S_i\\ \\to\\ S_W,\\ S_B\\ \\to\\ S_W^{-1}\\ \\to\\ \\mathbf{w}=S_W^{-1}(\\mathbf{m}_1-\\mathbf{m}_2)\\ \\ \\text{oppure}\\ \\ W=[\\mathbf{w}_1\\cdots\\mathbf{w}_{C-1}]\\ \\to\\ \\mathbf{y}=W^{t}\\mathbf{x}"],
+      "examRelevance": 2
+    },
+    {
+      "id": "c70",
+      "name": "Scomposizione dello scatter totale S_T = S_W + S_B",
+      "nameEn": "Total scatter matrix decomposition",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch3", "page": 55}],
+      "detail": "La matrice di scatter totale S_T = Σ_{x∈X}(x − m)(x − m)^t, quella usata dalla PCA (m14), si scompone esattamente in S_W + S_B con la S_B multiclasse della slide p55: i termini misti si annullano perché gli scarti dalla media di classe sommano a zero. La PCA vede quindi la somma di dispersione intra-classe e separazione tra le medie senza distinguerle; la LDA le tratta separatamente e ne massimizza il rapporto. Scomposizione aggiunta da noi (der09), utile per rispondere a «quando PCA e LDA coincidono».",
+      "latex": ["S_T=\\sum_{\\mathbf{x}\\in X}(\\mathbf{x}-\\mathbf{m})(\\mathbf{x}-\\mathbf{m})^{t}=S_W+S_B"],
+      "examRelevance": 2
+    },
+    {
+      "id": "c71",
+      "name": "Limite della LDA: vede le classi solo attraverso le medie",
+      "nameEn": "LDA fails when the class means coincide (S_B = 0): discriminant information in the covariances is ignored",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch3", "page": 52}, {"doc": "ch3", "page": 54}, {"doc": "part1", "page": 74}],
+      "detail": "Il criterio di Fisher misura la separazione solo attraverso le medie: il numeratore è (m̃_1 − m̃_2)² = w^t S_B w (p52, p54) e le note p74 dicono che S_B «captures the separation between class means». Se m_1 = m_2, S_B = 0 (rango 0, il caso limite del «rank at most 1» di p54) e J(w) = 0 per ogni w: la LDA non trova alcuna direzione utile anche se le classi sono diversissime per forma o dispersione (per esempio letture di sensori normali concentrate attorno a un valore e letture anomale sparse attorno allo stesso valore). In un caso così perfino la PCA, non supervisionata, può fare meglio: la direzione di massima varianza è quella lungo cui si allarga la classe diffusa, e una soglia su |y| separa in parte le classi. La LDA è inoltre lineare e dà al più C − 1 feature (c49): informazioni discriminanti nelle covarianze richiedono misure che le usano (secondo addendo della distanza di Bhattacharyya, m12) o classificatori non lineari. Osservazione aggiunta dal revisore: le fonti non discutono esplicitamente i limiti della LDA; è il naturale rovescio della domanda d'orale «When are the results of LDA and PCA the same?».",
+      "latex": ["\\mathbf{m}_1=\\mathbf{m}_2\\ \\Rightarrow\\ S_B=0\\ \\Rightarrow\\ J(\\mathbf{w})=\\frac{\\mathbf{w}^{t}S_B\\mathbf{w}}{\\mathbf{w}^{t}S_W\\mathbf{w}}=0\\quad\\forall\\,\\mathbf{w}"],
+      "examRelevance": 2,
+      "addedBy": "revisore"
+    }
+  ],
+  "derivations": [
+    {
+      "id": "der01",
+      "title": "Il numeratore di Fisher come forma quadratica: w^t S_B w = (m̃_1 − m̃_2)²",
+      "sourcePages": [{"doc": "part1", "page": 73}, {"doc": "ch3", "page": 54}],
+      "goal": "Mostrare che la distanza al quadrato tra le medie proiettate si scrive w^t S_B w (derivazione manoscritta delle note p73, prima casella), e che la media proiettata è la proiezione della media.",
+      "steps": [
+        "\\tilde{m}_i=\\frac{1}{\\#(X_i)}\\sum_{\\mathbf{x}\\in X_i}\\mathbf{w}^{t}\\mathbf{x}=\\mathbf{w}^{t}\\mathbf{m}_i",
+        "\\mathbf{w}^{t}S_B\\mathbf{w}=\\mathbf{w}^{t}(\\mathbf{m}_1-\\mathbf{m}_2)(\\mathbf{m}_1-\\mathbf{m}_2)^{t}\\mathbf{w}",
+        "=\\big[\\mathbf{w}^{t}(\\mathbf{m}_1-\\mathbf{m}_2)\\big]\\big[(\\mathbf{m}_1-\\mathbf{m}_2)^{t}\\mathbf{w}\\big]",
+        "=(\\mathbf{w}^{t}\\mathbf{m}_1-\\mathbf{w}^{t}\\mathbf{m}_2)(\\mathbf{w}^{t}\\mathbf{m}_1-\\mathbf{w}^{t}\\mathbf{m}_2)",
+        "=(\\tilde{m}_1-\\tilde{m}_2)(\\tilde{m}_1-\\tilde{m}_2)=(\\tilde{m}_1-\\tilde{m}_2)^{2}"
+      ],
+      "stepWhy": [
+        "Ogni campione proiettato è y = w^t x; w è costante e esce dalla somma (linearità): la media delle proiezioni è la proiezione della media. Nel manoscritto p73 è l'annotazione m̃_i scritta sotto w^t m_i.",
+        "Si inserisce nella forma quadratica la definizione di S_B per due classi (slide p53): è la prima riga del manoscritto.",
+        "Proprietà associativa del prodotto matriciale: si raggruppano (1×n)(n×1) e (1×n)(n×1), ottenendo due scalari.",
+        "Il secondo fattore (m_1 − m_2)^t w è uno scalare, uguale al suo trasposto w^t(m_1 − m_2); distribuendo w^t si ottiene la seconda riga del manoscritto.",
+        "Si sostituisce w^t m_i = m̃_i (passo 1): il numeratore di Fisher è la forma quadratica w^t S_B w, con S_B indipendente da w."
+      ],
+      "concepts": ["c24", "c25", "c22"]
+    },
+    {
+      "id": "der02",
+      "title": "Lo scatter proiettato come forma quadratica: w^t S_W w = s̃_1² + s̃_2²",
+      "sourcePages": [{"doc": "part1", "page": 73}],
+      "goal": "Mostrare che la somma degli scatter proiettati si scrive w^t S_W w (derivazione manoscritta delle note p73, seconda casella).",
+      "steps": [
+        "\\mathbf{w}^{t}S_W\\mathbf{w}=\\mathbf{w}^{t}(S_1+S_2)\\mathbf{w}",
+        "=\\mathbf{w}^{t}S_1\\mathbf{w}+\\mathbf{w}^{t}S_2\\mathbf{w}",
+        "\\mathbf{w}^{t}S_1\\mathbf{w}=\\mathbf{w}^{t}\\Big(\\sum_{\\mathbf{x}\\in\\omega_1}(\\mathbf{x}-\\mathbf{m}_1)(\\mathbf{x}-\\mathbf{m}_1)^{t}\\Big)\\mathbf{w}",
+        "=\\sum_{\\mathbf{x}\\in\\omega_1}\\mathbf{w}^{t}(\\mathbf{x}-\\mathbf{m}_1)(\\mathbf{x}-\\mathbf{m}_1)^{t}\\mathbf{w}",
+        "=\\sum_{\\mathbf{x}\\in\\omega_1}(\\mathbf{w}^{t}\\mathbf{x}-\\mathbf{w}^{t}\\mathbf{m}_1)(\\mathbf{w}^{t}\\mathbf{x}-\\mathbf{w}^{t}\\mathbf{m}_1)",
+        "=\\sum_{y\\in\\omega_1}(y-\\tilde{m}_1)^{2}=\\tilde{s}_1^{2}",
+        "\\Rightarrow\\ \\mathbf{w}^{t}S_W\\mathbf{w}=\\tilde{s}_1^{2}+\\tilde{s}_2^{2}"
+      ],
+      "stepWhy": [
+        "Definizione S_W = S_1 + S_2 (slide p53).",
+        "Distributività del prodotto matriciale rispetto alla somma.",
+        "Definizione di S_1 (p53); nel manoscritto la graffa sotto w^t S_1 w indica questa espansione.",
+        "w^t e w non dipendono dall'indice di somma e possono entrare nella sommatoria (linearità).",
+        "Come per S_B: (x − m_1)^t w è uno scalare uguale a w^t(x − m_1) = w^t x − w^t m_1.",
+        "Nel manoscritto sotto w^t x è annotato y e sotto w^t m_1 è annotato m̃_1: si ottiene la definizione di scatter proiettato (p52). Il manoscritto scrive «S̃_1», ma si intende s̃_1².",
+        "Lo stesso vale per la classe 2; sommando si ottiene il denominatore del criterio di Fisher."
+      ],
+      "concepts": ["c26", "c14", "c21", "c19"]
+    },
+    {
+      "id": "der03",
+      "title": "Dal criterio alla direzione ottima w = S_W^{-1}(m_1 − m_2)",
+      "sourcePages": [{"doc": "ch3", "page": 54}, {"doc": "part1", "page": 73}],
+      "goal": "Ricavare la formula chiusa della slide p54 annullando il gradiente di J (le note p73 indicano solo il metodo: «differentiating with respect to w and setting the gradient to zero»).",
+      "steps": [
+        "J(\\mathbf{w})=\\frac{\\mathbf{w}^{t}S_B\\mathbf{w}}{\\mathbf{w}^{t}S_W\\mathbf{w}}",
+        "\\nabla_{\\mathbf{w}}(\\mathbf{w}^{t}A\\mathbf{w})=2A\\mathbf{w}\\qquad (A=A^{t})",
+        "\\nabla_{\\mathbf{w}}J=\\frac{2S_B\\mathbf{w}\\,(\\mathbf{w}^{t}S_W\\mathbf{w})-2S_W\\mathbf{w}\\,(\\mathbf{w}^{t}S_B\\mathbf{w})}{(\\mathbf{w}^{t}S_W\\mathbf{w})^{2}}=\\mathbf{0}",
+        "(\\mathbf{w}^{t}S_W\\mathbf{w})\\,S_B\\mathbf{w}=(\\mathbf{w}^{t}S_B\\mathbf{w})\\,S_W\\mathbf{w}",
+        "S_B\\mathbf{w}=J(\\mathbf{w})\\,S_W\\mathbf{w}=\\lambda\\,S_W\\mathbf{w}",
+        "S_B\\mathbf{w}=(\\mathbf{m}_1-\\mathbf{m}_2)\\big[(\\mathbf{m}_1-\\mathbf{m}_2)^{t}\\mathbf{w}\\big]=\\alpha\\,(\\mathbf{m}_1-\\mathbf{m}_2)",
+        "\\lambda\\,S_W\\mathbf{w}=\\alpha\\,(\\mathbf{m}_1-\\mathbf{m}_2)\\ \\Rightarrow\\ \\mathbf{w}=\\frac{\\alpha}{\\lambda}\\,S_W^{-1}(\\mathbf{m}_1-\\mathbf{m}_2)",
+        "\\mathbf{w}=S_W^{-1}(\\mathbf{m}_1-\\mathbf{m}_2)",
+        "J^{*}=\\frac{\\big[(\\mathbf{m}_1-\\mathbf{m}_2)^{t}S_W^{-1}(\\mathbf{m}_1-\\mathbf{m}_2)\\big]^{2}}{(\\mathbf{m}_1-\\mathbf{m}_2)^{t}S_W^{-1}S_WS_W^{-1}(\\mathbf{m}_1-\\mathbf{m}_2)}=(\\mathbf{m}_1-\\mathbf{m}_2)^{t}S_W^{-1}(\\mathbf{m}_1-\\mathbf{m}_2)"
+      ],
+      "stepWhy": [
+        "Criterio in forma matriciale (slide p54, note p73).",
+        "Regola di derivazione delle forme quadratiche: per A simmetrica il gradiente di w^t A w è 2Aw; S_B e S_W sono simmetriche (p54).",
+        "Regola del quoziente (f/g)' = (f'g − fg')/g² con f = w^t S_B w e g = w^t S_W w, e condizione di stazionarietà indicata dalle note p73.",
+        "Il gradiente si annulla quando si annulla il numeratore, perché il denominatore è positivo se S_W è definita positiva.",
+        "Dividendo per lo scalare w^t S_W w > 0 compare J(w): il w ottimo risolve il problema agli autovalori generalizzato con λ = J(w).",
+        "S_B ha rango 1: applicata a qualsiasi w dà un multiplo di m_1 − m_2; α = (m_1 − m_2)^t w è uno scalare.",
+        "Si moltiplica a sinistra per S_W^{-1}, che esiste se S_W è non singolare (di solito se N > n, p54), e si divide per λ ≠ 0.",
+        "α/λ è solo un fattore di scala e J(cw) = J(w): lo si scarta e si ottiene la formula della slide p54.",
+        "Verifica aggiunta da noi: sostituendo la soluzione nel criterio, il valore massimo è la distanza di tipo Mahalanobis tra le medie rispetto a S_W, ed è l'autovalore λ."
+      ],
+      "concepts": ["c27", "c28", "c29", "c30", "c31", "c68", "c18"]
+    },
+    {
+      "id": "der04",
+      "title": "Invarianza di scala del criterio di Fisher",
+      "sourcePages": [{"doc": "ch3", "page": 54}],
+      "goal": "Mostrare che J dipende solo dalla direzione di w (proprietà usata per scartare i fattori scalari nella soluzione).",
+      "steps": [
+        "J(\\alpha\\mathbf{w})=\\frac{(\\alpha\\mathbf{w})^{t}S_B(\\alpha\\mathbf{w})}{(\\alpha\\mathbf{w})^{t}S_W(\\alpha\\mathbf{w})}",
+        "=\\frac{\\alpha^{2}\\,\\mathbf{w}^{t}S_B\\mathbf{w}}{\\alpha^{2}\\,\\mathbf{w}^{t}S_W\\mathbf{w}}",
+        "=J(\\mathbf{w})\\qquad\\forall\\,\\alpha\\neq 0"
+      ],
+      "stepWhy": [
+        "Si sostituisce αw al posto di w nel criterio in forma matriciale.",
+        "Gli scalari escono dalle forme quadratiche, una volta dal vettore riga e una dal vettore colonna.",
+        "α² si semplifica: il criterio non dipende né dalla lunghezza né dal verso (vale anche per α < 0), per questo la soluzione è definita a meno di un fattore e massimizzare la sola differenza delle medie non avrebbe senso."
+      ],
+      "concepts": ["c18", "c16"]
+    },
+    {
+      "id": "der05",
+      "title": "Caso multiclasse con C = 2: si ritrova la S_B di Fisher",
+      "sourcePages": [{"doc": "ch3", "page": 55}, {"doc": "ch3", "page": 53}],
+      "goal": "Verificare che la S_B multiclasse (p55) con due classi è proporzionale alla S_B binaria (p53), quindi porta alla stessa direzione ottima.",
+      "steps": [
+        "\\mathbf{m}=\\frac{N_1\\mathbf{m}_1+N_2\\mathbf{m}_2}{N},\\qquad N_i=\\#(X_i),\\ N=N_1+N_2",
+        "\\mathbf{m}_1-\\mathbf{m}=\\frac{N_2}{N}(\\mathbf{m}_1-\\mathbf{m}_2),\\qquad \\mathbf{m}_2-\\mathbf{m}=-\\frac{N_1}{N}(\\mathbf{m}_1-\\mathbf{m}_2)",
+        "S_B=N_1\\frac{N_2^{2}}{N^{2}}(\\mathbf{m}_1-\\mathbf{m}_2)(\\mathbf{m}_1-\\mathbf{m}_2)^{t}+N_2\\frac{N_1^{2}}{N^{2}}(\\mathbf{m}_1-\\mathbf{m}_2)(\\mathbf{m}_1-\\mathbf{m}_2)^{t}",
+        "=\\frac{N_1N_2(N_1+N_2)}{N^{2}}(\\mathbf{m}_1-\\mathbf{m}_2)(\\mathbf{m}_1-\\mathbf{m}_2)^{t}=\\frac{N_1N_2}{N}(\\mathbf{m}_1-\\mathbf{m}_2)(\\mathbf{m}_1-\\mathbf{m}_2)^{t}"
+      ],
+      "stepWhy": [
+        "La media globale è la media delle medie di classe pesata con il numero di campioni.",
+        "Sottraendo: N m_1 − N_1 m_1 − N_2 m_2 = N_2 (m_1 − m_2) perché N − N_1 = N_2; per la classe 2 si ottiene lo stesso vettore con segno opposto.",
+        "Si inseriscono gli scarti nella S_B multiclasse (p55); il segno meno si elide nel prodotto esterno.",
+        "Si raccoglie e si usa N_1 + N_2 = N: la S_B multiclasse è la S_B binaria (p53) per una costante positiva, quindi J cambia di un fattore e la direzione ottima è la stessa."
+      ],
+      "concepts": ["c43", "c40", "c41"]
+    },
+    {
+      "id": "der06",
+      "title": "Perché rank(S_B) ≤ C − 1 e al più C − 1 autovalori non nulli",
+      "sourcePages": [{"doc": "ch3", "page": 56}, {"doc": "part1", "page": 74}],
+      "goal": "Giustificare l'affermazione della slide p56 «only C−1 of these are independent» e le sue conseguenze.",
+      "steps": [
+        "\\sum_{i=1}^{C}\\#(X_i)\\,\\mathbf{m}_i=\\sum_{i=1}^{C}\\sum_{\\mathbf{x}\\in X_i}\\mathbf{x}=\\sum_{\\mathbf{x}\\in X}\\mathbf{x}=N\\mathbf{m}",
+        "\\sum_{i=1}^{C}\\#(X_i)(\\mathbf{m}_i-\\mathbf{m})=N\\mathbf{m}-N\\mathbf{m}=\\mathbf{0}",
+        "\\mathbf{m}_C-\\mathbf{m}=-\\frac{1}{\\#(X_C)}\\sum_{i=1}^{C-1}\\#(X_i)(\\mathbf{m}_i-\\mathbf{m})",
+        "S_B\\mathbf{v}=\\sum_{i=1}^{C}\\#(X_i)\\,\\big[(\\mathbf{m}_i-\\mathbf{m})^{t}\\mathbf{v}\\big]\\,(\\mathbf{m}_i-\\mathbf{m})\\in\\operatorname{span}\\{\\mathbf{m}_1-\\mathbf{m},\\ldots,\\mathbf{m}_{C-1}-\\mathbf{m}\\}",
+        "\\operatorname{rank}(S_B)\\le C-1\\ \\Rightarrow\\ \\operatorname{rank}(S_W^{-1}S_B)\\le C-1"
+      ],
+      "stepWhy": [
+        "Definizione di m_i (#(X_i) m_i è la somma dei campioni della classe) e di media globale m (p55): sommare per classi e poi sommare le classi equivale a sommare tutti i campioni.",
+        "Si sottrae Σ #(X_i) m = N m: gli scarti pesati dalla media globale sommano a zero.",
+        "Quindi l'ultimo scarto è combinazione lineare degli altri C − 1: solo C − 1 sono indipendenti, come afferma la slide p56.",
+        "Ogni termine di S_B applicato a v dà un multiplo del proprio vettore m_i − m: l'immagine di S_B sta nello span degli scarti, che per il passo 3 ha dimensione al più C − 1.",
+        "Il rango di un prodotto non supera quello dei fattori: S_W^{-1}S_B ha al più C − 1 autovalori non nulli («no more than C−1 of the eigenvalues are nonzero», p56). Il rango è minore se gli scarti sono ulteriormente dipendenti (medie allineate)."
+      ],
+      "concepts": ["c48", "c49", "c50", "c41"]
+    },
+    {
+      "id": "der07",
+      "title": "Soluzione multiclasse: perché gli autovettori di S_W^{-1}S_B (schema di dimostrazione)",
+      "sourcePages": [{"doc": "ch3", "page": 56}, {"doc": "part1", "page": 74}],
+      "goal": "Dare un'idea del «It can be shown» della slide p56: con colonne autovettori generalizzati J(W) è il prodotto degli autovalori, massimo scegliendo i più grandi.",
+      "steps": [
+        "J(WA)=\\frac{|A^{t}W^{t}S_BWA|}{|A^{t}W^{t}S_WWA|}=\\frac{|A|^{2}\\,|W^{t}S_BW|}{|A|^{2}\\,|W^{t}S_WW|}=J(W)",
+        "S_B\\mathbf{w}_i=\\lambda_i\\,S_W\\mathbf{w}_i,\\qquad \\mathbf{w}_i^{t}S_W\\mathbf{w}_j=\\delta_{ij}",
+        "W^{t}S_WW=I,\\qquad W^{t}S_BW=\\operatorname{diag}(\\lambda_1,\\ldots,\\lambda_{C-1})",
+        "J(W)=\\frac{\\prod_{i}\\lambda_i}{1}=\\lambda_1\\lambda_2\\cdots\\lambda_{C-1}",
+        "\\max_{W}J(W)\\ \\Rightarrow\\ \\text{colonne di } W=\\text{autovettori dei } C-1 \\text{ autovalori maggiori di } S_W^{-1}S_B"
+      ],
+      "stepWhy": [
+        "Per A invertibile il determinante di un prodotto è il prodotto dei determinanti e |A^t| = |A|: J dipende solo dal sottospazio generato dalle colonne di W, non dalla base scelta. È anche il motivo per cui il determinante è un buon modo di scalarizzare (note p74).",
+        "Si prendono come colonne gli autovettori generalizzati (equivalenti agli autovettori di S_W^{-1}S_B); per la coppia simmetrica (S_B, S_W) con S_W definita positiva si possono normalizzare in modo S_W-ortonormale.",
+        "Con questa normalizzazione le due matrici proiettate diventano diagonali: w_i^t S_B w_j = λ_j w_i^t S_W w_j = λ_j δ_ij.",
+        "Il determinante di una matrice diagonale è il prodotto degli elementi: J(W) è il prodotto degli autovalori scelti, e ogni λ_i è il rapporto di Fisher lungo w_i.",
+        "Il massimo si ottiene scegliendo gli autovalori più grandi (la slide p56 lo afferma senza dimostrazione; la prova completa di ottimalità, con sbiancamento e teorema di Courant-Fischer, non è nelle fonti). Al più C − 1 autovalori sono non nulli."
+      ],
+      "concepts": ["c44", "c46", "c47", "c51", "c52"]
+    },
+    {
+      "id": "der08",
+      "title": "Proprietà di S_W e S_B: simmetria, semidefinitezza positiva, rango",
+      "sourcePages": [{"doc": "ch3", "page": 54}, {"doc": "part1", "page": 73}],
+      "goal": "Dimostrare le proprietà elencate alla slide p54 e nelle note p73, con la precisazione sul rango di S_W.",
+      "steps": [
+        "\\big(\\mathbf{a}\\mathbf{a}^{t}\\big)^{t}=\\mathbf{a}\\mathbf{a}^{t}\\ \\Rightarrow\\ S_i^{t}=S_i,\\ \\ S_W^{t}=S_W,\\ \\ S_B^{t}=S_B",
+        "\\mathbf{v}^{t}(\\mathbf{x}-\\mathbf{m}_i)(\\mathbf{x}-\\mathbf{m}_i)^{t}\\mathbf{v}=\\big(\\mathbf{v}^{t}(\\mathbf{x}-\\mathbf{m}_i)\\big)^{2}\\ge 0\\ \\Rightarrow\\ \\mathbf{v}^{t}S_W\\mathbf{v}\\ge 0",
+        "\\mathbf{v}^{t}S_B\\mathbf{v}=\\big((\\mathbf{m}_1-\\mathbf{m}_2)^{t}\\mathbf{v}\\big)^{2}\\ge 0",
+        "S_B\\mathbf{v}=(\\mathbf{m}_1-\\mathbf{m}_2)\\big[(\\mathbf{m}_1-\\mathbf{m}_2)^{t}\\mathbf{v}\\big]\\ \\Rightarrow\\ \\operatorname{rank}(S_B)\\le 1",
+        "\\sum_{\\mathbf{x}\\in X_i}(\\mathbf{x}-\\mathbf{m}_i)=\\mathbf{0}\\ \\Rightarrow\\ \\operatorname{rank}(S_i)\\le\\#(X_i)-1,\\qquad \\operatorname{rank}(S_W)\\le N-C"
+      ],
+      "stepWhy": [
+        "Il trasposto di un prodotto esterno è il prodotto stesso, e una somma di matrici simmetriche è simmetrica.",
+        "Ogni forma quadratica di un termine è un quadrato; sommando quadrati si ottiene un numero ≥ 0: S_W è semidefinita positiva (p54).",
+        "Stesso argomento per S_B, che ha un solo termine.",
+        "L'immagine di S_B è la retta generata da m_1 − m_2: rango al più 1, come dice la slide p54 e come spiegano le note p73 («based on a single vector formed by the difference between class means»).",
+        "Precisazione aggiunta da noi: gli scarti di una classe dalla sua media sono linearmente dipendenti, quindi ogni S_i perde un grado; S_W (n×n) può essere invertibile solo se N − C ≥ n, da cui il «usually nonsingular if N > n» della slide."
+      ],
+      "concepts": ["c32", "c33", "c34"]
+    },
+    {
+      "id": "der09",
+      "title": "Scomposizione dello scatter totale: S_T = S_W + S_B",
+      "sourcePages": [{"doc": "ch3", "page": 55}],
+      "goal": "Collegare la matrice usata dalla PCA (scatter totale) alle due matrici della LDA (derivazione aggiunta da noi).",
+      "steps": [
+        "S_T=\\sum_{\\mathbf{x}\\in X}(\\mathbf{x}-\\mathbf{m})(\\mathbf{x}-\\mathbf{m})^{t}",
+        "\\mathbf{x}-\\mathbf{m}=(\\mathbf{x}-\\mathbf{m}_i)+(\\mathbf{m}_i-\\mathbf{m}),\\qquad \\mathbf{x}\\in X_i",
+        "S_T=\\sum_{i=1}^{C}\\sum_{\\mathbf{x}\\in X_i}\\Big[(\\mathbf{x}-\\mathbf{m}_i)(\\mathbf{x}-\\mathbf{m}_i)^{t}+(\\mathbf{x}-\\mathbf{m}_i)(\\mathbf{m}_i-\\mathbf{m})^{t}+(\\mathbf{m}_i-\\mathbf{m})(\\mathbf{x}-\\mathbf{m}_i)^{t}+(\\mathbf{m}_i-\\mathbf{m})(\\mathbf{m}_i-\\mathbf{m})^{t}\\Big]",
+        "\\sum_{\\mathbf{x}\\in X_i}(\\mathbf{x}-\\mathbf{m}_i)=\\mathbf{0}\\ \\Rightarrow\\ \\text{i termini misti si annullano}",
+        "S_T=\\sum_{i=1}^{C}S_i+\\sum_{i=1}^{C}\\#(X_i)(\\mathbf{m}_i-\\mathbf{m})(\\mathbf{m}_i-\\mathbf{m})^{t}=S_W+S_B"
+      ],
+      "stepWhy": [
+        "Matrice di scatter di tutti i dati attorno alla media globale: è quella di cui la PCA calcola gli autovettori (m14, ch3 p42).",
+        "Si aggiunge e si toglie la media della classe a cui appartiene x.",
+        "Si sviluppa il prodotto esterno e si raggruppa la somma per classi.",
+        "m_i − m non dipende da x ed esce dalla somma interna, che è la somma degli scarti dalla media di classe: nulla per definizione di m_i.",
+        "Il primo gruppo è S_W (p55), il secondo (termine costante sommato #(X_i) volte) è la S_B multiclasse (p55): la PCA vede solo la somma, la LDA separa i due pezzi e ne massimizza il rapporto."
+      ],
+      "concepts": ["c70", "c60", "c54", "c39", "c40"]
+    },
+    {
+      "id": "der10",
+      "title": "Via alternativa: massimo del quoziente di Rayleigh generalizzato con il moltiplicatore di Lagrange",
+      "sourcePages": [{"doc": "ch3", "page": 54}, {"doc": "ch3", "page": 56}],
+      "goal": "Ottenere il problema agli autovalori generalizzato S_B w = λ S_W w fissando il denominatore invece di derivare il rapporto (derivazione aggiunta dal revisore; risponde a «Which is the formula for the w maximizing the Generalized Rayleigh ratio?» e spiega perché nel caso multiclasse si scelgono gli autovalori più grandi).",
+      "steps": [
+        "\\max_{\\mathbf{w}}\\ \\frac{\\mathbf{w}^{t}S_B\\mathbf{w}}{\\mathbf{w}^{t}S_W\\mathbf{w}}\\quad\\Longleftrightarrow\\quad \\max_{\\mathbf{w}}\\ \\mathbf{w}^{t}S_B\\mathbf{w}\\ \\ \\text{s.t.}\\ \\ \\mathbf{w}^{t}S_W\\mathbf{w}=1",
+        "L(\\mathbf{w},\\lambda)=\\mathbf{w}^{t}S_B\\mathbf{w}-\\lambda\\,(\\mathbf{w}^{t}S_W\\mathbf{w}-1)",
+        "\\nabla_{\\mathbf{w}}L=2S_B\\mathbf{w}-2\\lambda\\,S_W\\mathbf{w}=\\mathbf{0}\\ \\Rightarrow\\ S_B\\mathbf{w}=\\lambda\\,S_W\\mathbf{w}\\ \\Rightarrow\\ S_W^{-1}S_B\\,\\mathbf{w}=\\lambda\\,\\mathbf{w}",
+        "\\mathbf{w}^{t}S_B\\mathbf{w}=\\lambda\\,\\mathbf{w}^{t}S_W\\mathbf{w}=\\lambda\\ \\Rightarrow\\ J(\\mathbf{w})=\\lambda",
+        "\\max_{\\mathbf{w}}J(\\mathbf{w})=\\lambda_{\\max}(S_W^{-1}S_B)\\qquad (C=2:\\ \\mathbf{w}\\propto S_W^{-1}(\\mathbf{m}_1-\\mathbf{m}_2),\\ \\lambda_{\\max}=J^{*})"
+      ],
+      "stepWhy": [
+        "J(αw) = J(w) (der04): si può fissare la scala di w imponendo che il denominatore valga 1 senza perdere soluzioni; resta da massimizzare il numeratore sotto un vincolo di uguaglianza.",
+        "Lagrangiana del problema vincolato: si sottrae il vincolo moltiplicato per λ.",
+        "Si usa ∇(w^t A w) = 2Aw per A simmetrica (S_B e S_W lo sono, p54): i punti stazionari sono gli autovettori generalizzati della coppia (S_B, S_W), cioè gli autovettori di S_W^{-1}S_B se S_W è invertibile. È la stessa equazione di der03, ottenuta senza la regola del quoziente.",
+        "Moltiplicando a sinistra per w^t e usando il vincolo, il moltiplicatore λ è proprio il valore del criterio in quel punto stazionario.",
+        "Il massimo globale è quindi l'autovalore più grande: per due classi coincide con la formula chiusa di p54 e con J* (c68); per C classi (p56) con il vincolo W^t S_W W = I si prendono gli autovettori dei C − 1 autovalori più grandi (der07)."
+      ],
+      "concepts": ["c27", "c30", "c18", "c47", "c68"],
+      "addedBy": "revisore"
+    }
+  ],
+  "workedExamples": [
+    {
+      "id": "ex01",
+      "title": "Stessi campioni, due direzioni di proiezione",
+      "sourcePages": [{"doc": "ch3", "page": 51}, {"doc": "part1", "page": 72}],
+      "description": "Figura p51 (ripresa nelle note p72): 15 campioni nel piano (x1, x2) ∈ [0, 2]², 6 neri (una classe) e 9 rossi (l'altra). La slide non fornisce numeri: il confronto è qualitativo e motiva il bisogno di un criterio J(w). Coordinate approssimate ricavate dal revisore digitalizzando i centri dei pallini (scala circa 181 px per unità; da usare nei widget dichiarandole come lettura della figura): neri (0.08, 1.96), (0.01, 1.42), (0.02, 1.27), (0.92, 1.60), (0.69, 0.65), (1.72, 0.39); rossi (0.65, 0.92), (0.91, 1.97), (0.91, 1.01), (0.97, 0.43), (1.50, 1.80), (1.51, 1.23), (1.60, 0.26), (1.64, 0.87), (1.93, 1.45). Sinistra: w lungo la bisettrice (45°, pendenza misurata esattamente −1 in pixel); le linee di proiezione (tratteggiate nere per i neri, rosa per i rossi) portano i punti sulla retta grigia. Con w unitario le proiezioni sono neri 0.91, 0.94, 1.01, 1.44, 1.49, 1.78 e rossi 0.99, 1.11, 1.32, 1.36, 1.77, 1.94, 2.03, 2.34, 2.39: completamente alternate (ordine N N R N R R R N N R N R R R R), J ≈ 0.066, almeno 4 errori con la soglia migliore. Destra: w punta in basso a destra (circa −15°) e la retta passa per l'origine; proiezioni neri −0.44, −0.36, −0.31, 0.47, 0.49, 1.57 e rossi 0.36, 0.39, 0.62, 0.83, 0.98, 1.14, 1.35, 1.47, 1.49 (ordine N N N R R N N R R R R R R R N): i tre neri sull'asse x2 sono ben staccati, ma due neri si mescolano ai primi rossi e uno cade oltre l'ultimo rosso; J ≈ 0.115, almeno 3 errori. Separazione migliore, non perfetta. Verifica del revisore: sugli stessi punti la direzione di Fisher S_W^{-1}(m_1 − m_2) forma circa +10° con l'asse x1 e dà J ≈ 0.14 (almeno 2 errori); nessuna direzione scende sotto 2 errori (intervallo di angoli con 2 errori: circa da 8° a 28°), perché il nero (0.92, 1.60) sta dentro l'involucro convesso dei rossi. Tutti questi numeri sono stime dalla digitalizzazione.",
+      "concepts": ["c08", "c09", "c05", "c06"]
+    },
+    {
+      "id": "ex02",
+      "title": "Esempio PCA del corso: riduzione a una feature (Step 5')",
+      "sourcePages": [{"doc": "part1", "page": 71}],
+      "description": "Dati (ch3 p44, modulo m14): classe 1 x11 = (1,0,0), x12 = (1,0,1), x13 = (1,1,0); classe 2 x21 = (0,0,1), x22 = (0,1,0), x23 = (0,1,1). Dopo la centratura sul baricentro (0.5, 0.5, 0.5) e il calcolo degli autovettori (λ1 = λ2 = 1/3, λ3 = 1/12; φ1 ≈ (0.79, −0.23, −0.56)), part1 p71 mostra i campioni nelle prime due componenti (classe 1 a destra, classe 2 a sinistra) e lo Step 5': con Φ = φ1 e z = Φ^t x si ottiene z11 = 0.79, z12 = 0.23, z13 = 0.56, z21 = −0.56, z22 = −0.23, z23 = −0.79, cioè sull'asse z23 < z21 < z22 < 0 < z12 < z13 < z11. Le due classi sono separate dal segno di z, benché la PCA non abbia usato le etichette.",
+      "concepts": ["c65", "c66", "c67"]
+    },
+    {
+      "id": "ex03",
+      "title": "PCA vs LDA, esempio 1: classi allungate e affiancate",
+      "sourcePages": [{"doc": "ch3", "page": 57}, {"doc": "part1", "page": 75}],
+      "description": "Scatter di due classi (circa 500 campioni ciascuna, ○ rossi e + blu) allungate lungo la diagonale e affiancate. Assi PCA neri (il primo lungo l'allungamento, da (−2,−4) a (4,4) circa; il secondo ortogonale), retta LDA verde tratteggiata da (−2.5, 1.5) a (4.5, −1.5) circa. Istogramma «PCA Projection» su y1 (da −6 a 8): le due curve si sovrappongono quasi completamente (picchi di circa 70 conteggi a y1 ≈ 0 e y1 ≈ 1.2). Istogramma «LDA Projection» su y (da −4 a 10): due campane distinte con picchi a y ≈ 0.5 e y ≈ 5.2 e sovrapposizione minima attorno a 2.5. Conclusione: la PCA, guidata dalla varianza, sceglie la direzione in cui le classi si confondono; la LDA quella in cui si separano. Angoli misurati dal revisore sui pixel: PCA circa +55° e −35° (ortogonali), LDA circa −22°, cioè a circa 13° dalla seconda componente PCA e a circa 77° dalla prima.",
+      "concepts": ["c56", "c58", "c59"]
+    },
+    {
+      "id": "ex04",
+      "title": "PCA vs LDA, esempio 2: le medie differiscono anche lungo la diagonale",
+      "sourcePages": [{"doc": "ch3", "page": 58}, {"doc": "part1", "page": 75}],
+      "description": "Scatter di due classi: ○ rossi allungati lungo la diagonale in basso a sinistra, + blu più raccolti in alto a destra. Assi PCA neri incrociati attorno a (1.2, 0.8), retta LDA verde tratteggiata quasi orizzontale. Istogramma «PCA Projection» su y1 (da −5 a 4): blu attorno a −2.7, rosso attorno a 0 con coda fino a 3, sovrapposizione limitata tra −2 e −1. Istogramma «LDA Projection» su y (da −4 a 8): rosso attorno a 0, blu attorno a 4, sovrapposizione limitata tra 1 e 2.5. Conclusione: qui anche la PCA separa in buona parte, perché la differenza tra le classi ha una componente lungo la direzione di massima varianza; è il caso da usare come esempio in cui i risultati sono simili. Angoli misurati dal revisore sui pixel: PCA circa +42° e −48°, LDA circa −3°: le direzioni restano lontane circa 45°, la somiglianza è negli istogrammi. La classe blu (in alto a destra nel piano) cade su y1 negativi perché il verso di φ1 è arbitrario.",
+      "concepts": ["c57", "c58", "c60"]
+    },
+    {
+      "id": "ex05",
+      "title": "PCA vs LDA, esempio 3: immagine telerilevata",
+      "sourcePages": [{"doc": "ch3", "page": 59}, {"doc": "ch3", "page": 60}, {"doc": "part1", "page": 76}],
+      "description": "Immagine telerilevata a falsi colori di un'area urbana (vegetazione in rosso, specchi d'acqua scuri, edifici e viali) affiancata dalle prime sei bande PCA (p59) e dalle sei bande LDA (p60); le note p76 le mostrano insieme. Su tutte le immagini è stata applicata l'equalizzazione dell'istogramma solo per la visualizzazione. Le bande PCA, ordinate per varianza, passano da immagini molto contrastate a immagini rumorose; le bande LDA evidenziano classi specifiche (nella prima l'acqua è bianca). Nessun dato numerico nella fonte; sei bande LDA sono coerenti con al più C − 1 feature (C = 7 classi, inferenza nostra).",
+      "concepts": ["c61", "c62", "c63", "c64"]
+    }
+  ],
+  "figures": [
+    {"id": "fig01", "doc": "ch3", "page": 51, "description": "Due grafici affiancati nel piano (x1, x2): gli stessi campioni neri e rossi proiettati su una retta lungo w a 45° (sinistra, proiezioni completamente alternate) e su una retta lungo w a circa −15° (destra, separazione migliore ma non perfetta), con i segmenti di proiezione perpendicolari (tratteggiati neri per una classe, pieni rosa per l'altra). Coordinate digitalizzate dei 15 punti in ex01.", "region": "intera slide sotto il titolo", "concepts": ["c08", "c09"], "importance": 3},
+    {"id": "fig02", "doc": "part1", "page": 72, "description": "La stessa figura delle due proiezioni (versione ridotta nelle note), seguita dalle formule del criterio di Fisher e delle matrici di scatter.", "region": "terzo superiore della pagina", "concepts": ["c08"], "importance": 2},
+    {"id": "fig03", "doc": "part1", "page": 73, "description": "Due riquadri su carta a quadretti con la derivazione manoscritta: w^t S_B w = (m̃_1 − m̃_2)² e w^t S_W w = w^t S_1 w + w^t S_2 w con lo sviluppo fino a Σ (y − m̃_1)², con le annotazioni y e m̃_i sotto i termini.", "region": "metà superiore, dopo «Now:» e «and:»", "concepts": ["c24", "c25", "c26"], "importance": 3},
+    {"id": "fig04", "doc": "ch3", "page": 55, "description": "Formula della S_B multiclasse con la m cerchiata in verde e la freccia verso l'etichetta «Global mean vector» e la formula m = (1/N) Σ x.", "region": "metà inferiore destra", "concepts": ["c40", "c41"], "importance": 2},
+    {"id": "fig05", "doc": "ch3", "page": 57, "description": "PCA vs LDA esempio 1: scatter di due classi allungate e affiancate (○ rossi, + blu) con i due assi PCA neri e la retta LDA verde tratteggiata; a destra gli istogrammi «PCA Projection» (y1, classi sovrapposte) e «LDA Projection» (y, classi separate).", "region": "intera slide: scatter a sinistra, due istogrammi impilati a destra", "concepts": ["c56", "c58", "c59"], "importance": 3},
+    {"id": "fig06", "doc": "ch3", "page": 58, "description": "PCA vs LDA esempio 2: scatter con medie diverse anche lungo la diagonale, assi PCA e retta LDA quasi orizzontale; istogramma PCA parzialmente separato e istogramma LDA meglio separato.", "region": "intera slide: scatter a sinistra, due istogrammi impilati a destra", "concepts": ["c57", "c58", "c60"], "importance": 3},
+    {"id": "fig07", "doc": "part1", "page": 75, "description": "Nelle note, i due esempi PCA vs LDA uno sotto l'altro, ciascuno con scatter e i due istogrammi.", "region": "intera pagina", "concepts": ["c56", "c57", "c58"], "importance": 2},
+    {"id": "fig08", "doc": "ch3", "page": 59, "description": "Immagine telerilevata a falsi colori e le prime sei bande PCA come strisce verticali in scala di grigi, con la nota sull'equalizzazione dell'istogramma.", "region": "intera slide", "concepts": ["c61", "c62", "c64"], "importance": 2},
+    {"id": "fig09", "doc": "ch3", "page": 60, "description": "La stessa immagine a falsi colori e le sei bande LDA come strisce verticali in scala di grigi, con la nota sull'equalizzazione dell'istogramma.", "region": "intera slide", "concepts": ["c61", "c63", "c64"], "importance": 2},
+    {"id": "fig10", "doc": "part1", "page": 76, "description": "Nelle note, le due strisce (sei bande PCA sopra, sei bande LDA sotto) per il confronto diretto.", "region": "due terzi superiori della pagina", "concepts": ["c61", "c62", "c63", "c64"], "importance": 2},
+    {"id": "fig11", "doc": "part1", "page": 71, "description": "Esempio PCA del cubo: campioni y11…y23 nel piano delle prime due componenti (classe 1 piena a destra, classe 2 vuota a sinistra) e, sotto, l'asse z dopo la riduzione a una feature con i valori z_ij.", "region": "metà superiore della pagina", "concepts": ["c65", "c66"], "importance": 2}
+  ],
+  "widgets": [
+    {
+      "id": "m15-rappresentare-o-discriminare",
+      "title": "Rappresentare o discriminare? Stessi pesci, due obiettivi",
+      "concepts": ["c01", "c02", "c03", "c54", "c55"],
+      "scenario": "pesce",
+      "realExample": "Nastro trasportatore dell'impianto di confezionamento: per ogni pesce la telecamera misura lunghezza e larghezza (cm); le classi sono salmone e spigola. Si vogliono comprimere le 2 feature in 1 sola per un classificatore più semplice e veloce. La PCA guarda solo la nuvola (senza etichette) e tiene la direzione di massima varianza, cioè la taglia del pesce; la LDA usa le etichette fornite dall'operatore e tiene la direzione che separa le specie, cioè la forma. Dati sintetici ispirati all'esempio del Cap. 1.",
+      "storyboard": [
+        "Stato iniziale: scatter 2D di 200 pesci tutti grigi (etichette nascoste), una nuvola allungata lungo la diagonale (pesci piccoli e grandi). Didascalia: «Questo è ciò che vede la PCA».",
+        "La freccia PCA φ1 cresce dal baricentro lungo la diagonale (600 ms); i punti scivolano sull'asse e si accumulano in un istogramma grigio unimodale sotto il grafico, etichettato «efficient for representation».",
+        "Trigger «Mostra le etichette»: i punti si colorano (salmone arancio, spigola blu) con uno stagger di 5 ms e si scopre che le due specie sono due strisce parallele affiancate.",
+        "L'istogramma PCA si divide nei due colori: le due campane si sovrappongono quasi del tutto; badge «errore con la soglia migliore: 41%».",
+        "Trigger «Usa le etichette (LDA)»: compare la freccia verde tratteggiata w, i punti volano sulla nuova retta e l'istogramma LDA mostra due campane staccate; badge «errore: 3%», etichetta «efficient for discrimination».",
+        "Chiusura: tabella a due colonne PCA / LDA con le righe supervisionata? (no / sì), usa le etichette? (no / sì), obiettivo (massima varianza, rappresentazione / massima separazione, discriminazione)."
+      ],
+      "interactions": ["toggle etichette visibili", "pulsanti «Proietta con PCA» e «Proietta con LDA»", "slider differenza di forma tra le specie (0-3 cm di larghezza a parità di lunghezza)", "slider allungamento della nuvola (rapporto degli assi 1-6)", "pulsante «rigenera dati» con seed"],
+      "visual": "SVG a due pannelli: a sinistra lo scatter con assi lunghezza (cm) e larghezza (cm), freccia φ1 nera e freccia w verde tratteggiata come nelle slide p57; a destra due istogrammi impilati «PCA Projection y1» e «LDA Projection y» con curve rosse e blu come nelle slide; sotto la tabella di confronto. Etichetta «dati sintetici ispirati all'esempio del Cap. 1».",
+      "aha": "La direzione che rappresenta meglio i dati (massima varianza) non è necessariamente quella che separa le classi: senza etichette la PCA non può sapere che cosa distingue un salmone da una spigola.",
+      "formulasShown": ["y_1=\\boldsymbol{\\phi}_1^{t}\\mathbf{x}\\ \\ (\\text{PCA, senza etichette})", "y=\\mathbf{w}^{t}\\mathbf{x}\\ \\ (\\text{LDA, con etichette})"],
+      "challenge": "Prima di premere «Mostra le etichette» scommetti: la PCA separerà le specie? Poi trova un valore dello slider allungamento per cui PCA e LDA hanno lo stesso errore.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m15-retta-rotante-proiezioni",
+      "title": "Gira la retta: le proiezioni cadono e si separano (o no)",
+      "concepts": ["c04", "c05", "c06", "c08", "c09"],
+      "scenario": "pesce",
+      "realExample": "15 pesci (6 salmoni neri e 9 spigole rosse, con le coordinate digitalizzate dalla figura p51 riportate in ex01) descritti da luminosità e larghezza normalizzate in [0, 2]. Si cerca l'unica retta su cui proiettarli per poi separarli con una soglia: la qualità della separazione dipende solo dalla direzione scelta.",
+      "storyboard": [
+        "Riproduzione della figura p51 sinistra: punti neri e rossi, retta grigia a 45° per l'origine, freccia w.",
+        "Play: da ogni punto parte un segmento perpendicolare alla retta (tratteggiato nero per ω1, pieno rosa per ω2) e un pallino scivola fino al piede della perpendicolare con stagger di 60 ms; accanto a ogni piede appare il valore y = w^t x.",
+        "Sotto il piano, un asse 1D «y» raccoglie i pallini: si vede la sovrapposizione rosso/nero e un contatore «campioni fuori posto: k».",
+        "L'utente trascina la punta di w o ruota la manopola θ: le perpendicolari si ricalcolano in tempo reale e i pallini sull'asse 1D scorrono.",
+        "Preset «figura destra p51»: la retta ruota a circa −15°; i tre neri sull'asse x2 si staccano a sinistra (valori negativi), ma due neri restano mescolati ai primi rossi e uno scappa oltre l'ultimo rosso: meglio di 45° (contatore da 4 a 3 errori), non perfetto.",
+        "Pulsante «direzione di Fisher»: la retta ruota fino a circa +10° (w ∝ S_W^{-1}(m_1 − m_2) sui 15 punti) e un indicatore J(w) = (m̃_1 − m̃_2)²/(s̃_1² + s̃_2²) passa da circa 0.07 (45°) a 0.12 (−15°) a 0.14 (Fisher): anticipazione del criterio di p52.",
+        "Pannello laterale: con ||w|| = 1, y è la coordinata del piede lungo la retta; attivando «||w|| = 2» tutte le y raddoppiano ma l'ordine dei pallini e la separazione relativa non cambiano."
+      ],
+      "interactions": ["trascina la punta di w", "manopola angolo θ da 0° a 180°", "toggle ||w|| = 1 / libero", "pulsanti Play e Passo", "preset «p51 sinistra» e «p51 destra»", "pulsante «direzione di Fisher»", "clic su un punto per vedere il calcolo y = w1 x1 + w2 x2 con i numeri"],
+      "visual": "SVG: piano x1-x2 da 0 a 2 come in p51, retta grigia, freccia w nera spessa, perpendicolari colorate per classe, asse 1D sotto con pallini colorati, formula live y = w^t x con i numeri del punto selezionato.",
+      "aha": "Una proiezione lineare schiaccia tutto su una retta: se la retta è scelta male, classi ben distinte nel piano diventano inseparabili; tutto dipende dalla direzione di w.",
+      "formulasShown": ["y=\\mathbf{w}^{t}\\mathbf{x}=w_1x_1+w_2x_2", "\\|\\mathbf{w}\\|=1:\\ y=\\|\\mathbf{x}\\|\\cos\\theta", "J(\\mathbf{w})=\\frac{(\\tilde{m}_1-\\tilde{m}_2)^{2}}{\\tilde{s}_1^{2}+\\tilde{s}_2^{2}}"],
+      "challenge": "Ruota w per ridurre al minimo i campioni fuori posto con la soglia migliore: con i punti di p51 lo zero è impossibile (il nero in (0.92, 1.60) sta dentro la nuvola rossa), il minimo è 2 errori tra circa 8° e 28°. Trova quell'intervallo e confronta il tuo angolo con la direzione di Fisher (circa +10°) e con quella scelta nella slide (circa −15°, 3 errori).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m15-bilancia-di-fisher",
+      "title": "La bilancia di Fisher: medie lontane, classi compatte",
+      "concepts": ["c07", "c10", "c13", "c14", "c15", "c17"],
+      "scenario": "medicina",
+      "realExample": "Monitor Holter: ogni battito ECG è ridotto a una sola feature proiettata, combinazione lineare di durata del QRS e intervallo RR. Classi: battiti normali e battiti ventricolari prematuri (PVC). Un buon indice deve allontanare le medie delle due classi e tenere compatti i battiti della stessa classe. Dati sintetici ispirati al database MIT-BIH.",
+      "storyboard": [
+        "Asse 1D con i battiti proiettati: due nuvole di tacche (verde normali, viola PVC) con le medie m̃1 e m̃2 come triangoli e le bande di dispersione.",
+        "A destra una bilancia: sul piatto «numeratore» un blocco alto quanto (m̃1 − m̃2)², sul piatto «denominatore» un blocco alto quanto s̃1² + s̃2²; il valore J(w) appare sulla trave.",
+        "Slider «distanza tra le medie»: le nuvole si allontanano, il blocco del numeratore cresce quadraticamente e J sale.",
+        "Slider «dispersione intra-classe»: le nuvole si allargano, il denominatore cresce e J crolla anche con medie lontane.",
+        "Preset «caso ideale»: le dispersioni vanno a zero, i battiti di ogni classe collassano in un impulso (barra verticale), il denominatore sparisce e J → ∞ (badge «impulsi lontani»).",
+        "Didascalia finale con la frase della slide p52: «the best projection makes the difference between the means as large as possible relative to the variance»."
+      ],
+      "interactions": ["slider distanza tra le medie (0-5, in unità della feature)", "slider dispersione separati per la classe 1 e la classe 2", "preset «ideale», «medie uguali», «molto disperse»", "toggle scala logaritmica su J"],
+      "visual": "SVG: asse 1D con i campioni come tacche, triangoli per le medie, bande di scatter; bilancia animata con molla; formula J con i valori sostituiti in tempo reale; colori per ruolo (separazione inter-classe arancio, dispersione intra-classe grigio-blu).",
+      "aha": "J premia due cose insieme: medie lontane (between-class) e classi compatte (within-class); allontanare le medie non basta se le classi si allargano.",
+      "formulasShown": ["J(\\mathbf{w})=\\frac{(\\tilde{m}_1-\\tilde{m}_2)^{2}}{\\tilde{s}_1^{2}+\\tilde{s}_2^{2}}", "\\tilde{s}_1^{2}+\\tilde{s}_2^{2}\\to 0\\ \\Rightarrow\\ J\\to\\infty"],
+      "challenge": "Parti da J = 0.5 e raggiungi J ≥ 10 in al massimo 5 mosse, spostando uno slider di una tacca per volta.",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m15-medie-proiettate-e-scatter",
+      "title": "Media delle proiezioni o proiezione della media? Sono la stessa cosa",
+      "concepts": ["c11", "c12", "c24"],
+      "scenario": "banca",
+      "realExample": "Credit scoring: clienti descritti da reddito mensile (k€) e rapporto rata/reddito; classi «rimborsa» e «insolvente». Lo score è y = w^t x. È la domanda d'orale reale: la media degli score dei clienti di una classe coincide con lo score del «cliente medio»? Dati sintetici.",
+      "storyboard": [
+        "Scatter di 8 clienti per classe e retta di proiezione w.",
+        "Percorso A «proietta poi media»: ogni cliente scende sulla retta (y_k), poi i pallini proiettati si fondono nel loro baricentro m̃_i = (1/#X_i) Σ y.",
+        "Percorso B «media poi proietta»: i clienti si fondono prima nel centroide 2D m_i (stella), che poi scende sulla retta: w^t m_i.",
+        "I due risultati si sovrappongono esattamente sull'asse: badge «m̃_i = w^t m_i» con i due numeri identici fino alla quarta cifra.",
+        "Pannello scatter proiettato: per ogni cliente compare un quadratino di lato |y − m̃_i| (area (y − m̃_i)²); i quadratini si impilano in una colonna la cui altezza totale è s̃_i².",
+        "Nota: s̃_i² è una somma, non una media; aggiungendo clienti cresce. Il toggle «dividi per #X_i» mostra la varianza."
+      ],
+      "interactions": ["trascina i clienti", "ruota w", "pulsanti «Percorso A» e «Percorso B»", "toggle somma / varianza", "clic per aggiungere o rimuovere clienti"],
+      "visual": "SVG: piano 2D con due colori (verde rimborsa, rosso insolvente), stelle per m_i, retta di proiezione; asse 1D sotto; colonna di quadratini per s̃_i²; formule con i numeri.",
+      "aha": "Proiettare è lineare: la media delle proiezioni è la proiezione della media, quindi m̃_i = w^t m_i; lo scatter invece è una somma di quadrati e cresce con il numero di campioni.",
+      "formulasShown": ["\\tilde{m}_i=\\frac{1}{\\#(X_i)}\\sum_{y\\in\\omega_i}y=\\mathbf{w}^{t}\\mathbf{m}_i", "\\tilde{s}_i^{2}=\\sum_{y\\in\\omega_i}(y-\\tilde{m}_i)^{2}"],
+      "challenge": "Trova una mossa di un cliente che non cambia né m̃_1 né s̃_1² (muovilo perpendicolarmente a w); poi sposta due clienti in modo che s̃_1² raddoppi senza cambiare m̃_1.",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m15-allontanare-non-basta",
+      "title": "Allontanare le medie non basta: scala, direzione e ruolo di S_W^{-1}",
+      "concepts": ["c16", "c18", "c35"],
+      "scenario": "pesce",
+      "realExample": "Salmoni e spigole con feature luminosità e larghezza fortemente correlate dentro ciascuna specie (ellissi inclinate). La tentazione è proiettare lungo la retta che unisce le medie; il widget mostra perché Fisher corregge questa direzione con S_W^{-1} e perché la lunghezza di w non conta. Dati sintetici.",
+      "storyboard": [
+        "Scatter con le ellissi intra-classe inclinate e il segmento tra le medie m1 e m2.",
+        "Slider «lunghezza di w» (α da 0.2 a 5): la differenza |m̃1 − m̃2| cresce linearmente con α (barra che si allunga) ma J resta fermo: badge «J(αw) = J(w)».",
+        "Pulsante «w ∝ m1 − m2»: proiezione lungo la congiungente delle medie; istogrammi con sovrapposizione visibile e valore di J.",
+        "Pulsante «w = S_W^{-1}(m1 − m2)»: la freccia ruota in 800 ms allontanandosi dall'asse lungo delle ellissi; istogrammi più separati e J più alto.",
+        "Toggle «classi sferiche» (S_W ∝ I): le ellissi diventano cerchi e le due frecce coincidono.",
+        "Vista «spazio sbiancato»: trasformazione animata che rende le ellissi cerchi; lì la direzione di Fisher è esattamente la congiungente delle medie."
+      ],
+      "interactions": ["slider α", "pulsanti direzione congiungente / direzione di Fisher", "slider correlazione intra-classe da −0.9 a 0.9", "toggle S_W ∝ I", "toggle spazio sbiancato"],
+      "visual": "SVG con ellissi di covarianza intra-classe, due frecce (grigia per la congiungente, verde per Fisher), istogrammi 1D per entrambe le direzioni e i due valori di J affiancati.",
+      "aha": "Conta solo la direzione di w, non la lunghezza; e la direzione migliore non è la congiungente delle medie ma la congiungente corretta dalla forma delle classi (S_W^{-1}), tranne quando le classi sono sferiche.",
+      "formulasShown": ["J(\\alpha\\mathbf{w})=J(\\mathbf{w})", "\\mathbf{w}=S_W^{-1}(\\mathbf{m}_1-\\mathbf{m}_2)", "S_W=\\sigma^{2}I\\ \\Rightarrow\\ \\mathbf{w}\\propto\\mathbf{m}_1-\\mathbf{m}_2"],
+      "challenge": "Con correlazione 0.8 clicca sul piano dove pensi che punterà la freccia di Fisher prima di premere il pulsante; il punteggio è l'errore angolare.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m15-fabbrica-matrici-scatter",
+      "title": "La fabbrica delle matrici di scatter: S_i, S_W e S_B pezzo per pezzo",
+      "concepts": ["c19", "c20", "c21", "c22", "c23", "c34"],
+      "scenario": "telerilevamento",
+      "realExample": "Pixel di un'immagine da drone su un campo agricolo con due feature, riflettanza nel rosso e nel vicino infrarosso (NIR); classi vegetazione e suolo nudo etichettate con rilievi a terra. Per addestrare la LDA servono le medie di classe e le matrici di scatter. Dati sintetici ispirati a Sentinel-2.",
+      "storyboard": [
+        "Scatter vuoto; l'utente clicca per aggiungere pixel della classe selezionata (vegetazione verde, suolo marrone) e la media m_i (stella) si aggiorna a ogni pixel.",
+        "Per ogni pixel compare il vettore x − m_i (freccia sottile dalla stella al pixel) e il suo contributo (x − m_i)(x − m_i)^t come ellisse degenere (segmento) e come matrice 2×2 con i numeri.",
+        "I contributi volano in un riquadro e si sommano in S_i; attorno alla classe si disegna l'ellisse di S_i (assi lungo gli autovettori, semiassi proporzionali alla radice degli autovalori).",
+        "S_W = S_1 + S_2: le due ellissi si combinano nel riquadro S_W.",
+        "S_B = (m1 − m2)(m1 − m2)^t: tra le due stelle si tende un segmento; l'ellisse di S_B è schiacciata a segmento, badge «rank(S_B) = 1, det = 0».",
+        "Didascalia: S_W descrive quanto e come sono sparse le classi attorno alle loro medie, S_B quanto e in che direzione sono lontane le medie; toggle per vedere S_i = #(X_i) Σ̂_i."
+      ],
+      "interactions": ["clic per aggiungere pixel", "selettore della classe", "trascina un pixel", "pulsante «genera 50 pixel»", "toggle mostra contributi", "toggle Σ̂_i / S_i"],
+      "visual": "SVG: piano rosso/NIR, stelle per le medie, ellissi di S_1 e S_2 nei colori di classe, riquadri laterali con le matrici 2×2 S_1, S_2, S_W, S_B aggiornate live con autovalori e determinante; S_B disegnata come segmento.",
+      "aha": "Una matrice di scatter è una somma di pezzi di rango 1, uno per campione: S_W accumula la dispersione attorno alle medie di classe, S_B ha un solo pezzo (la differenza delle medie) e quindi rango al più 1.",
+      "formulasShown": ["S_i=\\sum_{\\mathbf{x}\\in X_i}(\\mathbf{x}-\\mathbf{m}_i)(\\mathbf{x}-\\mathbf{m}_i)^{t}", "S_W=S_1+S_2", "S_B=(\\mathbf{m}_1-\\mathbf{m}_2)(\\mathbf{m}_1-\\mathbf{m}_2)^{t}", "\\operatorname{rank}(S_B)\\le 1"],
+      "challenge": "Aggiungi almeno 4 pixel a una classe in modo che la sua S_i sia singolare (det = 0): scoprirai che devono essere tutti allineati.",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m15-dalla-somma-alla-forma-quadratica",
+      "title": "Dal criterio sulle proiezioni alle matrici: la derivazione scritta a mano",
+      "concepts": ["c25", "c26", "c27"],
+      "scenario": "pesce",
+      "realExample": "3 salmoni e 3 spigole con due feature (lunghezza, larghezza). Per ogni direzione w il criterio si calcola in due modi: proiettando i pesci uno per uno e con le forme quadratiche w^t S_B w e w^t S_W w. I numeri devono coincidere, come nella derivazione manoscritta delle note p73. Dati sintetici.",
+      "storyboard": [
+        "Riquadro a quadretti stile quaderno (come p73) con la prima riga w^t S_B w = w^t(m1 − m2)(m1 − m2)^t w.",
+        "Passo: le parentesi si aprono, w^t m1 − w^t m2 appare due volte e sotto ciascun termine compare in piccolo m̃1 o m̃2 (come nelle note), con il valore numerico.",
+        "Risultato (m̃1 − m̃2)²: accanto un asse 1D mostra la distanza tra le medie proiettate e il suo quadrato.",
+        "Seconda derivazione: w^t S_W w = w^t S1 w + w^t S2 w; la sommatoria esce dalla forma quadratica e ogni termine w^t(x − m1)(x − m1)^t w diventa (y − m̃1)², con evidenziazione colorata dei pezzi corrispondenti.",
+        "Verifica numerica: due colonne «calcolo diretto sulle proiezioni» e «forme quadratiche» con gli stessi numeri e J(w) = w^t S_B w / w^t S_W w.",
+        "L'utente ruota w: entrambe le colonne si aggiornano insieme."
+      ],
+      "interactions": ["pulsanti Avanti / Indietro tra i passi", "trascina w o manopola dell'angolo", "clic su un termine per evidenziare la sua controparte nel grafico", "pulsante «nuovi pesci»"],
+      "visual": "HTML con KaTeX su sfondo a quadretti e SVG a lato; colori coerenti (medie proiettate arancio, scatter blu); a ogni passo il termine che cambia è evidenziato.",
+      "aha": "Il criterio definito sui numeri proiettati si riscrive con matrici che non dipendono da w: tutta la dipendenza da w è nelle forme quadratiche, ed è questo che permette di ottimizzare.",
+      "formulasShown": ["\\mathbf{w}^{t}S_B\\mathbf{w}=(\\tilde{m}_1-\\tilde{m}_2)^{2}", "\\mathbf{w}^{t}S_W\\mathbf{w}=\\tilde{s}_1^{2}+\\tilde{s}_2^{2}", "J(\\mathbf{w})=\\frac{\\mathbf{w}^{t}S_B\\mathbf{w}}{\\mathbf{w}^{t}S_W\\mathbf{w}}"],
+      "challenge": "Riordina con drag and drop le righe mescolate della derivazione e scegli per ogni passo la giustificazione corretta tra quattro proposte.",
+      "size": "M",
+      "tech": "html+motion"
+    },
+    {
+      "id": "m15-scalata-del-criterio",
+      "title": "Scalare J(w): gradiente nullo, autovalori generalizzati e formula chiusa",
+      "concepts": ["c28", "c29", "c30", "c31", "c68"],
+      "scenario": "pesce",
+      "realExample": "Salmoni e spigole con feature luminosità e larghezza: si vuole la direzione migliore senza provare tutti gli angoli. Si sale lungo J con il gradiente e si ritrova la formula chiusa w = S_W^{-1}(m1 − m2) della slide p54. Dati sintetici.",
+      "storyboard": [
+        "Pannello sinistro: scatter con la freccia w; pannello destro: curva J(θ) per θ in [0°, 180°) (θ e θ + 180° sono la stessa retta).",
+        "Una pallina sulla curva indica la posizione corrente; Play «ascesa del gradiente»: la pallina sale a passi, w ruota in sincronia e il vettore gradiente è disegnato sul piano.",
+        "Al picco il gradiente si annulla: appare l'equazione (w^t S_W w) S_B w = (w^t S_B w) S_W w e poi S_B w = λ S_W w con λ = J(w) uguale all'altezza del picco.",
+        "Visualizzazione: la freccia S_B w (arancio) resta sempre parallela a m1 − m2 qualunque sia w; ruotando w si vede solo allungarsi, accorciarsi o invertirsi.",
+        "Formula chiusa: la freccia verde S_W^{-1}(m1 − m2) compare e coincide con il picco; il valore J* = (m1 − m2)^t S_W^{-1}(m1 − m2) è uguale all'altezza del picco.",
+        "Confronto: sulla curva compaiono tacche per la direzione della congiungente m1 − m2 e per la prima componente PCA, entrambe sotto il picco."
+      ],
+      "interactions": ["trascina w", "Play / Passo per l'ascesa del gradiente", "slider passo di apprendimento", "pulsante «formula chiusa»", "toggle tacche PCA e congiungente"],
+      "visual": "SVG a due pannelli; curva J(θ) con area sfumata; frecce w, S_B w, S_W w con colori distinti; formule live con i valori numerici del picco.",
+      "aha": "Il massimo di J è il punto in cui S_B w e S_W w diventano paralleli (problema agli autovalori generalizzato); poiché S_B w punta sempre lungo m1 − m2, la soluzione si scrive in forma chiusa.",
+      "formulasShown": ["\\nabla J=\\frac{2S_B\\mathbf{w}(\\mathbf{w}^{t}S_W\\mathbf{w})-2S_W\\mathbf{w}(\\mathbf{w}^{t}S_B\\mathbf{w})}{(\\mathbf{w}^{t}S_W\\mathbf{w})^{2}}", "S_B\\mathbf{w}=\\lambda S_W\\mathbf{w}", "\\mathbf{w}=S_W^{-1}(\\mathbf{m}_1-\\mathbf{m}_2)", "J^{*}=(\\mathbf{m}_1-\\mathbf{m}_2)^{t}S_W^{-1}(\\mathbf{m}_1-\\mathbf{m}_2)"],
+      "challenge": "Senza guardare la curva trascina w dove pensi sia il massimo; poi rivela: il punteggio è J(w)/J*.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m15-quando-sw-non-si-inverte",
+      "title": "Quando S_W non si inverte: pochi pixel, troppe bande",
+      "concepts": ["c32", "c33"],
+      "scenario": "telerilevamento",
+      "realExample": "Immagine iperspettrale con n bande (fino a 200) e poche decine di pixel etichettati per classe, perché i rilievi a terra costano. La formula w = S_W^{-1}(m1 − m2) richiede S_W invertibile: con troppo pochi pixel rispetto alle bande non lo è. Collegamento con l'effetto Hughes. Dati sintetici.",
+      "storyboard": [
+        "Slider n (bande) e N (pixel etichettati): barra orizzontale degli autovalori di S_W ordinati, in scala logaritmica.",
+        "Con N molto maggiore di n tutti gli autovalori sono positivi: badge verde «non singolare» e numero di condizionamento basso.",
+        "Riducendo N gli autovalori piccoli precipitano; quando N − C < n compaiono autovalori nulli (barre grigie a zero) e il badge diventa rosso: «S_W singolare, S_W^{-1} non esiste».",
+        "Una vista 2D mostra il caso limite n = 2 con 2 pixel per classe: ogni classe è un segmento e l'ellisse di S_W può degenerare.",
+        "Pannello proprietà: heatmap simmetrica di S_W (S_W = S_W^t) e una direzione v trascinabile con il valore v^t S_W v, che non diventa mai negativo.",
+        "Pulsante «cubo del corso»: N = 6 > n = 3 eppure S_W è singolare, perché x1 è costante in ogni classe; «usually» non vuol dire «always»."
+      ],
+      "interactions": ["slider n da 2 a 200", "slider N da 3 a 500", "pulsante «cubo del corso»", "trascina v nel pannello 2D"],
+      "visual": "canvas2d per la barra degli autovalori e la heatmap di S_W; SVG per il pannello 2D; badge di stato; formula rank(S_W) ≤ N − C con i numeri correnti.",
+      "aha": "S_W è sempre simmetrica e semidefinita positiva, ma è invertibile solo se i campioni etichettati sono abbastanza rispetto alla dimensione: la LDA soffre la stessa scarsità di dati dell'effetto Hughes.",
+      "formulasShown": ["\\mathbf{v}^{t}S_W\\mathbf{v}\\ge 0", "\\operatorname{rank}(S_W)\\le N-C", "N>n\\ \\Rightarrow\\ S_W\\ \\text{di solito invertibile}"],
+      "challenge": "Con n = 50 bande e 2 classi bilanciate trova il numero minimo di pixel per classe che rende S_W invertibile (risposta: 26, perché serve N − 2 ≥ 50).",
+      "size": "M",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "m15-una-feature-per-la-cernita",
+      "title": "Una sola feature per la cernita: dall'LDA alla soglia",
+      "concepts": ["c36"],
+      "scenario": "pesce",
+      "realExample": "Il braccio di cernita dell'impianto decide salmone o spigola in pochi millisecondi: invece di 5 misure (luminosità, larghezza, lunghezza, peso, colore dorsale) usa il solo numero y = w^t x fornito dalla LDA; la decisione con una soglia è l'argomento del Cap. 4. Dati sintetici.",
+      "storyboard": [
+        "Nastro animato: i pesci scorrono e una telecamera stilizzata legge il vettore x (5 numeri in un'etichetta).",
+        "Ogni etichetta si comprime in un solo numero y = w^t x: i 5 numeri si fondono pesati da w, con i pesi mostrati come barre.",
+        "I valori y cadono in un istogramma che si costruisce in tempo reale, colorato per specie.",
+        "L'utente trascina una soglia: il braccio devia i pesci sopra o sotto soglia; contatori degli errori salmone → spigola e spigola → salmone.",
+        "Confronto: il selettore sostituisce la feature LDA con una sola feature originale (per esempio solo la luminosità) o con la prima componente PCA; gli istogrammi sono più sovrapposti."
+      ],
+      "interactions": ["trascina la soglia", "selettore della feature (le 5 originali, prima PCA, LDA)", "velocità del nastro", "pulsante pausa"],
+      "visual": "html+motion per il nastro; SVG per l'istogramma e la soglia; barre dei pesi w; contatori degli errori.",
+      "aha": "La LDA produce la feature lineare più discriminante (qui una sola, perché le classi sono due): è estrazione di feature, la classificazione vera e propria viene dopo con una soglia.",
+      "formulasShown": ["y=\\mathbf{w}^{t}\\mathbf{x}=\\sum_{j=1}^{5}w_jx_j", "\\hat{\\omega}=\\omega_1\\ \\text{se}\\ y>y_0,\\ \\text{altrimenti}\\ \\omega_2"],
+      "challenge": "Trova la soglia che minimizza gli errori totali con la feature LDA e poi con la migliore feature originale: chi vince e di quanto?",
+      "size": "M",
+      "tech": "html+motion"
+    },
+    {
+      "id": "m15-tre-classi-tre-medie",
+      "title": "Tre classi: media globale, pesi #(X_i) e il nuovo S_B",
+      "concepts": ["c37", "c38", "c39", "c40", "c41", "c42", "c43", "c70"],
+      "scenario": "telerilevamento",
+      "realExample": "Pixel satellitari con 3 bande (verde, rosso, NIR) e 3 classi: acqua, vegetazione, suolo urbano. Una sola retta non basta a separare tre classi: la LDA cerca W con C − 1 = 2 colonne e porta i pixel da 3 a 2 dimensioni. Dati sintetici ispirati a Sentinel-2.",
+      "storyboard": [
+        "Scatter 3D ruotabile con le tre nuvole e le tre medie m_i (stelle); una sola retta di proiezione mostra che due classi finiscono sempre sovrapposte nell'istogramma.",
+        "Compare la media globale m (cerchio verde come sulla slide p55) come media pesata delle m_i: i pesi #(X_i) sono masse su una leva.",
+        "Dalle stelle partono i vettori m_i − m; ognuno genera un contributo #(X_i)(m_i − m)(m_i − m)^t di rango 1 (ellisse degenere, spessa in proporzione al peso).",
+        "I tre contributi si sommano in S_B; S_W = S_1 + S_2 + S_3 si forma sommando le ellissi intra-classe.",
+        "Slider #(X_acqua): aumentando i pixel d'acqua la media globale si sposta verso l'acqua e il contributo dell'acqua pesa di più.",
+        "Proiezione finale y = W^t x sul piano delle 2 feature LDA con le tre classi separate; il pannello «S_T = S_W + S_B» verifica la scomposizione con i numeri.",
+        "Toggle «C = 2» (nasconde il suolo): la S_B multiclasse diventa (N1 N2 / N)(m1 − m2)(m1 − m2)^t, la S_B binaria a meno di un fattore."
+      ],
+      "interactions": ["rotazione 3D con trascinamento", "slider #(X_i) per ogni classe (20-500 pixel)", "pulsante «proietta in 2D»", "toggle C = 2", "toggle mostra contributi"],
+      "visual": "canvas2d per la vista 3D; SVG per la leva dei pesi e il piano 2D finale; matrici 3×3 di S_W, S_B e S_T con heatmap aggiornate live.",
+      "aha": "Con C classi la separazione si misura rispetto alla media globale, pesando ogni classe con il numero dei suoi campioni, e la dimensione di arrivo non è 1 ma C − 1.",
+      "formulasShown": ["S_W=\\sum_{i=1}^{C}S_i", "S_B=\\sum_{i=1}^{C}[\\#(X_i)](\\mathbf{m}_i-\\mathbf{m})(\\mathbf{m}_i-\\mathbf{m})^{t}", "\\mathbf{m}=\\frac{1}{N}\\sum_{\\mathbf{x}\\in X}\\mathbf{x}", "S_T=S_W+S_B"],
+      "challenge": "Sposta le medie in modo che S_B abbia rango 1 anche con tre classi (suggerimento: allineale).",
+      "size": "L",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "m15-volume-del-determinante",
+      "title": "Il volume del determinante: J(W) con due direzioni",
+      "concepts": ["c44", "c45", "c46", "c47"],
+      "scenario": "cifre",
+      "realExample": "Cifre 0, 1 e 7 scritte a mano, descritte da 3 feature (quantità di inchiostro, larghezza del tratto, simmetria verticale). Con C = 3 la LDA cerca W 3×2, cioè due direzioni; per confrontare due scelte di W serve un solo numero: il rapporto dei determinanti. Dati sintetici ispirati a MNIST.",
+      "storyboard": [
+        "Piano delle due feature proiettate y = W^t x con le tre classi; W iniziale casuale, con le due colonne mostrate come frecce in un riquadro 3D.",
+        "Nel piano proiettato si disegnano l'ellisse di W^t S_W W (dispersione intra-classe, blu) e l'ellisse di W^t S_B W (dispersione delle medie, arancio), con aree proporzionali alla radice dei determinanti.",
+        "Badge: |W^t S_B W|, |W^t S_W W| e J(W) = rapporto; didascalia: il determinante è il prodotto degli autovalori, cioè il volume che contiene le medie.",
+        "L'utente ruota le colonne di W: l'ellisse arancio si gonfia o si sgonfia, quella blu cambia forma, J(W) si aggiorna.",
+        "Pulsante «autovettori di S_W^{-1}S_B»: le colonne scattano sugli autovettori con gli autovalori maggiori; il rapporto dei volumi è massimo e J(W) = λ1 λ2 (con W^t S_W W = I).",
+        "Toggle «mescola le colonne» (W → WA con A invertibile): le frecce cambiano ma il piano proiettato e J(W) restano identici."
+      ],
+      "interactions": ["trascina le punte delle due colonne di W nel riquadro 3D", "pulsante autovettori", "toggle W → WA", "clic su una classe per nasconderla"],
+      "visual": "canvas2d con SVG sovrapposto: ellissi con area evidenziata e valore numerico, mini-matrici 2×2 W^t S_B W e W^t S_W W live, barre degli autovalori.",
+      "aha": "Quando W ha più colonne numeratore e denominatore sono matrici: il determinante le riduce a un volume, e il volume delle medie relativo a quello delle classi è massimo sugli autovettori di S_W^{-1}S_B.",
+      "formulasShown": ["J(W)=\\frac{|W^{t}S_BW|}{|W^{t}S_WW|}", "|A|=\\prod_k\\lambda_k", "S_W^{-1}S_B\\mathbf{w}_i=\\lambda_i\\mathbf{w}_i", "J(WA)=J(W)"],
+      "challenge": "Ruotando a mano le colonne raggiungi almeno il 90% del J(W) ottimo prima di premere il pulsante degli autovettori.",
+      "size": "L",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "m15-rango-c-meno-uno",
+      "title": "Quante feature LDA? Mai più di C − 1",
+      "concepts": ["c48", "c49", "c50", "c53"],
+      "scenario": "cifre",
+      "realExample": "Cifre scritte a mano 8×8 (n = 64 pixel). Aggiungendo una classe di cifre alla volta si guarda lo spettro degli autovalori di S_W^{-1}S_B: al più C − 1 non nulli, quindi al massimo 9 feature LDA con le dieci cifre, contro le 64 componenti possibili della PCA. Dati sintetici stile MNIST.",
+      "storyboard": [
+        "Riga di cifre selezionabili 0-9; con 2 classi il grafico a barre dei 64 autovalori ha una sola barra non nulla.",
+        "Aggiungendo classi (clic su una cifra) compare ogni volta una nuova barra non nulla: contatore «autovalori ≠ 0: C − 1».",
+        "Pannello «leva delle medie»: i vettori #(X_i)(m_i − m) disegnati testa-coda si chiudono sempre in un poligono (somma zero); l'ultimo è determinato dagli altri, quindi solo C − 1 sono indipendenti.",
+        "Confronto: accanto lo spettro PCA (autovalori dello scatter totale) con fino a 64 barre non nulle.",
+        "Caso speciale in 2D: pulsante «medie allineate» con 3 classi sulla stessa retta; rank(S_B) scende a 1 < C − 1, il «or less» della slide."
+      ],
+      "interactions": ["clic sulle cifre per aggiungere o togliere classi", "toggle scala logaritmica", "pulsante «medie allineate»", "trascinamento delle medie nel pannello 2D"],
+      "visual": "SVG: barre degli autovalori LDA e PCA affiancate, poligono chiuso dei vettori pesati, contatore del rango.",
+      "aha": "S_B è la somma di C pezzi di rango 1 legati dal vincolo della media globale: rango al più C − 1, quindi la LDA non può dare più di C − 1 feature, qualunque sia n.",
+      "formulasShown": ["\\sum_{i=1}^{C}\\#(X_i)(\\mathbf{m}_i-\\mathbf{m})=\\mathbf{0}", "\\operatorname{rank}(S_B)\\le C-1", "m_{\\text{LDA}}\\le C-1,\\qquad m_{\\text{PCA}}\\le n"],
+      "challenge": "Prevedi quanti autovalori non nulli avrà lo spettro con le cifre {3, 5, 8} prima di selezionarle (2); e con 10 classi le cui medie stanno tutte su un piano? (2)",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m15-assi-lda-cosa-rappresentano",
+      "title": "Cosa rappresentano i C − 1 autovettori (e perché non sono ortogonali)",
+      "concepts": ["c51", "c52"],
+      "scenario": "medicina",
+      "realExample": "Battiti ECG di tre tipi (normale, fibrillazione atriale, battito ventricolare) descritti da 2 feature (irregolarità dell'intervallo RR, durata del QRS). La LDA con C = 3 dà 2 direzioni: si vede che cosa separa ciascuna e quanto vale il suo autovalore. Dati sintetici.",
+      "storyboard": [
+        "Scatter con le tre classi e le loro ellissi intra-classe; frecce w1 (autovalore maggiore) e w2.",
+        "Per ciascuna freccia compaiono l'istogramma delle tre classi proiettate e il rapporto λ_i = (w_i^t S_B w_i)/(w_i^t S_W w_i): w1 separa soprattutto una classe dalle altre, w2 separa le due restanti.",
+        "Confronto con gli assi PCA (grigi, ortogonali): un goniometro mostra l'angolo tra w1 e w2, per esempio 64°, non 90°.",
+        "Pulsante «sbianca»: trasformazione animata con S_W^{-1/2} che rende circolari le ellissi intra-classe; nello spazio sbiancato w1 e w2 diventano ortogonali e sono gli assi principali delle sole medie.",
+        "Toggle «nascondi w2»: proiettando solo su w1 si perde la separazione tra due classi."
+      ],
+      "interactions": ["trascina le medie delle classi", "slider correlazione intra-classe", "pulsante sbianca / ripristina", "toggle assi PCA", "toggle nascondi w2"],
+      "visual": "SVG: istogrammi laterali per w1 e w2, goniometro dell'angolo tra gli assi, barre di λ1 e λ2.",
+      "aha": "Ogni autovettore è una nuova feature lungo cui le medie sono lontane rispetto alla dispersione intra-classe, e il suo autovalore misura quanto; gli assi LDA diventano ortogonali solo dopo lo sbiancamento, non nello spazio originale come quelli PCA.",
+      "formulasShown": ["\\lambda_i=\\frac{\\mathbf{w}_i^{t}S_B\\mathbf{w}_i}{\\mathbf{w}_i^{t}S_W\\mathbf{w}_i}", "\\mathbf{w}_i^{t}S_W\\mathbf{w}_j=0\\ (i\\neq j)"],
+      "challenge": "Trova una configurazione delle medie in cui λ2 ≈ 0 (una sola direzione utile) e spiega perché succede (medie allineate).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m15-duello-pca-lda",
+      "title": "Duello PCA vs LDA: gli esempi 1 e 2 delle slide dal vivo",
+      "concepts": ["c56", "c57", "c58", "c59", "c60", "c70", "c71"],
+      "scenario": "pesce",
+      "realExample": "Salmoni e spigole misurati in lunghezza e larghezza: entrambe le misure crescono con la taglia del pesce (nuvole allungate lungo la diagonale), mentre la specie cambia la forma (la spigola è più slanciata). La PCA trova la taglia, la LDA la forma. Dati sintetici che riproducono le configurazioni delle slide p57-58.",
+      "storyboard": [
+        "Preset «Esempio 1»: due nuvole allungate e parallele (○ rossi e + blu) come a p57, due assi PCA neri ortogonali e la retta LDA verde tratteggiata.",
+        "A destra i due istogrammi «PCA Projection (y1)» e «LDA Projection (y)» si costruiscono punto per punto mentre i campioni volano dalle rette agli istogrammi: PCA sovrapposti, LDA separati.",
+        "Evidenziazione: la seconda componente PCA (varianza minore) è quasi parallela alla LDA; scartarla significa buttare l'informazione discriminante.",
+        "Preset «Esempio 2»: le medie si spostano anche lungo la diagonale (le specie differiscono anche per taglia); l'istogramma PCA ora separa in parte, quello LDA meglio. Un goniometro mostra che le due rette distano comunque circa 45° (nelle slide: PCA circa +41°, LDA circa −3°) e un'etichetta ricorda che il verso di φ1 è arbitrario (nella slide la classe blu cade su y1 negativi).",
+        "Preset «Medie coincidenti» (aggiunto dal revisore): le due specie hanno la stessa media ma una è compatta e l'altra molto dispersa lungo una direzione; S_B = 0, la retta LDA diventa grigia e tremolante (J = 0 per ogni direzione, badge «LDA cieca: S_B = 0») e il suo istogramma mostra due campane centrate nello stesso punto; la PCA si allinea alla direzione di dispersione della classe diffusa e una doppia soglia su |y1| separa almeno in parte.",
+        "Slider «angolo tra la congiungente delle medie e l'asse di allungamento» (0°-90°): a 0° PCA e LDA coincidono e gli istogrammi sono uguali, a 90° divergono al massimo; indice di sovrapposizione e J di entrambe le proiezioni aggiornati live.",
+        "Pannello «S_T = S_W + S_B»: la PCA usa S_T (tutto insieme), la LDA separa S_W e S_B."
+      ],
+      "interactions": ["preset Esempio 1 / Esempio 2 / Coincidono / Medie coincidenti", "slider angolo", "slider allungamento", "slider numero di campioni", "toggle seconda componente PCA", "pulsante rigenera"],
+      "visual": "SVG: scatter con simboli ○ rossi e + blu come nelle slide, assi PCA neri etichettati «PCA», retta verde tratteggiata «LDA»; istogrammi a linea rossa e blu come nelle slide; badge con J_PCA, J_LDA e percentuale di sovrapposizione.",
+      "aha": "La PCA cerca la direzione di massima varianza di tutti i dati, la LDA quella di massima separazione: coincidono solo quando la differenza tra le classi sta proprio lungo la direzione di massima varianza. E la LDA guarda solo le medie: se le medie coincidono è cieca, anche quando la PCA vede qualcosa.",
+      "formulasShown": ["J(\\boldsymbol{\\phi}_1)\\le J(\\mathbf{w}_{\\text{LDA}})", "S_T=S_W+S_B", "\\mathbf{m}_1=\\mathbf{m}_2\\ \\Rightarrow\\ S_B=0\\ \\Rightarrow\\ J(\\mathbf{w})=0\\ \\ \\forall\\,\\mathbf{w}"],
+      "challenge": "Domanda d'orale reale: trascinando le medie costruisci una configurazione in cui PCA e LDA danno quasi lo stesso istogramma e una in cui sono molto diversi; il widget verifica con l'angolo tra φ1 e w.",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m15-bande-pca-lda-dal-satellite",
+      "title": "Sei bande PCA contro sei bande LDA: l'esempio 3 dal satellite",
+      "concepts": ["c61", "c62", "c63", "c64"],
+      "scenario": "telerilevamento",
+      "realExample": "Scena urbana iperspettrale sintetica, con parco, laghetti ed edifici come nell'immagine delle slide p59-60, e 7 classi: tetti, strade, sentieri, prato, alberi, acqua, ombra. La PCA produce bande ordinate per varianza; la LDA, con C = 7, al più 6 bande ordinate per potere discriminante. Dati sintetici.",
+      "storyboard": [
+        "A sinistra il composito a falsi colori della scena sintetica, con la vegetazione in rosso come nella slide.",
+        "Le 6 bande PCA compaiono una dopo l'altra come strisce verticali; sotto ognuna la percentuale di varianza spiegata.",
+        "Toggle «LDA»: le strisce si trasformano nelle 6 bande LDA con l'autovalore λ_i sotto ciascuna; chiedendo una settima banda compare l'avviso «rank(S_B) ≤ C − 1 = 6».",
+        "Clic su una classe nella legenda: in ogni banda i pixel di quella classe vengono contornati; si vede quale banda LDA isola l'acqua, quale la vegetazione e così via.",
+        "Toggle «equalizzazione dell'istogramma»: le bande cambiano contrasto ma non contenuto; nota che è solo per la visualizzazione, come scritto nella slide.",
+        "Mini-classificatore: con le prime k bande (PCA o LDA) un classificatore a minima distanza dalla media dà l'accuratezza, tracciata in un grafico accuratezza contro k."
+      ],
+      "interactions": ["toggle PCA / LDA", "slider k bande da 1 a 6", "clic sulla legenda delle classi", "toggle equalizzazione", "lente d'ingrandimento sulle strisce"],
+      "visual": "canvas2d per le immagini (griglia sintetica 60×300 pixel), strisce affiancate come nella slide; grafico accuratezza contro k in SVG.",
+      "aha": "Le bande PCA sono ordinate per quanto si vede (varianza), quelle LDA per quanto si distingue (separabilità); le bande LDA sono al più C − 1, e l'equalizzazione serve solo all'occhio.",
+      "formulasShown": ["C=7\\ \\Rightarrow\\ m_{\\text{LDA}}\\le C-1=6"],
+      "challenge": "Indovina quale delle 6 bande LDA isola meglio l'acqua prima di cliccare sulla legenda; poi trova il k minimo con cui la LDA raggiunge il 90% di accuratezza e confrontalo con la PCA.",
+      "size": "L",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "m15-cubo-del-corso-pca-e-lda",
+      "title": "Il cubo del corso: PCA a una feature e che cosa farebbe la LDA",
+      "concepts": ["c65", "c66", "c67"],
+      "scenario": "fonte",
+      "realExample": "Esempio numerico del corso (ch3 p44-49, part1 p71): 6 campioni binari in 3D, classe 1 = (1,0,0), (1,0,1), (1,1,0) e classe 2 = (0,0,1), (0,1,0), (0,1,1). La PCA li riduce a 1 feature (Step 5'); la LDA sugli stessi dati trova l'asse x1, lungo cui lo scatter intra-classe è nullo.",
+      "storyboard": [
+        "Cubo 3D ruotabile con i 6 vertici (pieni per la classe 1, vuoti per la classe 2).",
+        "Replay dello Step 5': i punti passano nel piano delle prime due componenti (come in p71) e poi sull'asse z con i valori 0.79, 0.23, 0.56, −0.56, −0.23, −0.79, ordinati z23 < z21 < z22 < 0 < z12 < z13 < z11.",
+        "Nota: le classi risultano separate dal segno, ma la PCA non ha usato le etichette (e λ1 = λ2 = 1/3, quindi φ1 non è unica).",
+        "Toggle «LDA»: calcolo animato delle medie m1 = (1, 1/3, 1/3) e m2 = (0, 2/3, 2/3) e di S_W, la cui prima riga e prima colonna sono zero: |S_W| = 0.",
+        "Proiettando su x1 le classi collassano in due impulsi (tutti 1 e tutti 0): s̃1² = s̃2² = 0 e J = ∞, il caso ideale."
+      ],
+      "interactions": ["rotazione del cubo", "pulsanti Step PCA e LDA", "clic su un vertice per vederne z e y", "toggle etichette"],
+      "visual": "SVG isometrico; asse 1D finale con le etichette z_ij; matrice S_W 3×3 con la riga nulla evidenziata.",
+      "aha": "Sullo stesso esempio del corso la PCA separa le classi per caso, la LDA per costruzione; e anche con N > n la S_W può essere singolare se una feature è costante dentro ogni classe.",
+      "formulasShown": ["z=\\Phi^{t}\\mathbf{x},\\qquad \\Phi=\\boldsymbol{\\phi}_1", "S_W=\\begin{pmatrix}0&0&0\\\\0&4/3&-2/3\\\\0&-2/3&4/3\\end{pmatrix}"],
+      "challenge": "Calcola z per il nuovo campione (1,1,1), centrato (0.5, 0.5, 0.5), con φ1 ≈ (0.79, −0.23, −0.56): viene esattamente 0. Perché? (φ1 è ortogonale a (1,1,1)); e che cosa direbbe la LDA su x1?",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m15-ricetta-lda-in-cinque-passi",
+      "title": "La ricetta LDA passo per passo, dal dataset alla feature",
+      "concepts": ["c69", "c28"],
+      "scenario": "sensori",
+      "realExample": "Manutenzione predittiva: vibrazioni di un motore misurate da un sensore IoT con 4 feature (RMS, picco, curtosi, energia in banda alta); classi «sano» e «guasto al cuscinetto». Si applica la ricetta LDA per ottenere un indice di salute monodimensionale. Dati sintetici.",
+      "storyboard": [
+        "Tabella del dataset etichettato (N righe × 4 colonne) con le righe colorate per classe.",
+        "Passo 1: le colonne si spremono in due vettori media m1 e m2.",
+        "Passo 2: calcolo di S1, S2 e S_W = S1 + S2, mostrate come heatmap 4×4.",
+        "Passo 3: verifica di invertibilità (determinante e numero di condizionamento) e calcolo di S_W^{-1}.",
+        "Passo 4: w = S_W^{-1}(m1 − m2), con le barre dei pesi per feature leggibili come importanza.",
+        "Passo 5: proiezione y = w^t x di ogni riga e istogramma dell'indice di salute; toggle «3 classi» (sano, cuscinetto, squilibrio) che estende la ricetta con la S_B multiclasse e gli autovettori di S_W^{-1}S_B."
+      ],
+      "interactions": ["Avanti / Indietro tra i passi", "modifica di una cella del dataset", "toggle 2 / 3 classi", "pulsante «dati nuovi»"],
+      "visual": "HTML con tabelle e heatmap, KaTeX per la formula di ogni passo, SVG per l'istogramma finale.",
+      "aha": "La LDA a due classi è un calcolo chiuso di pochi passi (medie, scatter, inversa, prodotto), senza iterazioni, a patto che S_W sia invertibile.",
+      "formulasShown": ["\\mathbf{m}_i=\\frac{1}{\\#(X_i)}\\sum_{\\mathbf{x}\\in X_i}\\mathbf{x}", "S_W=S_1+S_2", "\\mathbf{w}=S_W^{-1}(\\mathbf{m}_1-\\mathbf{m}_2)", "y=\\mathbf{w}^{t}\\mathbf{x}"],
+      "challenge": "Modifica una sola cella del dataset per rendere S_W quasi singolare (condizionamento > 10^6) e osserva che cosa succede ai pesi w.",
+      "size": "M",
+      "tech": "html+motion"
+    }
+  ],
+  "exercises": [
+    {
+      "id": "es01",
+      "title": "Fisher a mano su 3 + 3 campioni",
+      "type": "numerico",
+      "description": "Classe ω1: (1,2), (2,3), (3,4); classe ω2: (4,1), (5,3), (6,2). Calcolare m_1, m_2, S_1, S_2, S_W, S_W^{-1}, w = S_W^{-1}(m_1 − m_2), le proiezioni y = w^t x, m̃_i, s̃_i² e J(w). Soluzione: m_1 = (2,3), m_2 = (5,2); S_1 = [[2,2],[2,2]], S_2 = [[2,1],[1,2]], S_W = [[4,3],[3,4]], |S_W| = 7, S_W^{-1} = (1/7)[[4,−3],[−3,4]]; m_1 − m_2 = (−3,1), w = (1/7)(−15,13), cioè w ∝ (−15,13). Con w = (−15,13): proiezioni ω1 = 11, 9, 7 (m̃_1 = 9, s̃_1² = 8), ω2 = −47, −36, −64 (m̃_2 = −49, s̃_2² = 398); J = 58²/406 = 3364/406 ≈ 8.29, uguale a (m_1 − m_2)^t S_W^{-1}(m_1 − m_2) = 58/7. Randomizzazione: 3 campioni per classe a coordinate intere in [0, 8], scartando i casi con |S_W| = 0; la soluzione si calcola con le stesse formule.",
+      "concepts": ["c19", "c20", "c21", "c22", "c28", "c10", "c68", "c69"]
+    },
+    {
+      "id": "es02",
+      "title": "Confronto di direzioni sullo stesso dataset",
+      "type": "numerico",
+      "description": "Con i dati di es01 calcolare J per w = m_1 − m_2 = (−3,1), per w = (1,0) (solo x1) e per w = (0,1) (solo x2), e confrontare con la direzione di Fisher. Soluzione: w = (−3,1): ω1 → −1, −3, −5 (m̃ = −3, s̃² = 8), ω2 → −11, −12, −16 (m̃ = −13, s̃² = 14), J = 100/22 ≈ 4.55; w = (1,0): J = 9/4 = 2.25; w = (0,1): J = 1/4 = 0.25; Fisher: J ≈ 8.29. Verificare anche con le forme quadratiche w^t S_B w e w^t S_W w. Randomizzazione: stessi dati casuali di es01 e direzione casuale da confrontare.",
+      "concepts": ["c16", "c25", "c26", "c27", "c35"]
+    },
+    {
+      "id": "es03",
+      "title": "Media delle proiezioni o proiezione della media?",
+      "type": "concettuale",
+      "description": "Domanda d'orale: nel criterio di Fisher le medie sono proiezioni delle medie di classe o medie dei punti proiettati sulla direzione scelta? Sono la stessa cosa? Rispondere mostrando m̃_i = w^t m_i per linearità e spiegare perché per lo scatter non c'è un'analoga identità vettoriale (s̃_i² = w^t S_i w è una forma quadratica).",
+      "concepts": ["c11", "c24", "c26"]
+    },
+    {
+      "id": "es04",
+      "title": "Ricavare la direzione ottima annullando il gradiente",
+      "type": "dimostrazione",
+      "description": "Partendo da J(w) = w^t S_B w / w^t S_W w, calcolare il gradiente, porlo a zero, ottenere S_B w = J(w) S_W w e, usando il fatto che S_B w è parallelo a m_1 − m_2, arrivare a w = S_W^{-1}(m_1 − m_2). Spiegare perché i fattori scalari si possono scartare e calcolare il valore massimo J*.",
+      "concepts": ["c18", "c27", "c28", "c29", "c30", "c31", "c68"]
+    },
+    {
+      "id": "es05",
+      "title": "Dalle distanze alle matrici di scatter",
+      "type": "dimostrazione",
+      "description": "Riprodurre la derivazione manoscritta delle note p73: dimostrare che (m̃_1 − m̃_2)² = w^t S_B w e che s̃_1² + s̃_2² = w^t S_W w, giustificando ogni passaggio. Scrivere quindi il criterio di Fisher «both with distances and Scatter Matrices».",
+      "concepts": ["c10", "c25", "c26", "c27"]
+    },
+    {
+      "id": "es06",
+      "title": "Perché la LDA dà al più C − 1 feature",
+      "type": "dimostrazione",
+      "description": "Dimostrare che Σ_i #(X_i)(m_i − m) = 0, dedurre che solo C − 1 dei vettori m_i − m sono indipendenti, che rank(S_B) ≤ C − 1 e che S_W^{-1}S_B ha al più C − 1 autovalori non nulli. Dire quando il rango è strettamente minore di C − 1.",
+      "concepts": ["c48", "c49", "c50"]
+    },
+    {
+      "id": "es07",
+      "title": "S_B multiclasse a mano",
+      "type": "numerico",
+      "description": "Tre classi con #(X_i) = 10 ciascuna e medie m_1 = (0,0), m_2 = (2,0), m_3 = (1,3). Calcolare m, gli scarti m_i − m, verificare che la loro somma pesata è zero, calcolare S_B e il suo rango. Soluzione: m = (1,1); scarti (−1,−1), (1,−1), (0,2); S_B = 10[(1,1;1,1) + (1,−1;−1,1) + (0,0;0,4)] = [[20,0],[0,60]], rango 2 = C − 1. Variante con medie allineate (0,0), (2,0), (4,0): m = (2,0), S_B = [[80,0],[0,0]], rango 1 < C − 1. Randomizzazione: medie intere e pesi #(X_i) diversi (per esempio 10, 20, 30); la media globale va calcolata pesata.",
+      "concepts": ["c40", "c41", "c42", "c48", "c50"]
+    },
+    {
+      "id": "es08",
+      "title": "Quante feature posso estrarre?",
+      "type": "numerico",
+      "description": "Per ciascun caso dire quante feature al massimo danno la LDA e la PCA: (a) salmone/spigola con n = 5 feature; (b) acqua/vegetazione/suolo con n = 4 bande; (c) cifre 0-9 con n = 64 pixel; (d) scena telerilevata con 7 classi e 191 bande; (e) 5 classi con n = 2 feature. Soluzione: LDA ≤ min(n, C − 1): (a) 1; (b) 2; (c) 9; (d) 6; (e) 2 (qui n < C e la condizione n ≥ C della slide non è rispettata, quindi non c'è riduzione); PCA fino a n (5, 4, 64, 191, 2). Randomizzazione: n e C casuali.",
+      "concepts": ["c38", "c49", "c53", "c63"]
+    },
+    {
+      "id": "es09",
+      "title": "La LDA sul cubo del corso",
+      "type": "numerico",
+      "description": "Con i dati dell'esempio PCA (classe 1: (1,0,0), (1,0,1), (1,1,0); classe 2: (0,0,1), (0,1,0), (0,1,1)) calcolare m_1, m_2, S_1, S_2, S_W e il suo determinante. Soluzione: m_1 = (1, 1/3, 1/3), m_2 = (0, 2/3, 2/3); S_1 = S_2 = [[0,0,0],[0,2/3,−1/3],[0,−1/3,2/3]]; S_W = [[0,0,0],[0,4/3,−2/3],[0,−2/3,4/3]], |S_W| = 0. Commentare: N = 6 > n = 3 ma S_W è singolare; proiettando su x1 le classi diventano impulsi e J = ∞; confrontare con la riduzione PCA dello Step 5'.",
+      "concepts": ["c33", "c17", "c67", "c66"]
+    },
+    {
+      "id": "es10",
+      "title": "Disegnare PCA e LDA uguali e diverse",
+      "type": "concettuale",
+      "description": "Domanda d'orale reale: disegnare nel piano delle feature un esempio in cui PCA e LDA danno praticamente lo stesso risultato e uno in cui sono molto diversi (come nelle slide p57-58), tracciando per ciascuno la prima componente PCA, la direzione LDA e gli istogrammi delle proiezioni. Spiegare la condizione in cui coincidono usando S_T = S_W + S_B.",
+      "concepts": ["c56", "c57", "c58", "c59", "c60", "c70"]
+    },
+    {
+      "id": "es11",
+      "title": "Coerenza tra S_B binaria e S_B multiclasse",
+      "type": "numerico",
+      "description": "Due classi con #(X_1) = 3, #(X_2) = 6, m_1 = (0,0), m_2 = (3,0). Calcolare la S_B multiclasse e confrontarla con (m_1 − m_2)(m_1 − m_2)^t. Soluzione: m = (2,0); S_B = 3(−2,0)(−2,0)^t + 6(1,0)(1,0)^t = [[18,0],[0,0]]; (m_1 − m_2)(m_1 − m_2)^t = [[9,0],[0,0]] e il fattore è #(X_1)#(X_2)/N = 18/9 = 2. Randomizzazione: numerosità e medie casuali; il rapporto deve sempre valere N_1 N_2 / N.",
+      "concepts": ["c43", "c40", "c22"]
+    },
+    {
+      "id": "es12",
+      "title": "Perché il determinante nel criterio multiclasse",
+      "type": "concettuale",
+      "description": "Spiegare perché nel caso multiclasse il criterio usa i determinanti: che cosa sono W^t S_B W e W^t S_W W, perché serve uno scalare, che cosa misura il determinante (prodotto degli autovalori, volume) e dimostrare che J(WA) = J(W) per ogni A invertibile. Dire quale W massimizza J(W).",
+      "concepts": ["c44", "c45", "c46", "c47"]
+    },
+    {
+      "id": "es13",
+      "title": "S_W singolare, iperspettrale ed effetto Hughes",
+      "type": "concettuale",
+      "description": "Perché la slide dice che S_W è «usually» non singolare se N > n? Con n = 50 bande e due classi bilanciate, quanti pixel etichettati per classe servono almeno perché S_W possa essere invertibile (rank(S_W) ≤ N − C, quindi 26 per classe)? Collegare il problema all'effetto Hughes. Le possibili soluzioni pratiche (ridurre prima n con selezione o PCA, regolarizzare S_W) non sono nelle fonti: discuterle come approfondimento.",
+      "concepts": ["c32", "c33"]
+    },
+    {
+      "id": "es14",
+      "title": "Supervisionato o non supervisionato?",
+      "type": "concettuale",
+      "description": "Domanda d'orale: la LDA è supervisionata o non supervisionata? E la PCA? Spiegare quali grandezze di ciascun metodo richiedono le etichette (m_i, S_i, S_W, S_B contro la sola matrice di scatter totale) e che cosa ottimizza ciascuno (separazione contro varianza), con l'esempio salmone/spigola.",
+      "concepts": ["c01", "c03", "c54", "c55"]
+    },
+    {
+      "id": "es15",
+      "title": "Tre classi: autovettori di S_W^{-1}S_B e ordine delle direzioni",
+      "type": "numerico",
+      "description": "Si riprendono le medie di es07 (#(X_i) = 10, m_1 = (0,0), m_2 = (2,0), m_3 = (1,3)), per cui S_B = [[20,0],[0,60]]. (a) Con S_W = [[15,0],[0,15]] calcolare S_W^{-1}S_B, autovalori e autovettori, e J(W) = |W^t S_B W| / |W^t S_W W| con W = [w_1 w_2]. Soluzione: S_W^{-1}S_B = diag(4/3, 4); w_1 = (0,1) con λ_1 = 4, w_2 = (1,0) con λ_2 = 4/3; W^t S_B W = diag(60, 20), |·| = 1200; W^t S_W W = diag(15, 15), |·| = 225; J(W) = 1200/225 = 16/3 = λ_1 λ_2. (b) Stesso S_B con S_W = [[15,0],[0,90]]: S_W^{-1}S_B = diag(4/3, 2/3), quindi ora w_1 = (1,0) con λ_1 = 4/3 e w_2 = (0,1) con λ_2 = 2/3, J(W) = 1200/1350 = 8/9 = λ_1 λ_2. Commento: le medie sono più distanti lungo x2 (60 contro 20), ma se lungo x2 le classi sono molto disperse la direzione più discriminante diventa x1: l'ordine delle feature LDA dipende dal rapporto tra separazione delle medie e dispersione, non dalla sola separazione. (c) Osservare che qui n = 2 < C = 3: la condizione n ≥ C di p55 non vale e la proiezione su C − 1 = 2 dimensioni non riduce nulla, ma gli autovalori ordinano comunque le direzioni (se se ne tiene una sola: x2 nel caso a, x1 nel caso b). Randomizzazione: medie intere casuali e S_W diagonale con elementi positivi casuali; con S_B non diagonale gli autovalori di M = S_W^{-1}S_B si ottengono da λ² − tr(M) λ + |M| = 0, con |M| = |S_B| / |S_W|.",
+      "concepts": ["c44", "c47", "c49", "c51", "c38"],
+      "addedBy": "revisore"
+    },
+    {
+      "id": "es16",
+      "title": "Quando la LDA è cieca: stessa media, dispersioni diverse",
+      "type": "concettuale",
+      "description": "Sensori IoT: letture normali (classe ω_1) compatte attorno a (0,0) con covarianza 0.1 I; letture anomale (classe ω_2) attorno alla stessa media (0,0) ma con covarianza diag(4, 0.5). (a) Calcolare S_B e J(w) per ogni w: m_1 = m_2 ⇒ S_B = 0 ⇒ J(w) = 0, la LDA non trova alcuna direzione. (b) Dire quale direzione sceglie la PCA (lo scatter totale è dominato dalla classe anomala lungo x1, quindi φ1 = (1,0)) e perché una soglia su |y_1| separa almeno in parte le due classi. (c) Spiegare quale informazione ignora il criterio di Fisher (le differenze di covarianza) e confrontare con la domanda d'orale «When are the results of LDA and PCA the same?»: qui non solo sono diverse, ma la PCA fa meglio della LDA.",
+      "concepts": ["c71", "c34", "c54", "c60"],
+      "addedBy": "revisore"
+    }
+  ],
+  "examQuestions": [
+    {
+      "text": "LDA: what is it? Is it a supervised method or unsupervised method? Is PCA supervised or unsupervised? Define the principal formulas. Specify if the means in the formula are projections of means of classes or means of the projection of points on the chosen direction: are these two objects the same? Make clear the dependence of the formula on projection direction, also by defining scatter matrices (and what characteristics of the data do these represent?). How changes the framework with multiple classes and what do the C-1 eigenvectors found represent? Write the solution for the binary classification case. Finally, he asked me to make a graphical example in a 2D feature space where PCA and LDA produced a much equivalent result, and one where the result was much different (similar to the one on slides).",
+      "prof": "Melgani",
+      "concepts": ["c01", "c03", "c10", "c11", "c12", "c19", "c21", "c22", "c23", "c24", "c25", "c26", "c27", "c28", "c37", "c38", "c40", "c44", "c47", "c49", "c51", "c54", "c55", "c56", "c57", "c60"]
+    },
+    {
+      "text": "LDA: What is it? Definition of between-class distance and within-class distance. Definition of best case for two distributions, following the two criteria (Compact classes (as impulses) distant one from the other). Formula for Fisher Linear Discriminant, both with distances and Scatter Matrices. Which is the formula for the w maximizing the Generalized Rayleigh ratio? Citation of LDA in multiclass case. When are the results of LDA and PCA the same?",
+      "prof": "Melgani",
+      "concepts": ["c01", "c07", "c10", "c13", "c14", "c15", "c17", "c21", "c22", "c27", "c28", "c30", "c37", "c44", "c47", "c60", "c70"]
+    },
+    {
+      "text": "Block scheme/Design phases of an ML system, describe all the blocks and phases with examples (in particular at the beginning of data acquisition and feature extraction, which is the best feature in terms of discrimination, cit. of LDA). Then speaking about the selection (cit. of overfitting), the training and the evaluation of the model (cit. of k-fold), we reach the probabilities regarding the binary classifier  (cit. of MAP). At the end, what can we do when the model has low accuracy or in general if a final user wants to reduce the probability of false alarm and the probability of missed alarm?",
+      "prof": "Melgani",
+      "concepts": ["c36", "c02", "c01"]
+    }
+  ],
+  "crossLinks": [
+    {"moduleId": "m14-pca", "why": "Modulo gemello: la PCA (matrice di scatter totale, autovettori, componenti principali) è il termine di confronto di tutto questo modulo. La pagina part1 p71 è condivisa (Step 5' dell'esempio del cubo) e il quadro dell'estrazione di feature (ch3 p38, part1 p67) presenta LDA e PCA come le due trasformazioni lineari classiche, supervisionata e non."},
+    {"moduleId": "m11-hughes-feature-selection", "why": "Motiva la riduzione delle feature; l'effetto Hughes (pochi campioni etichettati rispetto alle feature) è lo stesso problema che rende S_W singolare quando N non supera abbastanza n."},
+    {"moduleId": "m12-misure-separabilita", "why": "Il valore massimo del criterio di Fisher, (m_1 − m_2)^t S_W^{-1}(m_1 − m_2), è una distanza di tipo Mahalanobis tra le medie, lo stesso tipo di termine della divergenza e del primo addendo della distanza di Bhattacharyya. Il secondo addendo di Bhattacharyya misura la differenza tra le covarianze, cioè proprio l'informazione che il criterio di Fisher ignora (c71)."},
+    {"moduleId": "m13-strategie-ricerca", "why": "Selezione di feature (SFS/SBS, sottoinsiemi delle feature originali) contro estrazione di feature (LDA/PCA, combinazioni lineari di tutte le feature)."},
+    {"moduleId": "m06-modelli-pdf-gaussiana", "why": "Le matrici di scatter sono covarianze campionarie non normalizzate: S_i = #(X_i) Σ̂_i; le ellissi di covarianza aiutano a leggere S_W e S_B."},
+    {"moduleId": "m05-max-likelihood", "why": "Le medie di classe e le matrici Σ̂_i usate per costruire S_W sono le stime ML di media e covarianza."},
+    {"moduleId": "m16-mdm-box", "why": "Dopo l'estrazione delle feature LDA serve un classificatore: il capitolo 4 inizia con la minima distanza dalla media, che lavora proprio sulle medie di classe nello spazio ridotto."},
+    {"moduleId": "m19-funzioni-discriminanti", "why": "Per classi gaussiane con covarianza comune la funzione discriminante bayesiana è lineare con w = Σ^{-1}(μ_1 − μ_2), la stessa direzione di Fisher."},
+    {"moduleId": "p07-regressione-multiclasse", "why": "I classificatori lineari generativi di Passerini (gaussiane con covarianza condivisa) portano alla stessa direzione della LDA di Fisher."},
+    {"moduleId": "p06-discriminanti-perceptron", "why": "Funzioni discriminanti lineari w^t x + w_0: la LDA fornisce una scelta di w basata sul criterio di Fisher invece che su un algoritmo iterativo come il perceptron."},
+    {"moduleId": "m02-sistema-ml-design", "why": "Nello schema a blocchi del sistema di ML l'estrazione di feature è il punto in cui all'orale si cita la LDA come «best feature in terms of discrimination»."}
+  ],
+  "emptyPages": [],
+  "gaps": [
+    "ch3 p53: nella formula m_i = (1/#(X_i)) Σ x manca il numeratore «1» della frazione (c'è solo la linea di frazione); le note part1 p72 riportano correttamente 1/#(X_i).",
+    "part1 p73 (derivazione manoscritta): l'ultimo termine è scritto «S̃_1» mentre si intende lo scatter proiettato s̃_1² (manca l'esponente e la lettera è maiuscola).",
+    "ch3 p51 / part1 p72: la slide non dice quale delle due proiezioni sia migliore; l'interpretazione (destra più separata) viene dalla didascalia originale di Duda-Hart-Stork, Fig. 3.5, e dalla lettura della figura. Il conteggio 6 neri + 9 rossi è letto dalla figura. Revisore: coordinate dei 15 punti, angoli delle rette (45° e circa −15°), proiezioni, J e numero di errori in ex01 sono stime ottenute digitalizzando i pixel della slide; ne risulta che la proiezione di destra è migliore ma non perfetta e che nessuna direzione separa del tutto le due classi (la versione precedente dell'inventario parlava di separazione quasi completa).",
+    "ch3 p57-58: gli angoli delle rette (esempio 1: PCA circa +55° e −35°, LDA circa −22°; esempio 2: PCA circa +42° e −48°, LDA circa −3°) sono misurati dal revisore sui pixel delle figure (assi in scala uguale); la fonte non li riporta.",
+    "Aggiunte del revisore non presenti nelle fonti: c71 (limite della LDA con medie coincidenti), der10 (via con il moltiplicatore di Lagrange), es15 e es16; la precisazione su «funzioni discriminanti» in c38 (proiezioni y_i = w_i^t x, non le g_i(x) del Cap. 4) è nostra.",
+    "ch3 p54 / part1 p73: «usually nonsingular if N > n» è una condizione approssimata; a rigore rank(S_W) ≤ N − C, quindi serve N ≥ n + C, e S_W può essere singolare anche con N > n (esempio del cubo). Precisazione nostra.",
+    "part1 p73: le note dicono solo «differentiating with respect to w and setting the gradient to zero»; tutti i passaggi della derivazione di w = S_W^{-1}(m_1 − m_2) (der03), il problema agli autovalori generalizzato e il valore massimo J* sono aggiunti da noi.",
+    "ch3 p56: «It can be shown that J(W) is maximized…» non è dimostrato nelle fonti; der07 è uno schema aggiunto da noi (la prova completa di ottimalità, con Courant-Fischer, resta fuori).",
+    "part1 p74: la frase sul determinante («quantifies the volume spanned by the eigenvalues of the matrix, which correspond to the variances along the directions defined by W») è imprecisa; la lettura corretta (determinante = prodotto degli autovalori, legato al volume dell'ellissoide di dispersione) è una nostra precisazione.",
+    "ch3 p56: la giustificazione di «only C−1 of these are independent» (gli scarti pesati dalla media globale sommano a zero) non è scritta nelle fonti ed è aggiunta da noi (der06).",
+    "Banca domande: i termini «Generalized Rayleigh ratio» e «Compact classes (as impulses)» e la domanda «When are the results of LDA and PCA the same?» non hanno riscontro testuale nelle slide o nelle note; le risposte (c17, c27, c60, c70) sono costruite da noi a partire dal materiale.",
+    "ch3 p57-58 / part1 p75: gli esempi 1 e 2 non riportano i parametri delle distribuzioni né commenti testuali; il messaggio (PCA fallisce / PCA separa in parte) e i valori dei picchi sono letti dagli istogrammi.",
+    "ch3 p59-60 / part1 p76: il dataset dell'immagine telerilevata e il numero di classi non sono indicati; C = 7 è dedotto dalle sei bande LDA e l'identificazione con la scena Washington DC Mall è solo un'ipotesi. La descrizione delle bande (acqua chiara nella prima banda LDA, ecc.) è una lettura visiva.",
+    "part1 p71: la metà superiore (Step 5' dell'esempio PCA) appartiene al modulo m14 ed è duplicata da ch3 p49; inventariata qui per la regola delle pagine, da deduplicare.",
+    "Le fonti non trattano come classificare dopo la proiezione LDA (scelta della soglia su y o classificatore nello spazio a C − 1 dimensioni) né come gestire S_W singolare (regolarizzazione, riduzione preliminare): eventuali cenni nei widget ed esercizi sono approfondimenti dichiarati."
+  ]
+}
