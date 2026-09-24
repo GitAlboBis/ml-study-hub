@@ -1,0 +1,1523 @@
+{
+  "moduleId": "m17-bayes-map-ml",
+  "title": "Classificazione bayesiana: criteri MAP e ML",
+  "stages": {"inventario": "done"},
+  "pagesReviewed": [
+    {"doc": "ch4", "from": 9, "to": 15},
+    {"doc": "part1", "from": 80, "to": 84},
+    {"doc": "examq", "from": 1, "to": 3}
+  ],
+  "overview": "Il modulo apre la parte probabilistica del Cap. 4: la teoria bayesiana della decisione (Bayesian decision theory) tratta la classificazione come un compromesso quantificato con probabilità e costi, e organizza i criteri in un albero (parametrizzazione completa: rischio minimo, MAP, ML; incompleta: minimax, Neyman-Pearson). Il cuore è il criterio MAP, detto anche criterio a minimo errore: si assegna x alla classe con posterior massima, riscritta con Bayes come prior per verosimiglianza, e si dimostra che minimizza la probabilità media di errore P_e. Il criterio ML usa solo le pdf condizionate, ignora i prior e coincide con il MAP solo quando i prior sono uguali. L'esempio 1-D delle slide 14-15 (prior 2/3 e 1/3) mostra come i prior spostino le frontiere e creino regioni non connesse. All'orale Melgani chiede il confronto MAP/ML, come i prior spostano la soglia, la dimostrazione dell'errore minimo e perché il MAP può non essere il migliore in pratica.",
+  "concepts": [
+    {
+      "id": "c01",
+      "name": "Teoria bayesiana della decisione",
+      "nameEn": "Bayesian decision theory",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch4", "page": 9}, {"doc": "part1", "page": 80}],
+      "detail": "Slide 9: 'Bayesian decision theory is a fundamental statistical approach to the problem of pattern classification' (in rosso nella slide 'Bayesian decision theory' e 'statistical approach'). È il quadro teorico in cui stanno tutti i criteri di questo modulo (MAP, ML) e dei successivi (rischio minimo, funzioni discriminanti). Le note (p.80) la descrivono come 'a foundational statistical approach to pattern classification that utilizes probabilistic information to make informed classification decisions'. A differenza di MDM e Box del modulo precedente, che decidono con distanze o box geometrici, qui la decisione discende da probabilità.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c02",
+      "name": "Tradeoff tra decisioni quantificati con probabilità e costi",
+      "nameEn": "Quantifying the tradeoffs between various classification decisions using probability and the costs that accompany such decisions",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch4", "page": 9}, {"doc": "part1", "page": 80}],
+      "detail": "Slide 9: 'This approach is based on quantifying the tradeoffs between various classification decisions using probability and the costs that accompany such decisions' (parola evidenziata in rosso: 'tradeoffs'). Ogni decisione ha una probabilità di essere giusta o sbagliata e un costo; la teoria bayesiana rende numerici questi compromessi. Note p.80: 'rooted in assessing and balancing tradeoffs between possible classification choices using probabilities and associated costs'. I costi entrano esplicitamente solo nella teoria del rischio minimo (m18): MAP e ML usano solo le probabilità, cioè trattano tutti gli errori come ugualmente costosi.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c03",
+      "name": "Ipotesi di base: problema probabilistico con tutte le probabilità rilevanti note",
+      "nameEn": "The decision problem is posed in probabilistic terms, and all of the relevant probability values are known",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch4", "page": 9}, {"doc": "part1", "page": 81}],
+      "detail": "Slide 9: 'It makes the assumption that the decision problem is posed in probabilistic terms, and that all of the relevant probability values are known'. Le note (p.81) dicono quali: 'with all relevant probability values accessible, including prior probabilities, likelihoods, and potentially a cost matrix for various classification decisions'. È l'ipotesi forte della teoria: in pratica pdf e prior vanno stimati dai dati di training con le tecniche del Cap. 2 (stima parametrica e non parametrica), e l'errore di queste stime è il motivo per cui il classificatore bayesiano reale non è sempre ottimo (c60).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c04",
+      "name": "Vantaggio chiave: integrare la conoscenza a priori sulle classi",
+      "nameEn": "Ability to integrate prior knowledge about class distributions",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part1", "page": 80}],
+      "detail": "Solo nelle note (p.80): 'A key advantage of Bayesian classification is its ability to integrate prior knowledge about class distributions'. La conoscenza a priori è ciò che si sa sulle classi prima di osservare il pattern, formalizzata dai prior P(ω_i): la frequenza di una malattia nella popolazione, la quota di salmoni nel carico. Il criterio MAP la usa, il criterio ML no: è la differenza centrale del modulo.",
+      "latex": ["P(\\omega_i),\\quad i=1,\\dots,C"],
+      "symbols": [{"s": "P(\\omega_i)", "meaning": "probabilità a priori della classe ω_i"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c05",
+      "name": "Criteri di decisione diversi secondo il problema",
+      "nameEn": "Different decision criteria may be considered depending on the peculiarities and requirements of the problem",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch4", "page": 9}, {"doc": "part1", "page": 81}],
+      "detail": "Slide 9: 'Depending on the peculiarities and requirements of the considered classification problem, different decision criteria may be considered' ('decision criteria' in rosso). Note p.81: 'Depending on the structure and requirements of a given classification problem, different Bayesian decision criteria may be applied'. Non esiste un unico classificatore bayesiano: la scelta dipende da quali informazioni sono disponibili (pdf, prior, costi) e da cosa si vuole garantire (errore minimo, rischio minimo, rischio massimo contenuto, falsi allarmi sotto controllo). La slide successiva organizza i criteri in un albero (c06).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c06",
+      "name": "Albero dei criteri di decisione bayesiani",
+      "nameEn": "Bayes Decision Criterion tree: Full / Incomplete Problem Parameterization",
+      "kind": "figura",
+      "sourcePages": [{"doc": "ch4", "page": 10}, {"doc": "part1", "page": 81}],
+      "detail": "Slide 10, ripetuta nelle note p.81: diagramma ad albero. Radice verde 'Bayes Decision Criterion'; due rami rossi 'Full Problem Parameterization' e 'Incomplete Problem Parameterization'. Sotto Full un solo nodo blu, 'Minimum Risk', con due foglie verdi 'MAP Criterion' e 'ML Criterion'. Sotto Incomplete due nodi blu, 'Minimax Criterion' e 'Neyman-Pearson Criterion'. Messaggio: MAP e ML sono casi particolari del rischio minimo e richiedono un problema completamente parametrizzato; minimax e Neyman-Pearson servono quando manca parte dell'informazione. Il corso sviluppa MAP e ML (questo modulo) e il rischio minimo (m18); minimax e Neyman-Pearson compaiono solo nell'albero e nelle note.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c07",
+      "name": "Parametrizzazione completa del problema",
+      "nameEn": "Full Problem Parameterization",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch4", "page": 10}, {"doc": "part1", "page": 81}],
+      "detail": "Note p.81: 'When the classification problem is fully specified (meaning all relevant probability density functions, prior probabilities, and a cost matrix, if applicable, are available), Bayes Decision Theory aims to minimize the expected classification risk'. Il problema è completamente parametrizzato quando si conoscono le pdf condizionate p(x|ω_i), i prior P(ω_i) e, se serve, la matrice dei costi. In questo ramo l'obiettivo è minimizzare il rischio atteso; nell'albero (slide 10) porta al nodo 'Minimum Risk' e alle foglie MAP e ML.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c08",
+      "name": "Rischio minimo come nodo del ramo completo",
+      "nameEn": "Minimum Risk",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch4", "page": 10}, {"doc": "part1", "page": 81}],
+      "detail": "Note p.81: 'Minimum Risk: Minimizes the total expected risk by balancing prior probabilities and the costs associated with misclassification'. Nell'albero della slide 10 è l'unico figlio di 'Full Problem Parameterization' e il padre di MAP e ML: il rischio minimo è il criterio generale, MAP e ML ne sono casi particolari (tutti gli errori con lo stesso costo). Le formule (rischio condizionale, matrice dei costi, rischio di Bayes) sono nel modulo m18.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c09",
+      "name": "Parametrizzazione incompleta del problema",
+      "nameEn": "Incomplete Problem Parameterization",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch4", "page": 10}, {"doc": "part1", "page": 81}],
+      "detail": "Note p.81: 'When parameters are partially unknown or only limited information is available, alternative criteria are used to make robust decisions'. È il ramo destro dell'albero (slide 10): quando per esempio i prior o i costi non sono noti non si può applicare il rischio minimo e si usano criteri 'robusti', minimax e Neyman-Pearson. La fonte non dà formule per questo ramo.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c10",
+      "name": "Criterio minimax",
+      "nameEn": "Minimax Criterion",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch4", "page": 10}, {"doc": "part1", "page": 81}],
+      "detail": "Note p.81: 'Minimax Criterion: A conservative approach that minimizes the maximum possible risk, particularly useful in high-uncertainty scenarios'. Invece di minimizzare il rischio medio per un prior fissato (che non si conosce), si sceglie la regola il cui rischio nel caso peggiore è il più basso possibile: un approccio prudente (conservative). Esempio d'uso: una nuova epidemia di cui non si conosce la prevalenza. Nelle slide compare solo come nodo dell'albero, senza formule.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c11",
+      "name": "Criterio di Neyman-Pearson",
+      "nameEn": "Neyman-Pearson Criterion",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch4", "page": 10}, {"doc": "part1", "page": 81}],
+      "detail": "Note p.81: 'Neyman-Pearson Criterion: Often applied in hypothesis testing, this criterion maximizes detection power (true positive rate) while controlling for the type I error (false positive rate), making it suitable for unbalanced class distributions'. Si fissa un tetto alla probabilità di falso allarme (errore di tipo I) e sotto quel vincolo si massimizza la probabilità di rilevazione. Nasce nel test di ipotesi (radar, diagnostica); il legame con le curve ROC è nel modulo m22. Nelle slide compare solo come nodo dell'albero, senza formule.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c12",
+      "name": "Versatilità: decisioni efficaci e cost-efficient",
+      "nameEn": "Bayesian classification is versatile ... to deliver the most effective and cost-efficient decisions",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part1", "page": 81}],
+      "detail": "Chiusura della sezione nelle note (p.81): 'Bayesian classification is versatile and well-suited to probabilistic classification settings. By leveraging available probabilistic information and tradeoffs, it aims to deliver the most effective and cost-efficient decisions for a wide range of classification scenarios'. Riassume la filosofia: usare tutta l'informazione probabilistica disponibile e i compromessi tra decisioni. 'Most effective' rimanda all'errore minimo (MAP), 'cost-efficient' al rischio minimo (m18).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c13",
+      "name": "Notazione: pattern x, classi ω_i, numero di classi C",
+      "nameEn": "Pattern x, classes ω_i (i = 1, 2, ..., C)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch4", "page": 11}, {"doc": "part1", "page": 82}],
+      "detail": "Nelle slide il pattern da classificare è il vettore di feature x (in grassetto), le classi sono ω_1, ..., ω_C e l'indice scorre su tutte le C classi ('i = 1, 2, ..., C'); le note usano x non in grassetto e 'i = 1, ..., C'. 'x ∈ ω_j' si legge 'x viene assegnato alla classe ω_j'. Le probabilità delle classi si scrivono con la P maiuscola (P(ω_i), P(ω_i|x)), le densità della variabile continua x con la p minuscola (p(x|ω_i), p(x)): distinzione da rispettare all'orale.",
+      "latex": ["\\mathbf{x}\\in\\omega_j", "i=1,2,\\dots,C"],
+      "symbols": [
+        {"s": "\\mathbf{x}", "meaning": "pattern da classificare (vettore di feature)"},
+        {"s": "\\omega_i", "meaning": "i-esima classe"},
+        {"s": "C", "meaning": "numero di classi"},
+        {"s": "P(\\cdot)", "meaning": "probabilità (classi discrete)"},
+        {"s": "p(\\cdot)", "meaning": "densità di probabilità (feature continue)"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c14",
+      "name": "Il MAP è il criterio a minimo errore",
+      "nameEn": "Maximum A Posteriori (MAP) Criterion, also known as the minimum error criterion",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part1", "page": 82}, {"doc": "ch4", "page": 11}],
+      "detail": "Note p.82: 'The Maximum A Posteriori (MAP) Criterion, also known as the minimum error criterion, aims to classify patterns by maximizing the probability of correctly identifying their class given the observed data. In MAP, we seek to assign each pattern to the class with the highest posterior probability, thus minimizing the average probability of error'. 'Maximum A Posteriori' significa massimo della probabilità a posteriori, cioè calcolata dopo aver osservato x. Il secondo nome, criterio a minimo errore, riassume la sua proprietà di ottimalità (c33, c34).",
+      "latex": ["\\omega_{MAP}(\\mathbf{x})=\\arg\\max_{i=1,\\dots,C}P(\\omega_i|\\mathbf{x})"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c15",
+      "name": "Ipotesi del MAP: posterior note",
+      "nameEn": "Hypothesis: a posteriori (posterior) probabilities of classes P(ω_i|x) (i = 1, 2, ..., C) are assumed to be known",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch4", "page": 11}, {"doc": "part1", "page": 82}],
+      "detail": "Slide 11, 'Hypothesis': si assumono note le probabilità a posteriori delle classi P(ω_i|x) per ogni i = 1, ..., C (in rosso 'a posteriori (posterior) probabilities'; accanto una vignetta decorativa di un omino pensoso). Le note (p.82) ripetono l'ipotesi ('It is assumed that the posterior probabilities P(ω_i|x) for each class ω_i (where i = 1, ..., C) are known') e mettono nello stesso elenco 'Hypotheses' le altre tre quantità coinvolte: pdf condizionata, prior, evidenza (c17-c19). L'ipotesi viene subito indebolita nella slide: poiché le posterior spesso non sono note direttamente, la regola viene riscritta con prior e verosimiglianze (c22, c24).",
+      "latex": ["P(\\omega_i|\\mathbf{x}),\\quad i=1,2,\\dots,C"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c16",
+      "name": "Probabilità a posteriori",
+      "nameEn": "a posteriori (posterior) probability P(ω_i|x)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch4", "page": 11}, {"doc": "part1", "page": 82}],
+      "detail": "La posterior P(ω_i|x) è la probabilità che il pattern appartenga alla classe ω_i dopo aver osservato il suo vettore di feature x ('a posteriori' = dopo l'osservazione). In ogni x le posterior di tutte le classi sommano a 1, perché le classi sono esaustive e mutuamente esclusive. È la quantità su cui decide il MAP: 'effectively choosing the class that is most likely given the observed data' (note p.82). Nel teorema di Bayes della slide 11 è il termine 'posterior' = likelihood × prior / evidence.",
+      "latex": ["\\sum_{i=1}^{C}P(\\omega_i|\\mathbf{x})=1\\quad\\forall\\,\\mathbf{x}"],
+      "symbols": [{"s": "P(\\omega_i|\\mathbf{x})", "meaning": "probabilità a posteriori della classe ω_i dato x"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c17",
+      "name": "Pdf condizionata alla classe (verosimiglianza)",
+      "nameEn": "Class-Conditional Probability Density Function (pdf) p(x|ω_i), also called the likelihood pdf",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part1", "page": 82}, {"doc": "ch4", "page": 11}],
+      "detail": "Note p.82: 'Class-Conditional Probability Density Function (pdf): p(x|ω_i), also called the likelihood pdf, represents the probability density of x given class ω_i'. Descrive come si distribuiscono le feature dei soli pattern di una classe (per esempio la luminosità dei soli salmoni) e integra a 1 su tutto lo spazio delle feature. Nella formula di Bayes della slide 11 è la 'likelihood'. È la quantità che si stima con le tecniche del Cap. 2 (stima ML o bayesiana dei parametri, K-NN, Parzen) usando i campioni di training di ciascuna classe separatamente.",
+      "latex": ["p(\\mathbf{x}|\\omega_i)", "\\int p(\\mathbf{x}|\\omega_i)\\,d\\mathbf{x}=1"],
+      "symbols": [{"s": "p(\\mathbf{x}|\\omega_i)", "meaning": "pdf condizionata alla classe, verosimiglianza"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c18",
+      "name": "Probabilità a priori",
+      "nameEn": "Prior Probability P(ω_i)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part1", "page": 82}, {"doc": "ch4", "page": 11}],
+      "detail": "Note p.82: 'Prior Probability: P(ω_i) denotes the prior probability of class ω_i'. È la probabilità della classe prima di osservare il pattern ('a priori'): la frequenza con cui la classe si presenta, per esempio la quota di salmoni nel carico. I prior sono non negativi e sommano a 1. Nella slide 11 è il termine 'prior' del teorema di Bayes e il fattore P(ω_j) della regola MAP riscritta. Integrazione didattica: con i soli prior, senza misurare x, la regola migliore è scegliere sempre la classe più probabile, con errore 1 − max_i P(ω_i).",
+      "latex": ["\\sum_{i=1}^{C}P(\\omega_i)=1", "P_e^{\\text{solo prior}}=1-\\max_i P(\\omega_i)"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c19",
+      "name": "Evidenza (pdf marginale)",
+      "nameEn": "Marginal Probability (Evidence) p(x), also called the marginal pdf",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part1", "page": 82}, {"doc": "ch4", "page": 11}],
+      "detail": "Note p.82: 'Marginal Probability (Evidence): p(x), also called the marginal pdf, represents the overall probability of observing x'. È la densità di x senza distinguere la classe: la distribuzione delle feature di tutti i pattern mescolati. Integrazione didattica (teorema della probabilità totale, non scritto nella fonte): p(x) = Σ_k p(x|ω_k)P(ω_k), la miscela delle pdf di classe pesate dai prior. Nel teorema di Bayes è il denominatore 'evidence', che normalizza le posterior a somma 1.",
+      "latex": ["p(\\mathbf{x})=\\sum_{k=1}^{C}p(\\mathbf{x}|\\omega_k)\\,P(\\omega_k)"],
+      "symbols": [{"s": "p(\\mathbf{x})", "meaning": "evidenza, pdf marginale di x"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c20",
+      "name": "Obiettivo del MAP: minimizzare la probabilità media di errore",
+      "nameEn": "Goal: minimize the average probability of error",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch4", "page": 11}, {"doc": "part1", "page": 82}],
+      "detail": "Slide 11, 'Goal' (in rosso): 'minimize the average probability of error'. Note p.82: 'The objective of the MAP criterion is to minimize the average probability of classification error by assigning each pattern x to the class with the highest posterior probability'. 'Average' significa mediata su tutti i pattern che il classificatore incontrerà, cioè pesata dalla distribuzione di x e dai prior; la definizione formale P_e è a slide 12 (c28). Il MAP non considera i costi: ogni errore conta 1.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c21",
+      "name": "Regola di decisione MAP con le posterior",
+      "nameEn": "Decision rule: a pattern x is assigned to the class that maximizes the a posteriori probability P(ω_i|x)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch4", "page": 11}, {"doc": "part1", "page": 82}],
+      "detail": "Slide 11, 'Decision rule': x è assegnato alla classe che massimizza la probabilità a posteriori: x ∈ ω_j se e solo se P(ω_j|x) ≥ P(ω_i|x) per ogni i = 1, 2, ..., C (doppia freccia verde nella slide). Il confronto è con tutte le classi, compresa j stessa, dove vale l'uguaglianza. Il simbolo ≥ lascia libera la scelta in caso di parità, evento di probabilità nulla con pdf continue. Forma compatta equivalente: la classe scelta è l'argmax delle posterior.",
+      "latex": [
+        "\\mathbf{x}\\in\\omega_j\\;\\Leftrightarrow\\;P(\\omega_j|\\mathbf{x})\\geq P(\\omega_i|\\mathbf{x}),\\quad\\forall\\,i=1,2,\\dots,C",
+        "\\omega^{*}(\\mathbf{x})=\\arg\\max_{i=1,\\dots,C}P(\\omega_i|\\mathbf{x})"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c22",
+      "name": "Le posterior spesso non sono note: si riscrive con Bayes",
+      "nameEn": "Since the posterior probabilities are often not directly known, it is preferable to rewrite the MAP decision rule by using the Bayes theorem",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch4", "page": 11}, {"doc": "part1", "page": 82}],
+      "detail": "Slide 11: 'Since the posterior probabilities are often not directly known, it is preferable to rewrite the MAP decision rule by using the Bayes theorem'. Nella pratica si sanno stimare dal training set le pdf di ciascuna classe (usando solo i campioni di quella classe) e la frequenza delle classi; la posterior si ottiene combinandole. Note p.82: 'we apply Bayes' theorem to express P(ω_i|x) in terms of the class-conditional pdf and prior probability'.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c23",
+      "name": "Teorema di Bayes",
+      "nameEn": "Bayes theorem (posterior = likelihood × prior / evidence)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch4", "page": 11}, {"doc": "part1", "page": 82}],
+      "detail": "La slide 11 (in rosso 'Bayes theorem') scrive la forma verbale posterior = likelihood × prior / evidence; le note (p.82) la esplicitano: P(ω_i|x) = p(x|ω_i)P(ω_i)/p(x). Ogni termine ha un nome: verosimiglianza p(x|ω_i), prior P(ω_i), evidenza p(x), posterior P(ω_i|x). Si ricava dalla doppia fattorizzazione della densità congiunta p(x, ω_i) (der01). Il teorema mescola una probabilità (P, classi discrete) e densità (p, feature continue).",
+      "latex": [
+        "\\text{posterior}=\\dfrac{\\text{likelihood}\\times\\text{prior}}{\\text{evidence}}",
+        "P(\\omega_i|\\mathbf{x})=\\dfrac{p(\\mathbf{x}|\\omega_i)\\,P(\\omega_i)}{p(\\mathbf{x})}"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c24",
+      "name": "Regola MAP riscritta: prior per verosimiglianza",
+      "nameEn": "MAP decision rule rewritten: x ∈ ω_j ⇔ P(ω_j)p(x|ω_j) ≥ P(ω_i)p(x|ω_i), ∀ i = 1, 2, ..., C",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch4", "page": 11}, {"doc": "part1", "page": 82}],
+      "detail": "Seconda regola della slide 11: sostituendo Bayes nella regola MAP e moltiplicando entrambi i membri per p(x) > 0 (der02), x ∈ ω_j se e solo se P(ω_j)p(x|ω_j) ≥ P(ω_i)p(x|ω_i) per ogni i. È la forma operativa del MAP: servono solo prior e pdf condizionate, quantità stimabili dal training set. Graficamente si disegnano le curve 'pesate' P(ω_i)p(x|ω_i) e in ogni x vince la più alta; le frontiere di decisione sono i punti in cui due curve pesate si incrociano.",
+      "latex": [
+        "\\mathbf{x}\\in\\omega_j\\;\\Leftrightarrow\\;P(\\omega_j)\\,p(\\mathbf{x}|\\omega_j)\\geq P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i),\\quad\\forall\\,i=1,2,\\dots,C",
+        "\\omega^{*}(\\mathbf{x})=\\arg\\max_{i}P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i)"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c25",
+      "name": "L'evidenza non influenza la decisione",
+      "nameEn": "The evidence p(x) is a common normalization factor and can be dropped",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch4", "page": 11}],
+      "detail": "Conseguenza del passaggio dalla prima alla seconda regola della slide 11 (esplicitazione didattica): p(x) è lo stesso per tutte le classi ed è positivo, quindi dividere tutti i termini per p(x) non cambia quale sia il più grande. Serve solo a normalizzare le posterior perché sommino a 1, cosa utile per leggere un grado di confidenza (per esempio P(ω_1|x) = 0.92), non per decidere. Per questo la slide scrive la regola senza l'evidenza.",
+      "latex": ["\\arg\\max_i\\dfrac{P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i)}{p(\\mathbf{x})}=\\arg\\max_i P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i)"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c26",
+      "name": "Interpretazione del MAP: la classe più probabile dato x",
+      "nameEn": "MAP effectively chooses the class that is most likely given the observed data",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part1", "page": 82}],
+      "detail": "Note p.82: 'In essence, the MAP criterion selects the class ω_i that maximizes the posterior probability P(ω_i|x), effectively choosing the class that is most likely given the observed data'. Lettura intuitiva: combinando quanto la misura è tipica per ogni classe (verosimiglianza) con quanto la classe è comune (prior) si sceglie la spiegazione più probabile del dato. Una classe rara vince solo se il dato è molto più tipico per lei che per le altre.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c27",
+      "name": "Regione di decisione di un classificatore arbitrario",
+      "nameEn": "Decision region ℜ_i generated by an arbitrary classifier for the class ω_i",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "ch4", "page": 12}, {"doc": "part1", "page": 82}],
+      "detail": "Slide 12: 'Let ℜ_i be the decision region generated by an arbitrary classifier for the class ω_i' ('decision region' in rosso). Ogni classificatore, qualunque sia (MDM, Box, MAP, ML, rete neurale), divide lo spazio delle feature in C regioni: ℜ_i è l'insieme dei punti assegnati a ω_i. Integrazione didattica: le regioni sono disgiunte e la loro unione è tutto lo spazio (una partizione), e ciascuna può essere formata da più pezzi non connessi. Le note (p.82) scrivono R_i invece di ℜ_i ('generated by the classifier for each class ω_i').",
+      "latex": [
+        "\\Re_i=\\{\\mathbf{x}:\\mathbf{x}\\text{ assegnato a }\\omega_i\\}",
+        "\\Re_i\\cap\\Re_k=\\emptyset\\;(i\\neq k),\\qquad\\bigcup_{i=1}^{C}\\Re_i=\\text{spazio delle feature}"
+      ],
+      "symbols": [{"s": "\\Re_i", "meaning": "regione di decisione della classe ω_i (R_i nelle note)"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c28",
+      "name": "Probabilità media di errore P_e",
+      "nameEn": "Average probability of error",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch4", "page": 12}, {"doc": "part1", "page": 82}],
+      "detail": "Slide 12: 'The average probability of error is given by: P_e = Σ_{i=1}^{C} P(err|ω_i)P(ω_i) = Σ_{i=1}^{C} P(x ∉ ℜ_i|ω_i)P(ω_i)'. Per ogni classe si calcola la probabilità di sbagliare quando il pattern è davvero di quella classe, cioè che il suo x cada fuori dalla regione ℜ_i, e la si pesa con la frequenza della classe; la somma è l'errore medio (teorema della probabilità totale). Note p.82: 'can be defined as the sum of the probabilities of misclassifying a pattern'. Vale per un classificatore arbitrario: è la misura con cui si confrontano i criteri.",
+      "latex": ["\\mathrm{P_e}=\\sum_{i=1}^{C}P(err|\\omega_i)\\,P(\\omega_i)=\\sum_{i=1}^{C}P(\\mathbf{x}\\notin\\Re_i|\\omega_i)\\,P(\\omega_i)"],
+      "symbols": [
+        {"s": "\\mathrm{P_e}", "meaning": "probabilità media di errore del classificatore"},
+        {"s": "P(err|\\omega_i)", "meaning": "probabilità di sbagliare un pattern della classe ω_i"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c29",
+      "name": "Errore condizionato alla classe come integrale",
+      "nameEn": "Class-conditional error probability P(err|ω_i) = P(x ∉ ℜ_i|ω_i)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch4", "page": 12}],
+      "detail": "Il termine della slide 12 P(err|ω_i) = P(x ∉ ℜ_i|ω_i) è la massa della pdf della classe ω_i che cade nelle regioni delle altre classi. Esplicitazione didattica, non scritta nella fonte: si ottiene integrando p(x|ω_i) sulle altre regioni, ed è uguale a 1 meno la massa dentro ℜ_i. Ogni P(err|ω_i) è una percentuale d'errore 'per classe' (il complemento della recall della classe, m22).",
+      "latex": ["P(err|\\omega_i)=P(\\mathbf{x}\\notin\\Re_i|\\omega_i)=\\sum_{k\\neq i}\\int_{\\Re_k}p(\\mathbf{x}|\\omega_i)\\,d\\mathbf{x}=1-\\int_{\\Re_i}p(\\mathbf{x}|\\omega_i)\\,d\\mathbf{x}"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c30",
+      "name": "Caso a due classi: P_e come somma di due aree",
+      "nameEn": "Two-class case: probability of error as two weighted tail areas",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch4", "page": 12}],
+      "detail": "Specializzazione didattica della formula di slide 12 per C = 2 (non scritta nella fonte, ma è il disegno che si fa all'orale): P_e = P(ω_1)∫_{ℜ_2}p(x|ω_1)dx + P(ω_2)∫_{ℜ_1}p(x|ω_2)dx. Graficamente è l'area sotto la curva pesata P(ω_1)p(x|ω_1) nella regione assegnata a ω_2 più l'area sotto P(ω_2)p(x|ω_2) nella regione di ω_1. Se la soglia si allontana dall'incrocio delle curve pesate si aggiunge un'area 'riducibile'; nell'incrocio (regola MAP) resta solo l'area minima P_e* = ∫ min[P(ω_1)p(x|ω_1), P(ω_2)p(x|ω_2)]dx.",
+      "latex": [
+        "\\mathrm{P_e}=P(\\omega_1)\\int_{\\Re_2}p(\\mathbf{x}|\\omega_1)\\,d\\mathbf{x}+P(\\omega_2)\\int_{\\Re_1}p(\\mathbf{x}|\\omega_2)\\,d\\mathbf{x}",
+        "\\mathrm{P_e^{*}}=\\int\\min\\big[P(\\omega_1)\\,p(\\mathbf{x}|\\omega_1),\\,P(\\omega_2)\\,p(\\mathbf{x}|\\omega_2)\\big]\\,d\\mathbf{x}"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c31",
+      "name": "Probabilità di classificazione corretta P_c = 1 − P_e",
+      "nameEn": "Probability of correct classification",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch4", "page": 12}, {"doc": "part1", "page": 82}],
+      "detail": "Passo didattico della dimostrazione (der03): poiché i prior sommano a 1, P_e = 1 − Σ_i P(ω_i)P(x ∈ ℜ_i|ω_i), cioè 1 meno la probabilità di classificazione corretta P_c = Σ_i ∫_{ℜ_i}P(ω_i)p(x|ω_i)dx. Minimizzare P_e equivale a massimizzare P_c, l'accuratezza attesa: le note (p.82) chiudono infatti con 'MAP minimizes P_e and therefore maximizes classification accuracy'.",
+      "latex": ["P_c=1-\\mathrm{P_e}=\\sum_{i=1}^{C}\\int_{\\Re_i}P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i)\\,d\\mathbf{x}"],
+      "symbols": [{"s": "P_c", "meaning": "probabilità di classificazione corretta (accuratezza attesa)"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c32",
+      "name": "Probabilità di errore condizionata al pattern P(err|x)",
+      "nameEn": "Conditional probability of error given x",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part1", "page": 82}],
+      "detail": "Integrazione didattica che dà la seconda dimostrazione dell'ottimalità del MAP (der04). Se x viene assegnato a ω_j, la probabilità di sbagliare su quel pattern è la probabilità che la sua vera classe sia un'altra: P(err|x) = 1 − P(ω_j|x). L'errore medio è P_e = ∫ P(err|x)p(x)dx; poiché p(x) ≥ 0, P_e è minimo se P(err|x) è minimo in ogni x, cioè scegliendo la posterior massima: P(err|x) minimo = 1 − max_i P(ω_i|x). È la traduzione formale della frase delle note (p.82) 'maximizing the probability of correctly identifying their class given the observed data'. Con due classi l'errore puntuale del MAP vale al più 0.5.",
+      "latex": [
+        "P(err|\\mathbf{x})=1-P(\\omega_j|\\mathbf{x})\\quad\\text{se }\\mathbf{x}\\in\\Re_j",
+        "\\mathrm{P_e}=\\int P(err|\\mathbf{x})\\,p(\\mathbf{x})\\,d\\mathbf{x}",
+        "P(err|\\mathbf{x})_{\\mathrm{MAP}}=1-\\max_i P(\\omega_i|\\mathbf{x})"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c33",
+      "name": "Il MAP minimizza P_e e massimizza l'accuratezza",
+      "nameEn": "By maximizing the posterior probability for each class, MAP minimizes P_e and therefore maximizes classification accuracy",
+      "kind": "teorema",
+      "sourcePages": [{"doc": "part1", "page": 82}, {"doc": "ch4", "page": 12}],
+      "detail": "Enunciato delle note (p.82): 'By maximizing the posterior probability for each class, MAP minimizes P_e and therefore maximizes classification accuracy'. La slide 12 prepara la dimostrazione definendo P_e per un classificatore arbitrario; la dimostrazione, chiesta all'orale ('Proof of MAP as error minimization'), è ricostruita in der03: si scrive P_e = 1 − Σ_i∫_{ℜ_i}P(ω_i)p(x|ω_i)dx e si osserva che l'integrale è massimo se ogni x viene messo nella regione della classe con P(ω_i)p(x|ω_i) più grande, che è la regola MAP. Tra tutte le partizioni {ℜ_i} possibili, quella MAP dà la P_e più bassa.",
+      "latex": ["\\{\\Re_i^{\\mathrm{MAP}}\\}=\\arg\\min_{\\{\\Re_1,\\dots,\\Re_C\\}}\\mathrm{P_e}(\\Re_1,\\dots,\\Re_C)"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c34",
+      "name": "Ottimalità del MAP: l'errore di Bayes come limite inferiore",
+      "nameEn": "The optimal MAP criterion (Bayes error as lower bound)",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch4", "page": 13}, {"doc": "part1", "page": 82}],
+      "detail": "La slide 13 chiama il MAP 'the optimal MAP criterion': con pdf e prior veri nessun classificatore ha probabilità d'errore più bassa. Il valore minimo P_e* = 1 − ∫ max_i[P(ω_i)p(x|ω_i)]dx è detto errore di Bayes (termine standard, non usato nelle slide di questo modulo): è un limite inferiore per ogni classificatore, anche non probabilistico (MDM, Box, reti). In generale è maggiore di zero perché le pdf delle classi si sovrappongono: dove due classi producono lo stesso x qualunque decisione sbaglia qualche volta. Nel quadro del rischio minimo l'equivalente è il 'Bayes risk' (m18).",
+      "latex": ["\\mathrm{P_e^{*}}=1-\\int\\max_i\\big[P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i)\\big]\\,d\\mathbf{x}\\leq\\mathrm{P_e}(\\text{qualsiasi classificatore})"],
+      "symbols": [{"s": "\\mathrm{P_e^{*}}", "meaning": "errore di Bayes, probabilità di errore minima (del MAP)"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c35",
+      "name": "Criterio a massima verosimiglianza (ML)",
+      "nameEn": "Maximum Likelihood (ML) Criterion",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part1", "page": 83}, {"doc": "part1", "page": 81}, {"doc": "ch4", "page": 13}],
+      "detail": "Note p.83: 'The Maximum Likelihood (ML) Criterion is a statistical approach to classification that aims to assign a pattern to the class that maximizes the likelihood of observing the data given the class, without requiring prior probabilities'. Il nome viene dalla verosimiglianza (likelihood) p(x|ω_i), letta come funzione della classe ω_i per il dato x fissato. Note p.81: 'Chooses the class that maximizes the likelihood of the observed data, focusing on likelihood alone, without requiring priors'.",
+      "latex": ["\\omega_{ML}(\\mathbf{x})=\\arg\\max_{i=1,\\dots,C}p(\\mathbf{x}|\\omega_i)"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c36",
+      "name": "Ipotesi del ML: solo le pdf condizionate sono note",
+      "nameEn": "Hypothesis: only the class-conditional pdfs p(x|ω_i) (i = 1, 2, ..., C) are assumed to be known",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch4", "page": 13}, {"doc": "part1", "page": 83}],
+      "detail": "Slide 13, 'Hypothesis': si assumono note soltanto le pdf condizionate alle classi p(x|ω_i), i = 1, ..., C. Note p.83, ipotesi 1: 'Class-Conditional PDFs: Only the class-conditional probability density functions p(x|ω_i) for each class ω_i (where i = 1, ..., C) are assumed to be known'. È un'ipotesi più debole di quella del MAP: non servono né le posterior né i prior.",
+      "latex": ["p(\\mathbf{x}|\\omega_i),\\quad i=1,2,\\dots,C"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c37",
+      "name": "Nessuna informazione a priori",
+      "nameEn": "No Prior Information",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part1", "page": 83}],
+      "detail": "Note p.83, ipotesi 2: 'No Prior Information: Unlike the MAP criterion, which requires prior probabilities P(ω_i), the ML criterion does not rely on this information'. Il ML è il criterio da usare quando i prior sono ignoti o non affidabili, per esempio quando la composizione delle classi nel campo operativo è diversa da quella del training set e non la si conosce. Non usarli equivale però ad assumerli uguali (c41).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c38",
+      "name": "Obiettivo dichiarato del ML: minimizzare la probabilità media di errore",
+      "nameEn": "Goal: minimize the average probability of error",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch4", "page": 13}, {"doc": "part1", "page": 83}],
+      "detail": "Slide 13, 'Goal' (in rosso): 'minimize the average probability of error', identico all'obiettivo del MAP. Note p.83: 'The objective of the ML criterion is to minimize the average probability of classification error by assigning each pattern x to the class that has the highest likelihood of generating x'. Precisazione (c43): il ML raggiunge davvero il minimo di P_e solo quando i prior sono uguali; altrimenti è la regola a minimo errore sotto l'ipotesi, non verificata, di prior uguali.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c39",
+      "name": "Regola di decisione ML",
+      "nameEn": "ML decision rule: x ∈ ω_j ⇔ p(x|ω_j) ≥ p(x|ω_i), ∀ i = 1, 2, ..., C",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch4", "page": 13}, {"doc": "part1", "page": 83}],
+      "detail": "Slide 13, 'Decision rule': x ∈ ω_j se e solo se p(x|ω_j) ≥ p(x|ω_i) per ogni i = 1, 2, ..., C. Note p.83: 'A pattern x is assigned to the class that maximizes the class-conditional pdf p(x|ω_i)'. Graficamente si disegnano le pdf delle classi senza pesarle e in ogni x vince la più alta; le frontiere sono gli incroci delle pdf. Rispetto alla regola MAP riscritta (c24) manca solo il fattore P(ω_i).",
+      "latex": ["\\mathbf{x}\\in\\omega_j\\;\\Leftrightarrow\\;p(\\mathbf{x}|\\omega_j)\\geq p(\\mathbf{x}|\\omega_i),\\quad\\forall\\,i=1,2,\\dots,C"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c40",
+      "name": "Interpretazione del ML: la classe che più verosimilmente ha generato x",
+      "nameEn": "The class that has the highest likelihood of generating x",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part1", "page": 83}],
+      "detail": "Note p.83: 'This decision rule selects the class ω_j that maximizes the likelihood of observing x within that class' e, nell'obiettivo, 'the class that has the highest likelihood of generating x'. Lettura: per quale classe il valore osservato è più tipico? Il ML non si chiede quanto sia comune la classe: una classe rarissima ma con pdf alta in x vince comunque.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c41",
+      "name": "Con prior uguali ML e MAP coincidono",
+      "nameEn": "If the priors are equal, the ML criterion is equivalent to the optimal MAP criterion",
+      "kind": "teorema",
+      "sourcePages": [{"doc": "ch4", "page": 13}, {"doc": "part1", "page": 83}],
+      "detail": "Slide 13: 'Note that if the priors are equal, the ML criterion is equivalent to the optimal MAP criterion'. Note p.83: 'When all classes have equal priors (i.e., P(ω_i) = P(ω_j) for all i, j), the ML criterion becomes equivalent to the MAP criterion. In this case, maximizing the likelihood p(x|ω_i) directly maximizes the posterior probability P(ω_i|x), and therefore both criteria yield the same classification decision'. Dimostrazione in der05: con P(ω_i) = 1/C il fattore comune si semplifica nella regola MAP riscritta. Il ML è quindi il MAP con prior uniformi, e in quel caso è anche ottimo.",
+      "latex": ["P(\\omega_i)=\\tfrac{1}{C}\\;\\forall i\\;\\Rightarrow\\;\\arg\\max_i P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i)=\\arg\\max_i p(\\mathbf{x}|\\omega_i)"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c42",
+      "name": "Quando usare il ML: solo pdf disponibili, prior uguali o non disponibili",
+      "nameEn": "ML is useful when only the probability density function is available (priors assumed equal or unavailable)",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part1", "page": 81}, {"doc": "part1", "page": 84}],
+      "detail": "Note p.81: il ML 'is useful when only the probability density function is available'. Note p.84, nell'esempio: 'ML Criterion: Assigns x to the class that maximizes p(x|ω_i) without considering the priors, assuming they are equal or unavailable'. Due situazioni: prior davvero uguali (allora ML = MAP ed è ottimo) oppure prior non disponibili (allora ML è la scelta neutrale, che equivale a supporli uguali).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c43",
+      "name": "Il ML è ottimo solo con prior uguali",
+      "nameEn": "With unequal priors the ML error is greater than or equal to the MAP error",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch4", "page": 13}],
+      "detail": "Conseguenza didattica di c33 e c41, non scritta esplicitamente nella fonte: poiché il MAP è il criterio a errore minimo per i prior veri, ogni altra regola, compreso il ML, ha P_e maggiore o uguale; l'uguaglianza vale con prior uguali (o quando le due regole prendono le stesse decisioni quasi ovunque). Nella ricostruzione sintetica delle curve delle slide 14-15 (prior 2/3 e 1/3) si ottiene P_e(MAP) ≈ 0.316 contro P_e(ML) ≈ 0.378. Più i prior sono sbilanciati più il ML perde: con prior estremi può sbagliare più della regola banale 'sempre la classe più frequente'.",
+      "latex": ["\\mathrm{P_e}(\\text{ML})\\geq\\mathrm{P_e}(\\text{MAP})=\\mathrm{P_e^{*}},\\quad\\text{uguaglianza se }P(\\omega_i)=\\tfrac{1}{C}\\;\\forall i"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c44",
+      "name": "Posizione del ML nell'albero dei criteri",
+      "nameEn": "ML Criterion placed under Full Problem Parameterization / Minimum Risk",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch4", "page": 10}, {"doc": "part1", "page": 81}],
+      "detail": "Nell'albero della slide 10 (e delle note p.81) il ML sta sotto 'Full Problem Parameterization' e 'Minimum Risk', accanto al MAP, pur non usando i prior. Non è una contraddizione: il ML è il caso del rischio minimo con costi uguali e prior uguali, quindi appartiene alla stessa famiglia completamente parametrizzata (i prior sono fissati implicitamente a 1/C). Minimax e Neyman-Pearson invece non fissano i prior, e per questo stanno nel ramo 'Incomplete'.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c45",
+      "name": "Non confondere il criterio ML/MAP con la stima ML/MAP dei parametri",
+      "nameEn": "ML/MAP decision criteria vs ML/MAP parameter estimation",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch4", "page": 13}],
+      "detail": "Nota didattica, non nella fonte, su una confusione frequente all'orale: 'Maximum Likelihood' compare in due punti del corso. Nel Cap. 2 (m05) la stima ML sceglie i parametri θ che massimizzano p(X|θ) su un training set; qui il criterio ML sceglie la classe ω_i che massimizza p(x|ω_i) per un singolo pattern. Lo stesso vale per MAP: la stima MAP dei parametri (Passerini, reti bayesiane) massimizza p(θ|X), il criterio MAP massimizza P(ω_i|x). Le due cose si usano in cascata: prima si stimano le pdf di classe (per esempio media e covarianza con stima ML), poi si classifica con il criterio MAP o ML.",
+      "latex": ["\\hat{\\theta}_{ML}=\\arg\\max_{\\theta}p(\\mathcal{X}|\\theta)\\qquad\\text{vs}\\qquad\\omega_{ML}(\\mathbf{x})=\\arg\\max_i p(\\mathbf{x}|\\omega_i)"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c46",
+      "name": "Esempio MAP-ML: pdf condizionate 1-D di due classi",
+      "nameEn": "MAP-ML: Example. 1-D class-conditional probability density functions for two classes",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "ch4", "page": 14}, {"doc": "part1", "page": 83}],
+      "detail": "Slide 14 (titolo 'MAP-ML: Example', sottotitolo '1-D class-conditional probability density functions for two classes'): grafico di p(x|ω_i) per due classi, ω_1 (curva nera) e ω_2 (curva rossa), con x da 9 a 15 e ordinate da 0 a 0.4. Note p.83: 'Consider a 1-dimensional example where we have class-conditional probability density functions for two classes, ω_1 and ω_2 ... These functions capture the distribution of data points within each class'. Le curve sono date solo in forma grafica, senza formula. L'esempio serve a confrontare le decisioni ML (slide 14) e MAP (slide 15) sugli stessi dati.",
+      "latex": ["p(x|\\omega_1),\\;p(x|\\omega_2),\\quad x\\in[9,15]"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c47",
+      "name": "Forma delle due pdf: ω_1 bimodale, ω_2 con una spalla",
+      "nameEn": "Shape of p(x|ω_1) (bimodal) and p(x|ω_2)",
+      "kind": "figura",
+      "sourcePages": [{"doc": "ch4", "page": 14}],
+      "detail": "Lettura del grafico di slide 14 (valori approssimati estratti dall'immagine). ω_2 (rossa): circa 0.02 a x = 9, sale fino al massimo ≈ 0.36 a x ≈ 11.4, scende con una 'spalla' ≈ 0.175 intorno a x ≈ 13 e si annulla verso x ≈ 14.5. ω_1 (nera): quasi nulla a x = 9, primo massimo ≈ 0.22 a x ≈ 10.8, minimo locale ≈ 0.15 a x ≈ 11.6, massimo principale ≈ 0.30 a x ≈ 13, scende a ≈ 0.03 a x = 15. ω_1 è bimodale (due gobbe): nessuna gaussiana singola la descrive, motivo per cui servono modelli a miscela o stime non parametriche. Le due curve si incrociano una sola volta, a x ≈ 12.3 (p ≈ 0.24).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c48",
+      "name": "Decisione ML nell'esempio: una soglia all'incrocio delle pdf",
+      "nameEn": "ML decision in the example: threshold where the likelihoods cross",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "ch4", "page": 14}, {"doc": "part1", "page": 84}],
+      "detail": "Applicando la regola ML (c39) al grafico di slide 14: ω_2 vince per x < ≈ 12.3 (la curva rossa è sopra, anche nella zona 9-10 dove entrambe sono piccole), ω_1 per x > ≈ 12.3. Il ML produce un'unica soglia e due regioni connesse nell'intervallo rappresentato. Note p.84: 'ML Criterion: Assigns x to the class that maximizes p(x|ω_i) without considering the priors, assuming they are equal or unavailable'. La posizione della soglia è una lettura del grafico: la fonte non la scrive.",
+      "latex": ["x<x_{ML}\\approx12.3\\Rightarrow\\omega_2,\\qquad x>x_{ML}\\Rightarrow\\omega_1"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c49",
+      "name": "Prior dell'esempio: P(ω_1) = 2/3, P(ω_2) = 1/3",
+      "nameEn": "Particular priors P(ω_1) = 2/3 and P(ω_2) = 1/3",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "ch4", "page": 15}, {"doc": "part1", "page": 83}, {"doc": "part1", "page": 84}],
+      "detail": "Slide 15: 'Corresponding posterior probabilities for the particular priors P(ω_1) = 2/3 and P(ω_2) = 1/3'. Le note elencano P(ω_1) = 2/3 e P(ω_2) = 1/3 sotto 'Posterior Probabilities with Specified Priors' (fine p.83, inizio p.84). La classe ω_1 è due volte più frequente di ω_2: per il MAP la soglia sul rapporto di verosimiglianza p(x|ω_1)/p(x|ω_2) passa da 1 (ML) a P(ω_2)/P(ω_1) = 1/2 (c57).",
+      "latex": ["P(\\omega_1)=\\tfrac{2}{3},\\qquad P(\\omega_2)=\\tfrac{1}{3}", "\\dfrac{P(\\omega_2)}{P(\\omega_1)}=\\dfrac{1/3}{2/3}=\\dfrac{1}{2}"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c50",
+      "name": "Posterior dell'esempio",
+      "nameEn": "Corresponding posterior probabilities P(ω_i|x)",
+      "kind": "figura",
+      "sourcePages": [{"doc": "ch4", "page": 15}, {"doc": "part1", "page": 84}],
+      "detail": "Slide 15: grafico di P(ω_i|x) (ordinate da 0 a 1) per le stesse due classi, ottenuto con Bayes dalle pdf di slide 14 e dai prior 2/3, 1/3. Lettura (valori approssimati): P(ω_2|x) (rossa) parte da ≈ 0.93 a x = 9, scende a un minimo ≈ 0.38 a x ≈ 10.5, risale a un massimo ≈ 0.54 a x ≈ 11.5, poi cala (≈ 0.23 a x = 13) fino a ≈ 0 a x = 15. P(ω_1|x) (nera) è il complemento: ≈ 0.07 a x = 9, ≈ 0.62 a x ≈ 10.5, ≈ 0.46 a x ≈ 11.5, ≈ 0.77 a x = 13, ≈ 1 a x = 15. Note p.84: 'The posterior probabilities P(ω_1|x) and P(ω_2|x) are shown in the graph below for the given priors'. Formula (der09): P(ω_1|x) = 2p(x|ω_1)/(2p(x|ω_1) + p(x|ω_2)).",
+      "latex": ["P(\\omega_1|x)=\\dfrac{\\tfrac{2}{3}\\,p(x|\\omega_1)}{\\tfrac{2}{3}\\,p(x|\\omega_1)+\\tfrac{1}{3}\\,p(x|\\omega_2)}=\\dfrac{2\\,p(x|\\omega_1)}{2\\,p(x|\\omega_1)+p(x|\\omega_2)}"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c51",
+      "name": "Le posterior sommano a 1 in ogni x",
+      "nameEn": "P(ω_1|x) + P(ω_2|x) = 1 at every x",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch4", "page": 15}],
+      "detail": "Osservazione sul grafico di slide 15: in ogni x le due curve sono simmetriche rispetto alla retta 0.5 (dove una sale l'altra scende della stessa quantità), perché con due classi P(ω_2|x) = 1 − P(ω_1|x). Conseguenza: con due classi la regola MAP equivale a 'scegli ω_1 se P(ω_1|x) ≥ 0.5', e le frontiere MAP sono i punti in cui le curve si incrociano a quota 0.5. A differenza delle pdf di slide 14, le posterior non sono densità in x (non integrano a 1 lungo x): sono probabilità tra 0 e 1 per ogni x.",
+      "latex": ["P(\\omega_1|x)+P(\\omega_2|x)=1", "x\\in\\omega_1\\Leftrightarrow P(\\omega_1|x)\\geq\\tfrac{1}{2}"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c52",
+      "name": "Regioni di decisione MAP nell'esempio",
+      "nameEn": "MAP decision regions in the example",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "ch4", "page": 15}],
+      "detail": "Lettura della slide 15 (analisi del grafico, non scritta nella fonte): le posterior si incrociano a 0.5 in tre punti, x ≈ 9.9, x ≈ 11.2 e x ≈ 11.8. Regola MAP: ω_2 per x < 9.9, ω_1 per 9.9 < x < 11.2, ω_2 per 11.2 < x < 11.8, ω_1 per x > 11.8. Le stesse frontiere si ritrovano sulla slide 14 come i punti in cui 2p(x|ω_1) = p(x|ω_2). Confronto con il ML (c48), che ha un'unica frontiera a x ≈ 12.3.",
+      "latex": ["\\Re_2^{MAP}\\approx(-\\infty,\\,9.9)\\cup(11.2,\\,11.8),\\qquad\\Re_1^{MAP}\\approx(9.9,\\,11.2)\\cup(11.8,\\,+\\infty)"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c53",
+      "name": "Le regioni di decisione possono essere non connesse",
+      "nameEn": "Decision regions need not be connected",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch4", "page": 15}],
+      "detail": "Osservazione sull'esempio (slide 15): con prior 2/3-1/3 le regioni MAP di entrambe le classi sono formate da due intervalli separati. Una regione di decisione non deve essere un pezzo unico: dipende da quante volte si incrociano le curve pesate P(ω_i)p(x|ω_i), e le pdf multimodali come quella di ω_1 moltiplicano gli incroci. Nella ricostruzione sintetica delle curve l'isola di ω_1 intorno a x ≈ 10.5 esiste solo per P(ω_1) > ≈ 0.55 e l'isola di ω_2 intorno a x ≈ 11.5 solo per P(ω_1) < ≈ 0.70: il valore 2/3 della slide cade nella finestra in cui ci sono tre frontiere.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c54",
+      "name": "Dove ML e MAP non sono d'accordo",
+      "nameEn": "Where MAP and ML disagree: the prior enlarges the region of the more probable class",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "ch4", "page": 14}, {"doc": "ch4", "page": 15}, {"doc": "part1", "page": 84}],
+      "detail": "Confrontando slide 14 (ML) e slide 15 (MAP): per x in circa (9.9, 11.2) e (11.8, 12.3) il ML sceglie ω_2 (la sua pdf è più alta) mentre il MAP sceglie ω_1, perché il prior doppio di ω_1 compensa una verosimiglianza più bassa, fino alla metà di quella di ω_2. Altrove le due regole coincidono. Esempio numerico letto dai grafici: a x = 12, p(x|ω_1) ≈ 0.19 e p(x|ω_2) ≈ 0.30; ML sceglie ω_2; MAP confronta (2/3)(0.19) ≈ 0.127 con (1/3)(0.30) = 0.10 e sceglie ω_1, con P(ω_1|x) ≈ 0.56. Il prior sposta le frontiere allargando la regione della classe più probabile.",
+      "latex": ["x=12:\\;\\tfrac{2}{3}(0.19)\\approx0.127>\\tfrac{1}{3}(0.30)=0.10\\;\\Rightarrow\\;\\text{MAP}:\\omega_1,\\quad\\text{ML}:\\omega_2"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c55",
+      "name": "Messaggio dell'esempio: i prior cambiano le decisioni MAP, il ML li ignora",
+      "nameEn": "Different prior probabilities can impact classification when using MAP, in contrast to ML, which would ignore these priors",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part1", "page": 84}],
+      "detail": "Note p.84, conclusione dell'esempio: 'MAP Criterion: Assigns x to the class with the highest posterior probability P(ω_i|x), incorporating both the likelihoods and the priors. This example illustrates how different prior probabilities can impact classification when using MAP, in contrast to ML, which would ignore these priors'. Il messaggio d'esame: le pdf sono le stesse nelle due slide, cambia solo il fatto di pesarle con i prior, e questo basta a cambiare le decisioni su intere zone dell'asse.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c56",
+      "name": "La posterior dipende dal rapporto, non dal valore assoluto delle verosimiglianze",
+      "nameEn": "Posteriors depend on the ratio of weighted likelihoods, not on their absolute size",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch4", "page": 14}, {"doc": "ch4", "page": 15}],
+      "detail": "Confronto tra i due grafici: a x = 9 entrambe le pdf sono quasi nulle (p(x|ω_2) ≈ 0.02, p(x|ω_1) ≈ 0.001) eppure P(ω_2|x) ≈ 0.93; a x = 14 p(x|ω_1) ≈ 0.17 e p(x|ω_2) ≈ 0.03 e P(ω_1|x) ≈ 0.92. La posterior misura quanto una classe spiega il dato meglio delle altre, non quanto il dato sia probabile: una posterior alta non garantisce che x sia un pattern tipico (può essere un outlier per tutte le classi). Il valore assoluto è dato dall'evidenza p(x), che la regola MAP ignora (c25).",
+      "latex": ["x=9:\\;p(x|\\omega_1)\\approx0.001,\\;p(x|\\omega_2)\\approx0.02\\;\\Rightarrow\\;P(\\omega_2|x)\\approx0.93"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c57",
+      "name": "Test sul rapporto di verosimiglianza: il prior sposta la soglia",
+      "nameEn": "Likelihood ratio test: MAP threshold P(ω_2)/P(ω_1) versus ML threshold 1",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch4", "page": 11}, {"doc": "ch4", "page": 13}, {"doc": "ch4", "page": 15}],
+      "detail": "Riscrittura didattica per due classi delle regole delle slide 11 e 13 (la forma a rapporto compare nella fonte solo nel rischio minimo, m18): dividendo la regola MAP per P(ω_1)p(x|ω_2) si ottiene il test sul rapporto di verosimiglianza Λ(x) = p(x|ω_1)/p(x|ω_2): si sceglie ω_1 se Λ(x) ≥ P(ω_2)/P(ω_1). Il ML confronta lo stesso rapporto con 1. I prior non toccano le pdf: spostano soltanto la soglia. Nell'esempio delle slide 14-15 la soglia passa da 1 a 1/2. È la risposta alla domanda d'esame 'Example of how priors change the threshold compared to ML criterion'.",
+      "latex": [
+        "\\Lambda(\\mathbf{x})=\\dfrac{p(\\mathbf{x}|\\omega_1)}{p(\\mathbf{x}|\\omega_2)}\\;\\underset{\\omega_2}{\\overset{\\omega_1}{\\gtrless}}\\;\\dfrac{P(\\omega_2)}{P(\\omega_1)}\\quad(\\text{MAP})",
+        "\\Lambda(\\mathbf{x})\\;\\underset{\\omega_2}{\\overset{\\omega_1}{\\gtrless}}\\;1\\quad(\\text{ML})",
+        "\\ln p(\\mathbf{x}|\\omega_1)-\\ln p(\\mathbf{x}|\\omega_2)\\;\\underset{\\omega_2}{\\overset{\\omega_1}{\\gtrless}}\\;\\ln\\dfrac{P(\\omega_2)}{P(\\omega_1)}"
+      ],
+      "symbols": [{"s": "\\Lambda(\\mathbf{x})", "meaning": "rapporto di verosimiglianza (likelihood ratio)"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c58",
+      "name": "Esempio gaussiano 1-D: la soglia si sposta con i prior",
+      "nameEn": "1-D Gaussian classes with equal variance: prior-induced threshold shift",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch4", "page": 13}, {"doc": "ch4", "page": 15}],
+      "detail": "Esempio didattico classico per la stessa domanda d'esame (non nella fonte di questo modulo; il caso generale è in m19): due classi gaussiane 1-D con medie μ_1 < μ_2 e stessa varianza σ². Il ML mette la soglia nel punto medio (μ_1 + μ_2)/2; il MAP la sposta di σ²/(μ_2 − μ_1)·ln(P(ω_1)/P(ω_2)) verso la media della classe meno probabile, così la regione della classe più probabile si allarga (der07). Lo spostamento cresce con σ² (classi molto sovrapposte: il prior conta di più) e cala se le medie sono lontane (classi ben separate: domina la misura). Esempio: μ_1 = 4, μ_2 = 7, σ = 1.2, P(ω_1) = 0.7 → x* = 5.5 + 0.48·ln(7/3) ≈ 5.91.",
+      "latex": [
+        "x^{*}_{MAP}=\\dfrac{\\mu_1+\\mu_2}{2}+\\dfrac{\\sigma^2}{\\mu_2-\\mu_1}\\,\\ln\\dfrac{P(\\omega_1)}{P(\\omega_2)}",
+        "x^{*}_{ML}=\\dfrac{\\mu_1+\\mu_2}{2}"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c59",
+      "name": "MAP o ML: quale è meglio e perché",
+      "nameEn": "MAP or ML: which one is better and why",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "ch4", "page": 13}, {"doc": "part1", "page": 83}, {"doc": "part1", "page": 84}],
+      "detail": "Risposta strutturata alla domanda d'esame 'At the end of the day is better MAP or ML and why?', costruita sulla fonte. Il MAP è 'the optimal MAP criterion' (slide 13), a minimo errore, purché posterior (o prior e pdf) siano quelli veri. Il ML richiede meno informazione (solo le pdf) e coincide con il MAP quando i prior sono uguali; con prior diversi dà un errore maggiore o uguale (c43). Quindi: prior noti e affidabili → MAP; prior ignoti o inaffidabili → ML (equivale a supporli uguali, scelta neutrale); prior uguali → indifferente. Se gli errori hanno costi diversi nessuno dei due è il migliore: serve il rischio minimo (m18).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c60",
+      "name": "Perché il MAP potrebbe non essere il migliore",
+      "nameEn": "Why MAP could not be the best one (approximation and estimation error)",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch4", "page": 9}, {"doc": "part1", "page": 84}],
+      "detail": "Ragionamento per la domanda d'esame 'Why MAP could not be the best one? (Linked to approximation error)'. L'ottimalità del MAP si regge sull'ipotesi della slide 9 che 'all of the relevant probability values are known'. In pratica pdf e prior sono stimati: se il modello scelto per p(x|ω_i) non può rappresentare la vera pdf (per esempio una gaussiana per la ω_1 bimodale dell'esempio) c'è errore di approssimazione; se i campioni di training sono pochi c'è errore di stima; se la prevalenza sul campo differisce da quella del training set i prior sono sbagliati. Il MAP 'stimato' non è più il classificatore di Bayes e può fare peggio del ML (per esempio con prior stimati male). Inoltre (note p.84) MAP e ML assumono che tutti gli errori costino uguale: con costi asimmetrici il criterio migliore è il rischio minimo. Errore di approssimazione e di stima sono trattati in m21.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c61",
+      "name": "Tabella di confronto MAP contro ML",
+      "nameEn": "MAP vs ML: hypotheses, information required, decision rule, optimality",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "ch4", "page": 11}, {"doc": "ch4", "page": 13}, {"doc": "part1", "page": 82}, {"doc": "part1", "page": 83}],
+      "detail": "Sintesi (integrazione didattica che mette in tabella slide 11-13 e note p.82-83). Ipotesi: MAP posterior note (in pratica prior e pdf), ML solo pdf. Informazione a priori: il MAP la usa, il ML no. Regola: MAP massimizza P(ω_i)p(x|ω_i), ML massimizza p(x|ω_i). Obiettivo dichiarato: per entrambi minimizzare la probabilità media di errore. Ottimalità: MAP sempre (con quantità vere), ML solo con prior uguali. Soglia a due classi sul rapporto di verosimiglianza: MAP P(ω_2)/P(ω_1), ML 1. Coincidono con prior uguali. Entrambi sono casi particolari del rischio minimo con costi uguali.",
+      "latex": ["\\text{MAP}:\\;\\arg\\max_i P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i)\\qquad\\text{ML}:\\;\\arg\\max_i p(\\mathbf{x}|\\omega_i)"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c62",
+      "name": "MAP e ML assumono che tutti gli errori costino uguale",
+      "nameEn": "MAP and ML assume all errors carry the same cost",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part1", "page": 84}, {"doc": "ch4", "page": 10}],
+      "detail": "Note p.84: 'While MAP and ML rules aim to minimize the average probability of classification error, they assume all errors carry the same cost. However, in many real-world applications, classification errors may have varying levels of severity, requiring a decision-making approach that accounts for these differential costs'. P_e conta ogni errore come un'unità, qualunque sia la classe scambiata con quale. È il limite principale di MAP e ML e la motivazione della teoria del rischio minimo.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c63",
+      "name": "Il rischio minimo contiene MAP e ML come casi particolari",
+      "nameEn": "Minimum risk theory encompasses the MAP and ML decision rules as specific cases",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part1", "page": 84}, {"doc": "ch4", "page": 10}],
+      "detail": "Note p.84: 'Minimum risk theory is a broad decision framework that encompasses the Maximum A Posteriori (MAP) and Maximum Likelihood (ML) decision rules as specific cases'. Nell'albero della slide 10 lo esprime la gerarchia Minimum Risk → MAP, ML. Pagina di confine con m18: qui interessa il legame (costi uguali → MAP; costi uguali e prior uguali → ML); la teoria completa è nel modulo successivo. Domanda d'esame collegata: 'Which is the best one (minimum risk)'.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c64",
+      "name": "Errori con gravità diversa: l'esempio della diagnosi medica",
+      "nameEn": "Some errors are inherently more costly than others (medical diagnosis)",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "part1", "page": 84}],
+      "detail": "Note p.84: 'In standard classification, every error is treated equally. However, some errors are inherently more costly than others. For example, in medical diagnosis, misclassifying a severe condition as minor can be far more consequential than the reverse. Minimum risk theory addresses this by integrating the costs associated with different types of classification errors into the decision process'. Dire 'lieve' a un paziente grave (falso negativo) è molto peggio che mandare a un secondo esame un paziente lieve (falso positivo); MAP e ML non vedono la differenza.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c65",
+      "name": "Il costo di un'azione dipende dalla classe vera",
+      "nameEn": "The cost of an action depends on the true class to which a considered observation belongs",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part1", "page": 84}],
+      "detail": "Note p.84: 'The cost of an action depends on the true class to which a considered observation belongs'. Si passa dal linguaggio delle classi assegnate a quello delle azioni: si decide un'azione (per esempio chiamare o no i vigili del fuoco) e il suo costo si conosce solo sapendo la classe vera. Nel MAP questa distinzione sparisce perché azione = classe dichiarata e ogni errore costa 1.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c66",
+      "name": "Insieme delle azioni e matrice dei costi",
+      "nameEn": "Set of R possible actions A = {α_1, ..., α_R}; cost matrix Λ of size R × C, λ_ij = λ(α_i|ω_j)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part1", "page": 84}],
+      "detail": "Note p.84: 'Let A = {α_1, ..., α_R} represent the set of R possible actions we might take, and let C represent the number of true classes. We define a cost matrix Λ of size R × C, where each entry λ_ij = λ(α_i|ω_j) denotes the cost (or loss) of taking action α_i when the true class is ω_j'. Le righe sono le azioni, le colonne le classi vere; il numero di azioni R può differire da C (per esempio con un'azione di rifiuto). Pagina di confine: l'esempio dell'incendio, il rischio condizionale e la regola a rischio minimo sono in m18.",
+      "latex": ["A=\\{\\alpha_1,\\dots,\\alpha_R\\}", "\\Lambda\\in\\mathbb{R}^{R\\times C},\\qquad\\lambda_{ij}=\\lambda(\\alpha_i|\\omega_j)"],
+      "symbols": [
+        {"s": "\\alpha_i", "meaning": "i-esima azione possibile"},
+        {"s": "\\Lambda", "meaning": "matrice dei costi R × C"},
+        {"s": "\\lambda(\\alpha_i|\\omega_j)", "meaning": "costo dell'azione α_i quando la classe vera è ω_j"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c67",
+      "name": "Il MAP è il rischio minimo con costi 0-1 (anteprima di m18)",
+      "nameEn": "MAP as minimum risk with zero-one costs",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part1", "page": 84}],
+      "detail": "Anticipazione del modulo m18, utile per la domanda 'What happens if the risks are unknown or equal? (we have the MAP criterion)'. Con R = C (un'azione α_i = 'decidi ω_i' per classe) e costi 0-1 (0 per la decisione giusta, 1 per qualunque errore), il rischio condizionale R(α_i|x) = Σ_j λ(α_i|ω_j)P(ω_j|x) diventa 1 − P(ω_i|x) (der10): minimizzarlo equivale a massimizzare la posterior, cioè al MAP. Le slide di m18 lo dicono per due classi: con λ_11 = λ_22 = 0 e λ_12 = λ_21 rischio minimo e MAP coincidono.",
+      "latex": [
+        "\\lambda(\\alpha_i|\\omega_j)=\\begin{cases}0 & i=j\\\\ 1 & i\\neq j\\end{cases}",
+        "R(\\alpha_i|\\mathbf{x})=\\sum_{j=1}^{C}\\lambda(\\alpha_i|\\omega_j)\\,P(\\omega_j|\\mathbf{x})=1-P(\\omega_i|\\mathbf{x})"
+      ],
+      "symbols": [{"s": "R(\\alpha_i|\\mathbf{x})", "meaning": "rischio condizionale dell'azione α_i dato x"}],
+      "examRelevance": 3
+    }
+  ],
+  "derivations": [
+    {
+      "id": "der01",
+      "title": "Teorema di Bayes per la classificazione ed evidenza come miscela",
+      "sourcePages": [{"doc": "ch4", "page": 11}, {"doc": "part1", "page": 82}],
+      "goal": "Ricavare P(ω_i|x) = p(x|ω_i)P(ω_i)/p(x) e l'espressione di p(x); la fonte dà solo il risultato.",
+      "steps": [
+        "p(\\mathbf{x},\\omega_i)=P(\\omega_i|\\mathbf{x})\\,p(\\mathbf{x})",
+        "p(\\mathbf{x},\\omega_i)=p(\\mathbf{x}|\\omega_i)\\,P(\\omega_i)",
+        "P(\\omega_i|\\mathbf{x})\\,p(\\mathbf{x})=p(\\mathbf{x}|\\omega_i)\\,P(\\omega_i)",
+        "P(\\omega_i|\\mathbf{x})=\\dfrac{p(\\mathbf{x}|\\omega_i)\\,P(\\omega_i)}{p(\\mathbf{x})}",
+        "p(\\mathbf{x})=\\sum_{k=1}^{C}p(\\mathbf{x},\\omega_k)=\\sum_{k=1}^{C}p(\\mathbf{x}|\\omega_k)\\,P(\\omega_k)",
+        "\\sum_{i=1}^{C}P(\\omega_i|\\mathbf{x})=\\dfrac{\\sum_{i}p(\\mathbf{x}|\\omega_i)P(\\omega_i)}{p(\\mathbf{x})}=1"
+      ],
+      "stepWhy": [
+        "Definizione di probabilità condizionata: la densità congiunta di x e della classe si fattorizza come posterior della classe per densità marginale di x.",
+        "Stessa densità congiunta fattorizzata nell'altro ordine: prima la classe (prior), poi x data la classe (verosimiglianza).",
+        "Le due espressioni descrivono la stessa quantità e si possono uguagliare.",
+        "Si divide per p(x), lecito per ogni x con p(x) > 0: è il teorema di Bayes della slide 11 (posterior = likelihood × prior / evidence).",
+        "Teorema della probabilità totale: sommando la congiunta su tutte le classi (esaustive e disgiunte) si ottiene la marginale; l'evidenza è la miscela delle pdf di classe pesate dai prior.",
+        "Verifica: con questo denominatore le posterior sommano a 1, quindi p(x) è il fattore di normalizzazione."
+      ],
+      "concepts": ["c16", "c17", "c18", "c19", "c23"]
+    },
+    {
+      "id": "der02",
+      "title": "Dalla regola MAP con le posterior alla regola con prior per verosimiglianza",
+      "sourcePages": [{"doc": "ch4", "page": 11}, {"doc": "part1", "page": 82}],
+      "goal": "Mostrare che le due regole della slide 11 sono equivalenti e che l'evidenza non serve per decidere.",
+      "steps": [
+        "\\mathbf{x}\\in\\omega_j\\Leftrightarrow P(\\omega_j|\\mathbf{x})\\geq P(\\omega_i|\\mathbf{x})\\;\\forall i",
+        "\\Leftrightarrow\\dfrac{p(\\mathbf{x}|\\omega_j)\\,P(\\omega_j)}{p(\\mathbf{x})}\\geq\\dfrac{p(\\mathbf{x}|\\omega_i)\\,P(\\omega_i)}{p(\\mathbf{x})}\\;\\forall i",
+        "\\Leftrightarrow P(\\omega_j)\\,p(\\mathbf{x}|\\omega_j)\\geq P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i)\\;\\forall i",
+        "\\omega^{*}(\\mathbf{x})=\\arg\\max_i P(\\omega_i|\\mathbf{x})=\\arg\\max_i P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i)"
+      ],
+      "stepWhy": [
+        "Regola MAP della slide 11: si sceglie la classe con posterior massima.",
+        "Si sostituisce a ogni posterior la sua espressione con il teorema di Bayes (der01).",
+        "Si moltiplicano entrambi i membri per p(x) > 0: il verso della disuguaglianza non cambia. È la seconda regola della slide 11.",
+        "Forma compatta: l'argmax non cambia se tutti i candidati sono divisi per la stessa quantità positiva p(x)."
+      ],
+      "concepts": ["c21", "c22", "c24", "c25"]
+    },
+    {
+      "id": "der03",
+      "title": "Il MAP minimizza la probabilità media di errore (dimostrazione sulle regioni)",
+      "sourcePages": [{"doc": "ch4", "page": 12}, {"doc": "part1", "page": 82}],
+      "goal": "Dimostrare che tra tutte le partizioni {ℜ_i} dello spazio delle feature quella che minimizza P_e è la regola MAP (domanda d'esame 'Proof of MAP as error minimization'). La slide 12 dà solo il punto di partenza.",
+      "steps": [
+        "\\mathrm{P_e}=\\sum_{i=1}^{C}P(err|\\omega_i)\\,P(\\omega_i)=\\sum_{i=1}^{C}P(\\mathbf{x}\\notin\\Re_i|\\omega_i)\\,P(\\omega_i)",
+        "P(\\mathbf{x}\\notin\\Re_i|\\omega_i)=1-P(\\mathbf{x}\\in\\Re_i|\\omega_i)=1-\\int_{\\Re_i}p(\\mathbf{x}|\\omega_i)\\,d\\mathbf{x}",
+        "\\mathrm{P_e}=\\sum_{i=1}^{C}P(\\omega_i)-\\sum_{i=1}^{C}P(\\omega_i)\\int_{\\Re_i}p(\\mathbf{x}|\\omega_i)\\,d\\mathbf{x}=1-\\sum_{i=1}^{C}\\int_{\\Re_i}P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i)\\,d\\mathbf{x}",
+        "\\min_{\\Re_1,\\dots,\\Re_C}\\mathrm{P_e}\\;\\Leftrightarrow\\;\\max_{\\Re_1,\\dots,\\Re_C}P_c=\\max_{\\Re_1,\\dots,\\Re_C}\\sum_{i=1}^{C}\\int_{\\Re_i}P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i)\\,d\\mathbf{x}",
+        "\\sum_{i=1}^{C}\\int_{\\Re_i}P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i)\\,d\\mathbf{x}=\\int P(\\omega_{k(\\mathbf{x})})\\,p(\\mathbf{x}|\\omega_{k(\\mathbf{x})})\\,d\\mathbf{x}",
+        "P(\\omega_{k(\\mathbf{x})})\\,p(\\mathbf{x}|\\omega_{k(\\mathbf{x})})\\leq\\max_i P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i)\\quad\\forall\\,\\mathbf{x}",
+        "\\Re_j^{*}=\\{\\mathbf{x}:P(\\omega_j)\\,p(\\mathbf{x}|\\omega_j)\\geq P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i)\\;\\forall i\\}",
+        "\\mathrm{P_e^{*}}=1-\\int\\max_i\\big[P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i)\\big]\\,d\\mathbf{x}\\leq\\mathrm{P_e}(\\Re_1,\\dots,\\Re_C)"
+      ],
+      "stepWhy": [
+        "Definizione della slide 12 per un classificatore arbitrario: errore di ogni classe pesato con il suo prior (probabilità totale).",
+        "L'evento 'x fuori da ℜ_i' è il complemento di 'x dentro ℜ_i'; la probabilità di cadere in ℜ_i per un pattern di ω_i è l'integrale della sua pdf su ℜ_i.",
+        "Si sostituisce nella somma e si usa Σ_i P(ω_i) = 1.",
+        "P_e = 1 − P_c: minimizzare l'errore equivale a massimizzare la probabilità di classificazione corretta; l'unica cosa che si può scegliere sono le regioni.",
+        "Le regioni formano una partizione: ogni x appartiene a una sola regione ℜ_k(x), quindi la somma di integrali è un unico integrale su tutto lo spazio dell'integrando della classe assegnata k(x).",
+        "In ogni punto l'integrando della classe assegnata non può superare il massimo tra le C funzioni P(ω_i)p(x|ω_i); l'integrale di una funzione più piccola punto per punto è più piccolo.",
+        "L'uguaglianza (massimo di P_c) si ottiene assegnando ogni x alla classe con P(ω_i)p(x|ω_i) massimo: sono esattamente le regioni della regola MAP riscritta (slide 11). Poiché la scelta si fa punto per punto, nessun'altra partizione fa meglio.",
+        "Il valore minimo è l'errore di Bayes: nessun classificatore può scendere sotto; per questo il MAP è il 'minimum error criterion' e la slide 13 lo chiama 'optimal'."
+      ],
+      "concepts": ["c27", "c28", "c29", "c31", "c33", "c34"]
+    },
+    {
+      "id": "der04",
+      "title": "Il MAP minimizza l'errore punto per punto (dimostrazione con P(err|x))",
+      "sourcePages": [{"doc": "part1", "page": 82}],
+      "goal": "Seconda dimostrazione, più breve, dell'ottimalità del MAP tramite l'errore condizionato al pattern.",
+      "steps": [
+        "P(err|\\mathbf{x})=\\sum_{i\\neq j}P(\\omega_i|\\mathbf{x})=1-P(\\omega_j|\\mathbf{x})\\quad(\\mathbf{x}\\in\\Re_j)",
+        "\\mathrm{P_e}=\\int p(err,\\mathbf{x})\\,d\\mathbf{x}=\\int P(err|\\mathbf{x})\\,p(\\mathbf{x})\\,d\\mathbf{x}",
+        "p(\\mathbf{x})\\geq0\\;\\Rightarrow\\;\\mathrm{P_e}\\text{ minima se }P(err|\\mathbf{x})\\text{ è minima per ogni }\\mathbf{x}",
+        "\\min_j\\big[1-P(\\omega_j|\\mathbf{x})\\big]=1-\\max_j P(\\omega_j|\\mathbf{x})\\;\\Rightarrow\\;\\text{regola MAP}"
+      ],
+      "stepWhy": [
+        "Se si decide ω_j si sbaglia quando la classe vera è una qualsiasi delle altre; le posterior sommano a 1.",
+        "Marginalizzazione: l'errore medio è l'errore condizionato mediato sulla distribuzione dei pattern p(x).",
+        "Il peso p(x) è non negativo e non dipende dalla decisione: l'integrale è minimo se l'integrando è minimo in ogni punto.",
+        "Minimizzare 1 − P(ω_j|x) equivale a massimizzare P(ω_j|x): è la regola MAP della slide 11, che quindi massimizza 'the probability of correctly identifying their class given the observed data' (note p.82)."
+      ],
+      "concepts": ["c32", "c33", "c14"]
+    },
+    {
+      "id": "der05",
+      "title": "Con prior uguali il criterio ML coincide con il MAP",
+      "sourcePages": [{"doc": "ch4", "page": 13}, {"doc": "part1", "page": 83}],
+      "goal": "Dimostrare la nota della slide 13: 'if the priors are equal, the ML criterion is equivalent to the optimal MAP criterion'.",
+      "steps": [
+        "P(\\omega_1)=P(\\omega_2)=\\dots=P(\\omega_C)=\\tfrac{1}{C}",
+        "P(\\omega_j)\\,p(\\mathbf{x}|\\omega_j)\\geq P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i)\\;\\Leftrightarrow\\;\\tfrac{1}{C}\\,p(\\mathbf{x}|\\omega_j)\\geq\\tfrac{1}{C}\\,p(\\mathbf{x}|\\omega_i)",
+        "\\Leftrightarrow\\;p(\\mathbf{x}|\\omega_j)\\geq p(\\mathbf{x}|\\omega_i)\\;\\forall i",
+        "P(\\omega_i|\\mathbf{x})=\\dfrac{p(\\mathbf{x}|\\omega_i)}{\\sum_{k}p(\\mathbf{x}|\\omega_k)}\\propto p(\\mathbf{x}|\\omega_i)"
+      ],
+      "stepWhy": [
+        "Ipotesi: prior tutti uguali; poiché sommano a 1 valgono 1/C.",
+        "Si sostituisce nella regola MAP riscritta (slide 11).",
+        "Si divide per 1/C > 0: resta la regola ML della slide 13. Le due regole prendono la stessa decisione per ogni x.",
+        "Con prior uguali la posterior è proporzionale alla verosimiglianza: 'maximizing the likelihood p(x|ω_i) directly maximizes the posterior probability' (note p.83). Il ML eredita quindi l'ottimalità del MAP."
+      ],
+      "concepts": ["c41", "c39", "c24"]
+    },
+    {
+      "id": "der06",
+      "title": "Due classi: la regola MAP come test sul rapporto di verosimiglianza",
+      "sourcePages": [{"doc": "ch4", "page": 11}, {"doc": "ch4", "page": 13}, {"doc": "ch4", "page": 15}],
+      "goal": "Mostrare come i prior spostano la soglia rispetto al ML (domanda d'esame) e calcolarla per l'esempio delle slide 14-15.",
+      "steps": [
+        "\\mathbf{x}\\in\\omega_1\\Leftrightarrow P(\\omega_1)\\,p(\\mathbf{x}|\\omega_1)\\geq P(\\omega_2)\\,p(\\mathbf{x}|\\omega_2)",
+        "\\Leftrightarrow\\Lambda(\\mathbf{x})=\\dfrac{p(\\mathbf{x}|\\omega_1)}{p(\\mathbf{x}|\\omega_2)}\\geq\\dfrac{P(\\omega_2)}{P(\\omega_1)}=\\theta_{MAP}",
+        "\\theta_{ML}=1",
+        "P(\\omega_1)=\\tfrac{2}{3},\\;P(\\omega_2)=\\tfrac{1}{3}\\;\\Rightarrow\\;\\theta_{MAP}=\\tfrac{1}{2}",
+        "\\ln p(\\mathbf{x}|\\omega_1)-\\ln p(\\mathbf{x}|\\omega_2)\\geq\\ln\\dfrac{P(\\omega_2)}{P(\\omega_1)}"
+      ],
+      "stepWhy": [
+        "Regola MAP riscritta della slide 11 con C = 2.",
+        "Si divide per P(ω_1)p(x|ω_2) > 0: a sinistra resta solo il rapporto di verosimiglianza, a destra solo i prior.",
+        "Con la regola ML (slide 13) il rapporto si confronta con 1: le pdf decidono da sole.",
+        "Nell'esempio delle slide 14-15 la soglia si dimezza: ω_1 vince anche dove la sua pdf è solo metà di quella di ω_2, e le frontiere diventano i punti con 2p(x|ω_1) = p(x|ω_2).",
+        "Forma logaritmica (il logaritmo è crescente): utile con pdf esponenziali come le gaussiane, dove il log-rapporto diventa un polinomio in x."
+      ],
+      "concepts": ["c57", "c49", "c54"]
+    },
+    {
+      "id": "der07",
+      "title": "Soglia MAP per due gaussiane 1-D con la stessa varianza",
+      "sourcePages": [{"doc": "ch4", "page": 13}, {"doc": "ch4", "page": 15}],
+      "goal": "Esempio analitico (integrazione didattica, caso generale in m19) di quanto il prior sposta la soglia ML.",
+      "steps": [
+        "p(x|\\omega_i)=\\dfrac{1}{\\sqrt{2\\pi}\\,\\sigma}\\exp\\!\\Big(-\\dfrac{(x-\\mu_i)^2}{2\\sigma^2}\\Big),\\quad i=1,2,\\;\\mu_1<\\mu_2",
+        "\\ln P(\\omega_1)-\\dfrac{(x-\\mu_1)^2}{2\\sigma^2}\\geq\\ln P(\\omega_2)-\\dfrac{(x-\\mu_2)^2}{2\\sigma^2}",
+        "(x-\\mu_2)^2-(x-\\mu_1)^2\\geq2\\sigma^2\\ln\\dfrac{P(\\omega_2)}{P(\\omega_1)}",
+        "(\\mu_2-\\mu_1)(\\mu_1+\\mu_2-2x)\\geq2\\sigma^2\\ln\\dfrac{P(\\omega_2)}{P(\\omega_1)}",
+        "x\\leq x^{*}=\\dfrac{\\mu_1+\\mu_2}{2}+\\dfrac{\\sigma^2}{\\mu_2-\\mu_1}\\ln\\dfrac{P(\\omega_1)}{P(\\omega_2)}",
+        "P(\\omega_1)=P(\\omega_2)\\;\\Rightarrow\\;x^{*}_{ML}=\\dfrac{\\mu_1+\\mu_2}{2}"
+      ],
+      "stepWhy": [
+        "Modello: due classi gaussiane con la stessa deviazione standard (per esempio luminosità di salmone e spigola).",
+        "Regola MAP in forma logaritmica; il termine comune −ln(√(2π)σ) si semplifica perché le varianze sono uguali.",
+        "Si moltiplica per 2σ² e si portano i termini quadratici a sinistra, i prior a destra.",
+        "Differenza di quadrati: (x−μ_2)² − (x−μ_1)² = (μ_2 − μ_1)(μ_1 + μ_2 − 2x); il termine x² si cancella, quindi la frontiera è un singolo punto.",
+        "Si divide per 2(μ_2 − μ_1) > 0 e si isola x; ln(P(ω_2)/P(ω_1)) = −ln(P(ω_1)/P(ω_2)). Se P(ω_1) > P(ω_2) la soglia si sposta verso μ_2 e la regione di ω_1 si allarga.",
+        "Con prior uguali il logaritmo si annulla: la soglia ML è il punto medio tra le medie (come nel classificatore a minima distanza, m16)."
+      ],
+      "concepts": ["c58", "c57"]
+    },
+    {
+      "id": "der08",
+      "title": "Probabilità di errore a due classi e area minima",
+      "sourcePages": [{"doc": "ch4", "page": 12}],
+      "goal": "Specializzare la formula di slide 12 per C = 2 e ricavare l'errore minimo come area sotto il minimo delle curve pesate.",
+      "steps": [
+        "\\mathrm{P_e}=P(err|\\omega_1)\\,P(\\omega_1)+P(err|\\omega_2)\\,P(\\omega_2)",
+        "P(err|\\omega_1)=P(\\mathbf{x}\\in\\Re_2|\\omega_1)=\\int_{\\Re_2}p(\\mathbf{x}|\\omega_1)\\,d\\mathbf{x},\\qquad P(err|\\omega_2)=\\int_{\\Re_1}p(\\mathbf{x}|\\omega_2)\\,d\\mathbf{x}",
+        "\\mathrm{P_e}=\\int_{\\Re_2}P(\\omega_1)\\,p(\\mathbf{x}|\\omega_1)\\,d\\mathbf{x}+\\int_{\\Re_1}P(\\omega_2)\\,p(\\mathbf{x}|\\omega_2)\\,d\\mathbf{x}",
+        "\\mathrm{P_e^{*}}=\\int\\min\\big[P(\\omega_1)\\,p(\\mathbf{x}|\\omega_1),\\,P(\\omega_2)\\,p(\\mathbf{x}|\\omega_2)\\big]\\,d\\mathbf{x}"
+      ],
+      "stepWhy": [
+        "Formula della slide 12 con C = 2.",
+        "Con due classi 'fuori da ℜ_1' significa 'dentro ℜ_2' e viceversa.",
+        "Si portano i prior dentro gli integrali: P_e è la somma di due aree sotto le curve pesate, ciascuna nella regione sbagliata.",
+        "Con la regola MAP, in ogni x si 'paga' sempre la curva più bassa delle due: l'errore minimo è l'area sotto il loro minimo. Ogni altra soglia aggiunge l'area riducibile tra le due curve."
+      ],
+      "concepts": ["c30", "c28", "c34"]
+    },
+    {
+      "id": "der09",
+      "title": "Posterior dell'esempio delle slide 14-15",
+      "sourcePages": [{"doc": "ch4", "page": 14}, {"doc": "ch4", "page": 15}, {"doc": "part1", "page": 84}],
+      "goal": "Ricostruire come si passa dal grafico delle pdf (slide 14) a quello delle posterior (slide 15) con i prior 2/3 e 1/3.",
+      "steps": [
+        "P(\\omega_1|x)=\\dfrac{p(x|\\omega_1)P(\\omega_1)}{p(x|\\omega_1)P(\\omega_1)+p(x|\\omega_2)P(\\omega_2)}",
+        "=\\dfrac{\\tfrac{2}{3}\\,p(x|\\omega_1)}{\\tfrac{2}{3}\\,p(x|\\omega_1)+\\tfrac{1}{3}\\,p(x|\\omega_2)}=\\dfrac{2\\,p(x|\\omega_1)}{2\\,p(x|\\omega_1)+p(x|\\omega_2)}",
+        "P(\\omega_2|x)=1-P(\\omega_1|x)=\\dfrac{p(x|\\omega_2)}{2\\,p(x|\\omega_1)+p(x|\\omega_2)}",
+        "P(\\omega_1|x)=P(\\omega_2|x)=\\tfrac{1}{2}\\;\\Leftrightarrow\\;2\\,p(x|\\omega_1)=p(x|\\omega_2)",
+        "x=11.5:\\;p(x|\\omega_1)\\approx0.15,\\;p(x|\\omega_2)\\approx0.36\\;\\Rightarrow\\;P(\\omega_1|x)\\approx\\dfrac{0.30}{0.66}\\approx0.46",
+        "x=12:\\;p(x|\\omega_1)\\approx0.19,\\;p(x|\\omega_2)\\approx0.30\\;\\Rightarrow\\;P(\\omega_1|x)\\approx\\dfrac{0.38}{0.68}\\approx0.56"
+      ],
+      "stepWhy": [
+        "Teorema di Bayes con l'evidenza scritta come somma sulle due classi (der01).",
+        "Si sostituiscono i prior della slide 15 e si moltiplica numeratore e denominatore per 3.",
+        "Con due classi le posterior sono complementari: la curva rossa della slide 15 è lo specchio della nera rispetto a 0.5.",
+        "Le frontiere MAP (incroci a 0.5 nella slide 15) sono i punti dove la pdf di ω_2 è il doppio di quella di ω_1 nella slide 14.",
+        "Verifica numerica con valori letti dal grafico di slide 14: il risultato coincide con il minimo della curva nera di slide 15 (≈ 0.46), quindi in x = 11.5 il MAP sceglie ω_2 come il ML.",
+        "In x = 12 le due regole divergono: ML sceglie ω_2 (0.30 > 0.19), MAP sceglie ω_1 (posterior 0.56 > 0.5), come nel grafico di slide 15."
+      ],
+      "concepts": ["c50", "c51", "c52", "c54"]
+    },
+    {
+      "id": "der10",
+      "title": "Con costi 0-1 il rischio minimo si riduce al MAP (anteprima m18)",
+      "sourcePages": [{"doc": "part1", "page": 84}],
+      "goal": "Mostrare che il MAP è il caso particolare del rischio minimo in cui tutti gli errori costano uguale.",
+      "steps": [
+        "R(\\alpha_i|\\mathbf{x})=\\sum_{j=1}^{C}\\lambda(\\alpha_i|\\omega_j)\\,P(\\omega_j|\\mathbf{x})",
+        "\\lambda(\\alpha_i|\\omega_j)=1-\\delta_{ij}",
+        "R(\\alpha_i|\\mathbf{x})=\\sum_{j\\neq i}P(\\omega_j|\\mathbf{x})=1-P(\\omega_i|\\mathbf{x})",
+        "\\min_i R(\\alpha_i|\\mathbf{x})\\;\\Leftrightarrow\\;\\max_i P(\\omega_i|\\mathbf{x})"
+      ],
+      "stepWhy": [
+        "Rischio condizionale (expected loss) dell'azione α_i: costo medio pesato con le posterior (definito nelle note p.85, modulo m18) usando la matrice Λ di p.84.",
+        "Costi 0-1: nessun costo per la decisione giusta (i = j), costo unitario per qualunque errore; δ_ij è il delta di Kronecker.",
+        "Resta la somma delle posterior delle classi diverse da i, che vale 1 − P(ω_i|x) perché le posterior sommano a 1.",
+        "Scegliere l'azione a rischio minimo equivale a scegliere la classe con posterior massima: è il MAP, e il rischio condizionale coincide con P(err|x) (c32)."
+      ],
+      "concepts": ["c67", "c66", "c63"]
+    }
+  ],
+  "workedExamples": [
+    {
+      "id": "ex01",
+      "title": "MAP-ML: esempio 1-D a due classi (slide 14-15)",
+      "sourcePages": [{"doc": "ch4", "page": 14}, {"doc": "ch4", "page": 15}, {"doc": "part1", "page": 83}, {"doc": "part1", "page": 84}],
+      "description": "Testo della fonte: slide 14 'MAP-ML: Example. 1-D class-conditional probability density functions for two classes' con il grafico di p(x|ω_1) (nera, bimodale: gobbe ≈ 0.22 a x ≈ 10.8 e ≈ 0.30 a x ≈ 13) e p(x|ω_2) (rossa, massimo ≈ 0.36 a x ≈ 11.4 e spalla ≈ 0.175 a x ≈ 13) per x da 9 a 15. Slide 15 'Corresponding posterior probabilities for the particular priors P(ω_1) = 2/3 and P(ω_2) = 1/3' con il grafico di P(ω_i|x) (valori tra 0 e 1). Note p.83-84: stesse due figure, con la spiegazione 'ML Criterion: Assigns x to the class that maximizes p(x|ω_i) without considering the priors, assuming they are equal or unavailable. MAP Criterion: Assigns x to the class with the highest posterior probability P(ω_i|x), incorporating both the likelihoods and the priors. This example illustrates how different prior probabilities can impact classification when using MAP, in contrast to ML, which would ignore these priors'. Risultato (lettura dei grafici, non scritta nella fonte): ML ha un'unica frontiera a x ≈ 12.3 (ω_2 a sinistra, ω_1 a destra); MAP ha tre frontiere, x ≈ 9.9, 11.2, 11.8, con ℜ_2 ≈ (−∞, 9.9) ∪ (11.2, 11.8) e ℜ_1 ≈ (9.9, 11.2) ∪ (11.8, +∞). Le regole divergono in (9.9, 11.2) e (11.8, 12.3), dove il prior doppio di ω_1 ribalta una verosimiglianza più bassa.",
+      "concepts": ["c46", "c47", "c48", "c49", "c50", "c52", "c53", "c54", "c55"]
+    },
+    {
+      "id": "ex02",
+      "title": "Decisioni ML e MAP punto per punto lette dai grafici",
+      "sourcePages": [{"doc": "ch4", "page": 14}, {"doc": "ch4", "page": 15}],
+      "description": "Valori approssimati letti dai grafici delle slide 14 e 15 (P(ω_1) = 2/3, P(ω_2) = 1/3). x = 9: p(x|ω_1) ≈ 0.001, p(x|ω_2) ≈ 0.02 → ML ω_2; MAP 0.0007 contro 0.0067 → ω_2; P(ω_1|x) ≈ 0.07. x = 10.5: p ≈ 0.20 e 0.24 → ML ω_2; MAP 0.133 contro 0.080 → ω_1; P(ω_1|x) ≈ 0.62. x = 11.5: p ≈ 0.15 e 0.36 → ML ω_2; MAP 0.10 contro 0.12 → ω_2; P(ω_1|x) ≈ 0.46. x = 12: p ≈ 0.19 e 0.30 → ML ω_2; MAP 0.127 contro 0.100 → ω_1; P(ω_1|x) ≈ 0.56. x = 13: p ≈ 0.30 e 0.175 → ML ω_1; MAP ω_1; P(ω_1|x) ≈ 0.77. x = 14: p ≈ 0.17 e 0.03 → ML ω_1; MAP ω_1; P(ω_1|x) ≈ 0.92. Le due regole divergono a x = 10.5 e x = 12, coincidono negli altri punti; a x = 9 la posterior di ω_2 è 0.93 anche se entrambe le pdf sono quasi nulle.",
+      "concepts": ["c48", "c52", "c54", "c56"]
+    }
+  ],
+  "figures": [
+    {"id": "fig01", "doc": "ch4", "page": 10, "description": "Albero dei criteri bayesiani: radice 'Bayes Decision Criterion' (verde), rami 'Full Problem Parameterization' e 'Incomplete Problem Parameterization' (rossi), nodi 'Minimum Risk', 'Minimax Criterion', 'Neyman-Pearson Criterion' (blu), foglie 'MAP Criterion' e 'ML Criterion' (verdi) sotto Minimum Risk.", "region": "slide intera", "concepts": ["c06", "c07", "c08", "c09", "c10", "c11", "c44"], "importance": 3},
+    {"id": "fig02", "doc": "part1", "page": 81, "description": "Stesso albero dei criteri bayesiani della slide 10, riprodotto nelle note in formato ridotto.", "region": "metà inferiore della pagina, sotto l'elenco dei criteri", "concepts": ["c06"], "importance": 1},
+    {"id": "fig03", "doc": "ch4", "page": 14, "description": "Pdf condizionate 1-D p(x|ω_i) di due classi, x da 9 a 15: ω_2 rossa con massimo ≈ 0.36 a x ≈ 11.4 e spalla a x ≈ 13; ω_1 nera bimodale con gobbe ≈ 0.22 (x ≈ 10.8) e ≈ 0.30 (x ≈ 13); un solo incrocio a x ≈ 12.3 (frontiera ML).", "region": "grafico al centro della slide", "concepts": ["c46", "c47", "c48"], "importance": 3},
+    {"id": "fig04", "doc": "ch4", "page": 15, "description": "Posterior P(ω_i|x) per P(ω_1) = 2/3, P(ω_2) = 1/3: curve complementari (nera ω_1, rossa ω_2) che si incrociano a 0.5 in x ≈ 9.9, 11.2, 11.8, cioè regioni MAP non connesse.", "region": "grafico al centro della slide", "concepts": ["c49", "c50", "c51", "c52", "c53"], "importance": 3},
+    {"id": "fig05", "doc": "part1", "page": 83, "description": "Stesso grafico delle pdf condizionate della slide 14, in formato ridotto nelle note.", "region": "terzo inferiore della pagina", "concepts": ["c46"], "importance": 1},
+    {"id": "fig06", "doc": "part1", "page": 84, "description": "Stesso grafico delle posterior della slide 15, in formato ridotto nelle note.", "region": "terzo superiore della pagina, dopo i prior", "concepts": ["c50"], "importance": 1},
+    {"id": "fig07", "doc": "ch4", "page": 11, "description": "Slide del criterio MAP: ipotesi, obiettivo, regola con le posterior e regola riscritta con prior e verosimiglianza, collegate da doppie frecce verdi; formula verbale di Bayes posterior = likelihood × prior / evidence.", "region": "slide intera (vignetta decorativa in alto a sinistra)", "concepts": ["c15", "c21", "c23", "c24"], "importance": 2},
+    {"id": "fig08", "doc": "ch4", "page": 12, "description": "Slide con la definizione di regione di decisione ℜ_i e la formula della probabilità media di errore P_e.", "region": "metà superiore della slide", "concepts": ["c27", "c28"], "importance": 2}
+  ],
+  "widgets": [
+    {
+      "id": "m17-albero-dei-criteri",
+      "title": "Cosa sai decide il criterio: l'albero bayesiano interattivo",
+      "concepts": ["c06", "c07", "c09", "c44"],
+      "scenario": "medicina",
+      "realExample": "Reparto di cardiologia: un classificatore deve decidere 'ECG normale' o 'aritmia' dalla durata del complesso QRS. A seconda di cosa l'ospedale conosce (le pdf del QRS per le due classi stimate dagli archivi, la prevalenza dell'aritmia tra i pazienti, il costo di un'aritmia non vista) la teoria bayesiana prescrive un criterio diverso. Dati sintetici ispirati a misure ECG reali.",
+      "storyboard": [
+        "L'albero della slide 10 si disegna dall'alto: prima il nodo verde 'Bayes Decision Criterion', poi i due rami rossi 'Full' e 'Incomplete Problem Parameterization' (le linee si tracciano in 300 ms), poi i nodi blu e infine le foglie verdi MAP e ML.",
+        "A destra compare il pannello 'Cosa conosci?' con tre interruttori: pdf condizionate p(x|ω_i), prior P(ω_i), costi λ(α_i|ω_j). All'inizio sono tutti accesi: si illumina il percorso Full → Minimum Risk.",
+        "Spegnendo 'costi' (tutti gli errori costano uguale) il percorso scende sulla foglia MAP; spegnendo anche 'prior' scende su ML. Il ramo attivo pulsa e sotto l'albero compare la regola corrispondente in LaTeX.",
+        "Spegnendo 'prior' ma lasciando i costi, il percorso salta nel ramo Incomplete su Minimax; attivando 'vincolo sui falsi allarmi' si accende Neyman-Pearson. Sulla foglia ML compare un cartellino: 'nella slide sta sotto Full pur non usando i prior: è il MAP con prior supposti uguali (1/C)'.",
+        "Sotto l'albero, l'asse della durata QRS con le due pdf e la frontiera verticale del criterio attivo: cambiando criterio la frontiera scivola in 400 ms nella nuova posizione e il suo valore in ms si aggiorna."
+      ],
+      "interactions": ["tre interruttori: pdf, prior, costi", "checkbox 'vincolo sulla probabilità di falso allarme'", "clic su un nodo per leggere definizione IT/EN e ipotesi dalle note p.81", "hover sulla foglia ML per il cartellino sulla sua posizione"],
+      "visual": "Albero con i colori della slide (radice verde, parametrizzazione rossa, criteri blu, foglie verdi); nodi non raggiungibili in grigio al 30%; sotto, asse x = durata QRS (ms) con le curve p(x|normale) in blu e p(x|aritmia) in arancio e la frontiera del criterio attivo con il valore numerico.",
+      "aha": "Il criterio non si sceglie per gusto: lo impone l'informazione disponibile. Con pdf, prior e costi si scende nel ramo completo; se mancano prior o costi si finisce nel ramo incompleto.",
+      "formulasShown": [
+        "\\mathbf{x}\\in\\omega_j\\Leftrightarrow P(\\omega_j)\\,p(\\mathbf{x}|\\omega_j)\\geq P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i)",
+        "\\mathbf{x}\\in\\omega_j\\Leftrightarrow p(\\mathbf{x}|\\omega_j)\\geq p(\\mathbf{x}|\\omega_i)"
+      ],
+      "challenge": "Tre casi descritti a parole (prevalenza nota e costi uguali; prevalenza ignota; falsi allarmi al massimo 5%): porta l'albero sul criterio giusto per ciascuno al primo tentativo.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m17-quale-criterio",
+      "title": "Quale criterio per quale problema? Smistamento di scenari clinici",
+      "concepts": ["c05", "c08", "c10", "c11"],
+      "scenario": "medicina",
+      "realExample": "Screening diagnostico: un test produce uno score continuo e bisogna fissare la regola di decisione. Situazioni diverse (prevalenza nota o ignota, costo del falso negativo noto, obbligo di tenere i falsi positivi sotto il 5%) richiedono criteri diversi: rischio minimo, minimax, Neyman-Pearson, MAP o ML. Scenari e dati sintetici.",
+      "storyboard": [
+        "Sei carte-scenario scendono dall'alto, per esempio 'Prevalenza del 2% nota, un tumore non visto costa 100 volte un falso allarme', 'Epidemia nuova: prevalenza ignota, tra 1% e 40%', 'Il comitato etico impone falsi positivi ≤ 5%: massimizza i veri positivi', 'Prevalenza nota, errori tutti uguali', 'Solo le pdf dello score sono note'.",
+        "Lo studente trascina ogni carta su uno dei nodi dell'albero: Minimum Risk, Minimax, Neyman-Pearson, MAP, ML.",
+        "Rilascio corretto: il nodo si illumina e compare la frase delle note p.81 in inglese con la traduzione; rilascio errato: la carta rimbalza e un suggerimento indica quale informazione manca o è presente.",
+        "Anteprima minimax: un cursore della prevalenza scorre da 1% a 40%; la curva del rischio della regola ottimizzata per un prior fissato sale molto ai bordi, mentre la regola minimax resta più piatta con il massimo più basso (illustrazione qualitativa: la fonte non dà formule).",
+        "Anteprima Neyman-Pearson: sulle due distribuzioni dello score la soglia si sposta finché l'area di falso allarme (rossa) vale il 5%; il contatore della potenza di rilevazione (TPR) si aggiorna."
+      ],
+      "interactions": ["drag & drop delle carte sui nodi", "cursore della prevalenza nell'anteprima minimax", "cursore α (falsi positivi massimi) nell'anteprima Neyman-Pearson", "pulsante 'nuove carte'"],
+      "visual": "Albero compatto in basso, carte in alto con icone (termometro, bilancia, allarme); nell'anteprima minimax un grafico rischio contro prevalenza con due curve; nell'anteprima Neyman-Pearson due gaussiane con aree di falso allarme (rosso) e di rilevazione (verde) e i valori FPR e TPR live.",
+      "aha": "I criteri bayesiani sono una famiglia: si usa quello le cui ipotesi coincidono con ciò che il problema offre. Minimax e Neyman-Pearson esistono proprio per quando manca qualche probabilità o costo.",
+      "formulasShown": ["\\text{FPR}\\leq\\alpha\\;\\Rightarrow\\;\\max\\text{TPR}"],
+      "challenge": "Smista correttamente tutte le carte con al massimo un errore.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m17-bilancia-delle-decisioni",
+      "title": "La bilancia bayesiana: probabilità e costi sul nastro del pesce",
+      "concepts": ["c01", "c02", "c03", "c12"],
+      "scenario": "pesce",
+      "realExample": "Nastro di un impianto di confezionamento: un pesce con luminosità misurata x deve finire nella cassa 'salmone' o 'spigola'. La teoria bayesiana della decisione tratta la scelta come un compromesso quantificato tra la probabilità che sia l'una o l'altra specie e il costo di ciascun errore (un salmone venduto come spigola fa perdere margine, una spigola venduta come salmone fa arrabbiare il cliente). Dati sintetici ispirati all'esempio del Cap. 1.",
+      "storyboard": [
+        "Un pesce stilizzato scorre sul nastro e si ferma sotto un sensore che mostra la luminosità, per esempio x = 5.8.",
+        "Compare una bilancia a due piatti: sul piatto 'salmone' cade un peso proporzionale a P(salmone|x), sull'altro a P(spigola|x); l'ago oscilla (molla con smorzamento) e si ferma: vince il piatto più pesante e il pesce scivola nella cassa corrispondente.",
+        "Si attiva 'costi': i pesi vengono moltiplicati per il costo dell'errore che eviterebbero (slider del rapporto dei costi); la bilancia può invertirsi. Una didascalia mostra 'tradeoff = probabilità × costo'.",
+        "Interruttore 'probabilità note?': se spento i piatti diventano punti interrogativi e la bilancia resta bloccata: senza le probabilità del problema la teoria non si applica (ipotesi della slide 9).",
+        "Riquadro finale con la frase della slide 9 e la chiusura delle note p.81 ('most effective and cost-efficient decisions')."
+      ],
+      "interactions": ["slider della luminosità x", "slider del rapporto dei costi (1 a 10)", "interruttore 'probabilità note'", "pulsante 'nuovo pesce'"],
+      "visual": "Nastro orizzontale con il pesce, bilancia al centro con piatti arancio (salmone) e grigio-blu (spigola), numeri live P(ω_i|x) e pesi con i costi, due casse in basso che si riempiono con contatori.",
+      "aha": "Decidere significa pesare: le probabilità dicono quanto è plausibile ogni classe, i costi quanto fa male sbagliare. La teoria bayesiana mette entrambi sulla stessa bilancia, ma solo se le probabilità sono note.",
+      "formulasShown": ["P(\\omega_i|x)", "\\lambda_{12}\\,P(\\omega_2|x)\\;\\text{vs}\\;\\lambda_{21}\\,P(\\omega_1|x)"],
+      "challenge": "Trova un pesce con P(salmone|x) = 0.6 che finisce comunque tra le spigole: quale rapporto di costi serve?",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m17-il-prior-da-solo",
+      "title": "Indovinare senza guardare: quanto vale il prior",
+      "concepts": ["c04", "c18"],
+      "scenario": "pesce",
+      "realExample": "Prima ancora di misurare il pesce, il responsabile sa che in questa stagione il carico è per il 70% salmone: è conoscenza a priori P(ω_i). La classificazione bayesiana la integra; un classificatore che la ignora spreca informazione. Dati sintetici.",
+      "storyboard": [
+        "Una cassa si riempie di 20 pesci coperti da un telo (classe ignota); lo slider 'quota di salmoni nel carico' va da 5% a 95% e aggiorna le due barre dei prior, che sommano sempre a 1.",
+        "Pulsante 'Indovina senza misurare': la regola migliore senza dati è dire sempre la classe con prior maggiore; il telo si alza, i pesci sbagliati si colorano di rosso e il contatore mostra l'errore, che tende a 1 − max P(ω_i).",
+        "Seconda fase: si accende il sensore di luminosità; i prior diventano pesi delle curve p(x|ω_i) (anteprima del MAP) e il contatore dell'errore scende sotto quello della regola 'solo prior'.",
+        "Ripetendo con prior 50% la regola 'solo prior' sbaglia metà delle volte, mentre il sensore porta l'errore molto più in basso: con classi bilanciate il prior da solo non aiuta."
+      ],
+      "interactions": ["slider del prior del salmone", "pulsante 'Indovina senza misurare'", "interruttore 'accendi il sensore'", "pulsante 'nuovo carico' (seed)"],
+      "visual": "Griglia 4×5 di pesci coperti che si scoprono con un flip; due barre verticali dei prior; contatori d'errore delle due regole affiancati; nella seconda fase due curve pesate sull'asse della luminosità.",
+      "aha": "Il prior è ciò che si sa prima di guardare il campione: da solo dà già una regola (sempre la classe più frequente) e la classificazione bayesiana lo combina con la misura.",
+      "formulasShown": ["\\sum_{i}P(\\omega_i)=1", "P_e^{\\text{solo prior}}=1-\\max_i P(\\omega_i)"],
+      "challenge": "Con quale prior la regola 'solo prior' sbaglia il 50%? E con quale il 5%?",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m17-anatomia-del-teorema",
+      "title": "Anatomia di Bayes: verosimiglianze, prior ed evidenza nel carico di pesce",
+      "concepts": ["c16", "c17", "c19"],
+      "scenario": "pesce",
+      "realExample": "Luminosità dei pesci sul nastro: p(x|salmone) e p(x|spigola) descrivono ciascuna specie da sola; l'evidenza p(x) è la distribuzione della luminosità di tutto il carico mescolato, che un sensore vede senza sapere la specie. Dati sintetici.",
+      "storyboard": [
+        "Due curve p(x|ω_i) disegnate in due pannelli separati: ognuna si riempie sotto e compare l'etichetta '∫ = 1'.",
+        "Le curve scendono in un pannello comune e si scalano in P(ω_i)p(x|ω_i) secondo lo slider del prior; sotto compare la loro somma p(x), curva nera: l'evidenza.",
+        "500 pesci sintetici cadono uno alla volta sull'asse, colorati per specie, e si accumulano in un istogramma grigio che converge alla curva p(x); attivando 'mostra specie' l'istogramma si separa nelle due componenti.",
+        "Trascinando x una linea verticale taglia le curve: tre numeri live p(x|ω_1), p(x|ω_2), p(x); le barre delle posterior si riempiono come quota di ciascun contributo nella somma, e sommano sempre a 1."
+      ],
+      "interactions": ["slider del prior", "trascinamento della linea x", "pulsante 'lancia 500 pesci'", "interruttore 'mostra specie'"],
+      "visual": "Curve arancio (salmone) e grigio-blu (spigola), evidenza in nero, istogramma grigio semitrasparente; a destra barre impilate delle posterior al 100% con valori numerici.",
+      "aha": "La verosimiglianza descrive una classe, il prior pesa le classi, l'evidenza è il miscuglio; la posterior è la fetta di evidenza dovuta a ciascuna classe in quel punto.",
+      "formulasShown": ["p(x)=\\sum_{k}p(x|\\omega_k)\\,P(\\omega_k)", "P(\\omega_i|x)=\\dfrac{p(x|\\omega_i)\\,P(\\omega_i)}{p(x)}", "\\sum_i P(\\omega_i|x)=1"],
+      "challenge": "Trova la luminosità in cui l'evidenza è massima e spiega perché non coincide con il picco di nessuna delle due specie.",
+      "size": "M",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "m17-bayes-in-corsia",
+      "title": "Dal registro clinico alla posterior: il teorema di Bayes in corsia",
+      "concepts": ["c22", "c23", "c25"],
+      "scenario": "medicina",
+      "realExample": "ECG: la durata del QRS di un paziente (ms). Le pdf p(x|normale) e p(x|blocco di branca) sono stimate da archivi clinici, la prevalenza dal registro dell'ospedale; il medico non ha direttamente P(blocco|x), e il teorema di Bayes la costruisce da ciò che si conosce. Dati sintetici.",
+      "storyboard": [
+        "Tre tessere 'likelihood', 'prior', 'evidence' mostrano i valori numerici per il QRS scelto; la tessera 'posterior' è vuota con un punto interrogativo (le posterior spesso non sono note direttamente).",
+        "Animazione: likelihood e prior si moltiplicano (le tessere si fondono in 'likelihood × prior'), poi il risultato si divide per 'evidence' e la posterior si riempie.",
+        "Interruttore 'dividi per p(x)': con la normalizzazione le barre sommano a 1; senza, cambiano altezza ma l'ordine resta lo stesso, e il vincitore è evidenziato in entrambe le viste.",
+        "Trascinando il QRS lungo l'asse si vede che p(x) varia molto (curva grigia) mentre la classe vincente dipende solo dai prodotti prior × likelihood."
+      ],
+      "interactions": ["slider della durata QRS", "slider della prevalenza", "interruttore 'dividi per p(x)'", "pulsante Play dell'animazione"],
+      "visual": "Tessere con numeri a tre decimali, barre delle posterior o dei prodotti non normalizzati, piccolo grafico con p(x) e il marcatore del QRS; la formula di Bayes con i numeri sostituiti live.",
+      "aha": "Il teorema di Bayes converte ciò che si sa stimare (pdf della classe, frequenza della classe) in ciò che serve per decidere (posterior); il denominatore p(x) è uguale per tutte le classi e non sposta la decisione.",
+      "formulasShown": ["P(\\omega_i|x)=\\dfrac{p(x|\\omega_i)\\,P(\\omega_i)}{p(x)}", "\\arg\\max_i\\dfrac{P(\\omega_i)\\,p(x|\\omega_i)}{p(x)}=\\arg\\max_i P(\\omega_i)\\,p(x|\\omega_i)"],
+      "challenge": "Prima di cliccare, prevedi se togliere la normalizzazione cambia il vincitore in un punto dove p(x) è minuscola.",
+      "size": "S",
+      "tech": "html+motion"
+    },
+    {
+      "id": "m17-regola-map-tre-classi",
+      "title": "La regola MAP su un'immagine satellitare a tre classi",
+      "concepts": ["c13", "c15", "c20", "c21"],
+      "scenario": "telerilevamento",
+      "realExample": "Pixel di un'immagine satellitare multispettrale: dall'indice NDVI (feature x) bisogna assegnare acqua, suolo nudo o vegetazione (C = 3). Supponendo di conoscere le posterior P(ω_i|x), per esempio da un modello già calibrato, il MAP sceglie la classe con posterior massima. Dati sintetici ispirati a scene Sentinel-2.",
+      "storyboard": [
+        "Asse NDVI da −0.5 a 1; tre curve posterior colorate (blu acqua, marrone suolo, verde vegetazione) disegnate come fascia impilata al 100% per mostrare che sommano a 1 in ogni punto.",
+        "Un pixel (quadratino) si trascina sull'asse; a destra tre barre verticali con i valori P(ω_i|x); la barra più alta si riempie di colore e compare 'x ∈ ω_j' con le C − 1 disuguaglianze verificate una per una (spunte verdi).",
+        "Sotto l'asse si colora la striscia delle regioni MAP: ogni tratto prende il colore della posterior massima.",
+        "Pulsante 'classifica la mappa': una mini-scena 8×8 di pixel si colora cella per cella con la regola; il contatore 'errore medio atteso' = media di 1 − max posterior si aggiorna (anteprima dell'obiettivo del MAP)."
+      ],
+      "interactions": ["trascinamento del pixel lungo l'asse NDVI", "pulsante 'classifica la mappa'", "selettore C = 2 o C = 3 classi"],
+      "visual": "Fascia impilata delle posterior, barre a destra con valori, striscia delle regioni sotto l'asse, mini-mappa 8×8 con i colori di classe; notazione x, ω_i, C visibile nelle etichette.",
+      "aha": "MAP significa: in ogni x scegli la classe con la posterior più alta. Con C classi la disuguaglianza va verificata contro tutte le altre C − 1, e l'obiettivo è sbagliare il meno possibile in media.",
+      "formulasShown": ["\\mathbf{x}\\in\\omega_j\\Leftrightarrow P(\\omega_j|\\mathbf{x})\\geq P(\\omega_i|\\mathbf{x}),\\;\\forall i=1,\\dots,C", "\\omega^{*}=\\arg\\max_i P(\\omega_i|\\mathbf{x})"],
+      "challenge": "Trova un valore di NDVI dove la classe vincente ha posterior sotto 0.5: la decisione MAP resta valida? Perché?",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m17-prior-per-verosimiglianza",
+      "title": "Prior per verosimiglianza: la frontiera MAP che scivola",
+      "concepts": ["c24", "c26"],
+      "scenario": "pesce",
+      "realExample": "Salmone contro spigola con la luminosità come feature: le curve pesate P(ω_i)p(x|ω_i) si confrontano direttamente, senza calcolare l'evidenza. Cambiando la composizione del carico (prior) cambia la frontiera di smistamento. Dati sintetici.",
+      "storyboard": [
+        "Due verosimiglianze tratteggiate e, sopra, le curve piene P(ω_i)p(x|ω_i).",
+        "Slider P(salmone) da 0.05 a 0.95: la curva piena del salmone si alza, l'altra si abbassa; l'incrocio delle curve piene (frontiera MAP, linea verde) scorre sull'asse, mentre la frontiera ML (incrocio delle tratteggiate) resta ferma come linea fantasma viola.",
+        "Un pesce trascinabile mostra 'la classe più probabile dato x' con i due prodotti numerici affiancati e il segno ≥ che si gira quando si attraversa la frontiera."
+      ],
+      "interactions": ["slider del prior", "trascinamento del pesce", "interruttore 'mostra frontiera ML'"],
+      "visual": "Curve piene e tratteggiate, frontiera MAP verde e ML viola, zone sotto l'asse colorate per classe, riquadro con P(ω_1)p(x|ω_1) e P(ω_2)p(x|ω_2) numerici.",
+      "aha": "Per decidere con il MAP non serve p(x): basta confrontare prior × verosimiglianza. Il prior spinge la frontiera verso la classe meno probabile e allarga la regione di quella più frequente.",
+      "formulasShown": ["P(\\omega_1)\\,p(x|\\omega_1)\\;\\gtrless\\;P(\\omega_2)\\,p(x|\\omega_2)"],
+      "challenge": "Porta la frontiera MAP esattamente su x = 6.0 regolando solo il prior.",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m17-regioni-arbitrarie",
+      "title": "Disegna il tuo classificatore e paga il suo errore",
+      "concepts": ["c27", "c28", "c29", "c31"],
+      "scenario": "pesce",
+      "realExample": "Un tecnico regola a mano il separatore dell'impianto: ogni scelta di soglie sulla luminosità definisce le regioni ℜ_1 (salmone) e ℜ_2 (spigola), cioè un classificatore arbitrario, e un tasso d'errore misurabile. Dati sintetici.",
+      "storyboard": [
+        "Asse della luminosità con le curve pesate P(ω_i)p(x|ω_i); due maniglie definiscono ℜ_1 (fascia arancio) e ℜ_2 (fascia grigio-blu); con un clic si aggiungono intervalli per creare regioni non connesse.",
+        "Le aree di errore si colorano: sotto P(ω_1)p(x|ω_1) dove x ∈ ℜ_2 (salmone scambiato per spigola) e sotto P(ω_2)p(x|ω_2) dove x ∈ ℜ_1.",
+        "Pannello a destra, riga per riga: P(err|ω_1) e P(err|ω_2) come percentuali (integrali delle pdf fuori dalla propria regione), poi i prodotti con i prior, poi la somma P_e; sotto P_c = 1 − P_e in verde.",
+        "Pulsante 'lancia 1000 pesci': una pioggia di pesci sintetici attraversa il separatore; il contatore degli errori empirici converge verso P_e."
+      ],
+      "interactions": ["trascinamento delle maniglie delle regioni", "clic per aggiungere o togliere intervalli", "slider del prior", "pulsante 'lancia 1000 pesci'"],
+      "visual": "Curve pesate, fasce colorate delle regioni, aree d'errore tratteggiate in rosso, tabella con P(err|ω_i), P(ω_i), prodotti, P_e e P_c; istogramma dei pesci lanciati con i mal classificati in rosso.",
+      "aha": "P_e si calcola per qualunque classificatore: è la somma, pesata dai prior, delle masse di probabilità di ogni classe che cadono fuori dalla sua regione.",
+      "formulasShown": [
+        "\\mathrm{P_e}=\\sum_{i}P(\\mathbf{x}\\notin\\Re_i|\\omega_i)\\,P(\\omega_i)",
+        "P(err|\\omega_i)=1-\\int_{\\Re_i}p(x|\\omega_i)\\,dx",
+        "P_c=1-\\mathrm{P_e}"
+      ],
+      "challenge": "Usando solo le maniglie, porta P_e sotto il 10%; poi prova a scendere ancora aggiungendo intervalli.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m17-caccia-all-errore-minimo",
+      "title": "Caccia all'errore minimo: perché il MAP vince sempre",
+      "concepts": ["c14", "c30", "c33", "c34"],
+      "scenario": "medicina",
+      "realExample": "Screening della fibrillazione atriale da smartwatch: uno score di irregolarità del battito; si cerca la soglia che minimizza la probabilità media di errore quando falsi allarmi e mancate diagnosi contano uguale. Dati sintetici.",
+      "storyboard": [
+        "In alto le due curve pesate P(ω_i)p(x|ω_i) con la soglia trascinabile e le aree d'errore colorate; in basso il grafico P_e(soglia) che si traccia punto per punto mentre si trascina.",
+        "Il triangolo 'errore riducibile' (area tra le curve pesate, fra la soglia corrente e il loro incrocio) lampeggia in giallo e si restringe fino a sparire quando la soglia raggiunge l'incrocio.",
+        "Pulsante 'Mostra MAP': la soglia vola sull'incrocio (spring 250 ms); nel grafico in basso compare il minimo con l'etichetta 'errore di Bayes P_e*' e una linea orizzontale tratteggiata sotto cui nessuna soglia scende.",
+        "Modalità 'regioni libere': lo studente può disegnare regioni fatte a pezzi; il contatore conferma che anche così P_e non scende sotto P_e*."
+      ],
+      "interactions": ["trascinamento della soglia", "pulsante 'Mostra MAP'", "modalità regioni libere", "slider della prevalenza"],
+      "visual": "Curve pesate blu e arancio, aree d'errore in rosso, triangolo riducibile in giallo, grafico P_e(soglia) con minimo marcato; valori numerici di P_e e P_e* a tre decimali.",
+      "aha": "Il MAP è il criterio a errore minimo: nel punto di incrocio delle curve pesate non resta area riducibile, e nessun classificatore può fare meglio con le stesse pdf e gli stessi prior.",
+      "formulasShown": [
+        "\\mathrm{P_e}=P(\\omega_1)\\int_{\\Re_2}p(x|\\omega_1)\\,dx+P(\\omega_2)\\int_{\\Re_1}p(x|\\omega_2)\\,dx",
+        "\\mathrm{P_e^{*}}=\\int\\min\\big[P(\\omega_1)p(x|\\omega_1),P(\\omega_2)p(x|\\omega_2)\\big]\\,dx"
+      ],
+      "challenge": "Posiziona a occhio la soglia ottima prima di premere 'Mostra MAP'; il punteggio è la distanza da P_e*.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m17-errore-punto-per-punto",
+      "title": "L'errore email per email: P(err|x) nel filtro antispam",
+      "concepts": ["c32", "c51"],
+      "scenario": "spam",
+      "realExample": "Filtro antispam: x è la frazione di parole sospette in un'email; P(spam|x) e P(ham|x) sono complementari. L'errore commesso su una singola email con score x è la posterior della classe non scelta; l'errore medio è la loro media pesata su tutte le email. Dati sintetici.",
+      "storyboard": [
+        "Due curve posterior complementari (spam rosso, ham verde), simmetriche rispetto alla retta 0.5; una barra impilata che scorre con x mostra che sommano sempre a 1.",
+        "Un cursore x: accanto compare la barra dell'errore condizionato P(err|x) = 1 − posterior della classe scelta; con il MAP è sempre la barra più corta, al massimo 0.5.",
+        "Interruttore 'regola sbagliata' (dice sempre spam): P(err|x) diventa P(ham|x) e cresce dove l'ham domina.",
+        "Sweep automatico da sinistra a destra: si integra P(err|x)p(x) (area che si riempie sotto una curva) e un contatore accumula P_e; alla fine confronto MAP contro regola sbagliata."
+      ],
+      "interactions": ["cursore x", "interruttore 'regola sbagliata'", "pulsante Play dello sweep"],
+      "visual": "Posterior in rosso e verde, barra dell'errore puntuale in grigio scuro, pannello inferiore con P(err|x)p(x) che si riempie e il valore cumulato di P_e.",
+      "aha": "Il MAP minimizza l'errore in ogni singolo punto, e quindi anche la media: P_e è l'integrale degli errori puntuali pesati da p(x).",
+      "formulasShown": ["P(err|x)=1-\\max_i P(\\omega_i|x)", "\\mathrm{P_e}=\\int P(err|x)\\,p(x)\\,dx", "P(\\omega_1|x)+P(\\omega_2|x)=1"],
+      "challenge": "In quale x l'errore puntuale del MAP è massimo e quanto vale al più con due classi?",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m17-regola-ml",
+      "title": "Quale classe ha generato questo pixel? La regola ML",
+      "concepts": ["c35", "c36", "c39", "c40"],
+      "scenario": "telerilevamento",
+      "realExample": "Classificazione di pixel iperspettrali con la riflettanza nel vicino infrarosso: le pdf di acqua, vegetazione e urbano sono stimate da poligoni di training, ma la quota di territorio coperta da ciascuna classe nella nuova scena è ignota. Il criterio ML sceglie la classe sotto cui la riflettanza osservata è più verosimile. Dati sintetici.",
+      "storyboard": [
+        "Tre curve p(x|ω_i) sull'asse della riflettanza NIR; la tessera 'prior' nel pannello è barrata: il ML non li usa.",
+        "Un pixel si trascina: tre segmenti verticali salgono dall'asse alle curve e mostrano le verosimiglianze; il segmento più alto si colora e l'etichetta dice 'la classe che più verosimilmente ha generato x'.",
+        "La striscia delle regioni ML si colora sotto l'asse; una scena 10×10 si classifica pixel per pixel con un'onda da sinistra a destra."
+      ],
+      "interactions": ["trascinamento del pixel", "pulsante 'classifica la scena'", "hover su una curva per l'etichetta IT/EN"],
+      "visual": "Curve blu (acqua), verde (vegetazione), grigio (urbano); segmenti di verosimiglianza con valori numerici; striscia delle regioni; scena 10×10.",
+      "aha": "Il ML guarda solo quanto il valore x è tipico per ciascuna classe; non chiede quanto la classe sia frequente.",
+      "formulasShown": ["\\mathbf{x}\\in\\omega_j\\Leftrightarrow p(\\mathbf{x}|\\omega_j)\\geq p(\\mathbf{x}|\\omega_i),\\;\\forall i", "\\omega_{ML}=\\arg\\max_i p(\\mathbf{x}|\\omega_i)"],
+      "challenge": "Trova una riflettanza in cui la classe ML ha una densità più bassa di 0.5 ma vince comunque.",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m17-ml-ignora-i-prior",
+      "title": "Il filtro che non guarda i prior: ML contro MAP su un flusso di email",
+      "concepts": ["c37", "c38", "c42", "c43"],
+      "scenario": "spam",
+      "realExample": "Un filtro antispam addestrato con le pdf di un dataset bilanciato va in produzione in un'azienda dove l'80% della posta è spam (o solo il 10%). Il ML non usa i prior e la sua frontiera resta ferma; il MAP la sposta. Si contano gli errori su un flusso di 1000 email sintetiche.",
+      "storyboard": [
+        "Due pdf p(x|spam) e p(x|ham) e due frontiere: ML (viola, fissa) e MAP (verde, dipende dal prior).",
+        "Slider 'quota reale di spam' dal 5% al 95%: la frontiera MAP scorre, quella ML non si muove.",
+        "Parte il flusso di 1000 email come puntini che attraversano le frontiere; due contatori d'errore (ML e MAP) avanzano. Un grafico P_e(prior) traccia le due curve: quella MAP sta sempre sotto o tocca quella ML, e si toccano al 50%.",
+        "Interruttore 'prior ignoti': il MAP non è calcolabile (si ingrigisce) e il ML resta l'unica regola disponibile; banner con la frase delle note 'useful when only the probability density function is available'."
+      ],
+      "interactions": ["slider della quota di spam", "pulsante 'avvia flusso'", "interruttore 'prior ignoti'"],
+      "visual": "Pannello delle pdf con le due frontiere, flusso animato di puntini rossi e verdi, contatori d'errore, grafico P_e contro prior con due curve (viola ML, verde MAP) e marcatore del prior corrente.",
+      "aha": "Il ML ha lo stesso obiettivo del MAP (errore minimo) ma lo raggiunge solo se i prior sono davvero uguali; quando i prior non sono disponibili è la scelta naturale, ma con classi sbilanciate paga errore in più.",
+      "formulasShown": ["\\mathrm{P_e}(\\text{ML})\\geq\\mathrm{P_e}(\\text{MAP})", "\\mathbf{x}\\in\\omega_j\\Leftrightarrow p(\\mathbf{x}|\\omega_j)\\geq p(\\mathbf{x}|\\omega_i)"],
+      "challenge": "Per quale quota di spam il vantaggio del MAP sul ML è massimo? Prevedi e verifica con lo slider.",
+      "size": "M",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "m17-prior-uguali",
+      "title": "Prior uguali: quando ML e MAP diventano la stessa regola",
+      "concepts": ["c41", "c61"],
+      "scenario": "pesce",
+      "realExample": "Un carico con metà salmoni e metà spigole: MAP e ML devono dare la stessa decisione per ogni pesce. Poi si aggiunge l'orata (C = 3) e si verifica di nuovo con prior 1/3. Dati sintetici.",
+      "storyboard": [
+        "Due strisce di decisione, MAP sopra e ML sotto, e lo slider del prior; quando il prior arriva a 0.5 le strisce si fondono con un effetto a scatto e compare 'ML ≡ MAP'.",
+        "La formula MAP si trasforma: P(ω_i) viene sostituito da 1/C, i due 1/C si cancellano con un'animazione di barratura e resta la regola ML.",
+        "Tabella di confronto che si riempie riga per riga: ipotesi, informazione richiesta, regola, obiettivo, ottimalità, soglia sul rapporto di verosimiglianza, quando coincidono.",
+        "Estensione a C = 3 (compare l'orata): con prior 1/3 ciascuno le strisce coincidono di nuovo; spostando un solo prior si separano."
+      ],
+      "interactions": ["slider del prior (con scatto magnetico a 1/C)", "pulsante 'aggiungi orata'", "clic sulle righe della tabella per nasconderle e fare il quiz"],
+      "visual": "Due strisce colorate per classe, formula con animazione di semplificazione, tabella a due colonne MAP e ML con righe che entrano in sequenza.",
+      "aha": "Il ML è il MAP con prior uniformi: tutta la differenza tra i due sta nel peso P(ω_i).",
+      "formulasShown": ["\\tfrac{1}{C}\\,p(\\mathbf{x}|\\omega_j)\\geq\\tfrac{1}{C}\\,p(\\mathbf{x}|\\omega_i)\\Leftrightarrow p(\\mathbf{x}|\\omega_j)\\geq p(\\mathbf{x}|\\omega_i)"],
+      "challenge": "Quiz: completa le celle nascoste della tabella di confronto (ipotesi, regola, quando coincidono, quale è ottimo).",
+      "size": "S",
+      "tech": "html+motion"
+    },
+    {
+      "id": "m17-esempio-slide-verosimiglianze",
+      "title": "L'esempio della slide 14 ricostruito: due specie, una soglia ML",
+      "concepts": ["c46", "c47", "c48"],
+      "scenario": "pesce",
+      "realExample": "Ricostruzione delle curve della slide 14 lette come luminosità di due specie di pesce (nella letteratura classica questa figura illustra proprio la luminosità del pesce): p(x|ω_1) ≈ 0.251·N(10.70, 0.50²) + 0.749·N(13.00, 0.995²), bimodale (per esempio due popolazioni di salmone), e p(x|ω_2) ≈ 0.904·N(11.41, 0.997²) + 0.096·N(13.30, 0.389²). Parametri ottenuti adattando miscele gaussiane ai valori estratti dal grafico: dati sintetici che riproducono la figura (incrocio ML a x ≈ 12.32).",
+      "storyboard": [
+        "Il grafico della slide si ridisegna: assi con x da 9 a 15 e y fino a 0.4; la curva rossa ω_2 si traccia da sinistra a destra (600 ms), poi la nera ω_1 con le sue due gobbe.",
+        "Etichette di lettura compaiono sui punti chiave: picco di ω_2 ≈ 0.36 a x ≈ 11.4; spalla di ω_2 ≈ 0.175 a x ≈ 13; gobbe di ω_1 ≈ 0.22 a x ≈ 10.8 e ≈ 0.30 a x ≈ 13; minimo locale di ω_1 ≈ 0.15 a x ≈ 11.6.",
+        "Un marcatore x trascinabile: due segmenti verticali confrontano le verosimiglianze; sotto l'asse la striscia ML è rossa (ω_2) fino a x ≈ 12.3 e nera (ω_1) oltre.",
+        "Pulsante 'scomponi': ω_1 si separa nelle due gaussiane della miscela, colorate in due tonalità di grigio, che poi si risommano (anticipazione dei modelli a miscela e dell'EM)."
+      ],
+      "interactions": ["trascinamento del marcatore x", "pulsante 'scomponi ω_1'", "interruttore 'mostra valori letti dalla slide'"],
+      "visual": "Riproduzione fedele del grafico (nero per ω_1, rosso per ω_2), valori numerici live di p(x|ω_1) e p(x|ω_2), striscia ML, etichette di lettura.",
+      "aha": "Il criterio ML taglia l'asse dove le verosimiglianze si incrociano: qui in un solo punto, x ≈ 12.3, anche se ω_1 ha due gobbe.",
+      "formulasShown": ["p(x|\\omega_1)\\;\\gtrless\\;p(x|\\omega_2)"],
+      "challenge": "Prima di trascinare, indica sull'asse dove pensi che il ML cambi decisione (tolleranza ±0.2).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m17-esempio-slide-posterior",
+      "title": "L'esempio della slide 15: prior 2/3 e 1/3 e le isole di decisione",
+      "concepts": ["c49", "c50", "c52", "c53"],
+      "scenario": "pesce",
+      "realExample": "Le stesse curve ricostruite della slide 14 con i prior della slide 15, P(ω_1) = 2/3 e P(ω_2) = 1/3: le posterior calcolate con Bayes riproducono il grafico della slide 15 e le frontiere MAP a x ≈ 9.89, 11.21, 11.82. Nella ricostruzione P_e(MAP) ≈ 0.316. Dati sintetici.",
+      "storyboard": [
+        "Dalle verosimiglianze della slide 14: le curve si moltiplicano per 2/3 e 1/3 (si schiacciano o si allungano), poi si normalizzano dividendo per la somma e si trasformano (morphing di 800 ms) nelle curve della slide 15.",
+        "La striscia MAP sotto l'asse si colora: rosso fino a 9.9, nero fino a 11.2, rosso fino a 11.8, nero oltre. Una graffa evidenzia che la regione di ω_2 (e quella di ω_1) è fatta di due pezzi.",
+        "Slider P(ω_1) da 0.05 a 0.95 con il valore della slide (2/3) marcato: le posterior si deformano in tempo reale; l'isola di ω_1 attorno a 10.5 compare sopra ≈ 0.55 e l'isola di ω_2 attorno a 11.5 sparisce sopra ≈ 0.70; a 0.5 resta un'unica frontiera a 12.3.",
+        "Contatore della probabilità d'errore della ricostruzione e numero di frontiere, aggiornati a ogni movimento."
+      ],
+      "interactions": ["slider P(ω_1)", "pulsante 'torna ai valori della slide'", "trascinamento di x con lettura delle posterior"],
+      "visual": "Grafico delle posterior (nero ω_1, rosso ω_2) con la retta 0.5 tratteggiata, striscia MAP con graffe sulle regioni non connesse, contatori di P_e e del numero di frontiere.",
+      "aha": "I prior cambiano la forma delle posterior e possono creare più frontiere: le regioni di decisione MAP non devono essere intervalli unici.",
+      "formulasShown": ["P(\\omega_1|x)=\\dfrac{2\\,p(x|\\omega_1)}{2\\,p(x|\\omega_1)+p(x|\\omega_2)}", "P(\\omega_1)=\\tfrac{2}{3},\\;P(\\omega_2)=\\tfrac{1}{3}"],
+      "challenge": "Trova il valore di P(ω_1) oltre il quale l'isola di ω_2 intorno a x ≈ 11.5 scompare (risposta nella ricostruzione: ≈ 0.70).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m17-dove-litigano",
+      "title": "Dove ML e MAP litigano (e perché una posterior alta non è un dato tipico)",
+      "concepts": ["c54", "c55", "c56"],
+      "scenario": "pesce",
+      "realExample": "Stesso esempio delle slide 14-15 ricostruito: si confrontano le decisioni dei due criteri pesce per pesce e si osserva dove e perché divergono. Dati sintetici.",
+      "storyboard": [
+        "Due strisce sovrapposte (ML sopra, MAP sotto) sotto il grafico delle pdf; le zone di disaccordo, circa (9.9, 11.2) e (11.8, 12.3), lampeggiano in giallo.",
+        "Cliccando in una zona gialla compare un riquadro: 'p(x|ω_1) = 0.19 < p(x|ω_2) = 0.30, ma (2/3)(0.19) = 0.127 > (1/3)(0.30) = 0.10': il prior doppio ribalta un rapporto di verosimiglianza compreso tra 1/2 e 1.",
+        "Pulsante 'vai agli estremi': il marcatore salta a x = 9 e poi a x = 14; le pdf sono quasi nulle o piccole (0.02 e 0.001; 0.17 e 0.03) ma le posterior valgono 0.93 e 0.92. Un'etichetta avverte: 'posterior alta ≠ pesce tipico'.",
+        "Gioco finale: 10 pesci con luminosità casuali; lo studente prevede ML e MAP per ciascuno prima della rivelazione."
+      ],
+      "interactions": ["clic sulle zone di disaccordo", "pulsante 'vai agli estremi'", "gioco di previsione con 10 pesci"],
+      "visual": "Grafico delle pdf con le due strisce, zone gialle, riquadri numerici; nel gioco carte-pesce con due pulsanti ω_1/ω_2 per ciascun criterio e punteggio.",
+      "aha": "ML e MAP divergono esattamente dove il prior 2/3 basta a compensare un rapporto di verosimiglianza tra 1/2 e 1. E una posterior vicina a 1 non richiede una verosimiglianza grande, solo molto più grande dell'altra.",
+      "formulasShown": ["\\tfrac{1}{2}<\\dfrac{p(x|\\omega_1)}{p(x|\\omega_2)}<1\\;\\Rightarrow\\;\\text{ML}:\\omega_2,\\;\\text{MAP}:\\omega_1"],
+      "challenge": "Classifica 10 pesci con entrambi i criteri prima che il widget lo faccia; almeno 18 risposte giuste su 20.",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m17-soglia-dei-prior",
+      "title": "Come il prior sposta la soglia: rapporto di verosimiglianza e caso gaussiano",
+      "concepts": ["c57", "c58"],
+      "scenario": "pesce",
+      "realExample": "Salmone e spigola con luminosità gaussiana: salmone μ_1 = 4, spigola μ_2 = 7, σ = 1.2 (dati sintetici). Il ML mette la soglia a metà (5.5); se il carico è per il 70% salmone il MAP la sposta a ≈ 5.91. Risponde alla domanda d'esame su come i prior cambiano la soglia rispetto al ML.",
+      "storyboard": [
+        "Pannello alto: le due gaussiane della luminosità. Pannello basso: il log-rapporto di verosimiglianza ln Λ(x), una retta decrescente perché le varianze sono uguali.",
+        "Una linea orizzontale a quota ln(P(ω_2)/P(ω_1)): con prior uguali sta a 0 e interseca la retta in x = 5.5, il punto medio (soglia ML).",
+        "Slider P(salmone): la linea orizzontale scende o sale, l'intersezione scivola e la soglia x* si sposta anche nel pannello alto; la formula x* = 5.5 + (1.44/3)·ln(P_1/P_2) si aggiorna con i numeri (P_1 = 0.7 → x* ≈ 5.91).",
+        "Slider σ: con σ grande lo stesso prior sposta la soglia molto di più (termine σ²/(μ_2 − μ_1)); con σ piccolo quasi non la sposta.",
+        "Modalità 'slide 15': le gaussiane vengono sostituite dalle curve ricostruite dell'esempio e la soglia 1/2 sul rapporto produce tre intersezioni, cioè tre frontiere."
+      ],
+      "interactions": ["slider P(salmone)", "slider σ da 0.5 a 2.5", "slider delle medie", "interruttore 'modalità slide 15'"],
+      "visual": "Pannello delle gaussiane con la soglia ML (viola tratteggiata) e MAP (verde), pannello di ln Λ(x) con la linea della soglia dei prior; formula di x* con i valori sostituiti live.",
+      "aha": "Il prior non cambia le curve: cambia la soglia sul rapporto di verosimiglianza. Il ML confronta Λ(x) con 1, il MAP con P(ω_2)/P(ω_1), e l'effetto è tanto più grande quanto più le classi si sovrappongono.",
+      "formulasShown": [
+        "\\Lambda(x)=\\dfrac{p(x|\\omega_1)}{p(x|\\omega_2)}\\;\\underset{\\omega_2}{\\overset{\\omega_1}{\\gtrless}}\\;\\dfrac{P(\\omega_2)}{P(\\omega_1)}",
+        "x^{*}=\\dfrac{\\mu_1+\\mu_2}{2}+\\dfrac{\\sigma^2}{\\mu_2-\\mu_1}\\ln\\dfrac{P(\\omega_1)}{P(\\omega_2)}"
+      ],
+      "challenge": "Con σ = 1.2 trova il prior del salmone che porta la soglia a x = 6.5 (risposta: P(ω_1) ≈ 0.89).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m17-map-in-pratica",
+      "title": "MAP sulla carta e MAP stimato: quando il migliore non vince",
+      "concepts": ["c45", "c59", "c60"],
+      "scenario": "medicina",
+      "realExample": "Diagnosi di COVID-19 da uno score estratto da radiografie del torace: le pdf delle due classi sono stimate (stima ML di media e varianza) da N radiografie di training e la prevalenza dal registro di un solo ospedale. Il MAP teorico è ottimo; quello costruito con stime rumorose o prevalenza sbagliata no. Dati sintetici.",
+      "storyboard": [
+        "Tre colonne: 'mondo vero' (pdf e prevalenza vere, frontiera MAP ottima), 'stime' (gaussiane stimate da N campioni e prevalenza stimata), 'decisione' (frontiere del MAP vero, del MAP stimato e del ML stimato).",
+        "Slider N da 10 a 2000: con N piccolo le gaussiane stimate 'ballano' a ogni ricampionamento animato e la frontiera del MAP stimato si allontana da quella vera; la barra della sua P_e reale resta sopra la linea dell'errore di Bayes.",
+        "Slider 'prevalenza stimata' separato da quella vera (per esempio registro al 30%, realtà al 10%): oltre un certo errore il MAP stimato fa peggio del ML e le barre di P_e si scambiano di posto.",
+        "Due etichette distinte: 'stima ML (dei parametri)' sulla colonna delle stime e 'criterio ML (di classificazione)' sulla colonna delle decisioni, con una freccia che mostra la cascata stima → classificazione.",
+        "Verdetto finale in tre righe: pdf e prior affidabili → MAP; prior ignoti o inaffidabili → ML; errori con costi diversi → rischio minimo (m18)."
+      ],
+      "interactions": ["slider N (campioni di training)", "slider prevalenza vera e prevalenza stimata", "pulsante 'ricampiona'", "interruttore 'modello sbagliato' (una gaussiana su dati bimodali)"],
+      "visual": "Tre colonne con curve vere (linea continua) e stimate (tratteggiate), frontiere colorate, barre di P_e reale per MAP vero, MAP stimato e ML stimato, linea dell'errore di Bayes.",
+      "aha": "Il MAP è il migliore solo sulla carta: con pdf e prior stimati (errore di approssimazione e di stima) o con costi asimmetrici può non essere la scelta giusta.",
+      "formulasShown": ["\\hat{\\theta}_{ML}=\\arg\\max_\\theta p(\\mathcal{X}|\\theta)", "\\hat{\\omega}(\\mathbf{x})=\\arg\\max_i\\hat{P}(\\omega_i)\\,\\hat{p}(\\mathbf{x}|\\omega_i)"],
+      "challenge": "Con N = 2000 trova l'errore di prevalenza minimo per cui il ML batte il MAP stimato.",
+      "size": "L",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "m17-costi-uguali-o-no",
+      "title": "Tutti gli errori costano uguale? Dal MAP al rischio minimo",
+      "concepts": ["c62", "c63", "c64", "c65"],
+      "scenario": "medicina",
+      "realExample": "Pronto soccorso: 'infarto' o 'dolore non cardiaco' dal livello di troponina. Mandare a casa un infarto è molto più grave che ricoverare un paziente sano; MAP e ML trattano i due errori come uguali, la teoria del rischio minimo li distingue (anteprima di m18). Dati sintetici.",
+      "storyboard": [
+        "Posterior complementari dei due esiti e frontiera MAP; sotto due icone d'errore (falso negativo: paziente mandato a casa; falso positivo: ricovero inutile) con lo stesso peso '1'.",
+        "Slider 'costo del falso negativo' da 1 a 100: la frontiera si sposta verso valori più bassi di troponina e la regione 'ricovera' si allarga; il numero di pazienti ricoverati su 1000 si aggiorna.",
+        "Una matrice 2×2 azioni × classi vere si colora: il costo dipende dalla classe vera e non solo dall'azione (frase delle note p.84).",
+        "Riportando i costi a 1 la frontiera torna esattamente su quella MAP (animazione di ritorno) e compare l'albero della slide 10 con il percorso Minimum Risk → MAP evidenziato."
+      ],
+      "interactions": ["slider del costo del falso negativo", "slider del costo del falso positivo", "pulsante 'costi uguali'"],
+      "visual": "Posterior con frontiera, icone d'errore con pesi, matrice dei costi 2×2, mini-albero dei criteri; contatori di falsi negativi e falsi positivi su 1000 pazienti sintetici.",
+      "aha": "MAP e ML minimizzano quante volte si sbaglia, non quanto costa sbagliare. Quando gli errori hanno gravità diverse serve il rischio minimo, che contiene MAP e ML come casi particolari.",
+      "formulasShown": ["\\lambda_{12}=\\lambda_{21}\\;\\Rightarrow\\;\\text{rischio minimo}\\equiv\\text{MAP}"],
+      "challenge": "Trova il costo del falso negativo per cui la frontiera si sposta di 10 ng/L rispetto al MAP.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "m17-matrice-costi-incendio",
+      "title": "La matrice dei costi dell'allarme antincendio e il caso 0-1",
+      "concepts": ["c66", "c67"],
+      "scenario": "incendio",
+      "realExample": "Allarme antincendio: classi ω_1 = fuoco e ω_2 = niente fuoco; azioni α_1 = chiamare i vigili del fuoco e α_2 = non chiamarli. La matrice Λ (R × C = 2 × 2) raccoglie i costi λ(α_i|ω_j); con costi 0-1 la scelta a rischio minimo coincide con il MAP. Dati sintetici; l'esempio completo con i costi 10^3 € e 10^6 € è nel modulo m18.",
+      "storyboard": [
+        "Una griglia 2×2 con righe = azioni α_i e colonne = classi ω_j; ogni cella editabile mostra λ_ij = λ(α_i|ω_j).",
+        "Un sensore di fumo dà una lettura x; accanto le barre delle posterior P(fuoco|x) e P(no fuoco|x).",
+        "Pulsante 'costi 0-1': diagonale a 0, fuori diagonale a 1. Per ciascuna azione il rischio condizionale si calcola come riga × posterior (animazione dei prodotti che scivolano nella somma) e vale 1 − P(ω_i|x): la barra di rischio più bassa corrisponde alla posterior più alta, cioè al MAP.",
+        "Modificando una cella (mancata chiamata con fuoco = 10^6 €) le decisioni del rischio minimo e del MAP divergono; il widget segnala la differenza e rimanda a m18."
+      ],
+      "interactions": ["modifica delle celle della matrice", "pulsante 'costi 0-1'", "slider della lettura del sensore"],
+      "visual": "Matrice con celle colorate per costo (scala logaritmica), barre delle posterior, barre dei rischi condizionali con la più bassa evidenziata, etichetta 'MAP' o 'rischio minimo ≠ MAP'.",
+      "aha": "Con costi 0-1 il rischio minimo è esattamente il MAP; la matrice dei costi è l'informazione che MAP e ML non usano.",
+      "formulasShown": [
+        "\\Lambda=\\begin{pmatrix}\\lambda(\\alpha_1|\\omega_1) & \\lambda(\\alpha_1|\\omega_2)\\\\ \\lambda(\\alpha_2|\\omega_1) & \\lambda(\\alpha_2|\\omega_2)\\end{pmatrix}",
+        "R(\\alpha_i|\\mathbf{x})=\\sum_{j}\\lambda(\\alpha_i|\\omega_j)\\,P(\\omega_j|\\mathbf{x})=1-P(\\omega_i|\\mathbf{x})"
+      ],
+      "challenge": "Imposta una matrice in cui l'azione scelta è 'chiama i vigili' anche con P(fuoco|x) = 0.01.",
+      "size": "S",
+      "tech": "html+motion"
+    }
+  ],
+  "exercises": [
+    {"id": "es01", "title": "MAP e ML in un punto a due classi", "type": "numerico", "description": "Dati p(x|ω_1), p(x|ω_2) in un punto x e il prior P(ω_1) (con P(ω_2) = 1 − P(ω_1)), calcolare l'evidenza p(x), le posterior P(ω_i|x) e le decisioni ML e MAP. Randomizzare p(x|ω_1), p(x|ω_2) in [0.02, 0.40] e P(ω_1) in [0.1, 0.9]; generare con probabilità 1/2 casi in cui le due regole divergono (rapporto di verosimiglianza tra P(ω_2)/P(ω_1) e 1). Soluzione: p(x) = Σ p(x|ω_i)P(ω_i); P(ω_i|x) = p(x|ω_i)P(ω_i)/p(x); ML sceglie la p(x|ω_i) più grande, MAP il prodotto P(ω_i)p(x|ω_i) più grande.", "concepts": ["c19", "c23", "c24", "c39"]},
+    {"id": "es02", "title": "Tre classi su un pixel satellitare", "type": "numerico", "description": "Un pixel ha verosimiglianze p(x|acqua), p(x|vegetazione), p(x|urbano) e prior noti (C = 3). Calcolare l'evidenza, le tre posterior (verificare che sommano a 1), la decisione MAP, la decisione ML e l'errore condizionato P(err|x) = 1 − max posterior. Randomizzare verosimiglianze in [0.01, 1] e prior su un simplesso (tre numeri positivi a somma 1).", "concepts": ["c13", "c16", "c21", "c32"]},
+    {"id": "es03", "title": "Soglia ML e MAP con due gaussiane", "type": "numerico", "description": "Due classi gaussiane 1-D con medie μ_1 < μ_2 e stessa σ (luminosità di salmone e spigola). Calcolare la soglia ML (μ_1 + μ_2)/2 e la soglia MAP x* = (μ_1 + μ_2)/2 + σ²/(μ_2 − μ_1)·ln(P(ω_1)/P(ω_2)); dire da che parte si sposta e perché. Randomizzare μ_1 in [2, 5], μ_2 = μ_1 + [1.5, 4], σ in [0.5, 2], P(ω_1) in [0.2, 0.9]. Esempio: μ_1 = 4, μ_2 = 7, σ = 1.2, P(ω_1) = 0.7 → x* ≈ 5.91.", "concepts": ["c57", "c58"]},
+    {"id": "es04", "title": "Probabilità di errore di una soglia arbitraria", "type": "numerico", "description": "Con le gaussiane di es03 e una soglia t scelta a caso (ω_1 a sinistra), calcolare P_e(t) = P(ω_1)[1 − Φ((t − μ_1)/σ)] + P(ω_2)Φ((t − μ_2)/σ) e confrontarla con P_e(x*) della soglia MAP; verificare che P_e(t) ≥ P_e(x*). Calcolare anche P_e della soglia ML e mostrare che è maggiore di quella MAP se i prior sono diversi. Randomizzare t in [μ_1, μ_2].", "concepts": ["c28", "c30", "c33", "c43"]},
+    {"id": "es05", "title": "Dimostrare che il MAP minimizza P_e", "type": "dimostrazione", "description": "Partendo dalla definizione della slide 12, P_e = Σ_i P(x ∉ ℜ_i|ω_i)P(ω_i), dimostrare che la partizione che minimizza P_e è quella della regola MAP (der03). In alternativa dimostrarlo con P(err|x) (der04). Indicare in quale passaggio si usa che le regioni formano una partizione.", "concepts": ["c28", "c31", "c32", "c33", "c34"]},
+    {"id": "es06", "title": "ML come caso particolare del MAP", "type": "dimostrazione", "description": "Dimostrare che con prior uguali la regola ML coincide con la regola MAP (der05) e spiegare perché, con prior diversi, P_e(ML) ≥ P_e(MAP). Dare un esempio numerico a due classi in cui il ML sbaglia più della regola banale 'sempre la classe più frequente' (prior estremi, per esempio 0.95 e 0.05).", "concepts": ["c41", "c43"]},
+    {"id": "es07", "title": "Leggere l'esempio delle slide 14-15", "type": "concettuale", "description": "Sul grafico della slide 14 indicare la frontiera ML; sul grafico della slide 15 indicare le frontiere MAP; per x = 9, 10.5, 11.5, 12, 13, 14 dire la decisione ML e quella MAP (soluzione in ex02). Spiegare perché le regioni MAP non sono connesse e perché a x = 9 la posterior di ω_2 è ≈ 0.93 benché entrambe le pdf siano quasi nulle.", "concepts": ["c48", "c52", "c53", "c54", "c56"]},
+    {"id": "es08", "title": "Scegliere il criterio giusto", "type": "concettuale", "description": "Per ciascuno scenario (screening con prevalenza nota ed errori equivalenti; prevalenza ignota; falsi positivi al massimo 5%; costi degli errori noti e asimmetrici; solo pdf disponibili) dire quale nodo dell'albero della slide 10 si applica e perché, citando le ipotesi di ciascun criterio.", "concepts": ["c06", "c07", "c09", "c10", "c11"]},
+    {"id": "es09", "title": "Perché il MAP potrebbe non essere il migliore", "type": "concettuale", "description": "Rispondere alla domanda d'esame: 'At the end of the day is better MAP or ML and why? Why MAP could not be the best one?'. La risposta deve citare l'ipotesi della slide 9 (probabilità note), l'errore di approssimazione (modello sbagliato per le pdf), l'errore di stima (pochi campioni, prior stimati male) e l'assunzione di costi uguali (note p.84).", "concepts": ["c59", "c60", "c62"]},
+    {"id": "es10", "title": "Costi 0-1 e rischio condizionale", "type": "numerico", "description": "Date le posterior di C classi in un punto x e la matrice dei costi 0-1, calcolare i rischi condizionali R(α_i|x) = Σ_j λ(α_i|ω_j)P(ω_j|x) e verificare che valgono 1 − P(ω_i|x) e che il minimo corrisponde alla classe MAP. Poi alzare un costo fuori diagonale (per esempio 10) e mostrare un caso in cui la decisione a rischio minimo diverge dal MAP. Randomizzare le posterior su un simplesso.", "concepts": ["c66", "c67", "c62"]},
+    {"id": "es11", "title": "Bayes con la regola 'solo prior'", "type": "numerico", "description": "Con prior P(ω_1) = p e nessuna misura, qual è la regola migliore e quale errore commette? Confrontare con l'errore del MAP quando si misura una feature gaussiana (es03) e commentare il caso p = 0.5. Randomizzare p in [0.05, 0.95].", "concepts": ["c04", "c18"]}
+  ],
+  "examQuestions": [
+    {"text": "MAP criterion: comparison and main differences between ML. Example of how priors change the threshold compared to ML criterion. Proof of MAP as error minimization. At the end of the day is better MAP or ML and why? Why MAP could not be the best one? (Linked to approximation error)", "prof": "Melgani", "concepts": ["c14", "c21", "c24", "c28", "c33", "c34", "c39", "c41", "c43", "c54", "c57", "c58", "c59", "c60", "c61"]},
+    {"text": "How does the Minimum risk criterium work, comparison with MAP and ML classification. Which is the best one (minimum risk). He also asked me the formula of the Gaussian curve in a multi dimensional space (with mean vector and covariance matrix).", "prof": "Melgani", "concepts": ["c08", "c59", "c61", "c62", "c63"]},
+    {"text": "Discuss minimum risk theory (with all formulas of MAP and ML too) + discuss ROC curves", "prof": "Melgani", "concepts": ["c21", "c23", "c24", "c28", "c39", "c63", "c67"]},
+    {"text": "(Assistant) “Minimum risk theory: tell me about it.” I explained the general concept and then i drew the table of α1,α2... ω1,ω2... λ(α1|ωi) ecc with the example of the fire and the call to firefighters. He stopped me here and asked me what is, given this table, the rule we use to choose an action (R(α1)><R(α2)  → p(α1|x)/p(α2|x)><...) and to write it passing through the demonstration if i wanted. Then “What happens if the risks are unknown or equal?” (we have the MAP criterion). Then he asked me what is the ROC curve.", "prof": "Assistant", "concepts": ["c62", "c66", "c67", "c57"]},
+    {"text": "Block scheme/Design phases of an ML system, describe all the blocks and phases with examples (in particular at the beginning of data acquisition and feature extraction, which is the best feature in terms of discrimination, cit. of LDA). Then speaking about the selection (cit. of overfitting), the training and the evaluation of the model (cit. of k-fold), we reach the probabilities regarding the binary classifier  (cit. of MAP). At the end, what can we do when the model has low accuracy or in general if a final user wants to reduce the probability of false alarm and the probability of missed alarm?", "prof": "Melgani", "concepts": ["c21", "c24", "c30", "c57"]}
+  ],
+  "crossLinks": [
+    {"moduleId": "m16-mdm-box", "why": "Modulo precedente e pagina condivisa (note p.80): il Box è un classificatore bayesiano con pdf uniformi (ML: vince la densità 1/V_i più alta; MAP: P(ω_i)/V_i); l'MDM coincide con il ML/MAP nel caso gaussiano a covarianza sferica e prior uguali."},
+    {"moduleId": "m18-rischio-minimo", "why": "Il rischio minimo contiene MAP e ML come casi particolari: matrice dei costi, rischio condizionale, esempio dell'incendio; con costi 0-1 (λ_11 = λ_22 = 0, λ_12 = λ_21) si ritrova il MAP; test sul rapporto di verosimiglianza con soglia che dipende da costi e prior; rischio di Bayes."},
+    {"moduleId": "m19-funzioni-discriminanti", "why": "Le regole MAP e ML riscritte come funzioni discriminanti g_i(x) = P(ω_i|x), P(ω_i)p(x|ω_i) o ln p(x|ω_i) + ln P(ω_i); casi gaussiani 1-2-3 in cui il termine ln P(ω_i) sposta la frontiera (generalizza der07)."},
+    {"moduleId": "m05-max-likelihood", "why": "Stima ML dei parametri delle pdf di classe p(x|ω_i): da non confondere con il criterio ML di classificazione (c45), ma si usano in cascata."},
+    {"moduleId": "m07-stima-bayesiana", "why": "Lo stesso teorema di Bayes applicato ai parametri θ (prior p(θ), posterior p(θ|X)); la stima MAP dei parametri è diversa dal criterio MAP di classificazione."},
+    {"moduleId": "m06-modelli-pdf-gaussiana", "why": "Il modello gaussiano per p(x|ω_i) usato negli esempi analitici della soglia MAP e nei widget."},
+    {"moduleId": "m03-stima-intro-parametrica", "why": "L'ipotesi 'all relevant probability values are known' richiede di stimare pdf e prior dai dati: è il motivo di tutto il Cap. 2."},
+    {"moduleId": "m08-non-parametrica-knn", "why": "Il classificatore K-NN stima la posterior come k_i/k e applica la regola MAP; le pdf di classe possono essere stimate con K-NN."},
+    {"moduleId": "m09-parzen-windows", "why": "Classificatore bayesiano plug-in con le pdf di classe stimate da finestre di Parzen: utile per pdf multimodali come la ω_1 dell'esempio."},
+    {"moduleId": "m10-em-dati-incompleti", "why": "La pdf bimodale di ω_1 nell'esempio delle slide 14-15 è ben descritta da una miscela di gaussiane, i cui parametri si stimano con l'EM."},
+    {"moduleId": "m21-errore-generalizzazione", "why": "Errore di approssimazione e di stima: spiegano perché il MAP costruito con pdf e prior stimati non raggiunge l'errore di Bayes (domanda d'esame 'Why MAP could not be the best one?')."},
+    {"moduleId": "m22-valutazione-accuratezza", "why": "P_e stimata empiricamente, matrice di confusione (P(err|ω_i) come complemento della recall), curve ROC ottenute spostando la soglia sul rapporto di verosimiglianza; Neyman-Pearson come punto della ROC a falso allarme fissato."},
+    {"moduleId": "m02-sistema-ml-design", "why": "Nella domanda sul progetto di un sistema di ML si arriva alle probabilità del classificatore binario 'cit. of MAP'."},
+    {"moduleId": "p01-stima-parametri", "why": "Parte di Passerini: stima ML e MAP dei parametri, stesso lessico con significato diverso."},
+    {"moduleId": "p05-apprendimento-reti", "why": "Apprendimento dei parametri delle reti bayesiane con ML e MAP (domande d'esame di Passerini): da distinguere dai criteri di classificazione."},
+    {"moduleId": "p07-regressione-multiclasse", "why": "Classificatori lineari generativi: modellano p(x|ω_i) e P(ω_i) e classificano con la regola di Bayes."},
+    {"moduleId": "d01-reti-feedforward", "why": "L'uscita softmax di una rete stima le posterior P(ω_i|x); prendere l'argmax è la regola MAP."}
+  ],
+  "emptyPages": [],
+  "gaps": [
+    "ch4 p.12: la slide dà solo la definizione di regione di decisione e di P_e (il testo estratto contiene molte righe vuote, forse segnaposto di animazioni); la dimostrazione che il MAP minimizza P_e, chiesta all'orale ('Proof of MAP as error minimization'), non è né nelle slide né nelle note: der03 e der04 sono completamenti didattici standard.",
+    "ch4 p.14-15 e note p.83-84: le curve dell'esempio sono solo grafiche, senza formula né numeri. Frontiere (ML ≈ 12.3; MAP ≈ 9.9, 11.2, 11.8) e valori delle pdf e delle posterior sono letti dall'immagine (estrazione dei pixel delle curve) e sono approssimati. La ricostruzione come miscele gaussiane (p(x|ω_1) ≈ 0.251·N(10.70, 0.50²) + 0.749·N(13.00, 0.995²); p(x|ω_2) ≈ 0.904·N(11.41, 0.997²) + 0.096·N(13.30, 0.389²)) e i valori P_e(MAP) ≈ 0.316, P_e(ML) ≈ 0.378 sono sintetici. Le due figure sembrano tratte da Duda, Hart & Stork, Pattern Classification (Fig. 2.1-2.2, luminosità del pesce), ma la slide non cita la fonte.",
+    "ch4 p.13: il 'Goal' del ML è scritto identico a quello del MAP ('minimize the average probability of error'), ma il ML raggiunge il minimo solo con prior uguali; la slide lo lascia intendere solo con la nota finale 'if the priors are equal, the ML criterion is equivalent to the optimal MAP criterion'.",
+    "ch4 p.10 e note p.81: il ML sta sotto 'Full Problem Parameterization / Minimum Risk' pur non richiedendo i prior; minimax e Neyman-Pearson compaiono solo nell'albero e nella descrizione a parole delle note (p.81), senza formule né esempi in tutto il Cap. 4.",
+    "Notazione: le slide usano ℜ_i e x in grassetto; le note usano R_i e x normale. Le note (p.82) elencano come 'Hypotheses' del MAP anche pdf condizionata, prior ed evidenza, mentre la slide 11 ha come ipotesi solo le posterior note.",
+    "part1 p.80: la metà superiore della pagina (Box classifier, figura dei tre box, limiti) appartiene al modulo m16; qui è inventariata solo la parte 'Bayesian Classification' in fondo alla pagina.",
+    "part1 p.84: la metà inferiore apre la teoria del rischio minimo (modulo m18); qui sono inventariati il legame con MAP e ML, l'esempio medico e la definizione di azioni e matrice dei costi (c62-c67), da deduplicare con m18.",
+    "Rapporto di verosimiglianza (c57), caso gaussiano (c58, der07), P(err|x) (c32) ed errore di Bayes (c34) sono integrazioni didattiche per rispondere alle domande d'esame, non contenuto esplicito delle pagine del modulo."
+  ]
+}

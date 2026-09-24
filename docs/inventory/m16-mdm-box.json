@@ -3,7 +3,8 @@
   "title": "Classificazione supervisionata: MDM e Box classifier",
   "stages": {
     "inventario": "done",
-    "completezza": "done"
+    "completezza": "done",
+    "formule": "done"
   },
   "pagesReviewed": [
     {
@@ -190,9 +191,10 @@
           "page": 77
         }
       ],
-      "detail": "Slide: 'Let x=(x1, x2, ..., xn) be a vector defined in a n-dimensional feature space'. Le note lo chiamano 'feature vector'. Ogni pattern da classificare è un punto x dello spazio delle feature, con una coordinata per feature; x è in grassetto perché è un vettore. Tutta la geometria di MDM (distanze) e Box (intervalli per coordinata) si svolge in questo spazio.",
+      "detail": "Slide: 'Let x=(x1, x2, ..., xn) be a vector defined in a n-dimensional feature space'. Le note lo chiamano 'feature vector'. Ogni pattern da classificare è un punto x dello spazio delle feature, con una coordinata per feature; x è in grassetto perché è un vettore. Tutta la geometria di MDM (distanze) e Box (intervalli per coordinata) si svolge in questo spazio. Le note (p.77) scrivono lo stesso vettore come x = (x_1, …, x_n), senza grassetto e senza la componente x_2 esplicita: la notazione cambia, il significato no.",
       "latex": [
-        "\\mathbf{x}=(x_1, x_2, \\ldots, x_n)"
+        "\\mathbf{x}=(x_1, x_2, \\ldots, x_n)",
+        "x=\\left(x_1,\\ldots,x_n\\right)"
       ],
       "symbols": [
         {
@@ -955,7 +957,7 @@
           "page": 79
         }
       ],
-      "detail": "Note, sotto 'Characteristics and Limitations': le frontiere lineari 'makes it computationally efficient but also limited to cases where the classes are linearly separable'. Efficiente perché il training è una media per classe e la classificazione costa C distanze di n componenti (integrazione: ordine C·n operazioni per pattern). Limitato perché con frontiere lineari non si possono separare classi intrecciate, annidate o multimodali.",
+      "detail": "Note, sotto 'Characteristics and Limitations': le frontiere lineari 'makes it computationally efficient but also limited to cases where the classes are linearly separable'. Efficiente perché il training è una media per classe e la classificazione costa C distanze di n componenti (integrazione: ordine C·n operazioni per pattern). Limitato perché con frontiere lineari non si possono separare classi intrecciate, annidate o multimodali. Precisazione (integrazione didattica): la separabilità lineare è una condizione necessaria, non sufficiente. L'MDM non cerca la retta migliore: usa sempre l'asse del segmento tra i baricentri. Due classi separabili da una retta possono quindi essere classificate male se sono allungate e sfalsate lungo la direzione dell'allungamento (es14: {(0, 0), (0, 10), (0, 20)} contro {(1, −2), (1, 0), (1, 2)} sono separate dalla retta x_1 = 0.5, ma l'MDM assegna (0, 0) alla seconda classe).",
       "latex": [],
       "symbols": [],
       "examRelevance": 2
@@ -1254,8 +1256,9 @@
           "page": 80
         }
       ],
-      "detail": "Lettura della figura: la quota orizzontale 'α· σ11' va dalla linea tratteggiata verticale che passa per il baricentro fino al lato destro del box; la quota verticale 'α · σ12' va dalla linea tratteggiata orizzontale del baricentro fino al lato superiore. Quindi α·σ_ij è la distanza dal centro al bordo (semilato) e il lato intero è 2α·σ_ij. Lungo ogni feature il box è l'intervallo centrato in m_ij di semiampiezza α·σ_ij. La scrittura degli intervalli è un'integrazione didattica coerente con la figura.",
+      "detail": "Lettura della figura: la quota orizzontale 'α· σ11' va dalla linea tratteggiata verticale che passa per il baricentro fino al lato destro del box; la quota verticale 'α · σ12' va dalla linea tratteggiata orizzontale del baricentro fino al lato superiore. Quindi α·σ_ij è la distanza dal centro al bordo (semilato) e il lato intero è 2α·σ_ij. Lungo ogni feature il box è l'intervallo centrato in m_ij di semiampiezza α·σ_ij. La scrittura degli intervalli è un'integrazione didattica coerente con la figura. Le due quote sono scritte nella figura esattamente come 'α· σ11' (orizzontale) e 'α · σ12' (verticale, ruotata di 90°): è l'unica formula presente nelle slide del Box.",
       "latex": [
+        "\\alpha\\cdot\\sigma_{11},\\qquad \\alpha\\cdot\\sigma_{12}",
         "m_{ij}-\\alpha\\,\\sigma_{ij}\\ \\le\\ x_j\\ \\le\\ m_{ij}+\\alpha\\,\\sigma_{ij}",
         "|x_j-m_{ij}|\\le\\alpha\\,\\sigma_{ij}",
         "\\ell_{ij}=2\\alpha\\,\\sigma_{ij}"
@@ -1578,7 +1581,7 @@
           "page": 80
         }
       ],
-      "detail": "Piano x1-x2 con le stesse tre classi dell'esempio MDM: ω_1 cerchi gialli dentro un box giallo in alto a destra (il più grande), ω_2 stelle verdi dentro un box verde a sinistra, ω_3 quadrati blu dentro un box blu in basso al centro. In ogni box una croce rossa segna il baricentro; per ω_1 la freccia 'Barycenter of ω1'. Linee tratteggiate partono dal baricentro di ω_1; le quote 'α· σ11' (orizzontale, sopra il box) e 'α · σ12' (verticale, a destra) hanno le etichette 'Standard deviation of ω1 along x1' e 'Standard deviation of ω1 along x2', e la freccia 'Constant' indica α. Messaggi: i box sono disgiunti e di dimensioni diverse secondo la dispersione di ogni classe; il box di ω_1 è quasi quadrato e molto più ampio della nuvola dei suoi campioni (α dell'ordine di 2-3); tra i box resta spazio vuoto dove un pattern non apparterrebbe a nessuna classe. Le note riproducono la stessa figura a p.80.",
+      "detail": "Piano x1-x2 con le stesse tre classi dell'esempio MDM: ω_1 cerchi gialli dentro un box giallo in alto a destra (il più grande), ω_2 stelle verdi dentro un box verde a sinistra, ω_3 quadrati blu dentro un box blu in basso al centro. In ogni box una croce rossa segna il baricentro; per ω_1 la freccia 'Barycenter of ω1'. Linee tratteggiate partono dal baricentro di ω_1; le quote 'α· σ11' (orizzontale, sopra il box) e 'α · σ12' (verticale, a destra) hanno le etichette 'Standard deviation of ω1 along x1' e 'Standard deviation of ω1 along x2', e la freccia 'Constant' indica α. Messaggi: i box sono disgiunti e di dimensioni diverse secondo la dispersione di ogni classe; il box di ω_1 è quasi quadrato e molto più ampio della nuvola dei suoi campioni (misurando i simboli disegnati, il semilato vale circa 3.6 deviazioni standard dei cerchi lungo entrambi gli assi; per ω_2 e ω_3 il rapporto è tra 2.3 e 3.4: la figura è schematica e non corrisponde a un unico α esatto, vedi gaps); tra i box resta spazio vuoto dove un pattern non apparterrebbe a nessuna classe. Le note riproducono la stessa figura a p.80.",
       "latex": [],
       "symbols": [],
       "examRelevance": 3
@@ -1766,10 +1769,11 @@
           "page": 78
         }
       ],
-      "detail": "Integrazione didattica che precisa la seconda ipotesi della slide 5 ('Classes should have the same statistical behavior (i.e., the same Σ)') con il Caso 2 delle funzioni discriminanti (ch4 p.30-31, modulo m19). Se tutte le classi hanno la stessa Σ, con prior uguali la frontiera ottima tra ω_i e ω_j è ancora un iperpiano per il punto medio x_0 = ½(m_i + m_j), come quella dell'MDM, ma il suo vettore normale è w = Σ^{-1}(m_i − m_j): la slide p.31 dice 'Hyperplane passes through x0 but is not necessarily orthogonal to the line between the means'. La regola ottima è quindi ancora 'prototipo più vicino', purché la distanza sia quella di Mahalanobis rispetto alla Σ comune. L'MDM euclideo coincide con essa solo se Σ^{-1}(m_i − m_j) è parallelo a m_i − m_j, cioè se Σ = σ²I (Caso 1) oppure se il segmento tra i baricentri è un autovettore di Σ. Esempio numerico (dati sintetici, scenario pesce): baricentri di salmone (4.2, 14.0) e spigola (6.8, 10.5), a distanza 4.36, con una Σ comune di deviazioni standard 1 e 2.5 lungo gli assi principali. Se l'asse lungo è perpendicolare al segmento, MDM euclideo e Bayes sbagliano entrambi l'1.46%; ruotando la stessa Σ di 45°, l'MDM euclideo sale al 12.6% mentre la minima distanza di Mahalanobis (che qui è la regola bayesiana) resta al 4.8%, con la normale della frontiera ruotata di 35.9° rispetto al segmento. Lettura geometrica: la distanza di Mahalanobis è la distanza euclidea dopo lo sbiancamento x → Σ^{-1/2} x, quindi è un MDM nello spazio sbiancato.",
+      "detail": "Integrazione didattica che precisa la seconda ipotesi della slide 5 ('Classes should have the same statistical behavior (i.e., the same Σ)') con il Caso 2 delle funzioni discriminanti (ch4 p.30-31, modulo m19). Se tutte le classi hanno la stessa Σ, con prior uguali la frontiera ottima tra ω_i e ω_j è ancora un iperpiano per il punto medio x_0 = ½(m_i + m_j), come quella dell'MDM, ma il suo vettore normale è w = Σ^{-1}(m_i − m_j): la slide p.31 dice 'Hyperplane passes through x0 but is not necessarily orthogonal to the line between the means'. La regola ottima è quindi ancora 'prototipo più vicino', purché la distanza sia quella di Mahalanobis rispetto alla Σ comune. L'MDM euclideo coincide con essa solo se Σ^{-1}(m_i − m_j) è parallelo a m_i − m_j, cioè se Σ = σ²I (Caso 1) oppure se il segmento tra i baricentri è un autovettore di Σ. Esempio numerico (dati sintetici, scenario pesce): baricentri di salmone (4.2, 14.0) e spigola (6.8, 10.5), a distanza 4.36, con una Σ comune di deviazioni standard 1 e 2.5 lungo gli assi principali. Se l'asse lungo è perpendicolare al segmento, MDM euclideo e Bayes sbagliano entrambi l'1.46%; ruotando la stessa Σ di 45°, l'MDM euclideo sale al 12.6% mentre la minima distanza di Mahalanobis (che qui è la regola bayesiana) resta al 4.8%, con la normale della frontiera ruotata di 35.9° rispetto al segmento. Lettura geometrica: la distanza di Mahalanobis è la distanza euclidea dopo lo sbiancamento x → Σ^{-1/2} x, quindi è un MDM nello spazio sbiancato. Con prior diversi il punto x_0 del Caso 2 è quello scritto nella slide ch4 p.31 (terza formula): il logaritmo del rapporto dei prior è diviso per la distanza di Mahalanobis al quadrato tra i baricentri; con prior uguali il logaritmo si annulla e x_0 torna il punto medio.",
       "latex": [
         "d_M^2(\\mathbf{x},\\mathbf{m}_i)=(\\mathbf{x}-\\mathbf{m}_i)^t\\Sigma^{-1}(\\mathbf{x}-\\mathbf{m}_i)",
         "\\mathbf{w}=\\Sigma^{-1}(\\mathbf{m}_i-\\mathbf{m}_j),\\qquad \\mathbf{x}_0=\\frac{1}{2}(\\mathbf{m}_i+\\mathbf{m}_j)\\quad \\text{se } P(\\omega_i)=P(\\omega_j)",
+        "\\mathbf{x}_0=\\frac{1}{2}(\\mathbf{m}_i+\\mathbf{m}_j)-\\frac{\\ln[P(\\omega_i)/P(\\omega_j)](\\mathbf{m}_i-\\mathbf{m}_j)}{(\\mathbf{m}_i-\\mathbf{m}_j)^t\\Sigma^{-1}(\\mathbf{m}_i-\\mathbf{m}_j)}",
         "\\text{MDM euclideo ottimo}\\iff \\Sigma^{-1}(\\mathbf{m}_i-\\mathbf{m}_j)\\parallel(\\mathbf{m}_i-\\mathbf{m}_j)",
         "d_M(\\mathbf{x},\\mathbf{m}_i)=\\lVert\\Sigma^{-1/2}\\mathbf{x}-\\Sigma^{-1/2}\\mathbf{m}_i\\rVert"
       ],
@@ -2278,33 +2282,39 @@
   "widgets": [
     {
       "id": "m16-mappa-capitolo-4",
-      "title": "La mappa del Capitolo 4: sei modi di decidere sullo stesso pesce",
+      "title": "La mappa del Capitolo 4: sei criteri di decisione per lo stesso pesce",
       "concepts": [
         "c01",
         "c14"
       ],
       "scenario": "pesce",
-      "realExample": "Impianto di confezionamento: un pesce con luminosità 5.6 e larghezza 12.2 cm arriva sul nastro e va smistato tra salmone e spigola. Ogni sezione del Capitolo 4 propone un criterio di decisione diverso per lo stesso pesce: minima distanza (MDM), appartenenza al box, massima probabilità a posteriori (MAP/ML), rischio minimo con costi, regole di un albero; l'ultima sezione misura quanto spesso ciascun criterio sbaglia. Dati sintetici ispirati all'esempio del Cap. 1.",
+      "realExample": "Impianto di confezionamento: il pesce x = (5.6, 12.2) (luminosità, larghezza in cm) arriva sul nastro e va smistato tra salmone e spigola. Modelli di classe stimati su dati sintetici ispirati all'esempio del Cap. 1: salmone m = (4.2, 14.0), σ = (0.8, 1.2); spigola m = (6.8, 10.5), σ = (0.4, 0.5); prior uguali. Ogni sezione della slide 1 applica allo stesso pesce un criterio di decisione diverso: MDM → spigola (distanze 2.28 contro 2.08); Box con α = 2 → salmone (il pesce sta in [2.6, 5.8] × [11.6, 16.4]); Bayes con gaussiane a covarianza diagonale → salmone (P(salmone|x) = 0.998); rischio minimo con costo 5 per una spigola venduta come salmone e 1 per un salmone scartato → salmone (rischio 0.012 contro 0.998); funzioni discriminanti g_i(x) = ln p(x|ω_i) + ln P(ω_i) → salmone (−5.15 contro −11.20); albero a due soglie → salmone. Valutazione su 10 000 pesci di test per classe (stime Monte Carlo): MDM 1.1% di errori, Box 0.02% di errori più 8.9% di pesci rifiutati, Bayes 0.11%, rischio minimo 0.14% di errori ma costo medio 0.0018 contro 0.0025, albero 0.23%.",
       "storyboard": [
-        "Stato iniziale: a sinistra le sei voci della slide 1 (Introduction, Bayesian Classification, Minimum Risk Theory, Discriminant Functions, Decision Trees, Accuracy Evaluation) come tessere verticali; a destra il piano luminosità-larghezza con le nuvole di salmone (arancio) e spigola (grigio-blu) e un pesce nuovo, un punto bianco, che cade sul nastro in 400 ms.",
-        "Clic su 'Introduction': la tessera si apre e mostra le due sottovoci 'MDM' e 'Box'; nel piano compaiono i due baricentri e le due linee di distanza dal pesce (2.28 e 2.08): il criterio 'distanza minima' colora il pesce di grigio-blu (spigola). Poi compaiono i due box con α = 2: il pesce cade dentro il box del salmone e si colora di arancio. Stesso pesce, due criteri, due risposte.",
-        "Clic su 'Bayesian Classification': le due gaussiane stimate compaiono come ellissi di livello, i posterior del pesce si riempiono come due barre; il criterio 'massimo posterior' decide. Uno slider fantasma del prior mostra che la risposta può cambiare (anteprima di m17).",
-        "Clic su 'Minimum Risk Theory': compare la matrice dei costi 2×2 (vendere una spigola come salmone costa 5, il contrario 1) e la frontiera trasla verso la spigola; clic su 'Decision Trees': il piano si divide a gradini con due soglie; clic su 'Accuracy Evaluation': sotto ogni criterio compare l'errore misurato su 1000 pesci di test.",
-        "Vista finale: tabella 'sezione → criterio di decisione → modulo dell'app' (Introduction = m16, Bayesian = m17, Minimum Risk = m18, Discriminant Functions = m19, Decision Trees = m20, Accuracy = m21-m22) con il pesce classificato da ciascuno."
+        "Stato iniziale (0-400 ms): a sinistra sei tessere verticali con le voci rosse della slide 1 (Introduction, Bayesian Classification, Minimum Risk Theory, Discriminant Functions, Decision Trees, Accuracy Evaluation); a destra il piano luminosità (x_1 da 2 a 9) × larghezza (x_2 da 8 a 18 cm) con 150 salmoni arancio e 150 spigole grigio-blu; il pesce x = (5.6, 12.2) cade dall'alto sul suo punto in 400 ms (ease-out) come cerchio bianco con contorno scuro. Sotto il piano una riga 'verdetto' vuota.",
+        "Clic su 'Introduction' (tasto 1): la tessera si espande in 250 ms e mostra le sottovoci 'MDM Classifier' e 'Box Classifier'. Fase MDM: compaiono le croci rosse dei due baricentri, dal pesce partono due segmenti (300 ms ciascuno) con le lunghezze 2.28 e 2.08, l'asse del segmento tra i baricentri si traccia in 400 ms e il pesce si colora di grigio-blu: verdetto 'spigola'. Dopo 1.2 s parte la fase Box: i due rettangoli con α = 2 crescono dal baricentro in 500 ms, due spunte verdi confermano |5.6 − 4.2| ≤ 1.6 e |12.2 − 14.0| ≤ 2.4 e il pesce si colora di arancio: verdetto 'salmone'. Badge 'stesso pesce, due criteri, due risposte'.",
+        "Clic su 'Bayesian Classification' (tasto 2): i box sfumano in 300 ms e compaiono le ellissi di livello a 1σ e 2σ delle due gaussiane; due barre orizzontali si riempiono in 600 ms fino a P(salmone|x) = 0.998 e P(spigola|x) = 0.002; la frontiera MAP, curva perché le due classi hanno dispersioni diverse, si traccia in 600 ms. Verdetto 'salmone'.",
+        "Clic su 'Minimum Risk Theory' (tasto 3): compare la matrice dei costi 2×2 (spigola venduta come salmone: 5; salmone scartato come spigola: 1; decisioni giuste: 0) e due barre di rischio R(salmone|x) = 5 · 0.002 = 0.012 e R(spigola|x) = 1 · 0.998 = 0.998; la frontiera si sposta in 500 ms verso il salmone (la regione della spigola si allarga, perché per dire 'salmone' ora serve più evidenza). Verdetto 'salmone'.",
+        "Clic su 'Discriminant Functions' (tasto 4): per ogni classe una barra verticale g_i(x) = ln p(x|ω_i) + ln P(ω_i), −5.15 per il salmone e −11.20 per la spigola, che cresce in 400 ms; vince la barra più alta. Una nota ricorda che l'MDM è il caso particolare Σ_i = σ²I con prior uguali (m19).",
+        "Clic su 'Decision Trees' (tasto 5): il piano viene tagliato dalla soglia orizzontale 'larghezza > 12.0 cm' (400 ms) e poi, nella metà inferiore, dalla soglia verticale 'luminosità < 5.5' (400 ms); accanto compare l'albero con le due domande. Il pesce scende nel ramo 'sì' della radice perché 12.2 > 12.0: verdetto 'salmone'.",
+        "Clic su 'Accuracy Evaluation' (tasto 6): 10 000 pesci di test per classe scorrono sul nastro (1.5 s) e sotto ogni tessera compare il suo contatore: MDM 1.1%, Box 0.02% di errori più 8.9% di rifiutati, Bayes 0.11%, rischio minimo 0.14% con costo medio 0.0018 (contro 0.0025 del MAP), albero 0.23%.",
+        "Vista finale: tabella 'sezione → criterio di decisione → verdetto sul pesce → modulo dell'app' (Introduction = m16, Bayesian Classification = m17, Minimum Risk Theory = m18, Discriminant Functions = m19, Decision Trees = m20, Accuracy Evaluation = m21-m22)."
       ],
       "interactions": [
-        "clic su una delle sei sezioni per attivarne il criterio",
-        "trascinamento del pesce nel piano per vedere come cambiano le sei decisioni",
-        "pulsante 'Nuovo pesce' (seed diverso)"
+        "clic su una delle sei tessere (o tasti 1-6) per attivarne il criterio",
+        "trascinamento del pesce nel piano (x_1 da 2 a 9, x_2 da 8 a 18 cm): i verdetti e i numeri si aggiornano in tempo reale",
+        "interruttore 'tutti i criteri insieme': sei pallini colorati sotto il pesce, uno per criterio",
+        "pulsante 'Nuovo pesce': posizione casuale nella zona tra le due nuvole"
       ],
-      "visual": "Colonna di sei tessere a sinistra, piano delle feature a destra con nuvole colorate per classe, pesce in bianco con contorno; per il criterio attivo un'etichetta 'criterio di decisione: ...' e il valore numerico che decide (distanza, appartenenza, posterior, rischio, soglia).",
-      "aha": "Tutto il capitolo risponde alla stessa domanda, 'a quale classe va x?', cambiando il criterio di decisione: MDM e Box sono i due più semplici e aprono la strada ai criteri probabilistici.",
+      "visual": "Colonna di sei tessere a sinistra (testo rosso come nella slide, la tessera attiva in evidenza); piano delle feature a destra con nuvole arancio (salmone) e grigio-blu (spigola), baricentri come croci rosse, pesce bianco con contorno; sotto il piano la formula del criterio attivo con i valori sostituiti e il verdetto colorato con il colore della classe.",
+      "aha": "Tutto il capitolo risponde alla stessa domanda, 'a quale classe va x?', cambiando il criterio di decisione: MDM e Box sono i due più semplici, possono già dissentire sullo stesso pesce, e aprono la strada ai criteri probabilistici.",
       "formulasShown": [
-        "d(\\mathbf{x},\\mathbf{m}_i)=\\lVert\\mathbf{x}-\\mathbf{m}_i\\rVert",
-        "\\mathbf{x}\\in B_i",
-        "\\arg\\max_i P(\\omega_i|\\mathbf{x})"
+        "d(\\mathbf{x},\\mathbf{m}_{\\text{sal}})=\\sqrt{(5.6-4.2)^2+(12.2-14.0)^2}=2.28,\\quad d(\\mathbf{x},\\mathbf{m}_{\\text{spi}})=\\sqrt{(5.6-6.8)^2+(12.2-10.5)^2}=2.08",
+        "|5.6-4.2|\\le 2\\cdot 0.8,\\quad |12.2-14.0|\\le 2\\cdot 1.2\\ \\Rightarrow\\ \\mathbf{x}\\in B_{\\text{sal}}",
+        "P(\\omega_{\\text{sal}}|\\mathbf{x})=0.998,\\qquad P(\\omega_{\\text{spi}}|\\mathbf{x})=0.002",
+        "R(\\text{salmone}|\\mathbf{x})=5\\cdot 0.002=0.012\\ <\\ R(\\text{spigola}|\\mathbf{x})=1\\cdot 0.998",
+        "g_{\\text{sal}}(\\mathbf{x})=-5.15\\ >\\ g_{\\text{spi}}(\\mathbf{x})=-11.20"
       ],
-      "challenge": "Trova una posizione del pesce in cui tutti e sei i criteri sono d'accordo e una in cui MDM e Box danno risposte diverse; spiega perché.",
+      "challenge": "Trascina il pesce per trovare (a) un punto in cui tutti e sei i criteri dicono 'spigola' e (b) un punto diverso da (5.6, 12.2) in cui MDM e Box dissentono; spiega da dove nasce il disaccordo. (Soluzione: (a) per esempio il baricentro della spigola (6.8, 10.5); (b) qualunque punto più vicino al baricentro della spigola ma dentro il box del salmone, per esempio (5.7, 12.0): il box del salmone è più largo perché σ_sal > σ_spi, mentre l'MDM ignora la dispersione.)",
       "size": "M",
       "tech": "svg+motion"
     },
@@ -2316,27 +2326,29 @@
         "c03"
       ],
       "scenario": "pesce",
-      "realExample": "Cento pesci misurati sul nastro (luminosità, larghezza). Se un operatore ha etichettato ogni pesce come salmone o spigola si può addestrare un classificatore supervisionato; se le etichette mancano si possono solo cercare gruppi nei dati (clustering, seconda parte del corso). Dati sintetici.",
+      "realExample": "Cento pesci misurati sul nastro (luminosità, larghezza in cm), metà salmoni e metà spigole; dati sintetici con salmone m = (4.2, 14.0), σ = (0.8, 1.2) e spigola m = (6.8, 10.5), σ = (0.7, 1.0). Se un operatore ha etichettato ogni pesce come salmone o spigola si può addestrare un classificatore supervisionato (qui l'MDM, errore circa 1.5%); se le etichette mancano si possono solo cercare gruppi nei dati (clustering, seconda parte del corso), senza sapere quale gruppo sia il salmone.",
       "storyboard": [
-        "Stato iniziale: 100 punti grigi nel piano luminosità-larghezza, nessuna etichetta; in alto l'interruttore 'Campioni di training etichettati: NO'.",
-        "Con l'interruttore su NO e il pulsante 'Cerca struttura' due centri si muovono iterativamente (anteprima di k-means, 6 iterazioni da 300 ms) e i punti si colorano in 'gruppo A' e 'gruppo B': il sistema trova gruppi ma non sa quale sia il salmone.",
-        "Interruttore su SÌ: le etichette 'arrivano' una alla volta (un cartellino cade su ogni punto, 20 ms per punto) e i punti diventano arancio (salmone) o grigio-blu (spigola); compare la scritta 'supervised: training samples with known labels'.",
-        "Con le etichette il classificatore supervisionato (qui l'MDM) calcola i baricentri e disegna la frontiera; un pesce nuovo arriva e riceve un nome di classe, non un numero di gruppo.",
-        "Pannello finale a due colonne: 'supervisionato: impara dai campioni etichettati e assegna classi' contro 'non supervisionato: trova gruppi senza etichette'; una nota ricorda che il Capitolo 4 tratta solo la prima colonna."
+        "Stato iniziale: 100 punti grigi nel piano luminosità (2-9) × larghezza (8-18 cm), nessuna etichetta; in alto l'interruttore 'Campioni di training etichettati: NO'.",
+        "Con l'interruttore su NO, clic su 'Cerca struttura': due centri partono da posizioni casuali e si muovono iterativamente (anteprima di k-means, 6 iterazioni da 300 ms); i punti si colorano 'gruppo A' e 'gruppo B' con colori neutri (viola e verde acqua): il sistema trova gruppi ma non sa quale sia il salmone.",
+        "Interruttore su SÌ: le etichette arrivano una alla volta (un cartellino cade su ogni punto, 20 ms per punto, 2 s in tutto) e i punti diventano arancio (salmone) o grigio-blu (spigola); compare la citazione delle note 'training samples with known labels are available to guide the learning process'.",
+        "Con le etichette l'MDM calcola i due baricentri (croci rosse, 300 ms) e traccia la frontiera (400 ms); un pesce nuovo scende sul nastro e riceve un nome di classe, non un numero di gruppo. Lo slider della percentuale di pesci etichettati ricalcola i baricentri con le sole etichette disponibili e mostra l'errore stimato su 10 000 pesci di test.",
+        "Pannello finale a due colonne: 'supervisionato: impara dai campioni etichettati e assegna classi' contro 'non supervisionato: trova gruppi senza etichette'; una nota ricorda che il Capitolo 4 tratta solo la prima colonna ('In this chapter, we will deal with the first category of techniques')."
       ],
       "interactions": [
         "interruttore etichette SÌ/NO",
-        "pulsante 'Cerca struttura'",
-        "slider percentuale di pesci etichettati da 0% a 100%",
+        "pulsante 'Cerca struttura' (k-means, 6 iterazioni)",
+        "slider percentuale di pesci etichettati da 0% a 100% (passo 10%)",
+        "pulsante 'Nuovo sorteggio delle etichette'",
         "trascinamento di un pesce nuovo"
       ],
       "visual": "Scatter con punti grigi o colorati per classe, cartellini animati delle etichette, frontiera MDM quando le etichette ci sono, pannello di confronto a due colonne.",
       "aha": "Ciò che separa supervisionato e non supervisionato non è l'algoritmo ma la disponibilità dei campioni di training con etichetta.",
       "formulasShown": [
         "\\mathbf{X}=\\{(\\mathbf{x}_k,\\omega(\\mathbf{x}_k))\\}_{k=1}^{N}\\ \\text{(supervisionato)}",
-        "\\mathbf{X}=\\{\\mathbf{x}_k\\}_{k=1}^{N}\\ \\text{(non supervisionato)}"
+        "\\mathbf{X}=\\{\\mathbf{x}_k\\}_{k=1}^{N}\\ \\text{(non supervisionato)}",
+        "\\mathbf{m}_{\\text{sal}}=\\frac{1}{N_{\\text{sal}}}\\sum_{\\mathbf{x}_k\\in\\text{salmone}}\\mathbf{x}_k\\quad (N_{\\text{sal}}=\\text{etichette disponibili, live})"
       ],
-      "challenge": "Con lo slider al 10% di pesci etichettati, il classificatore supervisionato è ancora affidabile? Prevedi l'errore e verifica ripetendo 5 volte.",
+      "challenge": "Con lo slider al 10% (10 pesci etichettati, circa 5 per classe) il classificatore supervisionato è ancora affidabile? Prevedi l'errore e verifica ripetendo 5 volte il sorteggio delle etichette. (Soluzione: in media circa 1.9% contro 1.5% con tutte le etichette, ma molto variabile: tra 1.2% e 2.7% nell'80% dei sorteggi e occasionalmente oltre il 5%, quando le poche etichette spostano molto i baricentri.)",
       "size": "S",
       "tech": "svg+motion"
     },
@@ -2351,27 +2363,30 @@
         "c08"
       ],
       "scenario": "pesce",
-      "realExample": "Il classificatore dell'impianto sbaglia troppo. Le quattro leve della slide 2 sono le quattro cose che l'ingegnere può cambiare: le feature misurate (solo luminosità o anche larghezza), quanti pesci etichettati usare per il training, il tipo di modello (MDM, Box, bayesiano gaussiano) e la funzione di costo (errore medio o costi asimmetrici, perché vendere una spigola come salmone costa più del contrario). Dati sintetici: salmone m = (4.2, 14.0), σ = (0.8, 1.2); spigola m = (6.8, 10.5), σ = (0.7, 1.0).",
+      "realExample": "Il classificatore dell'impianto sbaglia troppo. Le quattro leve della slide 2 sono le quattro cose che l'ingegnere può cambiare: le feature misurate (solo luminosità o luminosità + larghezza), quanti pesci etichettati usare per il training (5, 20 o 200 per classe), il tipo di modello (MDM, Box con α = 2, bayesiano gaussiano) e la funzione di costo (errore medio oppure costi asimmetrici: vendere una spigola come salmone costa 5, scartare un salmone come spigola costa 1). Dati sintetici: salmone m = (4.2, 14.0), σ = (0.8, 1.2); spigola m = (6.8, 10.5), σ = (0.7, 1.0); errori stimati su 10 000 pesci di test per classe.",
       "storyboard": [
-        "Stato iniziale: quattro leve verticali etichettate 'features', 'training samples', 'classification model', 'cost function' (le parole rosse della slide 2); a destra il piano delle feature con la frontiera attuale e un tachimetro dell'errore su 10 000 pesci di test.",
-        "Leva 'features' da 'solo luminosità' a 'luminosità + larghezza': il piano passa da 1-D (istogrammi sovrapposti) a 2-D (nuvole separate) con una transizione di 500 ms; l'errore dell'MDM scende da circa 4.2% a circa 1.5%.",
-        "Leva 'training samples' da 200 a 5 pesci per classe: i baricentri stimati tremano a ogni nuovo campionamento (pulsante 'ricampiona'), la frontiera oscilla e l'errore medio sale; tornando a 200 si stabilizza.",
-        "Leva 'classification model': MDM (frontiera retta), Box (rettangoli, con quota di rifiuti), bayesiano gaussiano (frontiera curva): l'errore passa da circa 1.5% (MDM) a circa 0.9% (bayesiano); il Box mostra errore e rifiuti separati.",
-        "Leva 'cost function': da 'errore medio' a 'costi asimmetrici 5:1': la frontiera trasla verso la spigola, crescono gli errori economici e cala il costo totale; un contatore in euro sostituisce il tachimetro dell'errore."
+        "Stato iniziale: quattro leve verticali etichettate con le parole rosse della slide 2 ('features', 'training samples', 'classification model', 'cost function'), posizionate su '2 feature, 200 campioni per classe, MDM, errore medio'; a destra il piano luminosità-larghezza con la frontiera attuale e un tachimetro dell'errore che segna 1.5%.",
+        "Leva 'features' su 'solo luminosità': il piano collassa in 500 ms su un asse 1-D con due istogrammi sovrapposti e la soglia MDM a 5.5 (punto medio tra 4.2 e 6.8); il tachimetro sale a 4.2% e compare il calcolo P_e = ½[Q(1.625) + Q(1.857)] = ½(0.052 + 0.032). Riportando la leva su 2 feature le nuvole si separano e l'errore torna a 1.5%.",
+        "Leva 'training samples' su 5 per classe: ogni clic su 'ricampiona' estrae un nuovo training set (i punti di training lampeggiano, 300 ms), i baricentri stimati saltano e la frontiera oscilla; un istogramma raccoglie l'errore di ogni estrazione: media circa 1.9%, tra 1.2% e 2.7% nell'80% dei casi. Con 200 per classe l'istogramma si stringe attorno a 1.5%.",
+        "Leva 'classification model': MDM (retta, 1.5%) → Box con α = 2 (rettangoli: 0.6% di errori, ma 8.5% di pesci rifiutati e 0.5% di contesi, risolti con 1/V) → bayesiano gaussiano (frontiera curva, 0.9%, vicino all'ottimo). La transizione tra i modelli dura 600 ms; errori e rifiuti hanno due contatori separati.",
+        "Leva 'cost function' (attiva con il modello bayesiano; con MDM e Box compare la nota 'questi modelli non ottimizzano un costo'): da 'errore medio' a 'costi 5:1' la frontiera si sposta in 500 ms verso il salmone, cioè la regione della spigola si allarga. L'errore totale sale da 0.92% a 1.25% (salmoni scartati da 1.0% a 2.2%, spigole vendute come salmone da 0.84% a 0.28%) ma il costo medio per pesce scende da 0.026 a 0.018; un contatore in euro affianca il tachimetro."
       ],
       "interactions": [
-        "quattro leve (selettori) indipendenti",
-        "pulsante 'ricampiona training set'",
-        "pulsante 'reset'",
-        "hover su una leva per vedere la citazione della slide e delle note"
+        "leva 'features': solo luminosità / luminosità + larghezza",
+        "leva 'training samples': 5 / 20 / 200 pesci per classe, con pulsante 'ricampiona'",
+        "leva 'classification model': MDM / Box (slider α da 1 a 3) / bayesiano gaussiano",
+        "leva 'cost function': errore medio / costi asimmetrici (slider del costo di una spigola venduta come salmone da 1 a 10)",
+        "hover su una leva: citazione della slide 2 e delle note p.77",
+        "pulsante 'reset'"
       ],
-      "visual": "Pannello delle leve a sinistra, piano delle feature con frontiera animata a destra, tachimetro dell'errore e contatore del costo; le parole chiave in rosso come nella slide.",
-      "aha": "Quando un classificatore va male non esiste solo 'cambiare modello': si possono cambiare feature, dati di training, modello e funzione di costo, e ciascuna leva agisce in modo diverso.",
+      "visual": "Pannello delle leve a sinistra con le parole chiave in rosso come nella slide; piano delle feature con frontiera animata a destra (o asse 1-D con istogrammi); tachimetro dell'errore, contatore dei rifiuti del Box e contatore del costo medio; istogramma degli errori per la leva dei campioni.",
+      "aha": "Quando un classificatore va male non esiste solo 'cambiare modello': si possono cambiare feature, dati di training, modello e funzione di costo, e ciascuna leva agisce in modo diverso (la funzione di costo può perfino aumentare gli errori pur riducendo il danno).",
       "formulasShown": [
-        "P(\\text{errore})\\approx\\frac{\\#\\text{pesci sbagliati}}{10000}",
-        "\\text{costo totale}=5\\cdot N_{\\text{spigola}\\to\\text{salmone}}+1\\cdot N_{\\text{salmone}\\to\\text{spigola}}"
+        "P_e=\\frac{1}{2}\\left[Q\\left(\\frac{5.5-4.2}{0.8}\\right)+Q\\left(\\frac{6.8-5.5}{0.7}\\right)\\right]=\\frac{1}{2}(0.052+0.032)=0.042",
+        "P(\\text{errore})\\approx\\frac{\\#\\text{pesci sbagliati}}{20000}",
+        "\\bar{C}=\\frac{1}{2}\\left[1\\cdot P(\\text{spi}|\\text{sal})+5\\cdot P(\\text{sal}|\\text{spi})\\right]=\\frac{1}{2}(0.022+5\\cdot 0.0028)=0.018"
       ],
-      "challenge": "Partendo da 'solo luminosità, 5 campioni, MDM, errore medio' (errore alto), porta l'errore sotto il 2% muovendo il minor numero possibile di leve.",
+      "challenge": "Parti da 'solo luminosità, 5 campioni per classe, MDM, errore medio' (errore medio circa 5%). Quante leve devi muovere, al minimo, per portare l'errore sotto l'1% (i pesci rifiutati dal Box contano come errori)? Prevedi prima di provare. (Soluzione: tre. Con le due feature l'MDM scende a circa 1.9% con 5 campioni e 1.5% con 200, ma non va sotto l'1% con nessun N; il bayesiano gaussiano con 5 campioni per classe stima male le varianze (circa 4%) e arriva a circa 0.95% solo con 200 campioni per classe: servono features, modello e campioni.)",
       "size": "M",
       "tech": "svg+motion"
     },
@@ -2386,11 +2401,11 @@
       "scenario": "pesce",
       "realExample": "La telecamera dell'impianto misura per ogni pesce luminosità, larghezza e lunghezza: ogni pesce diventa un vettore x = (x1, x2, x3) in uno spazio a 3 dimensioni. Le classi sono Ω = {salmone, spigola, orata} (C = 3) e il training set X contiene N pesci etichettati. Dati sintetici.",
       "storyboard": [
-        "Un pesce stilizzato scorre sul nastro; tre righelli animati misurano luminosità (5.1), larghezza (12.4 cm) e lunghezza (48 cm) e i tre numeri volano in un vettore colonna x = (5.1, 12.4, 48).",
+        "Un pesce stilizzato scorre sul nastro (800 ms); tre righelli animati, 300 ms ciascuno, misurano luminosità (5.1), larghezza (12.4 cm) e lunghezza (48 cm) e i tre numeri volano (400 ms) in un vettore colonna x = (5.1, 12.4, 48).",
         "Il vettore diventa un punto in un sistema di assi 3-D ruotabile (o 2-D se si sceglie n = 2): la dimensione n dello spazio è mostrata come contatore 'n = 3'.",
-        "Compare l'insieme Ω come tre cassette etichettate ω_1 salmone, ω_2 spigola, ω_3 orata, con 'C = 3'; ogni nuovo pesce di training cade nella sua cassetta e il suo punto si colora.",
-        "Il contatore N cresce mentre i pesci arrivano; accanto, i contatori N_1, N_2, N_3 per classe e la somma N = N_1 + N_2 + N_3 che si aggiorna.",
-        "Riepilogo con la notazione della slide 3 e il legame di ogni simbolo con l'oggetto disegnato (hover su un simbolo evidenzia l'oggetto)."
+        "Compare l'insieme Ω come tre cassette etichettate ω_1 salmone, ω_2 spigola, ω_3 orata, con 'C = 3'; ogni nuovo pesce di training cade nella sua cassetta (300 ms) e il suo punto si colora con il colore della classe.",
+        "Il contatore N cresce mentre i pesci arrivano; accanto i contatori N_1, N_2, N_3 per classe e la somma N = N_1 + N_2 + N_3 che si aggiorna (esempio: 12 + 9 + 7 = 28).",
+        "Riepilogo con la notazione della slide 3 ('Let x=(x1, x2, …, xn) ...', 'Let Ω be a set of C classes ωi (i=1, 2, …, C)', 'Let X be a set of N training samples') e il legame di ogni simbolo con l'oggetto disegnato: hover su un simbolo evidenzia l'oggetto."
       ],
       "interactions": [
         "selettore n = 2 o 3 feature",
@@ -2401,11 +2416,11 @@
       "visual": "Nastro con pesce, righelli, vettore colonna, assi 2-D/3-D con punti colorati per classe, cassette delle classi, contatori N_i e N.",
       "aha": "La notazione della slide 3 è un dizionario: x è un punto, Ω l'elenco delle classi, X la raccolta dei punti etichettati da cui si costruiscono i modelli.",
       "formulasShown": [
-        "\\mathbf{x}=(x_1,x_2,\\ldots,x_n)",
-        "\\Omega=\\{\\omega_1,\\ldots,\\omega_C\\}",
-        "N=\\sum_{i=1}^{C}N_i"
+        "\\mathbf{x}=(x_1,x_2,\\ldots,x_n)=(5.1,\\ 12.4,\\ 48)",
+        "\\Omega=\\{\\omega_1,\\omega_2,\\omega_3\\},\\quad C=3",
+        "N=\\sum_{i=1}^{C}N_i=12+9+7=28"
       ],
-      "challenge": "Quante coordinate servono per descrivere un pesce se si aggiunge il peso? E quanti numeri deve imparare l'MDM con C = 3 classi?",
+      "challenge": "Quante coordinate servono per descrivere un pesce se si aggiunge il peso? E quanti numeri deve imparare l'MDM con C = 3 classi? E il Box? (Soluzione: n = 4 coordinate; l'MDM impara n·C = 4·3 = 12 numeri, i tre baricentri; il Box 2nC = 24, baricentri e deviazioni standard.)",
       "size": "S",
       "tech": "svg+motion"
     },
@@ -2417,27 +2432,29 @@
         "c13"
       ],
       "scenario": "telerilevamento",
-      "realExample": "Immagine satellitare multispettrale: un fotointerprete etichetta alcuni pixel come acqua, vegetazione o suolo nudo (la conoscenza a priori del problema). Da questi pixel, descritti da riflettanza nel rosso e nel vicino infrarosso (NIR), si costruisce un modello per ogni classe; poi ogni pixel della mappa viene assegnato alla classe che ottimizza il criterio di decisione. Dati sintetici ispirati a immagini multispettrali.",
+      "realExample": "Immagine satellitare multispettrale: un fotointerprete etichetta alcuni pixel come acqua, vegetazione o suolo nudo (la conoscenza a priori del problema). Da questi pixel, descritti da riflettanza nel rosso e nel vicino infrarosso (NIR, in %), si costruisce un modello per ogni classe: acqua m = (4, 3), σ = (1, 1.5); vegetazione m = (5, 45), σ = (1.5, 6); suolo m = (25, 30), σ = (4, 4). Poi ogni pixel della mappa viene assegnato alla classe che ottimizza il criterio di decisione. Il pixel (12, 28) va al suolo con l'MDM (distanze 26.25, 18.38, 13.15) e con la gaussiana, ma resta non classificato con il Box (α = 2), perché cade fuori da tutti e tre i box. Dati sintetici ispirati a immagini multispettrali.",
       "storyboard": [
-        "A sinistra una piccola immagine sintetica 40×40 (lago, campi, cava); l'utente o l'animazione disegna tre poligoni di training (blu, verde, marrone) e i pixel selezionati volano nel piano rosso-NIR a destra.",
-        "Freccia animata 'integrating prior knowledge': per ogni classe si costruisce il modello; un selettore sceglie il tipo di modello: 'solo baricentro' (MDM), 'box' o 'gaussiana' (anteprima), e il modello si disegna sopra la nuvola.",
-        "Freccia 'decision criterion': un pixel ignoto (12, 28) viene preso dall'immagine; il criterio scelto calcola i suoi numeri (distanze 26.25, 18.38, 13.15 per l'MDM) e il pixel si colora di marrone (suolo).",
-        "Pulsante 'Classifica tutta l'immagine': la mappa si colora riga per riga (scansione di 1.5 s) e diventa una mappa tematica.",
-        "Cambiando modello la mappa si ricolora: stessi campioni, modelli diversi, decisioni diverse (con il box compaiono pixel neri non classificati)."
+        "A sinistra una piccola immagine sintetica 40×40 (lago, campi, cava); l'animazione disegna tre poligoni di training (blu, verde, marrone) in 1.2 s e i pixel selezionati volano (400 ms, stagger 5 ms) nel piano rosso (0-35) × NIR (0-60) a destra.",
+        "Freccia animata 'integrating prior knowledge' (300 ms): per ogni classe si costruisce il modello; un selettore sceglie il tipo di modello: 'solo baricentro' (MDM), 'box' (α = 2) o 'gaussiana' (anteprima), e il modello si disegna sopra la nuvola in 400 ms.",
+        "Freccia 'decision criterion': il pixel ignoto (12, 28) viene preso dall'immagine e portato nel piano; il criterio scelto calcola i suoi numeri (MDM: distanze 26.25, 18.38, 13.15; box: tre test di appartenenza tutti falsi; gaussiana: densità massima per il suolo) e il pixel si colora di marrone (suolo) oppure di nero (box: non classificato).",
+        "Pulsante 'Classifica tutta l'immagine': la mappa si colora riga per riga (40 righe in 1.5 s) e diventa una mappa tematica.",
+        "Cambiando modello la mappa si ricolora in 600 ms: stessi campioni, modelli diversi, decisioni diverse (con il box compaiono pixel neri non classificati)."
       ],
       "interactions": [
-        "disegno dei poligoni di training sull'immagine",
+        "disegno dei poligoni di training sull'immagine (trascinamento dei vertici)",
         "selettore del modello di classe (baricentro, box, gaussiana)",
         "clic su un pixel dell'immagine per vederne la decisione",
-        "pulsante 'Classifica tutta l'immagine'"
+        "pulsante 'Classifica tutta l'immagine'",
+        "interruttore 'etichette sporche': aggiunge il 10% di pixel d'acqua al poligono della vegetazione"
       ],
       "visual": "Immagine sintetica a sinistra, piano rosso-NIR a destra con nuvole di training e modelli di classe, pipeline 'campioni → modelli → criterio → classe' con frecce animate, mappa tematica finale.",
       "aha": "Il classificatore supervisionato non guarda direttamente i campioni quando decide: guarda i modelli di classe costruiti da essi e applica un criterio fissato in anticipo.",
       "formulasShown": [
         "\\mathbf{x}\\longmapsto\\omega(\\mathbf{x})\\in\\Omega",
-        "d(\\mathbf{x},\\mathbf{m}_{\\text{suolo}})=\\sqrt{(12-25)^2+(28-30)^2}=13.15"
+        "d(\\mathbf{x},\\mathbf{m}_{\\text{suolo}})=\\sqrt{(12-25)^2+(28-30)^2}=13.15",
+        "(12,28)\\notin B_{\\text{acqua}}\\cup B_{\\text{veg}}\\cup B_{\\text{suolo}}\\quad(\\alpha=2)"
       ],
-      "challenge": "Etichetta male alcuni pixel (metti un po' d'acqua nel poligono della vegetazione) e osserva quanto cambia la mappa: quale modello di classe ne soffre di più?",
+      "challenge": "Attiva 'etichette sporche' (10% di pixel d'acqua nel poligono della vegetazione) e osserva quanto cambia la mappa: quale modello di classe ne soffre di più? (Soluzione: il baricentro NIR della vegetazione scende solo da 45 a 40.8, ma la sua deviazione standard NIR passa da 6 a circa 13.8: il box della vegetazione (e l'ellisse gaussiana) più che raddoppia in altezza, mentre il prototipo dell'MDM si sposta poco. Le statistiche del secondo ordine sono più sensibili ai campioni sbagliati.)",
       "size": "M",
       "tech": "canvas2d"
     },
@@ -2452,24 +2469,26 @@
       "scenario": "pesce",
       "realExample": "Stessi dati salmone/spigola. La classificazione bayesiana decide con la massima probabilità a posteriori; cambia solo come si stima p(x|ω_i): con una gaussiana a parametri stimati (ramo Parametric) o con K-NN / finestre di Parzen (ramo Nonparametric). Dati sintetici.",
       "storyboard": [
-        "L'albero della slide 4 si costruisce dall'alto: radice verde 'Supervised Approaches', poi i rami rossi 'Parametric' e 'Nonparametric', poi le foglie blu (stagger di 150 ms).",
-        "Le due foglie 'Bayesian Classification' pulsano insieme; clic su quella di sinistra: sotto l'albero compare la stima gaussiana di p(x|ω_i) (due ellissi) e la frontiera MAP, con la formula di Bayes.",
-        "Clic sulla foglia di destra: la stessa regola MAP, ma p(x|ω_i) è stimata con finestre di Parzen (kernel che si sommano sui campioni, slider h): la frontiera diventa irregolare.",
-        "Un interruttore 'dati gaussiani / dati a banana' mostra quando conviene l'una o l'altra stima; la formula di Bayes resta identica in alto.",
+        "L'albero della slide 4 si costruisce dall'alto: radice verde 'Supervised Approaches' (300 ms), poi i rami rossi 'Parametric' e 'Nonparametric' (300 ms), poi le foglie blu con stagger di 150 ms.",
+        "Le due foglie 'Bayesian Classification' pulsano insieme (due volte, 600 ms); clic su quella di sinistra: sotto l'albero compare la stima gaussiana di p(x|ω_i) per salmone e spigola (due ellissi che crescono in 400 ms) e la frontiera MAP, con la formula di Bayes in alto e i valori per il pesce sotto il cursore.",
+        "Clic sulla foglia di destra: la stessa regola MAP, ma p(x|ω_i) è stimata con finestre di Parzen (un kernel gaussiano si accende su ogni campione, 5 ms per campione, e i kernel si sommano in una mappa di calore); la frontiera diventa irregolare e segue i dati.",
+        "Interruttore 'dati gaussiani / dati a mezzaluna' (la spigola disposta ad arco attorno al salmone): con dati gaussiani le due stime danno frontiere simili; con la mezzaluna l'ellisse gaussiana non segue l'arco e sbaglia di più. La formula di Bayes in alto non cambia mai.",
         "Riepilogo: 'stessa regola di decisione, stima diversa della densità: per questo la foglia compare due volte'."
       ],
       "interactions": [
         "clic sulle foglie dell'albero",
-        "slider h di Parzen da 0.1 a 2",
-        "interruttore forma dei dati gaussiana / a banana"
+        "slider h di Parzen da 0.1 a 2 (unità standardizzate)",
+        "interruttore forma dei dati gaussiana / a mezzaluna",
+        "trascinamento del pesce per leggere i posterior delle due stime"
       ],
       "visual": "Albero con i colori della slide, sotto un piano delle feature con densità stimate (ellissi o mappa di calore) e frontiera di decisione, formula di Bayes fissa in alto.",
       "aha": "'Parametrico' e 'non parametrico' riguardano come si stima la densità, non la regola di decisione: la classificazione bayesiana è un approccio che vive in entrambi i rami.",
       "formulasShown": [
         "P(\\omega_i|\\mathbf{x})=\\frac{p(\\mathbf{x}|\\omega_i)P(\\omega_i)}{p(\\mathbf{x})}",
-        "\\hat{p}(\\mathbf{x}|\\omega_i)=\\frac{1}{N_i}\\sum_{k}\\frac{1}{h^n}\\gamma\\left(\\frac{\\mathbf{x}-\\mathbf{x}_k}{h}\\right)"
+        "\\hat{p}(\\mathbf{x}|\\omega_i)=\\frac{1}{N_i}\\sum_{k}\\frac{1}{h^n}\\gamma\\left(\\frac{\\mathbf{x}-\\mathbf{x}_k}{h}\\right)",
+        "P(\\omega_{\\text{sal}}|\\mathbf{x})\\ \\text{gaussiana}\\ \\text{contro}\\ P(\\omega_{\\text{sal}}|\\mathbf{x})\\ \\text{Parzen: valori live per il pesce sotto il cursore}"
       ],
-      "challenge": "Con i dati a banana, trova un valore di h per cui la versione non parametrica sbaglia meno di quella gaussiana.",
+      "challenge": "Con i dati a mezzaluna, trova un valore di h per cui l'errore di test della versione non parametrica scende sotto quello della gaussiana (mostrati entrambi live); poi prova h = 0.1 e h = 2 e spiega perché peggiora ai due estremi. (Soluzione attesa: esiste un intervallo intermedio di h in cui Parzen batte la gaussiana; con h = 0.1 la stima è a spilli e la frontiera frastagliata, con h = 2 la stima è così liscia che torna simile a una gaussiana: il compromesso di m09.)",
       "size": "M",
       "tech": "svg+motion"
     },
@@ -2484,17 +2503,17 @@
         "c71"
       ],
       "scenario": "pesce",
-      "realExample": "Salmone contro spigola con 2 feature. I classificatori parametrici riassumono ogni classe in pochi numeri (MDM: 2 per classe; Box: 4; gaussiana: 5), quelli non parametrici (K-NN) si portano dietro tutti i campioni. Si confrontano efficienza e flessibilità quando le ipotesi valgono (nuvole gaussiane) e quando no (classe a mezzaluna). Dati sintetici.",
+      "realExample": "Salmone contro spigola con 2 feature. I classificatori parametrici riassumono ogni classe in pochi numeri (MDM: 2 per classe; Box: 4; gaussiana con Σ piena: 5), quelli non parametrici (K-NN) si portano dietro tutti i campioni. Due preset di dati sintetici: 'ipotesi vere' (salmone m = (4.2, 14.0), σ = (0.8, 1.2); spigola m = (6.8, 10.5), σ = (0.7, 1.0), nuvole gaussiane) e 'ipotesi false' (spigola disposta a mezzaluna attorno al salmone: arco di semiassi 2.4 e 3.6 da −100° a 100°, rumore σ = (0.3, 0.45)). Stime Monte Carlo: con ipotesi vere la gaussiana arriva a 0.9% e il K-NN (K = 5) resta attorno all'1.0%; con ipotesi false la gaussiana si blocca attorno al 7.5% mentre il K-NN scende a 4.0% con 200 pesci per classe.",
       "storyboard": [
-        "Due pannelli affiancati: 'Parametric' (MDM, Box, gaussiana) e 'Nonparametric' (K-NN con K = 5); sotto ciascuno un contatore 'numeri da memorizzare'.",
-        "Slider N (pesci di training) da 10 a 2000: nel pannello parametrico il contatore resta fermo (4, 8, 10 numeri in tutto), in quello non parametrico cresce come 2N (fino a 4000) con una barra che si allunga; anche il tempo per classificare un pesce cresce solo a destra.",
-        "Preset 'ipotesi vere' (nuvole gaussiane): l'errore dei parametrici è basso e già stabile con N piccolo; il K-NN ci arriva solo con N grande.",
-        "Preset 'ipotesi false' (spigola a mezzaluna attorno al salmone): i parametrici restano bloccati su frontiere sbagliate, il K-NN segue la forma: la curva dell'errore contro N si inverte.",
-        "Pulsante 'trabocchetto: e le reti neurali?': nel pannello non parametrico compare una piccola rete 2-4-1 con 17 pesi fissi (il contatore non cresce con N) e una SVM con i vettori di supporto evidenziati (che aumentano con N). La scritta chiarisce: la rete ha parametri ma non assume una forma per p(x|ω_i), quindi sta sotto 'Nonparametric'; 'parametrico' significa 'ipotesi sulla distribuzione', non 'avere parametri'.",
+        "Due pannelli affiancati: 'Parametric' (MDM, Box, gaussiana) e 'Nonparametric' (K-NN con K = 5); sotto ciascuno un contatore 'numeri da memorizzare' disegnato come pila di monete.",
+        "Slider N (pesci di training per classe) da 5 a 1000: nel pannello parametrico il contatore resta fermo (MDM 4, Box 8, gaussiana 10 numeri in tutto), in quello non parametrico cresce come n·2N = 4N (fino a 4000) con una barra che si allunga in tempo reale; anche il tempo per classificare un pesce cresce solo a destra.",
+        "Preset 'ipotesi vere' (transizione 600 ms): il grafico errore contro N si traccia punto per punto; la gaussiana parte male con 5 pesci per classe (circa 5%, cinque parametri stimati su cinque campioni), scende all'1.0% da 50 in su e arriva a 0.88% con 1000, vicino all'ottimo; il K-NN resta attorno all'1.0% pur memorizzando 4N numeri. Etichetta: 'computationally efficient when assumptions hold'.",
+        "Preset 'ipotesi false' (la spigola si dispone a mezzaluna in 800 ms): la gaussiana resta bloccata su un'ellisse sbagliata (circa 7.5% anche con 1000 pesci), il K-NN segue l'arco e scende da 12.6% (N = 10) a 6.7% (N = 20) e a 4.0% (N = 200): le due curve si incrociano attorno a N = 10-20 per classe.",
+        "Pulsante 'trabocchetto: e le reti neurali?': nel pannello non parametrico compare una piccola rete 2-4-1 con 17 pesi (2·4 + 4 + 4·1 + 1, il contatore non cresce con N) e una SVM con i vettori di supporto evidenziati (il cui numero può crescere con N). La scritta chiarisce: la rete ha parametri ma non assume una forma per p(x|ω_i), quindi sta sotto 'Nonparametric'; 'parametrico' significa 'ipotesi sulla distribuzione', non 'avere parametri'.",
         "Riepilogo con le frasi delle note: 'computationally efficient when assumptions hold' contro 'more flexible in handling complex, real-world data'."
       ],
       "interactions": [
-        "slider N da 10 a 2000",
+        "slider N (pesci per classe) da 5 a 1000, scala logaritmica",
         "preset 'ipotesi vere' / 'ipotesi false'",
         "selettore del classificatore parametrico (MDM, Box, gaussiana)",
         "slider K del K-NN da 1 a 25",
@@ -2503,10 +2522,11 @@
       "visual": "Due piani delle feature con frontiere, contatori di parametri come pile di monete, grafico errore contro N per le due famiglie.",
       "aha": "Parametrico vuol dire numero fisso di parametri e ipotesi sulla forma dei dati: vince quando le ipotesi sono vere, perde quando la forma è complessa.",
       "formulasShown": [
-        "\\text{MDM: } nC,\\quad \\text{Box: } 2nC,\\quad \\text{gaussiana: } C\\left(n+\\frac{n(n+1)}{2}\\right)",
-        "\\text{K-NN: } nN \\text{ numeri}"
+        "\\text{MDM: } nC=4,\\quad \\text{Box: } 2nC=8,\\quad \\text{gaussiana: } C\\left(n+\\frac{n(n+1)}{2}\\right)=10",
+        "\\text{K-NN: } n\\cdot 2N=4N\\ \\text{numeri}",
+        "\\text{rete 2-4-1: } 2\\cdot 4+4+4\\cdot 1+1=17\\ \\text{pesi}"
       ],
-      "challenge": "Con il preset 'ipotesi false', da quale N il K-NN batte stabilmente la gaussiana? Fai una previsione prima di muovere lo slider.",
+      "challenge": "Con il preset 'ipotesi false', da quale N (pesci per classe) il K-NN batte stabilmente la gaussiana? Fai una previsione prima di muovere lo slider. (Soluzione, stima Monte Carlo: a N = 10 sono quasi pari (12.6% contro 13.0%), da N = 20 il K-NN è nettamente migliore (6.7% contro 10.9%) e il divario cresce con N, perché la gaussiana resta ferma attorno al 7.5%.)",
       "size": "M",
       "tech": "canvas2d"
     },
@@ -2552,7 +2572,7 @@
         "c30"
       ],
       "scenario": "telerilevamento",
-      "realExample": "Classificatore a minima distanza per una mappa di copertura del suolo: pixel di training di acqua, vegetazione e suolo nudo nel piano riflettanza rosso - riflettanza NIR (%). L'MDM riassume ogni classe nel suo baricentro, il prototipo: acqua (4, 3), vegetazione (5, 45), suolo (25, 30). Dati sintetici ispirati a immagini multispettrali.",
+      "realExample": "Classificatore a minima distanza per una mappa di copertura del suolo: pixel di training di acqua, vegetazione e suolo nudo nel piano riflettanza rosso - riflettanza NIR (%). L'MDM riassume ogni classe nel suo baricentro, il prototipo: acqua (4, 3), vegetazione (5, 45), suolo (25, 30); le dispersioni che il prototipo dimentica sono σ = (1, 1.5), (1.5, 6) e (4, 4). Dati sintetici ispirati a immagini multispettrali.",
       "storyboard": [
         "Il piano rosso-NIR è vuoto; i pixel di training dell'acqua cadono uno alla volta (80 ms ciascuno) e una croce rossa, la media corrente, salta a ogni campione e poi si assesta: la formula della media si aggiorna con N_i e la somma.",
         "Lo stesso per vegetazione e suolo, in parallelo; accanto a ogni croce l'etichetta 'class prototype'.",
@@ -2570,9 +2590,10 @@
       "aha": "Addestrare l'MDM è solo fare C medie: dopo il training la classe è un punto, e tutto ciò che riguarda la forma della nuvola è perduto.",
       "formulasShown": [
         "\\mathbf{m}_i=\\frac{1}{N_i}\\sum_{\\mathbf{x}_k\\in\\omega_i}\\mathbf{x}_k",
-        "\\mathbf{m}_{\\text{acqua}}=(4,\\ 3)"
+        "\\mathbf{m}_{\\text{acqua}}=(4,\\ 3)",
+        "\\text{numeri memorizzati}=n\\cdot C=2\\cdot 3=6"
       ],
-      "challenge": "Con 3 soli campioni per classe, di quanto si sposta al massimo il prototipo dell'acqua ripetendo il campionamento 10 volte?",
+      "challenge": "Con 3 soli campioni per classe, di quanto si sposta il prototipo dell'acqua ripetendo il campionamento 10 volte? Prevedi prima con la formula della media. (Soluzione: la media di 3 campioni ha deviazione standard σ/√3, quindi (0.58, 0.87) per l'acqua: nel 95% delle estrazioni il prototipo cade entro circa ±1.1 in rosso e ±1.7 in NIR attorno a (4, 3).)",
       "size": "S",
       "tech": "svg+motion"
     },
@@ -2585,29 +2606,31 @@
         "c33"
       ],
       "scenario": "telerilevamento",
-      "realExample": "Stessi prototipi di acqua (4, 3), vegetazione (5, 45) e suolo (25, 30) nel piano riflettanza rosso-NIR. Un pixel ignoto (12, 28) va classificato: si calcolano le tre distanze euclidee (26.25, 18.38, 13.15) e vince il suolo. Si mostra anche l'effetto delle unità di misura: se il NIR fosse espresso in millesimi la classificazione cambierebbe. Dati sintetici.",
+      "realExample": "Stessi prototipi di acqua (4, 3), vegetazione (5, 45) e suolo (25, 30) nel piano riflettanza rosso-NIR. Un pixel ignoto (12, 28) va classificato: si calcolano le tre distanze euclidee (26.25, 18.38, 13.15) e vince il suolo. Si mostra anche l'effetto delle unità di misura: se il NIR fosse moltiplicato per 10 (per esempio espresso in millesimi invece che in centesimi) il pixel (22, 16), oggi suolo, diventerebbe acqua. Dati sintetici.",
       "storyboard": [
-        "Il pixel ignoto compare come punto bianco; passo 1: dal pixel partono tre segmenti verso i tre prototipi, che si allungano in 300 ms ciascuno, con la lunghezza scritta sopra.",
-        "Passo 2: le tre distanze vanno in una classifica a barre ordinate; la barra più corta (suolo, 13.15) si illumina e il pixel si colora di marrone: 'assigning it to the nearest class'.",
-        "Trascinando il pixel le tre distanze si aggiornano live e il colore cambia nel momento in cui due barre si eguagliano.",
-        "Interruttore 'd o d²': le barre diventano i quadrati (689, 338, 173): l'ordine non cambia, la classe nemmeno.",
-        "Interruttore 'NIR in scala ×10': l'asse NIR si stira, i prototipi si allontanano in verticale e alcuni pixel cambiano classe; il pulsante 'normalizza le feature' ripristina un confronto equo."
+        "Il pixel ignoto compare come punto bianco; passo 1 ('computing the distance between it and each of the C class prototypes'): dal pixel partono tre segmenti verso i tre prototipi, che si allungano in 300 ms ciascuno, con la lunghezza scritta sopra.",
+        "Passo 2 ('assigning it to the nearest class'): le tre distanze vanno in una classifica a barre ordinate (400 ms); la barra più corta (suolo, 13.15) si illumina e il pixel si colora di marrone.",
+        "Trascinando il pixel le tre distanze si aggiornano in tempo reale e il colore cambia nell'istante in cui due barre si eguagliano (il pixel attraversa una frontiera).",
+        "Interruttore 'd o d²': le barre diventano i quadrati (689, 338, 173) con una transizione di 400 ms: l'ordine non cambia, la classe nemmeno.",
+        "Interruttore 'NIR in scala ×10': l'asse NIR si stira in 800 ms, i prototipi si allontanano in verticale e alcuni pixel cambiano classe; il pixel di prova (22, 16) passa da suolo (d² = 493, 1130, 205) ad acqua (d² = 17224, 84389, 19609). Il pulsante 'normalizza le feature' divide ogni feature per la sua deviazione standard e ripristina un confronto equo."
       ],
       "interactions": [
-        "trascinamento del pixel ignoto",
+        "trascinamento del pixel ignoto (rosso 0-35, NIR 0-60)",
         "pulsante 'Passo' per i due passi dell'algoritmo",
         "interruttore d / d²",
         "interruttore scala del NIR ×1 / ×10",
-        "pulsante 'normalizza le feature'"
+        "pulsante 'normalizza le feature'",
+        "pulsante 'pixel di prova (22, 16)'"
       ],
       "visual": "Piano con prototipi e pixel, segmenti di distanza con etichette numeriche, classifica a barre delle distanze, formula della distanza con i numeri sostituiti.",
       "aha": "L'MDM è un algoritmo in due passi (distanze, minimo) che assegna sempre una classe; la distanza euclidea dipende dalle unità, quindi le feature vanno rese confrontabili.",
       "formulasShown": [
         "d(\\mathbf{x},\\mathbf{m}_i)=\\sqrt{\\sum_{j=1}^{n}(x_j-m_{ij})^2}",
         "d(\\mathbf{x},\\mathbf{m}_{\\text{suolo}})=\\sqrt{(12-25)^2+(28-30)^2}=13.15",
-        "i^*=\\arg\\min_i d(\\mathbf{x},\\mathbf{m}_i)"
+        "i^*=\\arg\\min_i d(\\mathbf{x},\\mathbf{m}_i)",
+        "\\text{NIR}\\times 10:\\ d^2\\big((22,160),\\mathbf{m}_{\\text{acqua}}\\big)=18^2+130^2=17224<d^2\\big((22,160),\\mathbf{m}_{\\text{suolo}}\\big)=3^2+140^2=19609"
       ],
-      "challenge": "Trova un pixel che sia a pari distanza da acqua e suolo; poi prevedi da che parte andrà se sposti il prototipo del suolo di 5 unità verso destra.",
+      "challenge": "Trova un pixel che sia a pari distanza da acqua e suolo; poi prevedi da che parte andrà se sposti il prototipo del suolo di 5 unità verso destra. (Soluzione: i punti equidistanti stanno sulla retta 21x_1 + 27x_2 = 750, per esempio il punto medio (14.5, 16.5); spostando il suolo in (30, 30) la frontiera si sposta verso il suolo e il pixel passa all'acqua: d² = 292.5 dall'acqua contro 422.5 dal suolo.)",
       "size": "M",
       "tech": "svg+motion"
     },
@@ -2623,12 +2646,12 @@
       "scenario": "telerilevamento",
       "realExample": "Ricostruzione interattiva della figura della slide 6 con i tre prototipi acqua (4, 3), vegetazione (5, 45), suolo (25, 30): l'MDM divide il piano rosso-NIR in tre regioni con frontiere rette; il punto in cui si incontrano, (4.87, 23.99), è equidistante (21.01) dai tre prototipi. Dati sintetici.",
       "storyboard": [
-        "Ricostruzione della slide 6: le tre nuvole e i prototipi; poi i segmenti tratteggiati tra i prototipi si disegnano uno alla volta.",
-        "Su ogni segmento compare il punto medio e da lì si traccia l'asse (doppia linea) con il quadratino dell'angolo retto, animato come nella slide.",
-        "Gli assi si accorciano fino al punto triplo: resta di ciascuno solo il tratto in cui le sue due classi sono le più vicine; le tre regioni si riempiono di colore tenue (celle di Voronoi).",
-        "Trascinando un prototipo tutto si aggiorna in tempo reale: gli assi ruotano restando perpendicolari, il punto triplo (circocentro) si sposta e il cerchio che passa per i tre prototipi si ridisegna.",
-        "Preset 'prototipi allineati': i tre prototipi scivolano su una retta; gli assi diventano paralleli, il punto triplo sparisce all'infinito e il piano si divide in tre strisce (der08). Preset 'triangolo ottusangolo': il punto triplo esce dal triangolo dei prototipi.",
-        "Pulsante 'aggiungi classe' (urbano): compare un quarto prototipo e la partizione diventa a quattro celle, sempre con frontiere rette."
+        "Ricostruzione della slide 6: le tre nuvole e i prototipi (croci rosse, freccia 'Class prototype'); poi i segmenti tratteggiati tra i prototipi si disegnano uno alla volta (300 ms ciascuno).",
+        "Su ogni segmento compare il punto medio (200 ms) e da lì si traccia l'asse a doppia linea (400 ms) con il quadratino dell'angolo retto, come nella slide.",
+        "Gli assi si accorciano (500 ms) fino al punto triplo (4.87, 23.99): di ciascuno resta solo il tratto in cui le sue due classi sono le più vicine; le tre regioni si riempiono di colore tenue (celle di Voronoi) e compare il cerchio di raggio 21.01 centrato nel punto triplo, che passa per i tre prototipi.",
+        "Trascinando un prototipo tutto si aggiorna in tempo reale: gli assi ruotano restando perpendicolari, il punto triplo (circocentro) si sposta e il cerchio si ridisegna; l'equazione dell'asse sotto il cursore mostra i numeri.",
+        "Preset 'prototipi allineati': i tre prototipi scivolano su una retta in 800 ms; gli assi diventano paralleli, il punto triplo sparisce all'infinito e il piano si divide in tre strisce (der08). Preset 'triangolo ottusangolo': il punto triplo esce dal triangolo dei prototipi.",
+        "Pulsante 'aggiungi classe' (urbano, prototipo in (20, 12)): compare un quarto prototipo e la partizione diventa a quattro celle, sempre con frontiere rette."
       ],
       "interactions": [
         "trascinamento dei prototipi",
@@ -2641,44 +2664,78 @@
       "aha": "Le frontiere dell'MDM sono gli assi dei segmenti tra prototipi: sono rette perché conta solo quale prototipo è più vicino, e la partizione copre tutto il piano senza buchi né sovrapposizioni.",
       "formulasShown": [
         "\\mathbf{w}^t(\\mathbf{x}-\\mathbf{x}_0)=0,\\quad \\mathbf{w}=\\mathbf{m}_i-\\mathbf{m}_j,\\quad \\mathbf{x}_0=\\tfrac{1}{2}(\\mathbf{m}_i+\\mathbf{m}_j)",
-        "\\text{acqua-suolo: } -21x_1-27x_2=-750"
+        "\\text{acqua-suolo: } -21x_1-27x_2=-750",
+        "\\mathbf{x}^*=(4.87,\\ 23.99),\\qquad \\lVert\\mathbf{x}^*-\\mathbf{m}_i\\rVert=21.01\\ \\ \\forall i"
       ],
-      "challenge": "Disponi i tre prototipi in modo che il punto triplo cada fuori dal triangolo che li unisce. Che tipo di triangolo hai costruito?",
+      "challenge": "Disponi i tre prototipi in modo che il punto triplo cada fuori dal triangolo che li unisce. Che tipo di triangolo hai costruito? E dove cade il punto triplo se il triangolo è rettangolo? (Soluzione: un triangolo ottusangolo, perché il punto triplo è il circocentro; con un angolo retto il circocentro cade esattamente sul punto medio dell'ipotenusa.)",
       "size": "M",
       "tech": "svg+motion"
     },
     {
-      "id": "m16-mdm-come-bayes",
-      "title": "L'MDM come caso particolare di Bayes: discriminanti lineari, prior e Mahalanobis",
+      "id": "m16-mdm-discriminanti-lineari",
+      "title": "Minima distanza = massimo di funzioni lineari",
       "concepts": [
-        "c37",
-        "c42",
-        "c70",
-        "c72"
+        "c37"
       ],
-      "scenario": "pesce",
-      "realExample": "Salmone m = (4.2, 14.0) e spigola m = (6.8, 10.5) con covarianza comune sferica σ²I (σ = 1). Con prior uguali la frontiera bayesiana coincide con quella dell'MDM, passante per il punto medio (5.5, 12.25); se in stagione il 70% dei pesci è salmone la frontiera si sposta a (5.616, 12.094), verso la spigola. Con una Σ comune allungata serve la distanza di Mahalanobis. Dati sintetici.",
+      "scenario": "telerilevamento",
+      "realExample": "Stessi prototipi dell'MDM per la mappa di copertura del suolo: acqua (4, 3), vegetazione (5, 45), suolo (25, 30) nel piano riflettanza rosso-NIR. Invece di calcolare distanze, ogni classe riceve una funzione lineare g_i(x) = m_i^t x − ½ m_i^t m_i: per il pixel (12, 28) valgono 119.5 (acqua), 295 (vegetazione) e 377.5 (suolo), e vince ancora il suolo, come con le distanze al quadrato 689, 338 e 173. Il legame è g_i = −½(d_i² − x^t x), con x^t x = 928 uguale per tutte le classi. Dati sintetici.",
       "storyboard": [
-        "Due gaussiane sferiche uguali disegnate come cerchi di livello; frontiera MDM (asse del segmento) in bianco e frontiera bayesiana in arancio: coincidono.",
-        "Pannello delle funzioni discriminanti: per il pesce sotto il cursore si mostrano g_sal(x) e g_spi(x) = m_i^t x − ½ m_i^t m_i come due barre; vince la più alta, che è la stessa classe della distanza minima.",
-        "Slider P(salmone) da 0.5 a 0.9: la frontiera bayesiana trasla parallela a sé stessa lontano dal salmone (a 0.9 passa per (5.801, 11.845)), quella MDM resta ferma; il termine ln P(ω_i) compare nella formula e si aggiorna.",
-        "Interruttore 'Σ comune allungata': i cerchi diventano ellissi uguali inclinate; la frontiera bayesiana resta retta ma non è più perpendicolare al segmento tra le medie (distanza di Mahalanobis), mentre l'MDM euclideo sbaglia di più.",
-        "Riquadro finale con la frase delle note su Bayes: probabilità, compromessi tra scelte con costi, conoscenza a priori; freccia verso il modulo m17."
+        "Vista 3-D inclinata di 30° del piano rosso (0-35) × NIR (0-60); sopra il piano si costruiscono in 600 ms tre paraboloidi capovolti −½||x − m_i||², uno per classe (blu acqua, verde vegetazione, marrone suolo). La superficie più alta in ogni punto colora il pavimento: sono le regioni dell'MDM.",
+        "Pulsante 'aggiungi ½ xᵗx a tutte' (animazione di 1 s): i tre paraboloidi si raddrizzano insieme e diventano tre piani g_i(x) = m_i^t x − ½ m_i^t m_i; la colorazione del pavimento non cambia di un pixel. Scritta: 'lo stesso termine per tutte le classi non cambia chi vince'.",
+        "Le rette di intersezione tra coppie di piani si proiettano sul pavimento (tratteggio, 400 ms) e coincidono con gli assi dei segmenti tra i prototipi (m16-mdm-frontiere-assi); il punto in cui i tre piani hanno la stessa quota cade sul punto triplo (4.87, 23.99).",
+        "Pixel trascinabile: due colonne di barre si aggiornano in tempo reale, a sinistra d_i² (689, 338, 173 per il pixel (12, 28)), a destra g_i (119.5, 295, 377.5); la classe vincente è evidenziata in entrambe: minimo delle d² e massimo delle g coincidono sempre.",
+        "Riquadro finale 'forma del Caso 1': g_i(x) = w_i^t x + w_i0 con w_i = m_i e w_i0 = −½ m_i^t m_i, cioè il 'Linear discriminant' di ch4 p.25 con σ² = 1 e prior uguali; un pulsante 'aggiungi ln P(ω_i)' anticipa m17-m19 mostrando che un termine diverso per classe sposta le frontiere."
       ],
       "interactions": [
-        "slider P(salmone) da 0.1 a 0.9",
-        "slider σ da 0.5 a 2",
-        "interruttore Σ sferica / Σ allungata comune",
-        "trascinamento del pesce per leggere g_i(x)"
+        "trascinamento del pixel (rosso 0-35, NIR 0-60)",
+        "trascinamento dei prototipi sul pavimento",
+        "interruttore paraboloidi / piani",
+        "rotazione della vista 3-D (azimut da 0° a 90°, elevazione da 10° a 80°)",
+        "pulsante 'aggiungi ln P(ω_i)' con slider del prior dell'acqua da 0.05 a 0.9"
       ],
-      "visual": "Piano con curve di livello, due frontiere sovrapposte in colori diversi, barre dei discriminanti, formula di x_0 con i valori sostituiti live.",
-      "aha": "L'MDM è il classificatore bayesiano ottimo solo in un caso preciso: classi gaussiane con Σ = σ²I e prior uguali; appena i prior o la forma di Σ cambiano, la regola ottima si allontana dalla minima distanza euclidea.",
+      "visual": "Superfici semitrasparenti colorate per classe sopra il piano delle feature, pavimento colorato dalla superficie più alta, rette di intersezione proiettate, due colonne di barre (d² e g) con i valori numerici, formula di g_i con i numeri sostituiti.",
+      "aha": "Minimizzare la distanza euclidea equivale a massimizzare C funzioni lineari: l'unico termine quadratico, x^t x, è comune a tutte le classi e si cancella. Per questo le frontiere dell'MDM sono rette e l'MDM è un classificatore lineare con pesi w_i = m_i.",
       "formulasShown": [
         "g_i(\\mathbf{x})=\\mathbf{m}_i^t\\mathbf{x}-\\tfrac{1}{2}\\mathbf{m}_i^t\\mathbf{m}_i",
-        "g_i(\\mathbf{x})=-\\frac{\\lVert\\mathbf{x}-\\mathbf{m}_i\\rVert^2}{2\\sigma^2}+\\ln P(\\omega_i)",
-        "\\mathbf{x}_0=\\tfrac{1}{2}(\\mathbf{m}_i+\\mathbf{m}_j)-\\frac{\\sigma^2}{\\lVert\\mathbf{m}_i-\\mathbf{m}_j\\rVert^2}\\ln\\frac{P(\\omega_i)}{P(\\omega_j)}(\\mathbf{m}_i-\\mathbf{m}_j)"
+        "g_{\\text{suolo}}(12,28)=25\\cdot 12+30\\cdot 28-\\tfrac{1}{2}(25^2+30^2)=377.5",
+        "g_i(\\mathbf{x})=-\\tfrac{1}{2}\\left(d_i^2-\\mathbf{x}^t\\mathbf{x}\\right),\\qquad \\mathbf{x}^t\\mathbf{x}=12^2+28^2=928"
       ],
-      "challenge": "Con P(salmone) = 0.9, di quanto si sposta la frontiera se raddoppi σ? Prevedi con la formula di x_0, poi verifica.",
+      "challenge": "Senza toccare il widget: se a tutti e tre i g_i si aggiunge 1000, cambia la classe del pixel (12, 28)? E se si aggiunge 1000 solo a g_acqua? Poi verifica con il pulsante 'aggiungi costante'. (Soluzione: nel primo caso no, vince ancora il suolo con 1377.5; nel secondo sì, l'acqua vince con 1119.5 contro 377.5: un termine diverso per classe, come ln P(ω_i) nelle funzioni discriminanti bayesiane, sposta le frontiere.)",
+      "size": "M",
+      "tech": "canvas2d",
+      "addedBy": "verificatore"
+    },
+    {
+      "id": "m16-mdm-come-bayes",
+      "title": "L'MDM come caso particolare di Bayes: prior, costi e σ",
+      "concepts": [
+        "c42",
+        "c70"
+      ],
+      "scenario": "pesce",
+      "realExample": "Salmone m = (4.2, 14.0) e spigola m = (6.8, 10.5), entrambe gaussiane con la stessa covarianza sferica σ²I (σ = 1, dati sintetici). Con prior uguali la frontiera bayesiana coincide con quella dell'MDM e passa per il punto medio (5.5, 12.25). Se in stagione il 70% dei pesci è salmone la frontiera ottima trasla in (5.616, 12.094), con il 90% in (5.801, 11.845), verso la spigola; se inoltre σ raddoppia lo spostamento quadruplica ((6.702, 10.632)). Con prior uguali ma un costo 5 per una spigola venduta come salmone (1 per il contrario) la frontiera va invece verso il salmone, in (5.280, 12.546): probabilità e costi, gli ingredienti della teoria bayesiana della decisione.",
+      "storyboard": [
+        "Stato iniziale: salmone e spigola come due gaussiane sferiche uguali (cerchi di livello a 1σ e 2σ, σ = 1); la frontiera MDM (asse del segmento tra i baricentri, bianca) e la frontiera bayesiana (arancio) si tracciano in 500 ms e coincidono, passando per il punto medio (5.5, 12.25). Badge 'Bayes = MDM'.",
+        "Pannello delle funzioni discriminanti: per il pesce sotto il cursore due barre g_i(x) = −||x − m_i||²/(2σ²) + ln P(ω_i); con prior uguali vince sempre la classe del baricentro più vicino, perché ln P(ω_i) è lo stesso per le due classi.",
+        "Slider P(salmone) da 0.1 a 0.9: la frontiera bayesiana trasla parallela a sé stessa in tempo reale, lontano dalla classe più probabile (a 0.7 passa per (5.616, 12.094), a 0.9 per (5.801, 11.845)); la frontiera MDM resta ferma, il badge diventa 'Bayes ≠ MDM' e i pesci compresi tra le due frontiere lampeggiano (sono quelli che l'MDM classifica in modo non ottimo).",
+        "Slider σ da 0.5 a 2: con prior diversi lo spostamento dal punto medio cresce come σ² (con P(salmone) = 0.9 passa da 0.50 unità con σ = 1 a 2.02 con σ = 2, x_0 = (6.702, 10.632)); con prior uguali σ non sposta nulla. La formula di x_0 mostra i numeri sostituiti.",
+        "Interruttore 'costi' (anteprima della teoria bayesiana della decisione, note p.80 e m18): vendere una spigola come salmone costa 5, scartare un salmone costa 1; con prior uguali la frontiera si sposta in 500 ms verso il salmone, fino a (5.280, 12.546). Una scritta collega il movimento alla frase delle note sui 'tradeoffs between possible classification choices using probabilities and associated costs'.",
+        "Riquadro finale con le tre parole chiave delle note su Bayes (informazione probabilistica, compromessi con costi, conoscenza a priori) e freccia verso il modulo m17."
+      ],
+      "interactions": [
+        "slider P(salmone) da 0.1 a 0.9 (passo 0.01)",
+        "slider σ da 0.5 a 2 (passo 0.05)",
+        "interruttore costi simmetrici 1:1 / asimmetrici 5:1",
+        "trascinamento del pesce per leggere g_i(x)"
+      ],
+      "visual": "Piano con cerchi di livello delle due gaussiane, frontiera MDM bianca e frontiera bayesiana arancio sovrapposte, punto x_0 evidenziato, barre dei discriminanti, fascia lampeggiante dei pesci classificati diversamente, formula di x_0 con i valori sostituiti live.",
+      "aha": "L'MDM è il classificatore bayesiano ottimo solo in un caso preciso: classi gaussiane con Σ_i = σ²I, prior uguali e costi simmetrici. Appena prior o costi cambiano, la frontiera ottima trasla parallela a sé stessa, tanto più quanto più grande è σ², mentre l'MDM resta fermo.",
+      "formulasShown": [
+        "g_i(\\mathbf{x})=-\\frac{\\lVert\\mathbf{x}-\\mathbf{m}_i\\rVert^2}{2\\sigma^2}+\\ln P(\\omega_i)",
+        "\\mathbf{x}_0=\\tfrac{1}{2}(\\mathbf{m}_i+\\mathbf{m}_j)-\\frac{\\sigma^2}{\\lVert\\mathbf{m}_i-\\mathbf{m}_j\\rVert^2}\\ln\\frac{P(\\omega_i)}{P(\\omega_j)}(\\mathbf{m}_i-\\mathbf{m}_j)",
+        "\\mathbf{x}_0=(5.5,\\ 12.25)+\\frac{1}{19.01}\\ln\\frac{0.9}{0.1}\\,(2.6,\\ -3.5)=(5.801,\\ 11.845)"
+      ],
+      "challenge": "Con P(salmone) = 0.9, di quanto si sposta la frontiera se raddoppi σ da 1 a 2? Prevedi con la formula di x_0, poi verifica. (Soluzione: lo spostamento dal punto medio è proporzionale a σ², quindi quadruplica: da 0.50 a 2.02 unità lungo il segmento tra i baricentri; x_0 passa da (5.801, 11.845) a (6.702, 10.632), quasi sul baricentro della spigola.)",
       "size": "L",
       "tech": "svg+motion"
     },
@@ -2695,16 +2752,17 @@
       "scenario": "pesce",
       "realExample": "Salmone contro spigola: si confronta l'MDM con il classificatore bayesiano ottimo (gaussiano) mentre si cambiano dispersione e forma delle classi. Con classi compatte o con la stessa Σ l'MDM è quasi ottimo (errore circa 1.5% contro 0.9%); con il salmone disperso σ = (1.6, 2.4) e la spigola compatta σ = (0.4, 0.5) l'MDM sale a circa 7.7% mentre il bayesiano resta attorno all'1.6%. Con una Σ comune allungata (σ = 1 lungo il segmento tra i baricentri, 2.5 perpendicolare) MDM e bayesiano coincidono (1.46%); ruotando la stessa Σ di 45° l'MDM euclideo sale al 12.6% e il bayesiano, cioè la minima distanza di Mahalanobis, resta al 4.8% (stime su dati sintetici).",
       "storyboard": [
-        "Stato iniziale: due nuvole compatte e simili; in alto due spie 'Ipotesi 1: small sample dispersion' e 'Ipotesi 2: same Σ', entrambe verdi, unite da un grande 'or'. Frontiera MDM in bianco, bayesiana in arancio: quasi sovrapposte.",
-        "Slider 'dispersione del salmone' verso l'alto: la nuvola arancio si gonfia, la spia 1 diventa gialla e poi rossa; la frontiera bayesiana si incurva attorno alla spigola, quella MDM resta l'asse fisso; il contatore dell'errore MDM sale.",
-        "Preset 'stessa Σ allungata': le due classi hanno la stessa forma allungata, con l'asse lungo perpendicolare al segmento tra i baricentri (spia 1 rossa, spia 2 verde): la frontiera bayesiana coincide con l'asse dell'MDM e l'errore è lo stesso (1.46%), quindi basta una delle due ipotesi. Poi la stessa Σ ruota di 45°: la spia 2 resta verde, ma la frontiera bayesiana resta retta e si inclina di 35.9° rispetto all'asse del segmento ('not necessarily orthogonal to the line between the means', ch4 p.31); l'MDM euclideo sale al 12.6% contro il 4.8%. L'interruttore 'distanza di Mahalanobis' riporta l'MDM sulla frontiera ottima: con Σ comune la minima distanza resta ottima purché la distanza tenga conto di Σ.",
-        "Con dispersioni grandi e diverse (entrambe le spie rosse) compare il messaggio delle note: 'may produce suboptimal results, as it cannot adapt to complex distributions'; le zone dove l'MDM sbaglia sono tratteggiate in rosso.",
-        "Grafico riassuntivo: errore MDM contro errore bayesiano al variare del rapporto tra le dispersioni delle due classi."
+        "Stato iniziale: due nuvole compatte e simili (salmone σ = (0.8, 1.2), spigola σ = (0.7, 1.0)); in alto due spie 'Ipotesi 1: small sample dispersion' e 'Ipotesi 2: same Σ', entrambe verdi, unite da un grande 'or' blu come nella slide 5. Frontiera MDM in bianco, bayesiana in arancio: quasi sovrapposte (errore 1.5% contro 0.9%).",
+        "Slider 'dispersione del salmone' verso l'alto: la nuvola arancio si gonfia in tempo reale, la spia 1 diventa gialla e poi rossa (transizioni di 200 ms); la frontiera bayesiana si incurva attorno alla spigola, quella MDM resta l'asse fisso; con salmone σ = (1.6, 2.4) e spigola σ = (0.4, 0.5) il contatore dell'errore MDM arriva a 7.7% contro 1.6% del bayesiano.",
+        "Preset 'stessa Σ allungata' (transizione 800 ms): le due classi hanno la stessa forma, deviazioni standard 1 e 2.5, con l'asse lungo perpendicolare al segmento tra i baricentri (spia 1 rossa, spia 2 verde): la frontiera bayesiana coincide con l'asse dell'MDM e l'errore è lo stesso (1.46%), quindi basta una delle due ipotesi. Poi la stessa Σ ruota di 45° (1 s): la spia 2 resta verde, ma la frontiera bayesiana, sempre retta e sempre per il punto medio, si inclina di 35.9° rispetto all'asse del segmento ('not necessarily orthogonal to the line between the means', ch4 p.31); l'MDM euclideo sale al 12.6% contro il 4.8%. L'interruttore 'distanza di Mahalanobis' riporta l'MDM sulla frontiera ottima: con Σ comune la minima distanza resta ottima purché la distanza tenga conto di Σ.",
+        "Con dispersioni grandi e diverse (entrambe le spie rosse) compare il messaggio delle note: 'may produce suboptimal results, as it cannot adapt to complex distributions'; le zone dove l'MDM sbaglia e il bayesiano no sono tratteggiate in rosso.",
+        "Grafico riassuntivo che si traccia in 1 s: errore MDM ed errore bayesiano al variare del rapporto tra le dispersioni delle due classi (da 1 a 4)."
       ],
       "interactions": [
-        "slider dispersione del salmone da 0.3 a 3",
+        "slider dispersione del salmone da 0.3 a 3 (fattore moltiplicativo delle σ)",
         "slider dispersione della spigola da 0.3 a 3",
-        "slider allungamento e rotazione comuni della Σ",
+        "slider allungamento comune della Σ (rapporto tra le deviazioni standard principali) da 1 a 4",
+        "slider rotazione comune della Σ da 0° a 90°",
         "interruttore 'Σ diverse per classe'",
         "interruttore distanza euclidea / distanza di Mahalanobis con la Σ comune"
       ],
@@ -2715,7 +2773,7 @@
         "P_e^{\\text{MDM}}\\approx 7.7\\%\\quad \\text{contro}\\quad P_e^{\\text{Bayes}}\\approx 1.6\\%",
         "d_M^2(\\mathbf{x},\\mathbf{m}_i)=(\\mathbf{x}-\\mathbf{m}_i)^t\\Sigma^{-1}(\\mathbf{x}-\\mathbf{m}_i)"
       ],
-      "challenge": "Trova una configurazione con classi molto disperse in cui l'MDM resta quasi ottimo. Quale ipotesi hai sfruttato?",
+      "challenge": "Trova una configurazione con classi molto disperse in cui l'MDM euclideo resta ottimo. Quale ipotesi hai sfruttato? (Soluzione: stessa Σ per le due classi, anche molto allungata, con l'asse lungo perpendicolare al segmento tra i baricentri (o Σ sferica): MDM e bayesiano coincidono, per esempio 1.46% con deviazioni standard 1 e 2.5. È l'ipotesi 2, 'same Σ'; se ruoti la Σ serve la distanza di Mahalanobis.)",
       "size": "L",
       "tech": "canvas2d"
     },
@@ -2727,27 +2785,31 @@
         "c41"
       ],
       "scenario": "medicina",
-      "realExample": "Screening ECG con due feature (frequenza cardiaca a riposo, durata del QRS): i pazienti sani formano una nuvola compatta al centro, quelli con aritmia stanno da entrambi i lati (frequenza troppo bassa o troppo alta). L'MDM, con un solo prototipo per classe e frontiere rette, non può separare una classe che circonda l'altra; alternative che tengono conto della variabilità fanno meglio. Dati sintetici ispirati a misure ECG.",
+      "realExample": "Screening ECG con due feature: frequenza cardiaca a riposo (bpm) e durata del QRS (ms). Tre preset di dati sintetici ispirati a misure ECG. 'Separabili': sani HR 72 ± 8, QRS 90 ± 8 contro tachicardia HR 125 ± 10, QRS 105 ± 12: l'MDM sbaglia lo 0.2%. 'Due lati': la classe aritmia è per metà bradicardia (HR 45 ± 5) e per metà tachicardia (HR 125 ± 10): il suo baricentro (85, 105) cade vicino ai sani (72, 90) e l'MDM sbaglia il 29%, contro il 3.3% di errori (più 3.7% di rifiuti) del Box e il 3.4% di una gaussiana con Σ piena per classe. 'Separabili ma allungate': sani HR uniforme 50-100 e QRS 86-96, blocco di branca HR 80-130 e QRS 100-110: la retta QRS = 98 ms le separa senza errori, ma l'MDM traccia l'asse del segmento tra (75, 91) e (105, 105), obliquo, e sbaglia il 13.5%.",
       "storyboard": [
-        "Preset 'linearmente separabili': due nuvole ben distinte; l'MDM le separa, con un contatore di velocità (operazioni per paziente = C·n = 4) e l'errore quasi nullo.",
-        "Preset 'patologico da due lati': la classe aritmia si divide in due gruppi ai lati dei sani; il suo baricentro cade in mezzo ai sani; la frontiera MDM taglia male e l'errore, calcolato live, sale di colpo.",
-        "Pulsante 'alternative': compaiono affiancati il Box (che copre i sani con un rettangolo e lascia fuori gli altri), una gaussiana per classe (frontiera curva) e il K-NN; per ognuno il suo errore.",
-        "Pulsante 'perché è impossibile?': si scelgono due pazienti con aritmia ai due lati dei sani e si traccia il segmento che li unisce; la regione dell'MDM per l'aritmia è convessa (intersezione di semispazi, der09), quindi deve contenere tutto il segmento, che attraversa i sani: l'errore è strutturale.",
+        "Preset 'separabili' (fade-in 400 ms): due nuvole ben distinte; l'MDM calcola i baricentri e traccia la frontiera (400 ms), con un contatore di velocità (operazioni per paziente ≈ C·n = 4) e l'errore quasi nullo (0.2%).",
+        "Preset 'due lati' (i pazienti con aritmia migrano ai due lati dei sani in 800 ms): il baricentro dell'aritmia scivola in (85, 105), in mezzo ai sani; la frontiera MDM taglia la nuvola dei sani e il contatore dell'errore, calcolato live, sale al 29%.",
+        "Pulsante 'alternative': compaiono affiancati, 300 ms ciascuno, il Box (un rettangolo piccolo per i sani, in gran parte dentro quello grande dell'aritmia; sovrapposizione risolta con 1/V: 3.3% di errori e 3.7% di rifiuti), una gaussiana con Σ piena per classe (frontiera chiusa attorno ai sani, 3.4%) e l'MDM con due prototipi per l'aritmia (1.9%).",
+        "Pulsante 'perché è impossibile?': si scelgono due pazienti con aritmia ai due lati dei sani e si traccia il segmento che li unisce (500 ms); la regione MDM dell'aritmia è convessa (intersezione di semispazi, der09), quindi deve contenere tutto il segmento, che attraversa i sani: l'errore è strutturale.",
+        "Preset 'separabili ma allungate': due strisce orizzontali di pazienti; una retta verde tratteggiata QRS = 98 ms le separa senza errori, ma la frontiera MDM, perpendicolare al segmento tra i baricentri (75, 91) e (105, 105), è obliqua e taglia la striscia dei sani ad alta frequenza: 13.5% di errori. Scritta: 'separabili linearmente non basta: l'MDM non sceglie la retta, la eredita dai baricentri'.",
         "Riepilogo con le frasi delle note: 'computationally efficient but also limited to cases where the classes are linearly separable' e 'alternative classifiers that account for these variations may yield better performance'."
       ],
       "interactions": [
-        "selettore preset (separabili, due lati, anello)",
+        "selettore preset (separabili, due lati, separabili ma allungate)",
         "pulsante 'alternative'",
-        "trascinamento di singoli pazienti di training"
+        "pulsante 'perché è impossibile?'",
+        "clic per aggiungere un secondo prototipo alla classe aritmia (MDM a più prototipi)",
+        "trascinamento di singoli pazienti di training (HR 30-160 bpm, QRS 70-140 ms)"
       ],
-      "visual": "Piano frequenza-QRS con nuvole colorate, frontiera MDM, contatori di velocità ed errore, pannello di confronto con tre alternative.",
-      "aha": "Frontiere lineari significano rapidità ma anche un limite strutturale: se una classe non sta da una sola parte di una retta, nessun prototipo può salvarla.",
+      "visual": "Piano frequenza cardiaca × QRS con nuvole colorate per classe (sani verdi, aritmia rossa), croci dei baricentri, frontiera MDM bianca, retta separatrice ideale tratteggiata, contatori di velocità ed errore, pannello di confronto con le alternative.",
+      "aha": "Frontiere lineari fissate dai baricentri significano rapidità ma anche un limite strutturale: se una classe non sta da una sola parte di una retta nessun prototipo può salvarla, e anche quando una retta esiste l'MDM non è detto che la trovi.",
       "formulasShown": [
-        "\\text{operazioni per pattern} \\approx C\\cdot n",
-        "\\mathbf{m}_{\\text{aritmia}}=\\frac{1}{N}\\sum_k \\mathbf{x}_k \\ \\text{cade tra i sani}",
-        "\\Re_i=\\bigcap_{j\\neq i}\\{\\mathbf{x}:\\ g_i(\\mathbf{x})\\ge g_j(\\mathbf{x})\\}\\ \\text{convessa}"
+        "\\text{operazioni per paziente}\\approx C\\cdot n=2\\cdot 2=4",
+        "\\mathbf{m}_{\\text{aritmia}}=\\tfrac{1}{2}(45,\\ 105)+\\tfrac{1}{2}(125,\\ 105)=(85,\\ 105)",
+        "\\Re_i=\\bigcap_{j\\neq i}\\{\\mathbf{x}:\\ g_i(\\mathbf{x})\\ge g_j(\\mathbf{x})\\}\\ \\text{convessa}",
+        "\\mathbf{w}=(75,91)-(105,105)=(-30,-14):\\ \\ \\mathbf{w}^t\\big((100,86)-(90,98)\\big)=-300+168<0\\ \\Rightarrow\\ \\text{blocco di branca (errore)}"
       ],
-      "challenge": "Nel preset 'due lati', aggiungi a mano un secondo prototipo per la classe aritmia (due prototipi per classe): l'errore scende? Che cosa hai inventato rispetto all'MDM?",
+      "challenge": "Nel preset 'due lati', aggiungi a mano un secondo prototipo per la classe aritmia (due prototipi per classe): dove lo metti e di quanto scende l'errore? Che cosa hai inventato rispetto all'MDM? (Soluzione: con i prototipi dell'aritmia in (45, 105) e (125, 105) e la regola 'classe del prototipo più vicino' l'errore scende dal 29% a circa 1.9%: hai inventato un classificatore a più prototipi per classe, un passo verso il K-NN di m08.)",
       "size": "M",
       "tech": "canvas2d"
     },
@@ -2763,61 +2825,96 @@
       "scenario": "pesce",
       "realExample": "Classe salmone nel piano luminosità-larghezza, con dispersioni diverse lungo i due assi: σ_11 = 0.8 (luminosità) e σ_12 = 1.2 cm (larghezza). Il Box aggiunge all'MDM la dispersione di secondo ordine lungo ogni feature. Dati sintetici.",
       "storyboard": [
-        "I pesci di training del salmone cadono nel piano; la croce rossa del baricentro si assesta come nell'MDM ('primo ordine').",
-        "Passo 'secondo ordine': sotto l'asse x1 si forma l'istogramma della luminosità e una freccia orizzontale lunga σ_11 si apre dal baricentro; a sinistra dell'asse x2 l'istogramma della larghezza e una freccia verticale σ_12. I due valori compaiono con la formula della deviazione standard.",
+        "I pesci di training del salmone cadono nel piano (80 ms ciascuno); la croce rossa del baricentro si assesta come nell'MDM ('primo ordine': m = (4.2, 14.0)).",
+        "Passo 'secondo ordine' (clic su 'Passo'): sotto l'asse x_1 si forma l'istogramma della luminosità (600 ms) e una freccia orizzontale lunga σ_11 = 0.8 si apre dal baricentro; a sinistra dell'asse x_2 l'istogramma della larghezza e una freccia verticale σ_12 = 1.2. I due valori compaiono con la formula della deviazione standard e i numeri sostituiti.",
         "Il rettangolo cresce dal baricentro verso l'esterno in 500 ms, più largo lungo l'asse in cui la classe è più dispersa: 'size proportional to the standard deviation along each dimension'.",
-        "Si aggiunge la classe spigola, più compatta: il suo box è più piccolo; hover su un box mostra i suoi 2n = 4 parametri.",
-        "Confronto a scorrimento: a sinistra la classe come punto (MDM), a destra come box (Box classifier)."
+        "Si aggiunge la classe spigola, più compatta (σ = (0.7, 1.0)): il suo box è più piccolo; hover su un box mostra i suoi 2n = 4 parametri.",
+        "Confronto a scorrimento (cursore verticale trascinabile): a sinistra la classe come punto (MDM), a destra come box (Box classifier)."
       ],
       "interactions": [
         "pulsante play/passo",
-        "slider dispersione lungo x1 e lungo x2 della classe",
-        "selettore stima con 1/N o 1/(N−1)",
+        "slider dispersione lungo x_1 della classe da 0.2 a 2",
+        "slider dispersione lungo x_2 della classe da 0.2 a 3",
+        "selettore stima con 1/N o 1/(N−1) (con N = 20 campioni la differenza è circa 2.6%)",
         "hover sui box"
       ],
       "visual": "Scatter con istogrammi marginali, frecce delle deviazioni standard con le etichette σ_11 e σ_12 come nella slide 8, rettangolo che cresce, parametri per classe.",
       "aha": "Il Box è l'MDM più la dispersione: stesso centro, ma ogni classe si prende tanto spazio quanto la sua deviazione standard lungo ciascun asse.",
       "formulasShown": [
         "\\hat{\\sigma}_{ij}=\\sqrt{\\frac{1}{N_i}\\sum_{\\mathbf{x}_k\\in\\omega_i}(x_{kj}-m_{ij})^2}",
-        "\\sigma_{11}=0.8,\\quad \\sigma_{12}=1.2"
+        "\\hat{\\sigma}_{11}=\\sqrt{\\frac{1}{N_1}\\sum_{k}(x_{k1}-4.2)^2}=0.8,\\qquad \\hat{\\sigma}_{12}=1.2"
       ],
-      "challenge": "Rendi la classe più dispersa lungo la larghezza che lungo la luminosità: prevedi la forma del box prima di muovere lo slider.",
+      "challenge": "Rendi la classe più dispersa lungo la larghezza che lungo la luminosità: prevedi la forma del box prima di muovere lo slider. Poi di quanto cambia σ passando da 1/N a 1/(N−1) con 5 campioni? (Soluzione: il box diventa più alto che largo, perché il semilato α·σ_12 supera α·σ_11; con N = 5 la stima con 1/(N−1) è più grande di un fattore √(5/4) ≈ 1.118, cioè dell'11.8%.)",
       "size": "M",
       "tech": "svg+motion"
     },
     {
       "id": "m16-box-alpha-e-lati",
-      "title": "La costante α, il semilato α·σ e il box sempre dritto",
+      "title": "La costante α e il semilato α·σ: il box come prodotto di intervalli",
       "concepts": [
-        "c44",
         "c49",
         "c50",
         "c51"
       ],
       "scenario": "pesce",
-      "realExample": "Salmone con baricentro (4.2, 14.0) e σ = (0.8, 1.2): con α = 2 il box va da 2.6 a 5.8 in luminosità e da 11.6 a 16.4 cm in larghezza. Interruttore 'feature correlate': nei salmoni reali luminosità e larghezza possono essere correlate (nuvola inclinata), ma il box resta con i lati paralleli agli assi. Dati sintetici.",
+      "realExample": "Salmone con baricentro (4.2, 14.0) e σ = (0.8, 1.2): con α = 2 il box va da 2.6 a 5.8 in luminosità e da 11.6 a 16.4 cm in larghezza (lati interi 3.2 e 4.8). Il test di appartenenza di un pesce sono due doppi confronti, uno per feature; con la lunghezza come terza feature (m = 60 cm, σ = 5) il box diventa un parallelepipedo e i confronti diventano tre. Dati sintetici.",
       "storyboard": [
-        "Ricostruzione annotata della slide 8 per il salmone: le quote 'α·σ11' e 'α·σ12' vanno dalle linee tratteggiate del baricentro ai lati del box, la freccia 'Constant' indica α.",
-        "Slider α da 0.5 a 4: il box si gonfia e si sgonfia in modo uniforme; le quote e gli intervalli [m − ασ, m + ασ] si aggiornano con i numeri; il lato intero 2ασ è mostrato a parte.",
-        "Un pattern di test trascinabile: il test di appartenenza scorre come due righe di spunte (|x_1 − 4.2| ≤ 2·0.8? |x_2 − 14.0| ≤ 2·1.2?), verdi o rosse.",
-        "Interruttore 'feature correlate': la nuvola ruota di 40°; le deviazioni standard marginali crescono e il box, sempre dritto, si riempie di angoli vuoti evidenziati; accanto compare la Σ con la covarianza fuori diagonale barrata: 'in a primitive way'.",
-        "Vista 3-D opzionale (n = 3, con la lunghezza): il box diventa un parallelepipedo, test su tre coordinate."
+        "Ricostruzione annotata della slide 8 per il salmone (fade-in 400 ms): le quote 'α· σ11' e 'α · σ12' vanno dalle linee tratteggiate del baricentro ai lati del box, la freccia 'Constant' indica α, come nella figura.",
+        "Slider α da 0.5 a 4: il box si gonfia e si sgonfia in modo uniforme in tempo reale; le quote e gli intervalli [m − ασ, m + ασ] si aggiornano con i numeri; il lato intero 2ασ è mostrato a parte con una quota tratteggiata.",
+        "Un pesce di test trascinabile: il test di appartenenza scorre come due righe di spunte (|x_1 − 4.2| ≤ α·0.8? |x_2 − 14.0| ≤ α·1.2?), verdi o rosse, con i numeri sostituiti; il pesce è dentro il box solo se tutte le righe sono verdi ('per ogni j').",
+        "Per il pesce di test compare anche 'α minimo per entrare': max_j |x_j − m_j|/σ_j, cioè la coordinata più lontana misurata in deviazioni standard; lo slider α ha una tacca in quel valore.",
+        "Selettore n = 3 (aggiunge la lunghezza): la vista passa a 3-D in 800 ms, il box diventa un parallelepipedo e il test aggiunge una terza riga di spunte."
       ],
       "interactions": [
-        "slider α da 0.5 a 4",
-        "trascinamento del pattern di test",
-        "interruttore feature correlate (rotazione della nuvola da 0° a 60°)",
-        "selettore n = 2 / 3"
+        "slider α da 0.5 a 4 (passo 0.05)",
+        "trascinamento del pesce di test (luminosità 1-8, larghezza 9-19 cm)",
+        "selettore n = 2 / 3",
+        "rotazione della vista 3-D quando n = 3"
       ],
-      "visual": "Box annotato come nella slide 8, quote animate, righe del test di appartenenza, matrice Σ con la parte ignorata barrata, angoli vuoti tratteggiati.",
-      "aha": "Il box è un prodotto di intervalli [m_ij − ασ_ij, m_ij + ασ_ij]: semplicissimo da testare, ma con i lati sempre paralleli agli assi, cieco alle correlazioni tra feature.",
+      "visual": "Box annotato come nella slide 8, quote animate con i valori numerici, righe del test di appartenenza con spunte colorate, tacca dell'α minimo sullo slider, vista 3-D opzionale.",
+      "aha": "Il box è un prodotto di intervalli [m_ij − ασ_ij, m_ij + ασ_ij]: α è l'unica manopola del progettista, e un pattern entra nel box solo se ogni sua coordinata dista dal baricentro al più α deviazioni standard.",
       "formulasShown": [
         "B_i=\\prod_{j=1}^{n}[m_{ij}-\\alpha\\sigma_{ij},\\ m_{ij}+\\alpha\\sigma_{ij}]",
-        "\\alpha=2:\\ [2.6,\\ 5.8]\\times[11.6,\\ 16.4]"
+        "\\alpha=2:\\ [4.2-1.6,\\ 4.2+1.6]\\times[14.0-2.4,\\ 14.0+2.4]=[2.6,\\ 5.8]\\times[11.6,\\ 16.4]",
+        "\\alpha_{\\min}(\\mathbf{x})=\\max_j\\frac{|x_j-m_{ij}|}{\\sigma_{ij}}"
       ],
-      "challenge": "Con la nuvola inclinata di 45°, quale frazione del box resta vuota? Stimala prima di attivare l'evidenziazione.",
+      "challenge": "Con quale α minimo il pesce (5.9, 16.0) entra nel box del salmone? Calcolalo prima di muovere lo slider. (Soluzione: servono |5.9 − 4.2| = 1.7 ≤ 0.8α e |16.0 − 14.0| = 2.0 ≤ 1.2α, cioè α ≥ 2.125 e α ≥ 1.667: α minimo = 2.125, deciso dalla luminosità, la coordinata più lontana in unità di σ.)",
       "size": "M",
       "tech": "svg+motion"
+    },
+    {
+      "id": "m16-box-secondo-ordine-primitivo",
+      "title": "Secondo ordine 'in modo primitivo': cosa il box non vede",
+      "concepts": [
+        "c44"
+      ],
+      "scenario": "pesce",
+      "realExample": "Classe salmone con σ = (0.8, 1.2) e luminosità e larghezza correlate con coefficiente ρ regolabile (dati sintetici). Box con α = 2: [2.6, 5.8] × [11.6, 16.4], area 15.36, altezza costante 1/15.36 = 0.065, identico qualunque sia ρ. I tre motivi del 'primitive way' diventano misurabili: (1) il box usa solo la diagonale di Σ: con ρ = 0.8 il 40% della sua area sta fuori dall'ellisse che contiene il 95% dei salmoni, contro il 3.8% con ρ = 0; (2) la densità è piatta: la gaussiana vale 0.166 nel baricentro e 0.003 nell'angolo (2σ, 2σ), il box 0.065 ovunque e 0 appena fuori; (3) lo stesso α vale per tutte le classi e tutte le feature.",
+      "storyboard": [
+        "Stato iniziale: nuvola di 300 salmoni con ρ = 0; accanto la matrice Σ 2×2 con le quattro caselle (0.64, 0, 0, 1.44); il box α = 2 cresce dal baricentro in 500 ms e l'ellisse gaussiana del 95% (tratteggiata) si traccia sopra: quasi coincidono (area del box fuori dall'ellisse 3.8%).",
+        "Slider ρ da 0 a 0.8 (o animazione automatica di 2 s): la nuvola si inclina, le caselle fuori diagonale della Σ si accendono (0.768 con ρ = 0.8), ma il box non si muove di un pixel perché le σ marginali restano 0.8 e 1.2; due angoli opposti del box si svuotano e si tratteggiano: 40% dell'area fuori dall'ellisse. Le caselle fuori diagonale vengono barrate con l'etichetta 'il Box legge solo la diagonale'.",
+        "Pulsante 'profilo': una linea passa per il baricentro (direzione trascinabile); sotto, in 600 ms, si disegna la densità lungo la linea: un gradino piatto a 0.065 tra i due lati del box contro la campana gaussiana (picco 0.166 con ρ = 0, 0.276 con ρ = 0.8) che decresce allontanandosi dal baricentro.",
+        "Pulsante 'stesso α per tutti': compare la spigola (σ = (0.7, 1.0)); un unico slider α fa crescere insieme i due box; un interruttore disattivato e barrato 'α diverso per classe o per feature' ricorda ciò che il Box non fa.",
+        "Confronto finale a tre pannelli affiancati (fade 400 ms): Box (rettangolo dritto e piatto), gaussiana a covarianza diagonale (ellisse dritta a campana), gaussiana con Σ piena (ellisse inclinata, Caso 3 di m19): 'uso completo del secondo ordine'."
+      ],
+      "interactions": [
+        "slider ρ (correlazione tra luminosità e larghezza) da −0.9 a 0.9",
+        "slider α da 1 a 4",
+        "pulsante 'profilo' con direzione della linea trascinabile da 0° a 180°",
+        "pulsante 'stesso α per tutti'",
+        "selettore del pannello di confronto (Box, gaussiana diagonale, gaussiana piena)"
+      ],
+      "visual": "Scatter della classe con box e ellisse del 95%, angoli vuoti tratteggiati con la percentuale di area, matrice Σ con le caselle fuori diagonale evidenziate e poi barrate, grafico del profilo di densità (gradino contro campana), tre pannelli di confronto.",
+      "aha": "Il Box usa il secondo ordine 'in modo primitivo': della matrice di covarianza prende solo la diagonale, la trasforma in un rettangolo dritto con densità piatta e usa lo stesso α per tutti. La gaussiana con Σ piena usa tutto il secondo ordine: inclinazione compresa.",
+      "formulasShown": [
+        "\\Sigma_{\\text{sal}}=\\begin{pmatrix}0.64 & 0.768\\\\ 0.768 & 1.44\\end{pmatrix}\\ (\\rho=0.8)\\ \\longrightarrow\\ \\text{Box: } \\sigma_{11}=0.8,\\ \\sigma_{12}=1.2",
+        "h=\\frac{1}{(2\\cdot 2\\cdot 0.8)(2\\cdot 2\\cdot 1.2)}=\\frac{1}{15.36}=0.065",
+        "p_{\\text{Gauss}}(\\mathbf{m})=\\frac{1}{2\\pi\\sqrt{|\\Sigma|}}=\\frac{1}{2\\pi\\cdot 0.96}=0.166\\quad(\\rho=0)"
+      ],
+      "challenge": "Prevedi: aumentando ρ da 0 a 0.8, la frazione di salmoni che cade dentro il box sale, scende o resta uguale? Poi verifica con il contatore. (Soluzione: sale leggermente, da 91.0% a 92.9%. Il problema del box con feature correlate non sono i salmoni persi ma lo spazio vuoto negli angoli, il 40% dell'area, che il box rivendica per il salmone e può sottrarre alle classi vicine.)",
+      "size": "M",
+      "tech": "svg+motion",
+      "addedBy": "verificatore"
     },
     {
       "id": "m16-box-pdf-uniforme-3d",
@@ -2846,9 +2943,10 @@
       "aha": "Una pdf uniforme deve avere volume 1: più la classe è dispersa, più il suo box è largo e basso. L'altezza 1/V_i è la probabilità da usare quando i box si contendono un pattern.",
       "formulasShown": [
         "h_i=\\frac{1}{V_i},\\qquad V_i=\\prod_{j}2\\alpha\\sigma_{ij}",
-        "V_{\\text{acqua}}=(2\\cdot 2\\cdot 1)(2\\cdot 2\\cdot 1.5)=24,\\quad h=0.0417"
+        "V_{\\text{acqua}}=(2\\cdot 2\\cdot 1)(2\\cdot 2\\cdot 1.5)=24,\\quad h=0.0417",
+        "V_{\\text{veg}}=6\\cdot 24=144,\\ h=0.0069;\\qquad V_{\\text{suolo}}=16\\cdot 16=256,\\ h=0.0039"
       ],
-      "challenge": "Quale valore di α rende l'altezza del blocco dell'acqua uguale a 0.01? Calcolalo e verificalo con lo slider.",
+      "challenge": "Quale valore di α rende l'altezza del blocco dell'acqua uguale a 0.01? Calcolalo e verificalo con lo slider. (Soluzione: h = 1/V = 0.01 richiede V = 100 = (2α·1)(2α·1.5) = 6α², quindi α = √(100/6) ≈ 4.08.)",
       "size": "M",
       "tech": "canvas2d"
     },
@@ -2863,11 +2961,11 @@
       "scenario": "telerilevamento",
       "realExample": "Mappa sintetica di copertura del suolo da drone (80×80 pixel) con acqua, vegetazione, suolo nudo e una piccola area di tetti non prevista nel training. Il Box classifier (parallelepipedi in telerilevamento) assegna ogni pixel al box in cui cade; i pixel fuori da tutti i box, compresi i tetti, restano neri come 'non classificati'. Dati sintetici ispirati a immagini multispettrali.",
       "storyboard": [
-        "A sinistra il piano rosso-NIR con i tre box (α = 2); a destra l'immagine RGB sintetica.",
-        "Scansione: una linea scorre sull'immagine riga per riga; per ogni pixel un puntino vola nel piano, si ferma, e se è dentro un box la cella corrispondente dell'immagine si colora con la classe ('Within-Box Assignment').",
-        "I pixel che cadono fuori da tutti i box restano neri; un contatore mostra la percentuale di non classificati; i tetti sono quasi tutti neri: il rifiuto segnala una classe mancante.",
-        "Cliccando un pixel nero si vede il suo punto nel piano, isolato tra i box, e la scritta 'does not fit well with any class'.",
-        "Confronto con l'MDM sulla stessa immagine: nessun pixel nero, ma i tetti vengono assegnati per forza a suolo o vegetazione."
+        "A sinistra il piano rosso-NIR con i tre box (α = 2) di acqua [2, 6] × [0, 6], vegetazione [2, 8] × [33, 57] e suolo [17, 33] × [22, 38]; a destra l'immagine RGB sintetica 80×80.",
+        "Scansione (play): una linea scorre sull'immagine riga per riga (80 righe in 4 s, 50 ms per riga); per ogni pixel un puntino vola nel piano, e se è dentro un box la cella corrispondente dell'immagine si colora con la classe ('Within-Box Assignment').",
+        "I pixel che cadono fuori da tutti i box restano neri; un contatore mostra la percentuale di non classificati; i tetti sono quasi tutti neri: il rifiuto segnala una classe mancante nel training.",
+        "Clic su un pixel nero: il suo punto nel piano si illumina, isolato tra i box, con la scritta delle note 'does not fit well with any class'.",
+        "Interruttore Box / MDM (transizione 600 ms): con l'MDM nessun pixel resta nero, ma i tetti vengono assegnati per forza a suolo o vegetazione."
       ],
       "interactions": [
         "pulsante play/pausa della scansione",
@@ -2912,9 +3010,9 @@
       "aha": "La distanza che conta è quella dal bordo, non dal centro: una classe dispersa ha bordi che arrivano lontano e può 'catturare' pixel che l'MDM darebbe a un'altra classe.",
       "formulasShown": [
         "d(\\mathbf{x},B_i)=\\sqrt{\\sum_j\\max(0,\\ |x_j-m_{ij}|-\\alpha\\sigma_{ij})^2}",
-        "d(\\mathbf{x},B_{\\text{suolo}})=\\sqrt{(17-12)^2+0^2}=5.00"
+        "d(\\mathbf{x},B_{\\text{suolo}})=\\sqrt{(17-12)^2+0^2}=5.00,\\quad d(\\mathbf{x},B_{\\text{veg}})=\\sqrt{(12-8)^2+(33-28)^2}=6.40"
       ],
-      "challenge": "Trova un pixel che il box più vicino assegna alla vegetazione mentre l'MDM lo assegnerebbe al suolo.",
+      "challenge": "Trova un pixel che il box più vicino assegna alla vegetazione mentre l'MDM lo assegnerebbe al suolo. (Soluzione: per esempio (10, 30): dista 3.61 dal box della vegetazione e 7.00 da quello del suolo, ma 15.81 dal baricentro della vegetazione e 15.00 da quello del suolo. La vegetazione è molto dispersa in NIR (σ = 6) e il suo box arriva fino a NIR = 33.)",
       "size": "M",
       "tech": "svg+motion"
     },
@@ -2947,9 +3045,10 @@
       "aha": "Quando i box si sovrappongono la sola geometria non basta: la probabilità (altezza 1/V, eventualmente per il prior) premia la classe più concentrata. È già un classificatore bayesiano, con densità uniformi.",
       "formulasShown": [
         "\\omega^*=\\arg\\max_{i:\\ \\mathbf{x}\\in B_i}\\frac{P(\\omega_i)}{V_i}",
+        "\\frac{1}{V_{\\text{sal}}}=\\frac{1}{61.44}=0.016\\ <\\ \\frac{1}{V_{\\text{spi}}}=\\frac{1}{3.2}=0.3125",
         "r_i(\\mathbf{x})=\\sum_j\\left(\\frac{x_j-m_{ij}}{\\sigma_{ij}}\\right)^2"
       ],
-      "challenge": "Con quale prior del salmone la zona contesa passa al salmone? Calcolalo dai volumi dei due box prima di muovere lo slider.",
+      "challenge": "Con quale prior del salmone la zona contesa passa al salmone? Calcolalo dai volumi dei due box prima di muovere lo slider. (Soluzione: V_sal = (2·2·1.6)(2·2·2.4) = 61.44 e V_spi = (2·2·0.4)(2·2·0.5) = 3.2; il salmone vince se P(sal)/61.44 > (1 − P(sal))/3.2, cioè P(salmone) > 61.44/64.64 ≈ 0.95.)",
       "size": "M",
       "tech": "canvas2d"
     },
@@ -2981,7 +3080,7 @@
         "P(\\mathbf{x}\\in B_i|\\omega_i)=\\left[\\mathrm{erf}\\left(\\tfrac{\\alpha}{\\sqrt{2}}\\right)\\right]^n",
         "\\alpha=2,\\ n=10:\\ 0.954^{10}=0.628"
       ],
-      "challenge": "Con peso del rifiuto 0.3, trova l'α che minimizza il punteggio. Poi porta n a 20: l'α migliore cresce o cala?",
+      "challenge": "Con peso del rifiuto 0.3, trova l'α che minimizza il punteggio. Poi porta n a 20: l'α migliore cresce o cala? (Soluzione, stima Monte Carlo sui dati sintetici con la regola 1/V nelle sovrapposizioni: con n = 2 l'ottimo è intorno ad α ≈ 2.3 (errori 1.0%, rifiuti 3.9%); con n = 20, aggiungendo 18 feature rumorose uguali per le due classi, l'ottimo sale a circa α ≈ 2.9: in alta dimensione servono box più larghi per non rifiutare troppi pesci normali.)",
       "size": "M",
       "tech": "canvas2d"
     },
@@ -2993,26 +3092,28 @@
         "c63"
       ],
       "scenario": "fonte",
-      "realExample": "Ricostruzione interattiva della figura della slide 8 (tre classi ω_1 cerchi gialli, ω_2 stelle verdi, ω_3 quadrati blu) con coordinate sintetiche compatibili con il disegno: per ogni classe si stimano baricentro e deviazioni standard (2n = 4 parametri) e si disegnano i box. È l'esempio citato direttamente dalla fonte.",
+      "realExample": "Ricostruzione interattiva della figura della slide 8 (ω_1 cerchi gialli, ω_2 stelle verdi, ω_3 quadrati blu) con coordinate sintetiche compatibili con il disegno, in unità arbitrarie: ω_1 m = (8.7, 6.0), σ = (0.8, 0.75); ω_2 m = (2.5, 5.4), σ = (0.5, 0.65); ω_3 m = (5.6, 1.8), σ = (0.45, 0.45); α = 3. Box risultanti: ω_1 [6.3, 11.1] × [3.75, 8.25], ω_2 [1.0, 4.0] × [3.45, 7.35], ω_3 [4.25, 6.95] × [0.45, 3.15], disgiunti come nella slide. Il modello intero sta in 2nC = 12 numeri più α. È l'esempio citato direttamente dalla fonte.",
       "storyboard": [
-        "Compaiono solo i campioni delle tre classi, come nella slide, senza box.",
-        "Passo 'Barycenter': per ogni classe la croce rossa si posa sul baricentro, con la freccia 'Barycenter of ω1' per la classe gialla.",
-        "Passo 'Standard deviation': per ω_1 compaiono le linee tratteggiate e le quote σ11 lungo x1 e σ12 lungo x2; per le altre classi i valori in una tabella dei parametri (m_i1, m_i2, σ_i1, σ_i2).",
-        "Passo 'Constant': la freccia indica α; lo slider α fa crescere i tre box insieme finché la figura coincide con quella della slide (i box disgiunti con spazio vuoto in mezzo).",
-        "Quiz finale: tre pattern ignoti appaiono (uno in un box, uno tra i box, uno al confine) e lo studente deve dire la classe o 'non classificato' prima che il widget risponda."
+        "Compaiono solo i campioni delle tre classi, con i simboli e i colori della slide (fade-in 400 ms), senza box.",
+        "Passo 'Barycenter' (clic su 'Passo'): per ogni classe la croce rossa scende sul baricentro (300 ms, stagger 150 ms), con la freccia 'Barycenter of ω1' per la classe gialla; la tabella dei parametri si riempie con m_i1 e m_i2.",
+        "Passo 'Standard deviation': per ω_1 compaiono le linee tratteggiate dal baricentro e le quote σ11 lungo x1 e σ12 lungo x2, con le etichette 'Standard deviation of ω1 along x1/x2'; per le altre classi i valori entrano nella tabella (σ_i1, σ_i2).",
+        "Passo 'Constant': la freccia 'Constant' indica α; lo slider α fa crescere i tre box insieme (500 ms per ogni scatto) finché, con α = 3, la figura coincide con quella della slide: box disgiunti con spazio vuoto in mezzo.",
+        "Quiz finale: tre pattern ignoti appaiono uno alla volta, (8.0, 7.0), (5.2, 4.2) e (6.4, 4.0); lo studente sceglie la classe o 'non classificato' prima che il widget risponda (risposte: ω_1; non classificato, perché fuori da tutti i box; ω_1, al confine: dentro di 0.1 in x_1 e di 0.25 in x_2)."
       ],
       "interactions": [
         "pulsante 'Passo' per le fasi dell'esempio",
-        "slider α",
-        "trascinamento dei campioni per vedere come cambiano i parametri",
-        "risposta al quiz con tre pulsanti per pattern"
+        "slider α da 1 a 5 (passo 0.05)",
+        "trascinamento dei campioni: baricentro, σ e box si ricalcolano live",
+        "risposta al quiz con tre pulsanti per pattern (ω_1, ω_2, ω_3, non classificato)"
       ],
-      "visual": "Figura della slide 8 ricostruita in SVG con gli stessi colori e simboli, tabella dei 12 parametri, quote animate.",
-      "aha": "Tutto il modello Box dell'esempio sta in 12 numeri (baricentro e due deviazioni standard per tre classi) più la costante α.",
+      "visual": "Figura della slide 8 ricostruita in SVG con gli stessi colori e simboli, quote animate per ω_1, tabella dei 12 parametri che si riempie passo per passo, evidenziazione delle coppie di box quando si toccano.",
+      "aha": "Tutto il modello Box dell'esempio sta in 12 numeri (baricentro e due deviazioni standard per tre classi) più la costante α; è α a decidere se i box restano disgiunti o si toccano.",
       "formulasShown": [
-        "\\{\\mathbf{m}_i,\\sigma_{i1},\\sigma_{i2}\\}_{i=1}^{3}\\ \\Rightarrow\\ 2nC=12\\ \\text{parametri}"
+        "\\{\\mathbf{m}_i,\\sigma_{i1},\\sigma_{i2}\\}_{i=1}^{3}\\ \\Rightarrow\\ 2nC=12\\ \\text{parametri}",
+        "B_1=[8.7-3\\cdot 0.8,\\ 8.7+3\\cdot 0.8]\\times[6.0-3\\cdot 0.75,\\ 6.0+3\\cdot 0.75]=[6.3,\\ 11.1]\\times[3.75,\\ 8.25]",
+        "B_1\\cap B_3\\neq\\emptyset\\iff 8.7-0.8\\alpha\\le 5.6+0.45\\alpha\\ \\ \\text{e}\\ \\ 6.0-0.75\\alpha\\le 1.8+0.45\\alpha"
       ],
-      "challenge": "Quale α serve perché il box di ω_1 tocchi quello di ω_3? Leggi i parametri dalla tabella e calcolalo prima di muovere lo slider.",
+      "challenge": "Aumentando α da 3, quali due box si toccano per primi e a quale α? Ricavalo dalla tabella dei parametri prima di muovere lo slider (due box si toccano quando si sovrappongono in entrambe le coordinate). (Soluzione: ω_2 e ω_3 a α ≈ 3.27 (servono α ≥ 3.1/0.95 = 3.26 in x_1 e α ≥ 3.6/1.1 = 3.27 in x_2); poi ω_1 e ω_3 a α = 3.5 (in x_2: 4.2/1.2); ω_1 e ω_2 solo a α ≈ 4.77.)",
       "size": "M",
       "tech": "svg+motion"
     },
@@ -3025,26 +3126,28 @@
         "c67"
       ],
       "scenario": "cifre",
-      "realExample": "Riconoscimento di cifre scritte a mano descritte da due feature (inchiostro totale e larghezza del tratto) per le cifre 1 e 7: alcune coppie di feature danno classi compatte e allineate agli assi (il Box va bene), altre danno classi allungate in diagonale, perché le due feature crescono insieme, o curve. Si confronta il Box con l'MDM e con il classificatore gaussiano. Dati sintetici ispirati a MNIST.",
+      "realExample": "Riconoscimento delle cifre 1 e 7 scritte a mano (immagini 28×28 stile MNIST) con due feature standardizzate: x_1 = inclinazione del tratto, x_2 = frazione di pixel accesi nella metà superiore (la barra del 7). Dati sintetici. Preset 'dispersioni diverse': 1 compatto (m = (0, −1), σ = 0.3) e 7 disperso (m = (0, 1.5), σ = 1.5): MDM 10.1% di errori, Box 5.0%, gaussiana 2.7%, perché il Box segue la dispersione di ogni classe. Preset 'allineate' e 'diagonali': baricentri (0, −1.2) e (0, 1.2), stessa forma con deviazioni standard principali 1.6 e 0.4, ruotata di θ: con θ = 0 MDM, Box e gaussiana sbagliano tutti circa lo 0.13%; oltre θ = 16.8° i box (α = 2) si sovrappongono; con θ = 45° l'MDM sbaglia il 15.1%, il Box il 24.9% e la gaussiana l'1.4%. Preset 'mezzelune' (due archi intrecciati): Box 7.7%, MDM 19.3%, K-NN 0.15%. Regola del Box usata per le tabelle: dentro un solo box → quella classe; box sovrapposti → 1/V più alto; fuori da tutti → box con il bordo più vicino.",
       "storyboard": [
-        "Preset 'allineate': due nuvole compatte con gli assi principali paralleli agli assi; box aderenti, errore basso; rispetto all'MDM il Box segue anche la diversa dispersione delle due classi: 'more flexible than MDM'.",
-        "Preset 'diagonali': le nuvole si inclinano (animazione di rotazione 600 ms); i box si allargano, restano dritti e si sovrappongono negli angoli; le zone di errore si tratteggiano: 'Rigid Boundaries'.",
-        "Preset 'curve': una classe a mezzaluna; il box copre soprattutto spazio vuoto e ingloba parte dell'altra classe: 'may struggle with classes exhibiting irregular distributions'.",
-        "Per ogni preset una tabella dell'errore di MDM, Box e gaussiana; un pulsante ruota gli assi delle feature per allinearli alle nuvole (anteprima di PCA) e i box tornano a funzionare."
+        "Preset 'dispersioni diverse' (fade-in 400 ms): l'1 è una nuvola piccola, il 7 una nuvola grande; box aderenti e di dimensioni diverse; la tabella degli errori si riempie riga per riga (MDM 10.1%, Box 5.0%, gaussiana 2.7%) con la frase delle note 'more flexible model than MDM by incorporating class variance'.",
+        "Preset 'allineate' (θ = 0°): due nuvole allungate orizzontalmente, box aderenti e disgiunti, i tre classificatori quasi perfetti (0.13%).",
+        "Slider θ o preset 'diagonali': le nuvole ruotano insieme (animazione 600 ms per 15°); i box restano dritti e si allargano in verticale (σ_2(θ) cresce da 0.4); a θ = 16.8° i due box si toccano e compare la zona contesa; le zone di errore si tratteggiano in rosso. A θ = 45° la metà dei campioni cade in una zona contesa o fuori dai box e l'errore del Box (24.9%) supera quello dell'MDM (15.1%): 'Rigid Boundaries'.",
+        "Preset 'mezzelune': due archi intrecciati; ogni box copre soprattutto spazio vuoto e metà dell'altra classe; il Box (7.7%) fa meglio dell'MDM (19.3%) ma resta lontano dal K-NN (0.15%), che segue le curve: 'may struggle with classes exhibiting irregular distributions'.",
+        "Pulsante 'ruota gli assi delle feature' (anteprima di PCA, m14): nel preset 'diagonali' gli assi ruotano di θ in 800 ms, le nuvole tornano allineate agli assi e i box tornano a funzionare (errore di nuovo circa 0.13%)."
       ],
       "interactions": [
-        "selettore preset (allineate, diagonali, curve)",
-        "slider rotazione delle nuvole da 0° a 90°",
+        "selettore preset (dispersioni diverse, allineate, diagonali, mezzelune)",
+        "slider rotazione θ delle nuvole da 0° a 90°",
         "pulsante 'ruota gli assi delle feature'",
-        "slider α"
+        "slider α da 1 a 4"
       ],
-      "visual": "Piano delle feature con nuvole, box, zone di errore tratteggiate, tabella di confronto dei tre classificatori.",
-      "aha": "Il Box è efficace esattamente quando le classi 'sembrano rettangoli' allineati agli assi; appena la forma è inclinata o irregolare, i lati rigidi diventano il limite principale.",
+      "visual": "Piano delle feature con nuvole colorate (1 in blu, 7 in arancio), box dritti, zona contesa tratteggiata, zone di errore in rosso, tabella di confronto MDM / Box / gaussiana (e K-NN nel preset mezzelune) che si aggiorna live.",
+      "aha": "Il Box è efficace esattamente quando le classi 'sembrano rettangoli' allineati agli assi, anche con dispersioni diverse; appena la forma è inclinata o irregolare, i lati rigidi diventano il limite principale.",
       "formulasShown": [
         "B_i=\\prod_j[m_{ij}-\\alpha\\sigma_{ij},\\ m_{ij}+\\alpha\\sigma_{ij}]",
-        "P_e^{\\text{Box}}\\ \\text{contro}\\ P_e^{\\text{MDM}}\\ \\text{contro}\\ P_e^{\\text{Gauss}}"
+        "\\sigma_2(\\theta)=\\sqrt{1.6^2\\sin^2\\theta+0.4^2\\cos^2\\theta}",
+        "\\theta=45^\\circ:\\ P_e^{\\text{MDM}}=15.1\\%,\\quad P_e^{\\text{Box}}=24.9\\%,\\quad P_e^{\\text{Gauss}}=1.4\\%"
       ],
-      "challenge": "Trova l'angolo di rotazione delle nuvole oltre il quale il Box sbaglia più dell'MDM.",
+      "challenge": "Con α = 2, oltre quale angolo θ i due box iniziano a sovrapporsi? Ricavalo dalla deviazione standard marginale σ_2(θ) e poi verifica con lo slider. (Soluzione: i box si toccano quando 2·α·σ_2(θ) = 2.4, cioè σ_2(θ) = 0.6: 0.16 + 2.4 sin²θ = 0.36, sin²θ = 1/12, θ ≈ 16.8°. Fino a circa 20° il Box sbaglia quanto l'MDM, oltre sbaglia di più.)",
       "size": "M",
       "tech": "canvas2d"
     },
@@ -3065,8 +3168,8 @@
       ],
       "interactions": [
         "trascinamento del pesce su entrambi i pannelli insieme",
-        "slider dispersione della spigola",
-        "slider α del Box",
+        "slider dispersione della spigola da σ = (0.4, 0.5) a σ = (1.2, 1.8), con una tacca in (0.8, 1.2), la dispersione del salmone",
+        "slider α del Box da 1 a 4",
         "pulsante 'pesce anomalo'"
       ],
       "visual": "Due pannelli sincronizzati, verdetti colorati, tabella di confronto che si compila riga per riga.",
@@ -3075,7 +3178,7 @@
         "\\lVert(5.6,12.2)-(4.2,14.0)\\rVert=2.28,\\quad \\lVert(5.6,12.2)-(6.8,10.5)\\rVert=2.08",
         "|5.6-4.2|\\le 2\\cdot 0.8,\\quad |12.2-14.0|\\le 2\\cdot 1.2"
       ],
-      "challenge": "Trova la zona del piano in cui MDM e Box sono in disaccordo e prevedi come cambia se la spigola diventa dispersa quanto il salmone.",
+      "challenge": "Trova la zona del piano in cui MDM e Box sono in disaccordo e prevedi come cambia se la spigola diventa dispersa quanto il salmone. (Soluzione: dissentono nella parte del box del salmone che sta oltre l'asse MDM, dal lato della spigola, come il pesce (5.6, 12.2), e ovunque il Box rifiuta mentre l'MDM classifica; con la spigola dispersa quanto il salmone i due box hanno lo stesso volume e si sovrappongono in [5.2, 5.8] × [11.6, 12.9]: lì il confronto 1/V non decide più e serve un'altra regola.)",
       "size": "M",
       "tech": "svg+motion"
     }
@@ -3241,6 +3344,19 @@
         "c42"
       ],
       "addedBy": "revisore"
+    },
+    {
+      "id": "es14",
+      "title": "Classi linearmente separabili che l'MDM sbaglia",
+      "type": "numerico",
+      "description": "Campioni di training: ω_1 = {(0, 0), (0, 10), (0, 20)}, ω_2 = {(1, −2), (1, 0), (1, 2)}. (a) Verificare che la retta x_1 = 0.5 separa le due classi senza errori. (b) Calcolare i baricentri m_1 = (0, 10), m_2 = (1, 0) e la frontiera MDM w^t(x − x_0) = 0 con w = m_1 − m_2 = (−1, 10) e x_0 = (0.5, 5), cioè −x_1 + 10x_2 = 49.5. (c) Classificare i sei campioni con l'MDM: (0, 0) ha d² = 100 da m_1 e d² = 1 da m_2, quindi va a ω_2; gli altri cinque sono corretti: 1 errore su 6 anche se le classi sono linearmente separabili. (d) Dire quali ipotesi della slide 5 cadono (piccola dispersione: ω_1 ha deviazione standard 8.16 lungo x_2; stessa Σ: varianze lungo x_2 di 66.7 e 2.67, stima con 1/N) e spiegare perché la frase delle note 'limited to cases where the classes are linearly separable' esprime una condizione necessaria e non sufficiente. Parametri randomizzabili: lunghezza della colonna allungata, distanza tra le due colonne, numero di punti; soluzione controllando il segno di w^t(x − x_0) per ogni campione.",
+      "concepts": [
+        "c39",
+        "c34",
+        "c27",
+        "c28"
+      ],
+      "addedBy": "verificatore"
     }
   ],
   "examQuestions": [
@@ -3410,6 +3526,8 @@
     "part1 p.80 in fondo: l'introduzione alla 'Bayesian Classification' appartiene al modulo m17; inserita qui come c70 per la regola delle pagine, da deduplicare.",
     "ch4 p.4: la slide mette 'Bayesian Classification' sotto entrambi i rami senza spiegazione; la spiegazione è solo nelle note (part1 p.77).",
     "ch4 p.4 e part1 p.77-78: l'albero mette 'Neural Nets' e 'SVM' sotto 'Nonparametric' anche se hanno parametri; la scelta si spiega solo con la definizione delle note ('rely on assumptions about the underlying distribution of the data'): vedi c71.",
-    "ch4 p.5: la slide non dice se la seconda ipotesi ('the same Σ') basti con la distanza euclidea; il Caso 2 (ch4 p.31) mostra che con Σ comune non sferica la frontiera ottima non è ortogonale al segmento tra le medie. Esempio numerico in c72 (MDM euclideo 12.6% contro 4.8% con Mahalanobis, dati sintetici)."
+    "ch4 p.5: la slide non dice se la seconda ipotesi ('the same Σ') basti con la distanza euclidea; il Caso 2 (ch4 p.31) mostra che con Σ comune non sferica la frontiera ottima non è ortogonale al segmento tra le medie. Esempio numerico in c72 (MDM euclideo 12.6% contro 4.8% con Mahalanobis, dati sintetici).",
+    "part1 p.79: 'limited to cases where the classes are linearly separable' va letto come condizione necessaria: anche con classi linearmente separabili l'MDM può sbagliare, perché la sua frontiera è fissata dai baricentri (asse del segmento) e non è la migliore retta separatrice (es14, preset 'separabili ma allungate' del widget m16-mdm-limiti-separabilita). La fonte non lo precisa.",
+    "ch4 p.8 e part1 p.80: la figura del Box è schematica. Stimando le deviazioni standard dai simboli disegnati, il rapporto tra semilato e σ vale circa 3.6 per ω_1 (entrambi gli assi) e tra 2.3 e 3.4 per ω_2 e ω_3: non corrisponde a un unico valore di α. Il widget m16-box-esempio-slide usa parametri sintetici compatibili con il disegno e α = 3."
   ]
 }
