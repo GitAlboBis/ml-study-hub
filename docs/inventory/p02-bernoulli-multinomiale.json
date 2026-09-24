@@ -1,0 +1,2283 @@
+{
+  "moduleId": "p02-bernoulli-multinomiale",
+  "title": "Applicazioni: Bernoulli (Beta) e Multinomiale (Dirichlet)",
+  "stages": {"inventario": "done", "completezza": "done", "formule": "done"},
+  "pagesReviewed": [
+    {"doc": "part2", "from": 5, "to": 11},
+    {"doc": "examq", "from": 1, "to": 5}
+  ],
+  "overview": "Il modulo applica la stima ML e la stima bayesiana con prior coniugati (conjugate priors) ai due modelli discreti fondamentali: la distribuzione di Bernoulli (esiti binari, parametro θ, prior Beta) e la distribuzione multinomiale (r stati con codifica one-hot, vettore θ sul simplesso, prior Dirichlet). Per entrambi le note di Passerini ricavano passo per passo la likelihood, la stima ML come frequenza relativa (h/(h+t) e N_i/N), le statistiche sufficienti (i conteggi), la posterior coniugata con parametri aggiornati (conteggi reali più conteggi «immaginari») e la predizione bayesiana come valore atteso di θ sotto la posterior. L'interpretazione dei parametri del prior come osservazioni immaginarie e dell'equivalent sample size α spiega quando la stima bayesiana converge alla ML (α → 0) e quando domina il prior (α grande): è la risposta alla domanda d'orale «in quale caso ML e Bayes coincidono?». Gli stessi risultati riappaiono nell'apprendimento dei parametri delle reti bayesiane (ogni colonna di una CPD è una multinomiale, stima ML con conteggi e MAP con pseudo-conteggi Dirichlet) e nel classificatore naive Bayes per il testo.",
+  "concepts": [
+    {
+      "id": "c01",
+      "name": "Vantaggio dei prior coniugati: il calcolo si semplifica",
+      "nameEn": "Simplifies Computation",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "detail": "In cima alla pagina 5, prima delle applicazioni, le note chiudono l'elenco «Why Conjugate Priors Are Useful» (iniziato a p. 4, modulo p01). Primo vantaggio (Simplifies Computation): la distribuzione a posteriori (posterior distribution) conserva la stessa forma funzionale (same functional form) del prior, quindi sono possibili soluzioni analitiche (analytical solutions). Non occorre calcolare integrali complessi per l'inferenza (you don't need to compute complex integrals for inference), il che semplifica gli aggiornamenti bayesiani (Bayesian updates). Nel resto del modulo lo si vede in concreto: con Beta e Dirichlet l'aggiornamento si riduce a sommare conteggi agli esponenti.",
+      "latex": [],
+      "symbols": [
+        {"s": "\\theta", "meaning": "parametro da stimare (qui: probabilità di successo o vettore di probabilità)"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c02",
+      "name": "Coerenza tra aggiornamenti successivi",
+      "nameEn": "Consistency Across Updates",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "detail": "Secondo vantaggio dei prior coniugati (Consistency Across Updates): aggiornamenti ripetuti con nuovi dati x (repeated updates using new data x) producono ancora posterior della stessa forma, e questo permette aggiornamenti bayesiani iterativi (iterative Bayesian updates). In pratica la posterior calcolata dopo un blocco di dati può fare da prior per il blocco successivo senza cambiare famiglia. Per Beta e Dirichlet (sviluppate nelle pagine seguenti) ciò significa che incorporare i dati uno alla volta o tutti insieme dà la stessa posterior, perché i conteggi si sommano.",
+      "latex": [],
+      "symbols": [
+        {"s": "x", "meaning": "nuovo dato osservato usato per aggiornare la posterior"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c03",
+      "name": "Intuizione chiave dei prior coniugati: stesso parametro, stessa «forma»",
+      "nameEn": "Key Intuition",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "detail": "Le note riassumono due intuizioni (Key Intuition). (1) La relazione tra prior, likelihood e posterior opera sullo stesso parametro θ (the relationship between the prior, likelihood, and posterior operates on the same parameter θ): tutte e tre sono funzioni di θ, quindi si possono disegnare sullo stesso asse. (2) Un prior coniugato garantisce che la «forma» (the \"shape\") della distribuzione a priori resti coerente anche quando i nuovi dati aggiornano i parametri (even as new data updates the parameters): cambiano solo i numeri che la caratterizzano, non la famiglia.",
+      "latex": [],
+      "symbols": [
+        {"s": "\\theta", "meaning": "parametro comune a prior, likelihood e posterior"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c04",
+      "name": "Tabella delle coppie likelihood - prior coniugato",
+      "nameEn": "Examples: Likelihood / Parameters / Conjugate prior",
+      "kind": "figura",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "detail": "«Common examples are the following»: una tabella (slide con intestazione blu «Examples») con tre colonne, Likelihood, Parameters, Conjugate prior. Righe: Binomial con parametro p (probability) e prior Beta; Multinomial con parametro p in grassetto corsivo (probability vector) e prior Dirichlet; Normal con parametro μ (mean) e prior Normal; Multivariate normal con parametro μ_i in grassetto (mean vector) e prior Normal. Si noti che la tabella parla di binomiale mentre il testo che segue tratta la Bernoulli (binomiale con una sola prova): il prior coniugato è lo stesso perché la likelihood ha lo stesso nucleo θ^h(1−θ)^t. Le prime due righe sono sviluppate in questo modulo, le ultime due corrispondono alla stima bayesiana gaussiana (m07).",
+      "latex": [
+        "\\begin{array}{lll}\\text{Likelihood} & \\text{Parameters} & \\text{Conjugate prior}\\\\ \\hline \\text{Binomial} & p\\ (\\text{probability}) & \\text{Beta}\\\\ \\text{Multinomial} & \\boldsymbol{p}\\ (\\text{probability vector}) & \\text{Dirichlet}\\\\ \\text{Normal} & \\mu\\ (\\text{mean}) & \\text{Normal}\\\\ \\text{Multivariate normal} & \\boldsymbol{\\mu}_i\\ (\\text{mean vector}) & \\text{Normal}\\end{array}"
+      ],
+      "symbols": [
+        {"s": "p", "meaning": "probabilità di successo (binomiale)"},
+        {"s": "\\boldsymbol{p}", "meaning": "vettore delle probabilità degli stati (multinomiale)"},
+        {"s": "\\mu,\\ \\boldsymbol{\\mu}_i", "meaning": "media e vettore delle medie (normale uni e multivariata)"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c05",
+      "name": "Distribuzione di Bernoulli: definizione",
+      "nameEn": "Bernoulli distribution",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "detail": "Sezione «Applications», sottosezione «Bernoulli Distribution». La distribuzione di Bernoulli (Bernoulli distribution, in grassetto) è una distribuzione di probabilità discreta (discrete probability distribution) che rappresenta un esperimento casuale (random experiment) con due soli esiti possibili, spesso chiamati «successo» (\"success\") e «fallimento» (\"failure\"). È un caso speciale della distribuzione binomiale con una sola prova (special case of the binomial distribution with only one trial (sample)): le note usano «trial» e «sample» come sinonimi.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c06",
+      "name": "I due esiti: x = 1 successo, x = 0 fallimento",
+      "nameEn": "Two possible outcomes",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "detail": "Due esiti possibili (Two possible outcomes): x = 1 codifica il successo (success) e x = 0 il fallimento (failure). La codifica numerica 0/1 non è arbitraria: è quella che permette di scrivere la PMF in forma compatta con x all'esponente (c17) e di contare i successi come somma delle x.",
+      "latex": [
+        "x=1\\ (\\text{success})",
+        "x=0\\ (\\text{failure})"
+      ],
+      "symbols": [
+        {"s": "x", "meaning": "variabile aleatoria di Bernoulli, vale 0 o 1"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c07",
+      "name": "Unico parametro p: probabilità di successo",
+      "nameEn": "Single parameter p: probability of success",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "detail": "La Bernoulli ha un solo parametro (a single parameter): p, probabilità di successo, cioè P(x = 1) = p. Di conseguenza (therefore) la probabilità di fallimento è P(x = 0) = 1 − p, che non è un parametro in più. Il parametro sta nell'intervallo 0 ≤ p ≤ 1 (lies within the range), come ogni probabilità.",
+      "latex": [
+        "P(x=1)=p",
+        "P(x=0)=1-p",
+        "0\\le p\\le 1"
+      ],
+      "symbols": [
+        {"s": "p", "meaning": "probabilità di successo, unico parametro della Bernoulli"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c08",
+      "name": "PMF della Bernoulli nella forma a casi",
+      "nameEn": "Probability mass function (PMF)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 5}, {"doc": "part2", "page": 6}],
+      "detail": "La funzione di massa di probabilità (probability mass function, PMF, in grassetto) di una variabile di Bernoulli x è introdotta a fine p. 5 e data a inizio p. 6 da un riquadro della slide: P(x; p) vale p se x = 1 e 1 − p se x = 0. La notazione con il punto e virgola P(x; p) indica che p è un parametro e non una variabile condizionante; poche righe dopo (c16-c17) le note passano alla notazione bayesiana P(x|θ), in cui il parametro viene trattato come variabile aleatoria.",
+      "latex": [
+        "P(x;p)=\\begin{cases} p & \\text{if } x=1\\\\ 1-p & \\text{if } x=0\\end{cases}"
+      ],
+      "symbols": [
+        {"s": "P(x;p)", "meaning": "PMF della Bernoulli con parametro p"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c09",
+      "name": "Valore atteso della Bernoulli: E[x] = p",
+      "nameEn": "Expected Value (E[x])",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 6}],
+      "detail": "Sotto «Expected Value and Variance»: il valore atteso (Expected Value) è E[x] = p. Le note lo interpretano come la media a lungo termine (long-run average) o esito medio dell'esperimento casuale, cioè la probabilità attesa di successo (the expected probability of success). La derivazione (1·p + 0·(1−p) = p) non è scritta nelle note ed è riportata in der10.",
+      "latex": [
+        "E[x]=p"
+      ],
+      "symbols": [
+        {"s": "E[x]", "meaning": "valore atteso della variabile di Bernoulli"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c10",
+      "name": "Varianza della Bernoulli: p(1 − p), massima per p = 0.5",
+      "nameEn": "Variance (Var[x])",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 6}],
+      "detail": "La varianza (Variance) è Var[x] = p(1 − p). Misura quanto i valori di x (successo o fallimento) si discostano dal valore atteso; le note precisano che la varianza massima si ha per p = 0.5 (with the maximum variance occurring when p = 0.5). Il valore massimo 0.25 e la verifica con la derivata (1 − 2p = 0) sono un'integrazione didattica (der10). Ai due estremi p = 0 e p = 1 la varianza è nulla: l'esito è certo.",
+      "latex": [
+        "Var[x]=p(1-p)",
+        "\\max_{p}\\,Var[x]=Var[x]\\big|_{p=0.5}=0.25"
+      ],
+      "symbols": [
+        {"s": "Var[x]", "meaning": "varianza della variabile di Bernoulli"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c11",
+      "name": "Esempio: lancio di una moneta",
+      "nameEn": "Example: tossing a coin",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "part2", "page": 6}],
+      "detail": "Riquadro verde della slide «Example: tossing a coin»: testa e croce sono i due esiti possibili, testa = successo (Head (success)) e croce = fallimento (tail (failure)); p è la probabilità di testa (p is probability of head). È l'esempio che torna in tutto il modulo: lo stesso schema vale per ogni esperimento binario, ad esempio l'etichetta spam/ham di un'email.",
+      "latex": [],
+      "symbols": [
+        {"s": "p", "meaning": "probabilità di testa"}
+      ],
+      "examRelevance": 1
+    },
+    {
+      "id": "c12",
+      "name": "Bernoulli come modello degli esperimenti binari (sì/no)",
+      "nameEn": "Key Points: binary or yes/no experiments",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 6}],
+      "detail": "Primo «Key Point»: la Bernoulli è ideale per modellare esperimenti binari o sì/no (binary or yes/no experiments), in cui ogni prova ha esattamente una possibilità di successo e una di fallimento (the wording of the notes: each trial has exactly one success and one failure possibility, cioè esattamente due esiti). Esempi di ML: email spam/ham, test diagnostico positivo/negativo, parola presente/assente in un documento.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c13",
+      "name": "La Bernoulli è il mattone della binomiale",
+      "nameEn": "Building block for the binomial distribution",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 5}, {"doc": "part2", "page": 6}],
+      "detail": "Secondo «Key Point»: la Bernoulli è il mattone (building block) della distribuzione binomiale, in cui ci sono più prove di Bernoulli (multiple Bernoulli trials (samples)). Specularmente, a p. 5 la Bernoulli è definita come caso speciale della binomiale con una sola prova. Il numero di successi in n prove indipendenti con lo stesso p è una somma di n variabili di Bernoulli; è per questo che la tabella dei coniugati (c04) può parlare di «Binomial» con prior Beta.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c14",
+      "name": "Media e varianza controllate dal solo parametro p",
+      "nameEn": "The mean and variance are controlled by the parameter p",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 6}],
+      "detail": "Terzo «Key Point»: media e varianza sono controllate dal parametro p (the mean and variance are controlled by the parameter p) e danno un'idea della distribuzione di successi e fallimenti in un insieme di prove (providing insight into the distribution of successes and failures in a set of trials). Non esistono due Bernoulli con la stessa media e varianza diversa: fissato p, E[x] = p e Var[x] = p(1 − p) sono determinati.",
+      "latex": [
+        "E[x]=p,\\qquad Var[x]=p(1-p)"
+      ],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c15",
+      "name": "Setting: evento booleano e singola prova come variabile di Bernoulli",
+      "nameEn": "Setting: Boolean Event",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 6}],
+      "detail": "Le note ripartono con un «Setting» in stile stima dei parametri. Evento booleano (Boolean Event): in una prova di Bernoulli ci sono due esiti possibili, x = 1 per il successo (e.g., heads in a coin toss) e x = 0 per il fallimento (e.g., tails in a coin toss). L'esito di una singola prova è tipicamente modellato come variabile aleatoria di Bernoulli (the outcome of a single trial is typically modeled as a Bernoulli random variable).",
+      "latex": [
+        "x=1\\ \\text{for success (e.g., heads in a coin toss)}",
+        "x=0\\ \\text{for failure (e.g., tails in a coin toss)}"
+      ],
+      "symbols": [
+        {"s": "x", "meaning": "esito della singola prova (evento booleano)"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c16",
+      "name": "Parametro θ: P(x = 1|θ) = θ e P(x = 0|θ) = 1 − θ",
+      "nameEn": "Parameters: θ, probability of success",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 6}],
+      "detail": "Parametri (Parameters): θ è la probabilità di successo (e.g., the probability of getting heads in a coin toss). Quindi P(x = 1|θ) = θ e P(x = 0|θ) = 1 − θ. Rispetto a c07 cambia la notazione: il parametro si chiama θ (come in tutta la parte di stima) e compare dopo la barra di condizionamento, perché nell'impostazione bayesiana θ è una variabile aleatoria.",
+      "latex": [
+        "P(x=1|\\theta)=\\theta",
+        "P(x=0|\\theta)=1-\\theta"
+      ],
+      "symbols": [
+        {"s": "\\theta", "meaning": "probabilità di successo (di testa), parametro da stimare"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c17",
+      "name": "PMF compatta della Bernoulli: θ^x (1 − θ)^(1 − x)",
+      "nameEn": "PMF for the Bernoulli distribution",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 6}],
+      "detail": "La PMF della Bernoulli è data dalla forma compatta P(x|θ) = θ^x (1 − θ)^{1−x}, dove x ∈ {0, 1} e θ è la probabilità di successo (e.g., heads). L'esponente fa da interruttore: per x = 1 resta θ (il secondo fattore ha esponente 0 e vale 1), per x = 0 resta 1 − θ. È la forma che permette di scrivere la likelihood di N prove come prodotto e poi di raggrupparla in θ^h(1 − θ)^t.",
+      "latex": [
+        "P(x|\\theta)=\\theta^{x}(1-\\theta)^{1-x}",
+        "x\\in\\{0,1\\}"
+      ],
+      "symbols": [
+        {"s": "P(x|\\theta)", "meaning": "PMF della Bernoulli condizionata al parametro θ"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c18",
+      "name": "Prior coniugato Beta per la Bernoulli: αh e αt come conteggi a priori",
+      "nameEn": "Conjugate prior: Beta distribution (Prior P(θ|ψ) = P(θ|αh, αt))",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 6}],
+      "detail": "Nell'analisi bayesiana il prior coniugato della likelihood di Bernoulli è la distribuzione Beta (Beta distribution, in grassetto). Prior: P(θ|ψ) = P(θ|αh, αt), dove ψ indica la conoscenza a priori (gli iperparametri), αh è il conteggio a priori delle teste (prior count of heads) e αt il conteggio a priori delle croci (prior count of tails (or failures)). L'interpretazione come conteggi viene ripresa a p. 8 con il nome di osservazioni «immaginarie» (c35). Precisazione del revisore: il simbolo ψ compare qui per la prima volta e le note non lo definiscono mai esplicitamente; dall'uguaglianza P(θ|ψ) = P(θ|αh, αt) si capisce che ψ riassume la conoscenza a priori, cioè gli iperparametri (αh, αt) del prior (per la multinomiale, a p. 9, ψ = (α_1, …, α_r)). Per questo la posterior si scrive P(θ|D, ψ): dipende sia dai dati sia dagli iperparametri.",
+      "latex": [
+        "P(\\theta|\\psi)=P(\\theta|\\alpha_h,\\alpha_t)"
+      ],
+      "symbols": [
+        {"s": "\\psi", "meaning": "conoscenza a priori (iperparametri del prior)"},
+        {"s": "\\alpha_h", "meaning": "conteggio a priori delle teste (successi)"},
+        {"s": "\\alpha_t", "meaning": "conteggio a priori delle croci (fallimenti)"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c19",
+      "name": "Forma della distribuzione Beta",
+      "nameEn": "The Beta distribution has the following form",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 7}],
+      "detail": "La distribuzione Beta ha la forma P(θ|αh, αt) = Γ(α)/(Γ(αh)Γ(αt)) · θ^{αh−1}(1 − θ)^{αt−1}, definita per θ ∈ [0, 1]. Il nucleo θ^{αh−1}(1 − θ)^{αt−1} ha la stessa struttura della likelihood di Bernoulli θ^h(1 − θ)^t: è questa somiglianza a renderla coniugata. La frazione di funzioni Gamma è la costante di normalizzazione (c20). Nella formula α = αh + αt, anche se le note definiscono α solo a p. 8.",
+      "latex": [
+        "P(\\theta|\\alpha_h,\\alpha_t)=\\frac{\\Gamma(\\alpha)}{\\Gamma(\\alpha_h)\\Gamma(\\alpha_t)}\\theta^{\\alpha_h-1}(1-\\theta)^{\\alpha_t-1}"
+      ],
+      "symbols": [
+        {"s": "\\Gamma(\\cdot)", "meaning": "funzione Gamma"},
+        {"s": "\\alpha", "meaning": "somma αh + αt (equivalent sample size, definita a p. 8)"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c20",
+      "name": "La funzione Gamma e la costante di normalizzazione della Beta",
+      "nameEn": "Γ is the gamma function",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 7}, {"doc": "part2", "page": 8}],
+      "detail": "«Here, Γ is the gamma function»: le note non aggiungono altro. La frazione Γ(α)/(Γ(αh)Γ(αt)) è la costante che fa integrare a 1 il nucleo θ^{αh−1}(1 − θ)^{αt−1} su [0, 1]; poiché non dipende da θ, nelle derivazioni della posterior la si può ignorare scrivendo ∝. Integrazione didattica (non nelle note): Γ(z) = ∫_0^∞ u^{z−1} e^{−u} du estende il fattoriale, Γ(n) = (n − 1)! per n intero, e vale Γ(z + 1) = z Γ(z), la proprietà che serve a calcolare la media della Beta (der03). Esempio: per Beta(2, 2) la costante è Γ(4)/(Γ(2)Γ(2)) = 3!/(1!·1!) = 6 e la densità è 6θ(1 − θ). Il simbolo α dentro Γ(α) è definito a p. 8 come α = αh + αt.",
+      "latex": [
+        "\\frac{\\Gamma(\\alpha)}{\\Gamma(\\alpha_h)\\Gamma(\\alpha_t)},\\qquad \\alpha=\\alpha_h+\\alpha_t",
+        "\\Gamma(z)=\\int_0^{\\infty}u^{z-1}e^{-u}\\,du,\\qquad \\Gamma(n)=(n-1)!,\\qquad \\Gamma(z+1)=z\\,\\Gamma(z)"
+      ],
+      "symbols": [
+        {"s": "\\Gamma(\\cdot)", "meaning": "funzione Gamma, generalizzazione del fattoriale"}
+      ],
+      "examRelevance": 1
+    },
+    {
+      "id": "c21",
+      "name": "Perché la Beta è coniugata alla Bernoulli",
+      "nameEn": "This prior distribution is conjugate because it leads to a Beta posterior",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 7}],
+      "detail": "Le note giustificano il nome: questa distribuzione a priori è coniugata perché, combinata con la likelihood di Bernoulli, produce una posterior Beta (it leads to a Beta posterior when combined with the Bernoulli likelihood). La dimostrazione è l'esempio di stima bayesiana poco sotto (c29-c31, der02): moltiplicando θ^h(1 − θ)^t per θ^{αh−1}(1 − θ)^{αt−1} gli esponenti si sommano e si riottiene il nucleo di una Beta.",
+      "latex": [
+        "\\text{Beta}(\\alpha_h,\\alpha_t)\\;\\xrightarrow{\\;D\\;}\\;\\text{Beta}(h+\\alpha_h,\\ t+\\alpha_t)"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c22",
+      "name": "Esempio ML: sette lanci di moneta, h = 4 e t = 3",
+      "nameEn": "Maximum Likelihood Estimation (MLE): Example",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "part2", "page": 7}],
+      "detail": "Esempio di stima a massima verosimiglianza (MLE). Sia D = {H, H, T, T, T, H, H} l'insieme degli esiti di 7 lanci di moneta (H per testa, T per croce): h = 4 teste e t = 3 croci. Il parametro da stimare è θ, probabilità di testa. L'esempio è interamente numerico e porta a θ* = 4/7 (c27).",
+      "latex": [
+        "D=\\{H,H,T,T,T,H,H\\}",
+        "h=4,\\qquad t=3"
+      ],
+      "symbols": [
+        {"s": "D", "meaning": "dataset degli esiti dei lanci"},
+        {"s": "h,\\ t", "meaning": "numero di teste e numero di croci nel dataset"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c23",
+      "name": "Likelihood dei lanci come prodotto: θ^h (1 − θ)^t",
+      "nameEn": "The likelihood function of the data D given the parameter θ",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 7}],
+      "detail": "La funzione di verosimiglianza (likelihood function) dei dati D dato θ (probabilità di testa) è il prodotto delle probabilità dei singoli lanci, nell'ordine in cui sono avvenuti: θ · θ · (1 − θ) · (1 − θ) · (1 − θ) · θ · θ = θ^h (1 − θ)^t. Il prodotto è lecito perché i lanci sono indipendenti e identicamente distribuiti (i.i.d., come nel setting ML di p. 2). Raggruppando i fattori uguali l'ordine sparisce: contano solo h e t.",
+      "latex": [
+        "p(D|\\theta)=\\theta\\cdot\\theta\\cdot(1-\\theta)\\cdot(1-\\theta)\\cdot(1-\\theta)\\cdot\\theta\\cdot\\theta=\\theta^{h}(1-\\theta)^{t}"
+      ],
+      "symbols": [
+        {"s": "p(D|\\theta)", "meaning": "likelihood del dataset in funzione di θ"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c24",
+      "name": "Log-likelihood della Bernoulli",
+      "nameEn": "Logarithm of the likelihood",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 7}],
+      "detail": "Per trovare la stima ML di θ si prende il logaritmo della likelihood e si deriva rispetto a θ: ln(p(D|θ)) = h · ln(θ) + t · ln(1 − θ). Il logaritmo trasforma il prodotto in somma e gli esponenti in coefficienti; essendo monotono crescente non sposta il punto di massimo.",
+      "latex": [
+        "\\ln(p(D|\\theta))=h\\cdot\\ln(\\theta)+t\\cdot\\ln(1-\\theta)"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c25",
+      "name": "Derivata nulla: h/θ − t/(1 − θ) = 0",
+      "nameEn": "Taking the derivative with respect to θ and setting it equal to zero",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 7}],
+      "detail": "Derivando rispetto a θ e ponendo la derivata uguale a zero si ottiene d/dθ (h · ln(θ) + t · ln(1 − θ)) = 0, cioè h/θ − t/(1 − θ) = 0. Il segno meno del secondo termine viene dalla regola della catena (la derivata di ln(1 − θ) è −1/(1 − θ)). I due termini si possono leggere come due spinte opposte: le teste spingono θ in alto, le croci in basso.",
+      "latex": [
+        "\\frac{d}{d\\theta}\\big(h\\cdot\\ln(\\theta)+t\\cdot\\ln(1-\\theta)\\big)=0",
+        "\\frac{h}{\\theta}-\\frac{t}{1-\\theta}=0"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c26",
+      "name": "Stima ML della Bernoulli: θ* = h/(h + t)",
+      "nameEn": "Maximum likelihood estimate θ* = h/(h+t)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 7}],
+      "detail": "Risolvendo per θ (solving for θ): h(1 − θ) = tθ, da cui θ* = h/(h + t). La stima ML è la frequenza relativa delle teste. Le note non verificano la condizione del secondo ordine; la derivata seconda −h/θ² − t/(1 − θ)² è negativa, quindi il punto stazionario è un massimo (integrazione, der01).",
+      "latex": [
+        "h(1-\\theta)=t\\theta",
+        "\\theta^{*}=\\frac{h}{h+t}"
+      ],
+      "symbols": [
+        {"s": "\\theta^{*}", "meaning": "stima a massima verosimiglianza di θ"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c27",
+      "name": "Valore numerico dell'esempio: θ* = 4/7",
+      "nameEn": "Thus, in our example, the MLE for θ is θ* = 4/7",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "part2", "page": 7}],
+      "detail": "Nell'esempio dei 7 lanci la stima ML è θ* = 4/7 ≈ 0.571. Controllo numerico (non nelle note): la likelihood vale (4/7)^4 (3/7)^3 ≈ 0.00839 in θ*, contro 0.5^7 ≈ 0.00781 per la moneta equa θ = 0.5.",
+      "latex": [
+        "\\theta^{*}=\\frac{4}{7}"
+      ],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c28",
+      "name": "h e t sono statistiche sufficienti",
+      "nameEn": "Sufficient statistics (counts of heads and tails)",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 7}],
+      "detail": "I conteggi di teste h e croci t sono statistiche sufficienti (sufficient statistics, in grassetto) per la likelihood di Bernoulli, perché contengono tutta l'informazione necessaria per stimare θ (they contain all the information needed to estimate θ). La likelihood θ^h(1 − θ)^t dipende dal dataset solo tramite h e t: due dataset con gli stessi conteggi in ordine diverso danno la stessa stima ML e la stessa posterior. Collega alla definizione generale di statistica sufficiente del modulo p01.",
+      "latex": [],
+      "symbols": [
+        {"s": "h,\\ t", "meaning": "statistiche sufficienti della Bernoulli"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c29",
+      "name": "Stima bayesiana della Bernoulli: posterior ∝ likelihood × prior",
+      "nameEn": "Bayesian Estimation: Example",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 7}],
+      "detail": "Esempio di stima bayesiana (Bayesian Estimation: Example). La distribuzione a posteriori di θ dato il dataset D e il prior αh (teste) e αt (croci) è proporzionale al prodotto di likelihood e prior: P(θ|D, ψ) ∝ P(D|θ)P(θ|ψ). Il simbolo ∝ nasconde il denominatore P(D|ψ), che non dipende da θ e serve solo a normalizzare.",
+      "latex": [
+        "P(\\theta|D,\\psi)\\propto P(D|\\theta)P(\\theta|\\psi)"
+      ],
+      "symbols": [
+        {"s": "P(\\theta|D,\\psi)", "meaning": "posterior di θ dati i dati D e la conoscenza a priori ψ"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c30",
+      "name": "Sostituzione di likelihood e prior Beta",
+      "nameEn": "Substituting the likelihood and the conjugate Beta prior",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 7}],
+      "detail": "Sostituendo la likelihood θ^h(1 − θ)^t e il prior coniugato Beta (senza la sua costante, che non dipende da θ) si ottiene P(θ|D, ψ) ∝ θ^h (1 − θ)^t θ^{αh−1} (1 − θ)^{αt−1}. Il passo successivo è raccogliere le potenze con la stessa base.",
+      "latex": [
+        "P(\\theta|D,\\psi)\\propto\\theta^{h}(1-\\theta)^{t}\\,\\theta^{\\alpha_h-1}(1-\\theta)^{\\alpha_t-1}"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c31",
+      "name": "Posterior Beta con parametri aggiornati h + αh e t + αt",
+      "nameEn": "Beta distribution with updated parameters h + αh and t + αt",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 7}],
+      "detail": "Semplificando (simplifying) si ottiene P(θ|D, ψ) ∝ θ^{h+αh−1}(1 − θ)^{t+αt−1}. Questa è una distribuzione Beta con parametri aggiornati h + αh e t + αt: i conteggi osservati si sommano ai conteggi a priori. La costante di normalizzazione si ricava senza integrali: è Γ(h + t + α)/(Γ(h + αh)Γ(t + αt)).",
+      "latex": [
+        "P(\\theta|D,\\psi)\\propto\\theta^{h+\\alpha_h-1}(1-\\theta)^{t+\\alpha_t-1}",
+        "h+\\alpha_h,\\qquad t+\\alpha_t"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c32",
+      "name": "Predire il prossimo lancio: valore atteso di θ sotto la posterior",
+      "nameEn": "To predict the probability of a new event ... is the expected value of θ under the posterior distribution",
+      "kind": "procedura",
+      "sourcePages": [{"doc": "part2", "page": 7}, {"doc": "part2", "page": 8}],
+      "detail": "Per predire la probabilità che un nuovo evento (ad esempio un nuovo lancio) sia testa, l'approccio bayesiano non sceglie un singolo θ: la probabilità cercata è il valore atteso di θ sotto la distribuzione a posteriori (the expected value of θ under the posterior distribution). La frase chiude p. 7 e le formule sono in cima a p. 8 (c33, c34).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c33",
+      "name": "Integrale predittivo della Bernoulli",
+      "nameEn": "P(x|D) = ∫ P(x|θ) P(θ|D, ψ) dθ",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 8}],
+      "detail": "La predittiva è P(x|D) = ∫ P(x|θ) P(θ|D, ψ) dθ = ∫ θ P(θ|D, ψ) dθ. Il secondo passaggio vale per x = testa (x = 1), perché allora P(x|θ) = θ: la probabilità del nuovo esito è la media dei θ pesata dalla posterior. Le note scrivono P(x|D) senza specificare x = 1 e senza ψ a sinistra; l'integrale è su θ ∈ [0, 1].",
+      "latex": [
+        "P(x|D)=\\int P(x|\\theta)P(\\theta|D,\\psi)\\,d\\theta=\\int\\theta\\,P(\\theta|D,\\psi)\\,d\\theta"
+      ],
+      "symbols": [
+        {"s": "P(x|D)", "meaning": "probabilità predittiva del nuovo esito (testa) dati i dati"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c34",
+      "name": "Media della posterior Beta: (h + αh)/(h + t + αh + αt)",
+      "nameEn": "Expected value of θ under the posterior",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 8}],
+      "detail": "Il valore atteso di θ sotto la posterior è E_{P(θ|D,ψ)}[θ] = (h + αh)/(h + t + αh + αt). Le note lo commentano come la probabilità attesa di testa che incorpora sia la conoscenza a priori sia i dati osservati (incorporating both prior knowledge and data from the observed outcomes). È la media di una Beta(a, b), a/(a + b), con a = h + αh e b = t + αt; la derivazione tramite funzioni Gamma è in der03. Esempio illustrativo: con αh = αt = 2 e i dati di p. 7 si ha 6/11 ≈ 0.545.",
+      "latex": [
+        "E_{P(\\theta|D,\\psi)}[\\theta]=\\frac{h+\\alpha_h}{h+t+\\alpha_h+\\alpha_t}"
+      ],
+      "symbols": [
+        {"s": "E_{P(\\theta|D,\\psi)}[\\theta]", "meaning": "media di θ sotto la posterior"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c35",
+      "name": "αh e αt come numero «immaginario» di teste e croci",
+      "nameEn": "Interpreting Priors: \"imaginary\" number of heads / tails",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 8}],
+      "detail": "Interpretare i prior (Interpreting Priors): la conoscenza a priori su θ è codificata nei parametri αh e αt della Beta. αh è il numero «immaginario» di teste (o successi) osservate prima di raccogliere i dati (the \"imaginary\" number of heads (or successes) observed before the data was collected); αt il numero «immaginario» di croci (o fallimenti). L'interpretazione è esatta per la media posteriore, dove αh e αt si sommano a h e t come se fossero lanci già visti.",
+      "latex": [],
+      "symbols": [
+        {"s": "\\alpha_h", "meaning": "teste immaginarie osservate prima dei dati"},
+        {"s": "\\alpha_t", "meaning": "croci immaginarie osservate prima dei dati"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c36",
+      "name": "Equivalent sample size α = αh + αt",
+      "nameEn": "Equivalent sample size",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 8}],
+      "detail": "L'informazione a priori totale (the total prior information) è rappresentata da α = αh + αt, chiamata dimensione campionaria equivalente (equivalent sample size): il prior vale quanto α lanci già osservati. È lo stesso α che compare in Γ(α) nella formula della Beta a p. 7.",
+      "latex": [
+        "\\alpha=\\alpha_h+\\alpha_t"
+      ],
+      "symbols": [
+        {"s": "\\alpha", "meaning": "equivalent sample size, forza del prior"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c37",
+      "name": "α grande: prior concentrato, predizione → αh/(αh + αt)",
+      "nameEn": "Impact of α: as α increases",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 8}],
+      "detail": "Impatto di α (Impact of α). Quando α cresce la distribuzione a priori si concentra attorno al proprio valore atteso, e i dati hanno meno impatto (stronger prior beliefs). Al limite la media posteriore tende alla media a priori: (h + αh)/(h + t + αh + αt) → αh/(αh + αt). Il limite va inteso con α → ∞ e rapporto αh/α fisso (le note lo sottintendono). Perché il prior «si concentra» (integrazione del revisore, der11): la varianza della Beta(αh, αt) è αhαt/(α²(α + 1)) = m(1 − m)/(α + 1), con m = αh/α media a priori; a media fissa decresce come 1/(α + 1). Esempio: Beta(2, 2) ha deviazione standard √(0.25/5) ≈ 0.224, Beta(50, 50) √(0.25/101) ≈ 0.050: stessa media 0.5, prior cinque volte più stretto.",
+      "latex": [
+        "\\frac{h+\\alpha_h}{h+t+\\alpha_h+\\alpha_t}\\to\\frac{\\alpha_h}{\\alpha_h+\\alpha_t}",
+        "Var[\\theta]=\\frac{\\alpha_h\\alpha_t}{\\alpha^{2}(\\alpha+1)}=\\frac{m(1-m)}{\\alpha+1},\\qquad m=\\frac{\\alpha_h}{\\alpha}"
+      ],
+      "symbols": [
+        {"s": "m", "meaning": "media a priori αh/α (integrazione del revisore)"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c38",
+      "name": "α → 0: prior non informativo, la stima bayesiana converge alla ML",
+      "nameEn": "As α → 0, the prior becomes non-informative",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 8}],
+      "detail": "Quando α → 0 il prior diventa non informativo (non-informative), che le note chiamano «uniform distribution», e la stima bayesiana converge alla classica stima a massima verosimiglianza (MLE), in cui il prior non influenza i risultati: (h + αh)/(h + t + αh + αt) → h/(h + t). È la risposta alla domanda d'orale «in quale caso ML e Bayes coincidono?» (l'altro caso è N → ∞ con α fisso). Nota di precisione: la Beta uniforme è Beta(1, 1), cioè α = 2, e con essa la media posteriore è (h + 1)/(h + t + 2), non h/(h + t); il limite α → 0 corrisponde al prior improprio Beta(0, 0).",
+      "latex": [
+        "\\alpha\\to 0",
+        "\\frac{h+\\alpha_h}{h+t+\\alpha_h+\\alpha_t}\\to\\frac{h}{h+t}"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c39",
+      "name": "Multinomiale: generalizzazione della Bernoulli a più di due esiti",
+      "nameEn": "Multinomial Distribution",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 8}],
+      "detail": "Sezione «Multinomial Distribution», Setting: la distribuzione multinomiale generalizza la Bernoulli a scenari con più di due esiti possibili (generalizes the Bernoulli distribution to scenarios with more than two possible outcomes). Nelle note «multinomiale» indica il modello di una singola estrazione categorica (in altri testi chiamato distribuzione categorica); la multinomiale sui conteggi di N estrazioni ne è la versione a più prove, come la binomiale per la Bernoulli.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c40",
+      "name": "Evento categorico con r stati (dado a sei facce)",
+      "nameEn": "Categorical event with r possible states",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 8}],
+      "detail": "La multinomiale modella un evento categorico (categorical event) con r stati possibili x ∈ {x^1, …, x^r}, ad esempio gli esiti del lancio di un dado con r = 6 facce (the note says a «fair dice», ma per un dado equo le probabilità sarebbero già note e pari a 1/6: l'esempio serve a illustrare r = 6 stati). Gli stati sono indicati con l'apice x^k per distinguerli dai campioni x_j del dataset.",
+      "latex": [
+        "x\\in\\{x^{1},\\dots,x^{r}\\}",
+        "r=6"
+      ],
+      "symbols": [
+        {"s": "r", "meaning": "numero di stati possibili"},
+        {"s": "x^{k}", "meaning": "k-esimo stato (esito) possibile"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c41",
+      "name": "Probabilità θ_k associata a ogni stato x^k",
+      "nameEn": "Each state x^k has a corresponding probability θ_k",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 8}],
+      "detail": "Ogni stato x^k ha una probabilità corrispondente θ_k, con k = 1, 2, …, r. Sono i parametri da stimare, l'analogo multidimensionale di θ nella Bernoulli.",
+      "latex": [
+        "\\theta_k,\\qquad k=1,2,\\dots,r"
+      ],
+      "symbols": [
+        {"s": "\\theta_k", "meaning": "probabilità dello stato x^k"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c42",
+      "name": "Codifica one-hot dell'esito",
+      "nameEn": "One-hot encoding",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 8}],
+      "detail": "Gli esiti si possono rappresentare con la codifica one-hot (one-hot encoding): z(x) = [z_1(x), …, z_r(x)], dove z_k(x) = 1 se x = x^k (cioè se l'esito x corrisponde allo stato x^k) e z_k(x) = 0 altrimenti (otherwise). Il vettore z è in grassetto nelle note.",
+      "latex": [
+        "\\boldsymbol{z}(x)=[z_1(x),\\dots,z_r(x)]",
+        "z_k(x)=1\\ \\text{if}\\ x=x^{k}",
+        "z_k(x)=0\\ \\text{otherwise}"
+      ],
+      "symbols": [
+        {"s": "\\boldsymbol{z}(x)", "meaning": "vettore one-hot dell'esito x"},
+        {"s": "z_k(x)", "meaning": "k-esima componente: 1 se x è lo stato x^k, altrimenti 0"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c43",
+      "name": "Il vettore one-hot indica quale stato si è verificato",
+      "nameEn": "This encoding transforms the outcome x into a binary vector",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 9}],
+      "detail": "Questa codifica trasforma l'esito x in un vettore binario che indica quale stato si è verificato (a binary vector indicating which state occurred). Il vettore ha esattamente una componente pari a 1; usato come esponente seleziona la probabilità dello stato osservato (c46) e, sommato sui campioni, dà i conteggi N_k (c50). Esempio illustrativo con r = 6: se esce la faccia 3, z(x) = [0, 0, 1, 0, 0, 0].",
+      "latex": [
+        "x=x^{3},\\ r=6\\;\\Rightarrow\\;\\boldsymbol{z}(x)=[0,0,1,0,0,0]"
+      ],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c44",
+      "name": "Vettore dei parametri θ = [θ_1, …, θ_r]",
+      "nameEn": "Parameters: θ = [θ1, …, θr], the vector of probabilities of each state",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 9}],
+      "detail": "Parametri (Parameters): θ = [θ_1, …, θ_r] (in grassetto) è il vettore delle probabilità di ciascuno stato. Ogni θ_k rappresenta la probabilità dell'esito x_k (le note qui scrivono x_k con il pedice, mentre a p. 8 usavano x^k con l'apice).",
+      "latex": [
+        "\\boldsymbol{\\theta}=[\\theta_1,\\dots,\\theta_r]"
+      ],
+      "symbols": [
+        {"s": "\\boldsymbol{\\theta}", "meaning": "vettore delle probabilità degli r stati"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c45",
+      "name": "Vincolo di normalizzazione: Σ θ_k = 1",
+      "nameEn": "These probabilities must sum to 1",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 9}],
+      "detail": "Le probabilità devono sommare a 1 (must sum to 1): Σ_{k=1}^{r} θ_k = 1, oltre a essere non negative. Geometricamente θ vive su un simplesso (un segmento per r = 2, un triangolo per r = 3). Il vincolo è decisivo nella stima ML (c55): senza di esso la log-likelihood non ha massimo.",
+      "latex": [
+        "\\sum_{k=1}^{r}\\theta_k=1"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c46",
+      "name": "PMF della multinomiale: prodotto con esponenti one-hot",
+      "nameEn": "The PMF of a multinomially distributed random variable",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 9}],
+      "detail": "La PMF di una variabile x distribuita secondo una multinomiale è P(x|θ) = ∏_{k=1}^{r} θ_k^{z_k(x)}, dove z_k(x) è il k-esimo elemento della codifica one-hot di x e θ_k la probabilità associata all'esito x^k. Siccome un solo esponente vale 1 e gli altri 0 (θ^0 = 1), il prodotto restituisce la probabilità dello stato osservato. È la generalizzazione diretta di θ^x(1 − θ)^{1−x} (der05).",
+      "latex": [
+        "P(x|\\boldsymbol{\\theta})=\\prod_{k=1}^{r}\\theta_k^{z_k(x)}"
+      ],
+      "symbols": [
+        {"s": "P(x|\\boldsymbol{\\theta})", "meaning": "PMF multinomiale (categorica) di un singolo esito"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c47",
+      "name": "Prior coniugato Dirichlet: α_k come concentrazione a priori",
+      "nameEn": "The Dirichlet distribution is the conjugate prior for the multinomial likelihood",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 9}],
+      "detail": "La distribuzione di Dirichlet (Dirichlet distribution, in grassetto) è il prior coniugato della likelihood multinomiale. Prior: P(θ|ψ) = P(θ|α_1, …, α_r), dove α_k rappresenta la concentrazione a priori (prior concentration), cioè il numero di osservazioni «immaginarie» (number of \"imaginary\" observations), per l'esito x^k.",
+      "latex": [
+        "P(\\boldsymbol{\\theta}|\\psi)=P(\\boldsymbol{\\theta}|\\alpha_1,\\dots,\\alpha_r)"
+      ],
+      "symbols": [
+        {"s": "\\alpha_k", "meaning": "concentrazione a priori (osservazioni immaginarie) dello stato x^k"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c48",
+      "name": "Forma della distribuzione di Dirichlet",
+      "nameEn": "The Dirichlet distribution has the following form",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 9}],
+      "detail": "La Dirichlet ha la forma P(θ|α_1, …, α_r) = Γ(α)/∏_{k=1}^{r}Γ(α_k) · ∏_{k=1}^{r} θ_k^{α_k−1}, dove Γ è la funzione Gamma e α è la somma di tutti i parametri di concentrazione a priori α_1 + … + α_r. È definita sul simplesso Σθ_k = 1; per r = 2 si riduce alla Beta (c66). Il nucleo ∏θ_k^{α_k−1} ha la stessa struttura della likelihood ∏θ_k^{N_k}.",
+      "latex": [
+        "P(\\boldsymbol{\\theta}|\\alpha_1,\\dots,\\alpha_r)=\\frac{\\Gamma(\\alpha)}{\\prod_{k=1}^{r}\\Gamma(\\alpha_k)}\\prod_{k=1}^{r}\\theta_k^{\\alpha_k-1}",
+        "\\alpha=\\alpha_1+\\dots+\\alpha_r"
+      ],
+      "symbols": [
+        {"s": "\\Gamma(\\cdot)", "meaning": "funzione Gamma"},
+        {"s": "\\alpha", "meaning": "somma dei parametri di concentrazione"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c49",
+      "name": "Dataset di N realizzazioni (N lanci di un dado)",
+      "nameEn": "Dataset: D = x1, …, xN",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 9}],
+      "detail": "Esempio di stima ML (Maximum Likelihood Estimation (MLE): Example). Dataset: sia D = x_1, …, x_N il dataset di N realizzazioni (N realizations), ad esempio i risultati di N lanci di un dado (results of N tosses of a die). Qui il pedice j di x_j indica il campione, non lo stato; le realizzazioni sono assunte i.i.d.",
+      "latex": [
+        "D=x_1,\\dots,x_N"
+      ],
+      "symbols": [
+        {"s": "N", "meaning": "numero di realizzazioni nel dataset"},
+        {"s": "x_j", "meaning": "j-esimo campione del dataset"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c50",
+      "name": "Conteggi N_k = Σ_j z_k(x_j)",
+      "nameEn": "N_k: number of occurrences of outcome x^k in the dataset",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 9}],
+      "detail": "N_k è il numero di occorrenze dell'esito x^k nel dataset. Per ogni k vale N_k = Σ_{j=1}^{N} z_k(x_j), dove z_k(x_j) è il k-esimo elemento della codifica one-hot di ciascun campione: sommare le colonne dei vettori one-hot equivale a contare.",
+      "latex": [
+        "N_k=\\sum_{j=1}^{N}z_k(x_j)"
+      ],
+      "symbols": [
+        {"s": "N_k", "meaning": "numero di volte in cui compare lo stato x^k"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c51",
+      "name": "Likelihood della multinomiale come doppio prodotto",
+      "nameEn": "The likelihood of observing dataset D",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 9}],
+      "detail": "La likelihood di osservare il dataset D sotto la multinomiale è p(D|θ) = ∏_{j=1}^{N} ∏_{k=1}^{r} θ_k^{z_k(x_j)}: il prodotto esterno scorre i campioni (i.i.d.), quello interno è la PMF di ciascun campione. «This can be simplified to» porta alla forma compatta di p. 10 (c52).",
+      "latex": [
+        "p(D|\\boldsymbol{\\theta})=\\prod_{j=1}^{N}\\prod_{k=1}^{r}\\theta_k^{z_k(x_j)}"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c52",
+      "name": "Likelihood semplificata: ∏ θ_k^(N_k)",
+      "nameEn": "Simplified likelihood",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 10}],
+      "detail": "La likelihood si semplifica in p(D|θ) = ∏_{k=1}^{r} θ_k^{N_k}, dove N_k è il numero di occorrenze dell'esito x^k nei dati. Il passaggio (der06) scambia i due prodotti e somma gli esponenti z_k(x_j) sui campioni. È l'analogo esatto di θ^h(1 − θ)^t.",
+      "latex": [
+        "p(D|\\boldsymbol{\\theta})=\\prod_{k=1}^{r}\\theta_k^{N_k}"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c53",
+      "name": "Log-likelihood della multinomiale",
+      "nameEn": "Logarithm of the likelihood function",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 10}],
+      "detail": "Per trovare la stima ML di θ si prende prima il logaritmo della likelihood: ln(p(D|θ)) = Σ_{k=1}^{r} N_k · ln(θ_k). Ogni stato contribuisce con un termine indipendente dagli altri, pesato dal suo conteggio.",
+      "latex": [
+        "\\ln(p(D|\\boldsymbol{\\theta}))=\\sum_{k=1}^{r}N_k\\cdot\\ln(\\theta_k)"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c54",
+      "name": "Derivata parziale rispetto a θ_i (gli altri θ_k sono costanti)",
+      "nameEn": "Partial derivative with respect to each θ_k",
+      "kind": "procedura",
+      "sourcePages": [{"doc": "part2", "page": 10}],
+      "detail": "Poiché si vogliono stimare θ_1, …, θ_r, si prende la derivata parziale della likelihood rispetto a ciascun θ_k. In particolare la derivata rispetto a θ_i cattura come cambia la likelihood variando θ_i mentre gli altri θ_k sono trattati come costanti; la si pone uguale a zero per trovare i punti critici (critical points). Nella somma sopravvive solo il termine i-esimo perché tutti gli altri termini hanno derivata nulla (le note scrivono «derivative with respect to θ_k» dove intendono θ_i), e d/dθ_i N_i · ln(θ_i) = N_i/θ_i. Le note usano d/dθ_i al posto del simbolo di derivata parziale.",
+      "latex": [
+        "\\frac{d}{d\\theta_i}\\ln(p(D|\\boldsymbol{\\theta}))=0\\;\\Rightarrow\\;\\frac{d}{d\\theta_i}\\sum_{k=1}^{r}N_k\\cdot\\ln(\\theta_k)=0",
+        "\\frac{d}{d\\theta_i}\\sum_{k=1}^{r}N_k\\cdot\\ln(\\theta_k)=\\frac{d}{d\\theta_i}N_i\\cdot\\ln(\\theta_i)",
+        "\\frac{d}{d\\theta_i}N_i\\cdot\\ln(\\theta_i)=\\frac{N_i}{\\theta_i}"
+      ],
+      "symbols": [
+        {"s": "\\theta_i", "meaning": "componente rispetto a cui si deriva"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c55",
+      "name": "N_i/θ_i = 0 non basta: serve il vincolo Σθ_k = 1",
+      "nameEn": "With some additional mathematical steps and using the fact that Σθk = 1",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 10}],
+      "detail": "Le note arrivano a N_i/θ_i = 0 («resulting in») e poi dicono che «con alcuni passaggi matematici aggiuntivi e usando il fatto che Σθ_k = 1» si ottiene la stima ML. In effetti N_i/θ_i = 0 non ha soluzione finita (per N_i > 0 la derivata è sempre positiva: aumentare θ_i fa sempre crescere la log-likelihood); il massimo esiste solo sul simplesso. I passaggi mancanti (integrazione, der07) usano un moltiplicatore di Lagrange: N_i/θ_i − λ = 0, quindi θ_i = N_i/λ e, imponendo la somma a 1, λ = N. In alternativa si sostituisce θ_r = 1 − Σ_{k<r} θ_k e si deriva rispetto ai primi r − 1 parametri.",
+      "latex": [
+        "\\frac{N_i}{\\theta_i}=0",
+        "\\sum_{k=1}^{r}\\theta_k=1",
+        "\\frac{N_i}{\\theta_i}-\\lambda=0\\;\\Rightarrow\\;\\theta_i=\\frac{N_i}{\\lambda}"
+      ],
+      "symbols": [
+        {"s": "\\lambda", "meaning": "moltiplicatore di Lagrange del vincolo (integrazione, non nelle note)"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c56",
+      "name": "Stima ML della multinomiale: θ*_i = N_i/N",
+      "nameEn": "Maximum likelihood estimate (MLE) of θk for each outcome",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 10}],
+      "detail": "La stima ML di ciascun θ è la frequenza relativa dell'esito: θ*_i = N_i/N, dove N = Σ_{k=1}^{r} N_k è il numero totale di osservazioni nel dataset. Per r = 2 si ritrova h/(h + t). Uno stato mai osservato (N_i = 0) riceve stima ML nulla (c69).",
+      "latex": [
+        "\\theta_i^{*}=\\frac{N_i}{N}",
+        "N=\\sum_{k=1}^{r}N_k"
+      ],
+      "symbols": [
+        {"s": "\\theta_i^{*}", "meaning": "stima ML della probabilità dello stato i"},
+        {"s": "N", "meaning": "numero totale di osservazioni"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c57",
+      "name": "I conteggi N_1, …, N_r sono statistiche sufficienti",
+      "nameEn": "The counts N1, …, Nr are the sufficient statistics",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 10}],
+      "detail": "I conteggi N_1, …, N_r sono le statistiche sufficienti per i parametri θ_1, …, θ_r, perché riassumono tutta l'informazione necessaria per stimare le probabilità θ_k di ciascuna categoria (they summarize all the information needed to estimate the probabilities θ_k for each category). L'ordine dei campioni non conta: likelihood, stima ML e posterior dipendono dal dataset solo tramite i conteggi.",
+      "latex": [
+        "N_1,\\dots,N_r"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c58",
+      "name": "Stima bayesiana della multinomiale: posterior ∝ likelihood × prior",
+      "nameEn": "Bayesian Estimation: Example (multinomial)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 10}],
+      "detail": "Nella stima bayesiana la posterior di θ dati D e il prior α_1, …, α_r è proporzionale alla likelihood moltiplicata per il prior: P(θ|D, ψ) ∝ P(D|θ)P(θ|ψ). È lo stesso schema del caso Bernoulli (c29), ora con un vettore di parametri.",
+      "latex": [
+        "P(\\boldsymbol{\\theta}|D,\\psi)\\propto P(D|\\boldsymbol{\\theta})P(\\boldsymbol{\\theta}|\\psi)"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c59",
+      "name": "Sostituzione e semplificazione: ∏ θ_k^(N_k + α_k − 1)",
+      "nameEn": "Substituting the multinomial likelihood and the Dirichlet prior",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 11}],
+      "detail": "Sostituendo la likelihood multinomiale e il prior Dirichlet (senza costante): P(θ|D, ψ) ∝ ∏_{k=1}^{r} θ_k^{N_k} θ_k^{α_k−1}. Semplificando (sommando gli esponenti della stessa base θ_k): P(θ|D, ψ) ∝ ∏_{k=1}^{r} θ_k^{N_k+α_k−1}.",
+      "latex": [
+        "P(\\boldsymbol{\\theta}|D,\\psi)\\propto\\prod_{k=1}^{r}\\theta_k^{N_k}\\theta_k^{\\alpha_k-1}",
+        "P(\\boldsymbol{\\theta}|D,\\psi)\\propto\\prod_{k=1}^{r}\\theta_k^{N_k+\\alpha_k-1}"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c60",
+      "name": "Posterior Dirichlet con parametri aggiornati N_k + α_k",
+      "nameEn": "Dirichlet distribution with updated parameters Nk + αk",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 11}],
+      "detail": "Il risultato è una distribuzione di Dirichlet (in grassetto) con parametri aggiornati N_k + α_k per k = 1, …, r: il prior è coniugato e l'aggiornamento consiste nel sommare i conteggi osservati ai conteggi immaginari. La costante di normalizzazione è Γ(N + α)/∏_k Γ(N_k + α_k).",
+      "latex": [
+        "N_k+\\alpha_k,\\qquad k=1,\\dots,r"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c61",
+      "name": "Predizione di un nuovo evento x_k: integrale = E[θ_k]",
+      "nameEn": "The prediction for a new event x_k is the expected value of θ_k under the posterior Dirichlet distribution",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 11}],
+      "detail": "La predizione per un nuovo evento x_k è il valore atteso di θ_k sotto la posterior Dirichlet: P(x_k|D) = ∫ θ_k P(θ|D, ψ) dθ = E_{P(θ|D,ψ)}[θ_k]. L'integrale è sul simplesso; il passaggio P(x_k|θ) = θ_k è sottinteso (è la PMF con z(x) one-hot sullo stato k).",
+      "latex": [
+        "P(x_k|D)=\\int\\theta_k\\,P(\\boldsymbol{\\theta}|D,\\psi)\\,d\\boldsymbol{\\theta}=E_{P(\\boldsymbol{\\theta}|D,\\psi)}[\\theta_k]"
+      ],
+      "symbols": [
+        {"s": "P(x_k|D)", "meaning": "probabilità predittiva che il nuovo esito sia lo stato k"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c62",
+      "name": "Media della posterior Dirichlet: (N_k + α_k)/(N + α)",
+      "nameEn": "The expected value of θ_k",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 11}],
+      "detail": "Il valore atteso di θ_k è E_{P(θ|D,ψ)}[θ_k] = (N_k + α_k)/(N + α), dove N = Σ_k N_k è il numero totale di osservazioni e α = Σ_k α_k la concentrazione a priori totale (total prior concentration). È la media di una Dirichlet con parametri N_k + α_k (der09). Esempio illustrativo: conteggi (12, 5, 3) e prior (2, 6, 2) danno (14/30, 11/30, 5/30).",
+      "latex": [
+        "E_{P(\\boldsymbol{\\theta}|D,\\psi)}[\\theta_k]=\\frac{N_k+\\alpha_k}{N+\\alpha}",
+        "N=\\sum_{k=1}^{r}N_k",
+        "\\alpha=\\sum_{k=1}^{r}\\alpha_k"
+      ],
+      "symbols": [
+        {"s": "\\alpha", "meaning": "concentrazione a priori totale"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c63",
+      "name": "α_k come osservazioni immaginarie e credenza a priori sull'esito x^k",
+      "nameEn": "Interpreting Priors: \"imaginary\" observations for each outcome",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 11}],
+      "detail": "Interpretare i prior: la conoscenza a priori su θ è codificata nei parametri α_1, …, α_r della Dirichlet, interpretabili come il numero di osservazioni «immaginarie» per ciascun esito (the number of \"imaginary\" observations for each outcome). α_k rappresenta la credenza a priori nel verificarsi dell'esito x^k (the prior belief in the occurrence of outcome x^k).",
+      "latex": [
+        "\\alpha_1,\\dots,\\alpha_r"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c64",
+      "name": "Equivalent sample size della Dirichlet: α = Σ α_k",
+      "nameEn": "Equivalent sample size",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 11}],
+      "detail": "L'informazione a priori totale è data da α = Σ_{k=1}^{r} α_k, nota come dimensione campionaria equivalente (equivalent sample size): il prior pesa quanto α osservazioni già viste. Coincide con αh + αt nel caso r = 2.",
+      "latex": [
+        "\\alpha=\\sum_{k=1}^{r}\\alpha_k"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c65",
+      "name": "α → 0 dà la stima ML, α grande rafforza il prior",
+      "nameEn": "As α → 0, the prior becomes non-informative ... for larger α, the prior has a stronger influence",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 11}],
+      "detail": "Quando α → 0 il prior diventa non informativo e la stima bayesiana converge alla classica stima ML: (N_k + α_k)/(N + α) → N_k/N. Al contrario, per α più grande il prior ha un'influenza più forte sulla posterior (for larger α, the prior has a stronger influence on the posterior). Le note lo dicono a parole; il limite in formula è la trascrizione diretta del caso Bernoulli di p. 8.",
+      "latex": [
+        "\\alpha\\to 0\\;\\Rightarrow\\;\\frac{N_k+\\alpha_k}{N+\\alpha}\\to\\frac{N_k}{N}"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c66",
+      "name": "Bernoulli e Beta sono il caso r = 2 di multinomiale e Dirichlet",
+      "nameEn": "The multinomial distribution generalizes the Bernoulli distribution",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "part2", "page": 8}, {"doc": "part2", "page": 9}],
+      "detail": "Le note dicono che la multinomiale generalizza la Bernoulli (p. 8). Rendendo esplicita la corrispondenza (integrazione): con r = 2, x^1 = 1 (successo) e x^2 = 0 (fallimento), il vettore one-hot è z(x) = [x, 1 − x] e θ = [θ, 1 − θ], quindi ∏θ_k^{z_k(x)} = θ^x(1 − θ)^{1−x}; la Dirichlet(α_1, α_2) con θ_1 = θ e θ_2 = 1 − θ è la Beta(αh, αt), con αh = α_1 e αt = α_2; i conteggi N_1, N_2 sono h e t. Tutti i risultati del caso multinomiale (stima ML, posterior, predizione, equivalent sample size) si riducono a quelli della Bernoulli. Integrazione del revisore, usata dal widget p02-da-tre-a-due-stati: fondere due stati di una Dirichlet somma i loro parametri (proprietà di aggregazione), per cui da Dirichlet(2, 6, 2) fondendo il secondo e il terzo stato si ottiene la Beta(2, 8) per la probabilità del primo stato contro «tutto il resto»; allo stesso modo si sommano i conteggi N_k degli stati fusi.",
+      "latex": [
+        "r=2:\\ \\boldsymbol{z}(x)=[x,\\,1-x],\\ \\boldsymbol{\\theta}=[\\theta,\\,1-\\theta]\\;\\Rightarrow\\;P(x|\\boldsymbol{\\theta})=\\theta^{x}(1-\\theta)^{1-x}",
+        "\\frac{\\Gamma(\\alpha)}{\\Gamma(\\alpha_1)\\Gamma(\\alpha_2)}\\theta_1^{\\alpha_1-1}\\theta_2^{\\alpha_2-1}\\;\\xrightarrow{\\ \\theta_1=\\theta,\\ \\theta_2=1-\\theta\\ }\\;\\frac{\\Gamma(\\alpha)}{\\Gamma(\\alpha_h)\\Gamma(\\alpha_t)}\\theta^{\\alpha_h-1}(1-\\theta)^{\\alpha_t-1}"
+      ],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c67",
+      "name": "Schema parallelo Bernoulli-Beta e Multinomiale-Dirichlet",
+      "nameEn": "Bernoulli/Beta vs Multinomial/Dirichlet: parallel results",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "part2", "page": 7}, {"doc": "part2", "page": 8}, {"doc": "part2", "page": 10}, {"doc": "part2", "page": 11}],
+      "detail": "Le due applicazioni seguono esattamente lo stesso percorso (sintesi per il ripasso, costruita con le formule della fonte). Likelihood: θ^h(1 − θ)^t contro ∏θ_k^{N_k}. Statistiche sufficienti: (h, t) contro (N_1, …, N_r). Stima ML: h/(h + t) contro N_i/N. Prior: Beta(αh, αt) contro Dirichlet(α_1, …, α_r). Posterior: Beta(h + αh, t + αt) contro Dirichlet(N_k + α_k). Predizione: (h + αh)/(h + t + α) contro (N_k + α_k)/(N + α). Equivalent sample size: αh + αt contro Σα_k. Limite α → 0: ML in entrambi i casi.",
+      "latex": [
+        "\\begin{array}{lll} & \\text{Bernoulli / Beta} & \\text{Multinomial / Dirichlet}\\\\ \\hline \\text{likelihood} & \\theta^{h}(1-\\theta)^{t} & \\prod_{k}\\theta_k^{N_k}\\\\ \\text{ML} & \\frac{h}{h+t} & \\frac{N_i}{N}\\\\ \\text{posterior} & \\theta^{h+\\alpha_h-1}(1-\\theta)^{t+\\alpha_t-1} & \\prod_{k}\\theta_k^{N_k+\\alpha_k-1}\\\\ \\text{prediction} & \\frac{h+\\alpha_h}{h+t+\\alpha_h+\\alpha_t} & \\frac{N_k+\\alpha_k}{N+\\alpha}\\\\ \\text{equiv. sample size} & \\alpha_h+\\alpha_t & \\sum_{k}\\alpha_k\\end{array}"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c68",
+      "name": "La predizione bayesiana è una media pesata tra stima ML e media a priori",
+      "nameEn": "Posterior mean as a weighted average of ML estimate and prior mean",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 8}, {"doc": "part2", "page": 11}],
+      "detail": "Integrazione didattica che rende esplicito il commento delle note sull'impatto di α (p. 8 e p. 11). Con N = h + t si può riscrivere (h + αh)/(N + α) = N/(N + α) · h/N + α/(N + α) · αh/α: la media posteriore è una combinazione convessa della stima ML h/N e della media a priori αh/α, con pesi proporzionali al numero di osservazioni reali (N) e immaginarie (α). Lo stesso vale per la Dirichlet con N_k/N e α_k/α. Da qui i due limiti delle note: α → 0 dà la ML, α → ∞ dà la media a priori; inoltre, con α fisso e N → ∞, il peso dei dati tende a 1 e Bayes converge alla ML. Esempio: h = 4, t = 3, αh = αt = 2 danno 7/11 · 4/7 + 4/11 · 1/2 = 6/11.",
+      "latex": [
+        "\\frac{h+\\alpha_h}{h+t+\\alpha_h+\\alpha_t}=\\frac{N}{N+\\alpha}\\cdot\\frac{h}{N}+\\frac{\\alpha}{N+\\alpha}\\cdot\\frac{\\alpha_h}{\\alpha}",
+        "\\frac{N_k+\\alpha_k}{N+\\alpha}=\\frac{N}{N+\\alpha}\\cdot\\frac{N_k}{N}+\\frac{\\alpha}{N+\\alpha}\\cdot\\frac{\\alpha_k}{\\alpha}"
+      ],
+      "symbols": [
+        {"s": "\\frac{N}{N+\\alpha}", "meaning": "peso dei dati reali"},
+        {"s": "\\frac{\\alpha}{N+\\alpha}", "meaning": "peso del prior (osservazioni immaginarie)"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c69",
+      "name": "Conteggi nulli: la stima ML dà probabilità zero, il prior la evita",
+      "nameEn": "Zero counts: ML assigns zero probability, the prior smooths it",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 10}, {"doc": "part2", "page": 11}],
+      "detail": "Integrazione didattica (non scritta nelle note, ma conseguenza diretta di c56 e c62). Se uno stato non compare mai nel dataset (N_k = 0) la stima ML θ*_k = N_k/N è esattamente 0: il modello dichiara impossibile un evento solo perché il campione era piccolo. Con un prior Dirichlet con α_k > 0 la predizione (N_k + α_k)/(N + α) resta positiva. Nel caso α_k = 1 per ogni k si ottiene lo smoothing di Laplace (N_k + 1)/(N + r), usato nei classificatori naive Bayes per il testo, dove una parola mai vista in training altrimenti annullerebbe il prodotto delle probabilità.",
+      "latex": [
+        "N_k=0\\;\\Rightarrow\\;\\theta_k^{*}=\\frac{N_k}{N}=0",
+        "\\alpha_k>0\\;\\Rightarrow\\;E[\\theta_k]=\\frac{0+\\alpha_k}{N+\\alpha}>0",
+        "\\alpha_k=1:\\ E[\\theta_k]=\\frac{N_k+1}{N+r}"
+      ],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c70",
+      "name": "Media della posterior e stima MAP (moda) non coincidono",
+      "nameEn": "Posterior mean vs MAP estimate",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 8}, {"doc": "part2", "page": 11}],
+      "detail": "Integrazione didattica utile all'orale. Le note di questo modulo predicono con la media della posterior, (h + αh)/(h + t + α) e (N_k + α_k)/(N + α). La stima MAP (maximum a posteriori) è invece la moda della posterior: per la Beta(a, b) vale (a − 1)/(a + b − 2), cioè (h + αh − 1)/(h + t + α − 2); per la Dirichlet (N_k + α_k − 1)/(N + α − r). Le due coincidono asintoticamente (N grande), differiscono con pochi dati: con αh = αt = 2 e h = 4, t = 3 la media è 6/11 ≈ 0.545 e la moda 5/9 ≈ 0.556. Con prior uniforme (α_k = 1) la moda coincide con la stima ML. Nel capitolo sulle reti bayesiane (modulo p05) la formula chiamata «MAP estimate», (N_{u,x} + α_{x|u})/Σ_x(N_{u,x} + α_{x|u}), ha la forma della media posteriore: conviene saper spiegare la differenza.",
+      "latex": [
+        "\\theta_{MAP}=\\frac{h+\\alpha_h-1}{h+t+\\alpha_h+\\alpha_t-2}",
+        "E[\\theta]=\\frac{h+\\alpha_h}{h+t+\\alpha_h+\\alpha_t}",
+        "\\theta_{k,MAP}=\\frac{N_k+\\alpha_k-1}{N+\\alpha-r}"
+      ],
+      "symbols": [
+        {"s": "\\theta_{MAP}", "meaning": "moda della posterior (stima maximum a posteriori)"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c71",
+      "name": "Inferenza e apprendimento come applicazioni ripetute delle regole della somma e del prodotto",
+      "nameEn": "Probabilistic inference and learning are fundamentally based on repeated applications of the sum and product rules of probability",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 11}],
+      "detail": "Frase di apertura della sezione «Bayesian networks», in fondo a p. 11 (contenuto condiviso con il modulo adiacente p03, da deduplicare): l'inferenza e l'apprendimento probabilistici si basano fondamentalmente su applicazioni ripetute delle regole della somma e del prodotto della probabilità. Nel modulo attuale se ne sono viste le istanze: la posterior P(θ|D, ψ) ∝ P(D|θ)P(θ|ψ) viene dalla regola del prodotto (teorema di Bayes), la predittiva P(x|D) = ∫P(x|θ)P(θ|D, ψ)dθ applica prima il prodotto e poi la somma (integrale) su θ. Le due regole non sono scritte in formula nella pagina: le formule riportate sono un'integrazione.",
+      "latex": [
+        "P(X)=\\sum_{Y}P(X,Y)",
+        "P(X,Y)=P(X|Y)P(Y)"
+      ],
+      "symbols": [
+        {"s": "X,\\ Y", "meaning": "variabili aleatorie generiche"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c72",
+      "name": "Modelli grafici probabilistici (PGM): la struttura del modello in un grafo",
+      "nameEn": "Probabilistic graphical models (PGMs)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 11}],
+      "detail": "I modelli grafici probabilistici (probabilistic graphical models, PGMs, in grassetto) forniscono una rappresentazione grafica degli aspetti qualitativi delle distribuzioni di probabilità (graphical representation of the qualitative aspects of probability distributions). Permettono anzitutto di visualizzare e capire (Visualize and understand, in grassetto) la struttura di un modello probabilistico in modo intuitivo e conciso; l'elenco degli altri usi prosegue a p. 12 (modulo p03, contenuto condiviso da deduplicare). Il modello di questo modulo, un parametro θ da cui dipendono i campioni i.i.d. x_1, …, x_N, è il più semplice grafo di questo tipo.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    }
+  ],
+  "derivations": [
+    {
+      "id": "der01",
+      "title": "Stima ML del parametro della Bernoulli (sette lanci)",
+      "sourcePages": [{"doc": "part2", "page": 7}],
+      "goal": "Dimostrare che la stima a massima verosimiglianza della probabilità di testa è θ* = h/(h + t), pari a 4/7 nell'esempio D = {H, H, T, T, T, H, H}.",
+      "steps": [
+        "p(D|\\theta)=\\prod_{j=1}^{7}P(x_j|\\theta)=\\theta\\cdot\\theta\\cdot(1-\\theta)\\cdot(1-\\theta)\\cdot(1-\\theta)\\cdot\\theta\\cdot\\theta",
+        "p(D|\\theta)=\\theta^{h}(1-\\theta)^{t},\\qquad h=4,\\ t=3",
+        "\\ln(p(D|\\theta))=h\\cdot\\ln(\\theta)+t\\cdot\\ln(1-\\theta)",
+        "\\frac{d}{d\\theta}\\big(h\\cdot\\ln(\\theta)+t\\cdot\\ln(1-\\theta)\\big)=0",
+        "\\frac{h}{\\theta}-\\frac{t}{1-\\theta}=0",
+        "h(1-\\theta)=t\\theta",
+        "h=(h+t)\\,\\theta",
+        "\\theta^{*}=\\frac{h}{h+t}=\\frac{4}{7}\\approx 0.571",
+        "\\frac{d^{2}}{d\\theta^{2}}\\ln(p(D|\\theta))=-\\frac{h}{\\theta^{2}}-\\frac{t}{(1-\\theta)^{2}}<0"
+      ],
+      "stepWhy": [
+        "I lanci sono i.i.d.: la probabilità congiunta del dataset è il prodotto delle PMF dei singoli lanci, θ per ogni testa e 1 − θ per ogni croce, nell'ordine osservato.",
+        "Il prodotto è commutativo: si raccolgono le h = 4 teste in θ^h e le t = 3 croci in (1 − θ)^t. Da qui si vede che bastano h e t (statistiche sufficienti).",
+        "Il logaritmo è monotono crescente, quindi ha lo stesso punto di massimo; trasforma il prodotto in somma e gli esponenti in coefficienti.",
+        "Condizione necessaria del primo ordine per un massimo interno a (0, 1): derivata nulla.",
+        "Derivata di ln θ è 1/θ; derivata di ln(1 − θ) è −1/(1 − θ) per la regola della catena.",
+        "Si moltiplicano entrambi i membri per θ(1 − θ), positivo in (0, 1), eliminando i denominatori.",
+        "Si sviluppa h − hθ = tθ e si porta hθ a destra.",
+        "Si divide per h + t > 0; con h = 4 e t = 3 il valore è 4/7. Le note si fermano qui.",
+        "Integrazione non presente nelle note: la derivata seconda è negativa ovunque in (0, 1), quindi la log-likelihood è concava e il punto stazionario è il massimo globale."
+      ],
+      "concepts": ["c22", "c23", "c24", "c25", "c26", "c27", "c28"]
+    },
+    {
+      "id": "der02",
+      "title": "La posterior di una Bernoulli con prior Beta è una Beta",
+      "sourcePages": [{"doc": "part2", "page": 7}],
+      "goal": "Mostrare che P(θ|D, ψ) è una Beta con parametri h + αh e t + αt, cioè che la Beta è il prior coniugato della Bernoulli.",
+      "steps": [
+        "P(\\theta|D,\\psi)=\\frac{P(D|\\theta)P(\\theta|\\psi)}{P(D|\\psi)}\\propto P(D|\\theta)P(\\theta|\\psi)",
+        "P(\\theta|D,\\psi)\\propto\\theta^{h}(1-\\theta)^{t}\\cdot\\frac{\\Gamma(\\alpha)}{\\Gamma(\\alpha_h)\\Gamma(\\alpha_t)}\\theta^{\\alpha_h-1}(1-\\theta)^{\\alpha_t-1}",
+        "P(\\theta|D,\\psi)\\propto\\theta^{h}(1-\\theta)^{t}\\,\\theta^{\\alpha_h-1}(1-\\theta)^{\\alpha_t-1}",
+        "P(\\theta|D,\\psi)\\propto\\theta^{h+\\alpha_h-1}(1-\\theta)^{t+\\alpha_t-1}",
+        "P(\\theta|D,\\psi)=\\frac{\\Gamma(h+t+\\alpha)}{\\Gamma(h+\\alpha_h)\\Gamma(t+\\alpha_t)}\\theta^{h+\\alpha_h-1}(1-\\theta)^{t+\\alpha_t-1}",
+        "\\text{Beta}(\\alpha_h,\\alpha_t)\\;\\xrightarrow{\\;D\\;}\\;\\text{Beta}(h+\\alpha_h,\\ t+\\alpha_t)"
+      ],
+      "stepWhy": [
+        "Teorema di Bayes; il denominatore P(D|ψ) non dipende da θ, quindi per trovare la forma della posterior basta il numeratore.",
+        "Si sostituiscono la likelihood θ^h(1 − θ)^t (der01) e il prior Beta completo.",
+        "La costante Γ(α)/(Γ(αh)Γ(αt)) non dipende da θ e viene assorbita nel segno di proporzionalità (è il passo che le note chiamano «substituting the likelihood and the conjugate Beta prior»).",
+        "Prodotto di potenze con la stessa base: gli esponenti si sommano (h + αh − 1 e t + αt − 1). È il passo «Simplifying» delle note.",
+        "Integrazione: il nucleo ottenuto è quello di una Beta(h + αh, t + αt), la cui costante di normalizzazione è nota; nessun integrale da calcolare (vantaggio dei coniugati, c01).",
+        "Riassunto: aggiornare il prior significa sommare i conteggi osservati ai parametri; la famiglia resta la Beta."
+      ],
+      "concepts": ["c21", "c29", "c30", "c31", "c01"]
+    },
+    {
+      "id": "der03",
+      "title": "La predizione bayesiana è la media della posterior Beta",
+      "sourcePages": [{"doc": "part2", "page": 8}],
+      "goal": "Calcolare P(x = 1|D) e mostrare che vale (h + αh)/(h + t + αh + αt).",
+      "steps": [
+        "P(x=1|D)=\\int_0^1 P(x=1|\\theta)P(\\theta|D,\\psi)\\,d\\theta",
+        "P(x=1|D)=\\int_0^1\\theta\\,P(\\theta|D,\\psi)\\,d\\theta=E_{P(\\theta|D,\\psi)}[\\theta]",
+        "a=h+\\alpha_h,\\ b=t+\\alpha_t:\\qquad E[\\theta]=\\frac{\\Gamma(a+b)}{\\Gamma(a)\\Gamma(b)}\\int_0^1\\theta^{a}(1-\\theta)^{b-1}\\,d\\theta",
+        "\\int_0^1\\theta^{a}(1-\\theta)^{b-1}\\,d\\theta=\\frac{\\Gamma(a+1)\\Gamma(b)}{\\Gamma(a+b+1)}",
+        "E[\\theta]=\\frac{\\Gamma(a+b)}{\\Gamma(a)\\Gamma(b)}\\cdot\\frac{\\Gamma(a+1)\\Gamma(b)}{\\Gamma(a+b+1)}=\\frac{a\\,\\Gamma(a)\\,\\Gamma(a+b)}{\\Gamma(a)\\,(a+b)\\,\\Gamma(a+b)}=\\frac{a}{a+b}",
+        "E_{P(\\theta|D,\\psi)}[\\theta]=\\frac{h+\\alpha_h}{h+t+\\alpha_h+\\alpha_t}"
+      ],
+      "stepWhy": [
+        "Regola della somma e del prodotto (marginalizzazione su θ): la predittiva media la probabilità del nuovo esito su tutti i valori di θ pesati dalla posterior.",
+        "Per il nuovo esito testa P(x = 1|θ) = θ (c16), quindi l'integrale è per definizione il valore atteso di θ sotto la posterior. È la formula delle note.",
+        "Integrazione (le note danno solo il risultato): la posterior è Beta(a, b) (der02); si scrive la sua densità normalizzata e si moltiplica per θ, alzando di 1 l'esponente di θ.",
+        "L'integrale è il nucleo di una Beta(a + 1, b): vale l'inverso della sua costante di normalizzazione.",
+        "Si usa Γ(z + 1) = zΓ(z) per a e per a + b: Γ(a + 1) = aΓ(a) e Γ(a + b + 1) = (a + b)Γ(a + b); tutto il resto si semplifica.",
+        "Si risostituiscono a e b: la predizione è la frazione delle teste, reali più immaginarie, sul totale dei lanci reali più immaginari."
+      ],
+      "concepts": ["c32", "c33", "c34", "c20"]
+    },
+    {
+      "id": "der04",
+      "title": "I limiti α → ∞ e α → 0 della media posteriore",
+      "sourcePages": [{"doc": "part2", "page": 8}],
+      "goal": "Giustificare i due limiti delle note: con α grande la predizione tende alla media a priori αh/(αh + αt), con α → 0 tende alla stima ML h/(h + t).",
+      "steps": [
+        "E[\\theta]=\\frac{h+\\alpha_h}{N+\\alpha},\\qquad N=h+t,\\ \\alpha=\\alpha_h+\\alpha_t",
+        "E[\\theta]=\\frac{N}{N+\\alpha}\\cdot\\frac{h}{N}+\\frac{\\alpha}{N+\\alpha}\\cdot\\frac{\\alpha_h}{\\alpha}",
+        "\\alpha\\to\\infty\\ \\left(\\tfrac{\\alpha_h}{\\alpha}\\ \\text{fisso}\\right):\\quad \\frac{N}{N+\\alpha}\\to 0\\;\\Rightarrow\\;E[\\theta]\\to\\frac{\\alpha_h}{\\alpha_h+\\alpha_t}",
+        "\\alpha\\to 0:\\quad \\frac{\\alpha}{N+\\alpha}\\to 0\\;\\Rightarrow\\;E[\\theta]\\to\\frac{h}{h+t}=\\theta^{*}",
+        "N\\to\\infty\\ (\\alpha\\ \\text{fisso}):\\quad \\frac{N}{N+\\alpha}\\to 1\\;\\Rightarrow\\;E[\\theta]-\\frac{h}{N}\\to 0"
+      ],
+      "stepWhy": [
+        "Si rinomina il denominatore: N osservazioni reali e α osservazioni immaginarie.",
+        "Integrazione: si divide e si moltiplica ogni addendo del numeratore per N e per α. La media posteriore diventa una combinazione convessa (pesi positivi che sommano a 1) di stima ML e media a priori.",
+        "Il peso dei dati svanisce: resta la media del prior. Le note: «as α increases, the prior distribution becomes more concentrated around its expected value, leading to less impact from the data».",
+        "Il peso del prior svanisce: resta la frequenza relativa. Le note: «the prior becomes non-informative ... Bayesian estimation converges to the classical maximum likelihood estimation (MLE)».",
+        "Integrazione: anche senza toccare il prior, con molti dati il peso N/(N + α) tende a 1 e la stima bayesiana si avvicina alla ML; è il secondo caso in cui ML e Bayes coincidono."
+      ],
+      "concepts": ["c36", "c37", "c38", "c68"]
+    },
+    {
+      "id": "der05",
+      "title": "La PMF one-hot seleziona θ_k e per r = 2 ridà la Bernoulli",
+      "sourcePages": [{"doc": "part2", "page": 8}, {"doc": "part2", "page": 9}],
+      "goal": "Verificare che ∏_k θ_k^{z_k(x)} restituisce la probabilità dello stato osservato e che per r = 2 coincide con θ^x(1 − θ)^{1−x}.",
+      "steps": [
+        "x=x^{k}\\;\\Rightarrow\\;z_k(x)=1,\\quad z_j(x)=0\\ \\ (j\\neq k)",
+        "P(x|\\boldsymbol{\\theta})=\\prod_{j=1}^{r}\\theta_j^{z_j(x)}=\\theta_k^{1}\\prod_{j\\neq k}\\theta_j^{0}=\\theta_k",
+        "r=2,\\ x^{1}=1,\\ x^{2}=0:\\quad \\boldsymbol{z}(x)=[x,\\ 1-x]",
+        "P(x|\\boldsymbol{\\theta})=\\theta_1^{x}\\theta_2^{1-x}=\\theta^{x}(1-\\theta)^{1-x}\\qquad(\\theta_1=\\theta,\\ \\theta_2=1-\\theta)"
+      ],
+      "stepWhy": [
+        "Definizione della codifica one-hot (p. 8).",
+        "Ogni potenza con esponente 0 vale 1, quindi nel prodotto resta solo il fattore dello stato osservato: la PMF di p. 9 assegna probabilità θ_k allo stato x^k, come deve.",
+        "Integrazione: con due stati, uno per il successo e uno per il fallimento, la prima componente del vettore one-hot è x stesso e la seconda è 1 − x.",
+        "Il vincolo θ_1 + θ_2 = 1 lascia un solo parametro libero: si ritrova la PMF compatta della Bernoulli (c17)."
+      ],
+      "concepts": ["c42", "c43", "c46", "c66"]
+    },
+    {
+      "id": "der06",
+      "title": "Dal doppio prodotto ai conteggi: p(D|θ) = ∏ θ_k^(N_k)",
+      "sourcePages": [{"doc": "part2", "page": 9}, {"doc": "part2", "page": 10}],
+      "goal": "Semplificare la likelihood multinomiale mostrando che dipende dai dati solo tramite i conteggi N_k.",
+      "steps": [
+        "p(D|\\boldsymbol{\\theta})=\\prod_{j=1}^{N}P(x_j|\\boldsymbol{\\theta})=\\prod_{j=1}^{N}\\prod_{k=1}^{r}\\theta_k^{z_k(x_j)}",
+        "p(D|\\boldsymbol{\\theta})=\\prod_{k=1}^{r}\\prod_{j=1}^{N}\\theta_k^{z_k(x_j)}",
+        "p(D|\\boldsymbol{\\theta})=\\prod_{k=1}^{r}\\theta_k^{\\sum_{j=1}^{N}z_k(x_j)}",
+        "p(D|\\boldsymbol{\\theta})=\\prod_{k=1}^{r}\\theta_k^{N_k}"
+      ],
+      "stepWhy": [
+        "Campioni i.i.d.: la likelihood è il prodotto delle PMF (c46) dei singoli campioni. È la formula di p. 9.",
+        "Integrazione del passaggio sottinteso («This can be simplified to»): un prodotto finito di fattori si può riordinare, si scambiano i due prodotti.",
+        "Per k fissato i fattori hanno tutti la stessa base θ_k: gli esponenti si sommano.",
+        "La somma degli esponenti è per definizione il conteggio N_k (c50). Le statistiche sufficienti sono i conteggi (c57)."
+      ],
+      "concepts": ["c50", "c51", "c52", "c57"]
+    },
+    {
+      "id": "der07",
+      "title": "Stima ML della multinomiale con il vincolo Σθ_k = 1",
+      "sourcePages": [{"doc": "part2", "page": 10}],
+      "goal": "Ricavare θ*_i = N_i/N completando i «passaggi matematici aggiuntivi» che le note omettono.",
+      "steps": [
+        "\\ln(p(D|\\boldsymbol{\\theta}))=\\sum_{k=1}^{r}N_k\\cdot\\ln(\\theta_k)",
+        "\\frac{d}{d\\theta_i}\\sum_{k=1}^{r}N_k\\cdot\\ln(\\theta_k)=\\frac{d}{d\\theta_i}N_i\\cdot\\ln(\\theta_i)=\\frac{N_i}{\\theta_i}",
+        "\\frac{N_i}{\\theta_i}=0\\quad(\\text{nessuna soluzione finita senza vincolo})",
+        "\\mathcal{L}(\\boldsymbol{\\theta},\\lambda)=\\sum_{k=1}^{r}N_k\\ln\\theta_k+\\lambda\\Big(1-\\sum_{k=1}^{r}\\theta_k\\Big)",
+        "\\frac{\\partial\\mathcal{L}}{\\partial\\theta_i}=\\frac{N_i}{\\theta_i}-\\lambda=0\\;\\Rightarrow\\;\\theta_i=\\frac{N_i}{\\lambda}",
+        "\\sum_{i=1}^{r}\\theta_i=\\frac{1}{\\lambda}\\sum_{i=1}^{r}N_i=\\frac{N}{\\lambda}=1\\;\\Rightarrow\\;\\lambda=N",
+        "\\theta_i^{*}=\\frac{N_i}{N},\\qquad N=\\sum_{k=1}^{r}N_k"
+      ],
+      "stepWhy": [
+        "Logaritmo della likelihood semplificata (der06): prodotto → somma, esponenti → coefficienti. Formula di p. 10.",
+        "Derivata parziale rispetto a θ_i con gli altri θ_k costanti: nella somma sopravvive solo il termine k = i. Formula di p. 10.",
+        "Le note scrivono N_i/θ_i = 0; per N_i > 0 questa equazione non ha soluzione: la log-likelihood cresce sempre con θ_i e il massimo non è un punto stazionario libero. Il vincolo va imposto.",
+        "Integrazione (i «some additional mathematical steps» delle note): lagrangiana con un moltiplicatore λ per il vincolo di normalizzazione Σθ_k = 1.",
+        "Si annulla la derivata della lagrangiana rispetto a θ_i: tutti i rapporti N_i/θ_i devono valere lo stesso numero λ.",
+        "Si impone il vincolo sommando su i: la somma dei conteggi è N, quindi λ = N.",
+        "Sostituendo λ si ottiene il risultato delle note: la frequenza relativa di ogni esito. La log-likelihood è concava (somma di logaritmi) e il vincolo è lineare, quindi il punto è il massimo globale."
+      ],
+      "concepts": ["c53", "c54", "c55", "c56"]
+    },
+    {
+      "id": "der08",
+      "title": "La posterior di una multinomiale con prior Dirichlet è una Dirichlet",
+      "sourcePages": [{"doc": "part2", "page": 10}, {"doc": "part2", "page": 11}],
+      "goal": "Mostrare che P(θ|D, ψ) è una Dirichlet con parametri N_k + α_k.",
+      "steps": [
+        "P(\\boldsymbol{\\theta}|D,\\psi)\\propto P(D|\\boldsymbol{\\theta})P(\\boldsymbol{\\theta}|\\psi)",
+        "P(\\boldsymbol{\\theta}|D,\\psi)\\propto\\prod_{k=1}^{r}\\theta_k^{N_k}\\cdot\\frac{\\Gamma(\\alpha)}{\\prod_{k=1}^{r}\\Gamma(\\alpha_k)}\\prod_{k=1}^{r}\\theta_k^{\\alpha_k-1}",
+        "P(\\boldsymbol{\\theta}|D,\\psi)\\propto\\prod_{k=1}^{r}\\theta_k^{N_k}\\theta_k^{\\alpha_k-1}",
+        "P(\\boldsymbol{\\theta}|D,\\psi)\\propto\\prod_{k=1}^{r}\\theta_k^{N_k+\\alpha_k-1}",
+        "P(\\boldsymbol{\\theta}|D,\\psi)=\\frac{\\Gamma(N+\\alpha)}{\\prod_{k=1}^{r}\\Gamma(N_k+\\alpha_k)}\\prod_{k=1}^{r}\\theta_k^{N_k+\\alpha_k-1}"
+      ],
+      "stepWhy": [
+        "Teorema di Bayes con il denominatore costante in θ (p. 10).",
+        "Si sostituiscono la likelihood semplificata (der06) e la densità Dirichlet (c48).",
+        "La costante Gamma non dipende da θ e si assorbe in ∝; i due prodotti su k si fondono in un solo prodotto. Formula di p. 11.",
+        "Per ogni k si sommano gli esponenti della stessa base θ_k («Simplifying»).",
+        "Integrazione: si riconosce il nucleo di una Dirichlet(N_1 + α_1, …, N_r + α_r), la cui somma dei parametri è N + α; la costante è quindi nota."
+      ],
+      "concepts": ["c58", "c59", "c60"]
+    },
+    {
+      "id": "der09",
+      "title": "Predizione multinomiale: media della posterior Dirichlet",
+      "sourcePages": [{"doc": "part2", "page": 11}],
+      "goal": "Ricavare P(x_k|D) = (N_k + α_k)/(N + α).",
+      "steps": [
+        "P(x_k|D)=\\int P(x_k|\\boldsymbol{\\theta})P(\\boldsymbol{\\theta}|D,\\psi)\\,d\\boldsymbol{\\theta}=\\int\\theta_k\\,P(\\boldsymbol{\\theta}|D,\\psi)\\,d\\boldsymbol{\\theta}",
+        "P(x_k|D)=E_{P(\\boldsymbol{\\theta}|D,\\psi)}[\\theta_k]",
+        "\\boldsymbol{\\theta}\\sim\\text{Dir}(\\alpha'_1,\\dots,\\alpha'_r)\\;\\Rightarrow\\;E[\\theta_k]=\\frac{\\alpha'_k}{\\sum_{j=1}^{r}\\alpha'_j}",
+        "\\alpha'_k=N_k+\\alpha_k,\\qquad\\sum_{j=1}^{r}\\alpha'_j=N+\\alpha",
+        "E_{P(\\boldsymbol{\\theta}|D,\\psi)}[\\theta_k]=\\frac{N_k+\\alpha_k}{N+\\alpha}"
+      ],
+      "stepWhy": [
+        "Marginalizzazione su θ; P(x_k|θ) = θ_k perché la PMF one-hot seleziona la componente k (der05).",
+        "Definizione di valore atteso sotto la posterior (formula di p. 11).",
+        "Integrazione: proprietà nota della Dirichlet, che si dimostra come der03 alzando di 1 l'esponente di θ_k e usando Γ(z + 1) = zΓ(z).",
+        "La posterior è Dirichlet con parametri N_k + α_k (der08); la loro somma è N + α.",
+        "Risultato delle note: quota di conteggi reali più immaginari dello stato k sul totale."
+      ],
+      "concepts": ["c61", "c62"]
+    },
+    {
+      "id": "der10",
+      "title": "Media e varianza della Bernoulli; varianza massima in p = 0.5",
+      "sourcePages": [{"doc": "part2", "page": 6}],
+      "goal": "Dimostrare E[x] = p, Var[x] = p(1 − p) e che il massimo della varianza è in p = 0.5 (le note danno solo i risultati).",
+      "steps": [
+        "E[x]=\\sum_{x\\in\\{0,1\\}}x\\,P(x;p)=1\\cdot p+0\\cdot(1-p)=p",
+        "E[x^{2}]=1^{2}\\cdot p+0^{2}\\cdot(1-p)=p",
+        "Var[x]=E[x^{2}]-E[x]^{2}=p-p^{2}=p(1-p)",
+        "\\frac{d}{dp}\\,p(1-p)=1-2p=0\\;\\Rightarrow\\;p=0.5,\\qquad Var[x]\\big|_{p=0.5}=0.25"
+      ],
+      "stepWhy": [
+        "Definizione di valore atteso per una variabile discreta, con la PMF a casi (c08).",
+        "Poiché x ∈ {0, 1}, x² = x: il momento secondo coincide con la media.",
+        "Formula della varianza come momento secondo meno quadrato della media.",
+        "La varianza è una parabola rivolta verso il basso: il vertice (derivata nulla) è il massimo, come affermano le note."
+      ],
+      "concepts": ["c09", "c10", "c14"]
+    },
+    {
+      "id": "der11",
+      "title": "Perché con α grande il prior Beta si concentra: la varianza della Beta",
+      "sourcePages": [{"doc": "part2", "page": 8}],
+      "goal": "Giustificare l'affermazione delle note «as α increases, the prior distribution becomes more concentrated around its expected value» calcolando la varianza della Beta(αh, αt) (le note non danno formule per la concentrazione).",
+      "steps": [
+        "E[\\theta]=\\frac{\\alpha_h}{\\alpha}=m,\\qquad \\alpha=\\alpha_h+\\alpha_t",
+        "E[\\theta^{2}]=\\frac{\\Gamma(\\alpha)}{\\Gamma(\\alpha_h)\\Gamma(\\alpha_t)}\\int_0^1\\theta^{\\alpha_h+1}(1-\\theta)^{\\alpha_t-1}\\,d\\theta=\\frac{\\Gamma(\\alpha)}{\\Gamma(\\alpha_h)}\\cdot\\frac{\\Gamma(\\alpha_h+2)}{\\Gamma(\\alpha+2)}=\\frac{\\alpha_h(\\alpha_h+1)}{\\alpha(\\alpha+1)}",
+        "Var[\\theta]=E[\\theta^{2}]-E[\\theta]^{2}=\\frac{\\alpha_h(\\alpha_h+1)}{\\alpha(\\alpha+1)}-\\frac{\\alpha_h^{2}}{\\alpha^{2}}=\\frac{\\alpha_h\\alpha_t}{\\alpha^{2}(\\alpha+1)}",
+        "Var[\\theta]=\\frac{m(1-m)}{\\alpha+1}",
+        "\\text{Beta}(2,2):\\ \\sqrt{0.25/5}\\approx 0.224,\\qquad \\text{Beta}(50,50):\\ \\sqrt{0.25/101}\\approx 0.050"
+      ],
+      "stepWhy": [
+        "Media della Beta (der03 con a = αh, b = αt): è la media a priori m, che resta fissa se si fa crescere α mantenendo il rapporto αh/α.",
+        "Integrazione del revisore: si moltiplica la densità per θ² alzando di 2 l'esponente di θ; l'integrale è l'inverso della costante di una Beta(αh + 2, αt), e si semplifica con Γ(z + 1) = zΓ(z) applicata due volte.",
+        "Varianza come momento secondo meno quadrato della media; portando a denominatore comune α²(α + 1) il numeratore si riduce a αh[(αh + 1)α − αh(α + 1)] = αh(α − αh) = αhαt.",
+        "Si riscrive con m = αh/α e 1 − m = αt/α: a media fissa la varianza decresce come 1/(α + 1), quindi il prior si stringe attorno alla media al crescere di α, come dicono le note.",
+        "Esempio numerico con la stessa media 0.5: il prior con α = 100 è circa cinque volte più stretto di quello con α = 4 e i 7 lanci dell'esempio lo spostano appena (predizione 0.505 contro 0.545)."
+      ],
+      "concepts": ["c36", "c37"],
+      "addedBy": "revisore"
+    },
+    {
+      "id": "der12",
+      "title": "I limiti α → 0 e α grande per la Dirichlet (p. 11, detti a parole)",
+      "sourcePages": [{"doc": "part2", "page": 11}],
+      "goal": "Tradurre in formule l'affermazione di p. 11: con α → 0 la stima bayesiana della multinomiale converge alla ML, con α grande il prior ha un'influenza più forte.",
+      "steps": [
+        "E_{P(\\boldsymbol{\\theta}|D,\\psi)}[\\theta_k]=\\frac{N_k+\\alpha_k}{N+\\alpha},\\qquad N=\\sum_{k=1}^{r}N_k,\\ \\alpha=\\sum_{k=1}^{r}\\alpha_k",
+        "\\frac{N_k+\\alpha_k}{N+\\alpha}=\\frac{N}{N+\\alpha}\\cdot\\frac{N_k}{N}+\\frac{\\alpha}{N+\\alpha}\\cdot\\frac{\\alpha_k}{\\alpha}",
+        "\\alpha\\to 0:\\quad \\frac{N_k+\\alpha_k}{N+\\alpha}\\to\\frac{N_k}{N}=\\theta_k^{*}",
+        "\\alpha\\to\\infty\\ \\left(\\tfrac{\\alpha_k}{\\alpha}\\ \\text{fisso}\\right):\\quad \\frac{N_k+\\alpha_k}{N+\\alpha}\\to\\frac{\\alpha_k}{\\alpha}",
+        "\\alpha_k=\\frac{\\alpha}{r}\\ \\text{per ogni }k:\\quad \\alpha\\to\\infty\\;\\Rightarrow\\;\\frac{N_k+\\alpha_k}{N+\\alpha}\\to\\frac{1}{r}"
+      ],
+      "stepWhy": [
+        "Predizione della posterior Dirichlet (formula di p. 11, c62).",
+        "Integrazione del revisore: stessa riscrittura come combinazione convessa usata per la Bernoulli (der04, c68), con pesi N/(N + α) per i dati e α/(N + α) per le osservazioni immaginarie.",
+        "Il peso del prior svanisce: resta la frequenza relativa N_k/N, cioè la stima ML di p. 10. Le note: «As α → 0, the prior becomes non-informative, and Bayesian estimation converges to the classical maximum likelihood estimation (MLE) approach».",
+        "Il peso dei dati svanisce: resta la media a priori α_k/α. Le note: «for larger α, the prior has a stronger influence on the posterior».",
+        "Caso usato nei widget sullo smoothing: con prior simmetrico e α enorme tutte le categorie tendono alla probabilità uniforme 1/r (ad esempio 1/6 con un vocabolario di 6 parole)."
+      ],
+      "concepts": ["c62", "c64", "c65", "c68"],
+      "addedBy": "revisore"
+    }
+  ],
+  "workedExamples": [
+    {
+      "id": "ex01",
+      "title": "Sette lanci di moneta: stima a massima verosimiglianza",
+      "sourcePages": [{"doc": "part2", "page": 7}],
+      "description": "Dati della fonte: D = {H, H, T, T, T, H, H}, 7 lanci con h = 4 teste e t = 3 croci; θ è la probabilità di testa. Likelihood: p(D|θ) = θ·θ·(1 − θ)·(1 − θ)·(1 − θ)·θ·θ = θ^4(1 − θ)^3. Log-likelihood: 4 ln θ + 3 ln(1 − θ). Derivata nulla: 4/θ − 3/(1 − θ) = 0, quindi 4(1 − θ) = 3θ e θ* = 4/(4 + 3) = 4/7 ≈ 0.571. Le note concludono che h e t sono statistiche sufficienti. Controlli numerici aggiunti: p(D|4/7) = (4/7)^4(3/7)^3 ≈ 0.00839 contro p(D|0.5) = 0.5^7 ≈ 0.00781; ln p(D|4/7) ≈ −4.780; derivata a θ = 0.5: 8 − 6 = 2 > 0 (conviene aumentare θ), a θ = 0.7: 5.71 − 10 = −4.29 < 0.",
+      "concepts": ["c22", "c23", "c24", "c25", "c26", "c27", "c28"]
+    },
+    {
+      "id": "ex02",
+      "title": "Stima bayesiana per la moneta: posterior Beta e predizione",
+      "sourcePages": [{"doc": "part2", "page": 7}, {"doc": "part2", "page": 8}],
+      "description": "Nella fonte l'esempio è simbolico: prior Beta(αh, αt), stessi dati di ex01, posterior ∝ θ^{h+αh−1}(1 − θ)^{t+αt−1} cioè Beta(h + αh, t + αt), predizione P(x = testa|D) = (h + αh)/(h + t + αh + αt), con i limiti αh/(αh + αt) per α grande e h/(h + t) per α → 0. Istanza numerica illustrativa (non nella fonte), con h = 4 e t = 3: prior Beta(2, 2) (media 0.5, α = 4) → posterior Beta(6, 5), costante Γ(11)/(Γ(6)Γ(5)) = 1260, predizione 6/11 ≈ 0.545 (moda 5/9 ≈ 0.556, ML 4/7 ≈ 0.571). Prior Beta(50, 50) (α = 100) → predizione 54/107 ≈ 0.505, quasi la media a priori. Prior Beta(0.01, 0.01) (α = 0.02) → predizione 4.01/7.02 ≈ 0.571, praticamente la stima ML.",
+      "concepts": ["c29", "c30", "c31", "c33", "c34", "c37", "c38"]
+    },
+    {
+      "id": "ex03",
+      "title": "Lanci di un dado: stima ML e bayesiana della multinomiale",
+      "sourcePages": [{"doc": "part2", "page": 9}, {"doc": "part2", "page": 10}, {"doc": "part2", "page": 11}],
+      "description": "Nella fonte l'esempio è simbolico: D = x_1, …, x_N risultati di N lanci di un dado (r = 6), conteggi N_k = Σ_j z_k(x_j), likelihood ∏_k θ_k^{N_k}, stima ML θ*_i = N_i/N, posterior Dirichlet(N_k + α_k), predizione (N_k + α_k)/(N + α). Istanza numerica illustrativa (non nella fonte): N = 30 lanci con conteggi (4, 6, 5, 3, 7, 5). Stima ML: (4/30, 6/30, 5/30, 3/30, 7/30, 5/30) ≈ (0.133, 0.200, 0.167, 0.100, 0.233, 0.167). Con prior Dirichlet(1, 1, 1, 1, 1, 1) (α = 6): posterior Dirichlet(5, 7, 6, 4, 8, 6) e predizione (5/36, 7/36, 6/36, 4/36, 8/36, 6/36) ≈ (0.139, 0.194, 0.167, 0.111, 0.222, 0.167): ogni stima è tirata verso 1/6.",
+      "concepts": ["c49", "c50", "c52", "c56", "c60", "c62"]
+    },
+    {
+      "id": "ex04",
+      "title": "Esempio della slide: lancio di una moneta",
+      "sourcePages": [{"doc": "part2", "page": 6}],
+      "description": "Riquadro verde «Example: tossing a coin»: testa (successo) e croce (fallimento) sono i due esiti possibili; p è la probabilità di testa. La PMF è P(x; p) = p se x = 1 e 1 − p se x = 0, con E[x] = p e Var[x] = p(1 − p) (massima, 0.25, per la moneta equa p = 0.5).",
+      "concepts": ["c11", "c08", "c09", "c10"]
+    }
+  ],
+  "figures": [
+    {
+      "id": "fig01",
+      "doc": "part2",
+      "page": 5,
+      "description": "Tabella «Examples» (slide con intestazione blu) delle coppie coniugate: Likelihood | Parameters | Conjugate prior con le righe Binomial - p (probability) - Beta; Multinomial - p (probability vector) - Dirichlet; Normal - μ (mean) - Normal; Multivariate normal - μ_i (mean vector) - Normal.",
+      "region": "centro della pagina, sotto «Common examples are the following»",
+      "concepts": ["c04"],
+      "importance": 3
+    },
+    {
+      "id": "fig02",
+      "doc": "part2",
+      "page": 6,
+      "description": "Riquadro lilla della slide con la PMF della Bernoulli a casi: P(x; p) = p se x = 1, 1 − p se x = 0.",
+      "region": "in alto, centrato",
+      "concepts": ["c08"],
+      "importance": 2
+    },
+    {
+      "id": "fig03",
+      "doc": "part2",
+      "page": 6,
+      "description": "Riquadro con intestazione verde «Example: tossing a coin»: Head (success) and tail (failure) possible outcomes; p is probability of head.",
+      "region": "metà superiore, sotto la varianza",
+      "concepts": ["c11"],
+      "importance": 1
+    }
+  ],
+  "widgets": [
+    {
+      "id": "p02-coniugati-stessa-forma",
+      "title": "Prior coniugato contro prior qualsiasi: chi aggiorna più in fretta?",
+      "concepts": ["c01", "c02", "c03"],
+      "scenario": "spam",
+      "realExample": "Un filtro antispam aziendale stima θ = frazione di email spam in arrivo sul server e la aggiorna ogni volta che un utente etichetta un'email come spam o ham. Con un prior Beta ogni etichetta si incorpora sommando 1 a un contatore; con un prior non coniugato (ad esempio un prior a gradini disegnato a mano) ogni aggiornamento richiede un integrale numerico su una griglia. Dati sintetici ispirati a un server di posta aziendale.",
+      "storyboard": [
+        "[Caricamento, 600 ms] Due pannelli con lo stesso asse θ ∈ [0, 1] (frazione di spam): a sinistra «Prior coniugato Beta(2, 8)» (curva viola, media 0.2), a destra «Prior non coniugato» (curva viola a gradini disegnata a mano, stessa media 0.2). Sotto, una casella di posta vuota e due contatori h (spam) e t (ham) a zero.",
+        "[Clic «Arriva un'email», 500 ms] Un'icona email scivola nella casella e si colora di rosso (spam, x = 1) o verde (ham, x = 0) secondo il seed (θ vero nascosto = 0.3). A sinistra l'etichetta del prior scatta «Beta(2, 8) → Beta(3, 8)» con il +1 che vola dall'email al parametro; la curva si deforma con un morph ma resta una Beta (badge «stessa famiglia»).",
+        "[Contemporaneamente a destra, 900 ms] Compare una barra di avanzamento «integrazione numerica su 1000 punti» e la posterior viene ricalcolata punto per punto (la curva si ridisegna da sinistra a destra); l'etichetta dice «forma nuova: nessuna formula chiusa». Un contatore di operazioni cresce di 1000 a destra e di 1 a sinistra.",
+        "[Auto-play, un'email ogni 0.8 s] Dopo 20 email la posterior di sinistra è Beta(2 + h, 8 + t) e la catena degli aggiornamenti è mostrata come nastro di pillole: Beta(2, 8) → Beta(3, 8) → Beta(3, 9) → …; una freccia curva ricorda che ogni posterior diventa il prior del passo dopo («oggi posterior, domani prior»).",
+        "[Toggle «Tutto insieme»] Gli stessi 20 dati sono incorporati in un solo colpo: la curva finale coincide esattamente con quella ottenuta un'email alla volta (sovrapposizione con badge «identiche»).",
+        "[Fine] Riquadro «Key intuition»: prior, likelihood e posterior vivono sullo stesso asse θ; la forma Beta è conservata e cambiano solo i due numeri."
+      ],
+      "interactions": [
+        "pulsante «Arriva un'email» (una etichetta per clic)",
+        "Auto-play/Pausa con velocità da 0.5× a 4×",
+        "selettore del prior di destra: a gradini, triangolare, mistura di due Beta",
+        "toggle «Tutto insieme» / «uno alla volta»",
+        "toggle «Rivela θ vero» e slider del θ vero da 0.05 a 0.95",
+        "Reset con nuovo seed"
+      ],
+      "visual": "Due grafici SVG affiancati sull'asse θ ∈ [0, 1]: prior viola, posterior arancione con area semitrasparente, likelihood corrente tratteggiata grigia. Nel pannello sinistro l'etichetta Beta(a, b) si aggiorna con i +1 animati; nel destro barra di integrazione numerica e contatore delle operazioni. Sotto, il nastro della catena di aggiornamenti come pillole Beta(a, b).",
+      "aha": "Con un prior coniugato imparare dai dati significa aggiornare due contatori: la forma resta la stessa e ogni posterior è già pronta a fare da prior per il dato successivo.",
+      "formulasShown": [
+        "P(\\theta|D,\\psi)\\propto P(D|\\theta)P(\\theta|\\psi)",
+        "\\text{Beta}(a,b)\\xrightarrow{\\;x=1\\;}\\text{Beta}(a+1,b)",
+        "\\text{Beta}(a,b)\\xrightarrow{\\;x=0\\;}\\text{Beta}(a,b+1)"
+      ],
+      "challenge": "Prevedi: dopo 5 email (3 spam, 2 ham) partendo da Beta(2, 8), quali sono i parametri della posterior? Inserisci a e b; il widget verifica (Beta(5, 10)) e mostra che l'ordine delle 5 email non conta.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p02-tabella-coppie-coniugate",
+      "title": "La tabella dei coniugati: abbina ogni likelihood al suo prior",
+      "concepts": ["c04"],
+      "scenario": "spam",
+      "realExample": "Tre problemi reali con la loro coppia coniugata: (1) Binomiale-Beta: numero di email spam su n ricevute in un'ora; (2) Multinomiale-Dirichlet: frequenze delle classi acqua/vegetazione/urbano nei pixel etichettati di un'immagine satellitare; (3) Normale-Normale: luminosità media dei salmoni del Cap. 2 di Melgani e, nella versione multivariata, vettore delle medie di luminosità e larghezza.",
+      "storyboard": [
+        "[Caricamento, 500 ms] La tabella «Examples» di p. 5 ricostruita con intestazione blu e tre colonne Likelihood | Parameters | Conjugate prior; quattro righe: Binomial - p (probability); Multinomial - p in grassetto (probability vector); Normal - μ (mean); Multivariate normal - μ_i in grassetto (mean vector). Le celle della terza colonna sono carte coperte; sotto la tabella un mazzo di quattro carte «Beta», «Dirichlet», «Normal», «Normal» mescolate.",
+        "[Trascinamento di una carta] Lo studente trascina una carta su una cella della colonna dei prior: se è giusta la carta si gira con un flip 3D di 300 ms e la riga si colora di verde; se è sbagliata rimbalza al mazzo con una molla di 250 ms e il contatore degli errori sale di 1.",
+        "[Clic su una riga completata, apertura 400 ms] Sotto la tabella si apre il mini-laboratorio della riga. Binomial: curva Beta(2, 8) sulla frazione di spam θ ∈ [0, 1]. Multinomial: triangolo acqua/vegetazione/urbano con la heatmap Dirichlet(2, 6, 2). Normal: campana del prior su μ (luminosità media dei salmoni, prior N(5, 2²)). Multivariate normal: ellisse al 95% del prior sul vettore delle medie (luminosità, larghezza).",
+        "[Pulsante «Aggiungi 5 dati», morph 600 ms] Binomial: arrivano 3 spam e 2 ham, l'etichetta passa da Beta(2, 8) a Beta(5, 10) e la curva si sposta. Multinomial: arrivano 5 pixel (3 acqua, 1 vegetazione, 1 urbano) e la heatmap passa a Dir(5, 7, 3). Normal: 5 salmoni con media campionaria 6.1 stringono e spostano la campana. Multivariate normal: l'ellisse si restringe verso la media campionaria. Per ogni riga il badge «prior → posterior: stessa famiglia» si accende in verde.",
+        "[Regola di aggiornamento, sempre visibile] Accanto al pannello una riga di testo: per Beta e Dirichlet «si sommano i conteggi agli esponenti», per le due normali «la media della posterior è una media pesata e la varianza si riduce» con rimando al modulo m07.",
+        "[Fine partita] Le righe Binomial e Multinomial (sviluppate in questo modulo) si evidenziano con un bordo arancione; una nota ricorda che la stessa Beta vale per la Bernoulli, binomiale con una sola prova."
+      ],
+      "interactions": [
+        "drag and drop delle 4 carte dei prior nella colonna giusta (feedback immediato, contatore errori)",
+        "clic su una riga completata per aprire il mini-laboratorio",
+        "pulsante «Aggiungi 5 dati» dentro ogni mini-laboratorio (ripetibile fino a 50 dati, poi Reset)",
+        "pulsante «Rimescola le carte» (nuova partita)"
+      ],
+      "visual": "Tabella HTML con intestazione blu come nella slide, carte ribaltabili nella terza colonna, sotto un pannello SVG che cambia a seconda della riga: curva Beta su [0, 1], triangolo con heatmap Dirichlet, campana normale, ellisse 2D. Regola di aggiornamento mostrata accanto.",
+      "aha": "Ogni verosimiglianza classica ha un prior partner che rende la posterior calcolabile a mano; Beta e Dirichlet sono i partner dei conteggi.",
+      "formulasShown": [
+        "\\text{Binomial}+\\text{Beta}\\Rightarrow\\text{Beta}:\\ \\text{Beta}(2,8)\\xrightarrow{3\\ \\text{spam},\\ 2\\ \\text{ham}}\\text{Beta}(5,10)",
+        "\\text{Multinomial}+\\text{Dirichlet}\\Rightarrow\\text{Dirichlet}:\\ \\text{Dir}(2,6,2)\\xrightarrow{N=(3,1,1)}\\text{Dir}(5,7,3)",
+        "\\text{Normal}(\\mu)+\\text{Normal}\\Rightarrow\\text{Normal}"
+      ],
+      "challenge": "Abbina le quattro carte al primo tentativo; poi rispondi: se la likelihood fosse una Bernoulli (un solo lancio) invece di una binomiale, quale prior useresti? (Beta: stesso nucleo θ^h(1 − θ)^t).",
+      "size": "S",
+      "tech": "html+motion"
+    },
+    {
+      "id": "p02-bernoulli-due-esiti",
+      "title": "Spam o ham: la Bernoulli in due barre",
+      "concepts": ["c05", "c06", "c07", "c08"],
+      "scenario": "spam",
+      "realExample": "Un'email che arriva al server è spam (x = 1, il «success» della distribuzione) oppure ham (x = 0). Il filtro modella l'etichetta di una singola email come variabile di Bernoulli con parametro p = probabilità che un'email sia spam; p è ciò che poi andrà stimato dai dati. Dati sintetici.",
+      "storyboard": [
+        "[Caricamento, 400 ms] Grafico a due barre su x ∈ {0, 1} che crescono dal basso: barra verde «x = 0 (failure: ham)» alta 1 − p e barra rossa «x = 1 (success: spam)» alta p, con p = 0.3 di default. Accanto la PMF a casi della slide P(x; p) con i valori sostituiti.",
+        "[Trascina lo slider p, aggiornamento continuo con molla di 150 ms] Le due barre cambiano altezza in modo complementare e il badge «p + (1 − p) = 1» resta fisso; passando con il mouse su una barra si illumina la riga corrispondente della formula a casi.",
+        "[Prova a uscire da [0, 1]] Se la maniglia viene trascinata oltre 1 o sotto 0 rimbalza indietro con una molla di 300 ms e compare per 2 s la nota «0 ≤ p ≤ 1: è una probabilità».",
+        "[Clic «Estrai un'email», 400 ms] Un'email cade sopra una delle due barre (rossa con probabilità p) e si impila come icona; un contatore conta le estrazioni e la frazione osservata di spam. «Estrai 20» fa cadere 20 email a 80 ms l'una.",
+        "[Toggle «Binomiale con n = 1», dissolvenza 500 ms] Accanto appare l'istogramma della binomiale; con n = 1 coincide barra per barra con la Bernoulli (sovrapposizione esatta, badge «caso speciale: una sola prova»)."
+      ],
+      "interactions": [
+        "slider p da 0 a 1 (passo 0.01, default 0.3)",
+        "pulsanti «Estrai un'email» e «Estrai 20»",
+        "toggle «Confronta con binomiale n = 1»",
+        "hover sulle barre per evidenziare la riga della PMF"
+      ],
+      "visual": "Due barre SVG colorate per ruolo (rosso spam = success, verde ham = failure) con altezze etichettate, formula a casi P(x; p) con valori live, icone email che cadono e si impilano.",
+      "aha": "Una Bernoulli è descritta da un solo numero p: la probabilità di fallimento 1 − p ne è una conseguenza, non un secondo parametro.",
+      "formulasShown": [
+        "P(x;p)=\\begin{cases} p & \\text{if } x=1\\\\ 1-p & \\text{if } x=0\\end{cases}",
+        "P(x=1)=p=0.30,\\qquad P(x=0)=1-p=0.70"
+      ],
+      "challenge": "Il server riceve 1 email su 4 di spam: imposta p in modo che la barra rossa sia esattamente un terzo della verde (p = 0.25).",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p02-media-varianza-bernoulli",
+      "title": "Quanto spam arriva e quanto è imprevedibile",
+      "concepts": ["c09", "c10", "c14"],
+      "scenario": "spam",
+      "realExample": "Il responsabile IT vuole sapere quante email spam aspettarsi in media e quanto sarà imprevedibile il flusso. E[x] = p è la frazione di spam a lungo termine; Var[x] = p(1 − p) misura quanto è incerta l'etichetta di una singola email: massima quando spam e ham sono equiprobabili, nulla quando il server riceve solo spam o solo ham. Dati sintetici.",
+      "storyboard": [
+        "[Caricamento] In alto un flusso di email come pallini rossi (1) e verdi (0) generato con p = 0.3; sotto a sinistra la media corrente come linea che oscilla; a destra la parabola Var = p(1 − p) su p ∈ [0, 1] con un punto sulla posizione attuale.",
+        "[Play, 20 email al secondo] La media corrente parte instabile (0, 1, 0.5, …) e converge alla linea tratteggiata E[x] = p = 0.3: la media a lungo termine (long-run average).",
+        "[Automatico] Un secondo indicatore mostra la varianza campionaria che converge a p(1 − p) = 0.21; la dispersione dei pallini attorno alla media è disegnata come banda.",
+        "[Trascina p] Il punto scorre sulla parabola; a p = 0.5 si accende il badge «massima varianza: 0.25»; a p = 0 o 1 la varianza è 0 e il flusso diventa tutto verde o tutto rosso.",
+        "[Toggle «Confronta due server»] Due flussi affiancati con p = 0.5 e p = 0.05: il primo alterna i colori in modo imprevedibile, il secondo è quasi tutto verde; la varianza lo quantifica (0.25 contro 0.0475)."
+      ],
+      "interactions": [
+        "slider p da 0 a 1 (passo 0.01, default 0.3)",
+        "Play/Pausa e velocità del flusso da 5 a 50 email al secondo",
+        "pulsante «Nuovo flusso» (seed)",
+        "toggle «Confronta due server» (p = 0.5 e p = 0.05)"
+      ],
+      "visual": "Striscia orizzontale di pallini 0/1, grafico della media corrente con la linea E[x] = p, parabola della varianza con punto mobile e vertice evidenziato a p = 0.5; valori live di E[x] e Var[x] teorici ed empirici.",
+      "aha": "La media dice quanto spam arriva, la varianza quanto è imprevedibile la singola email; entrambe dipendono solo da p e l'incertezza è massima a p = 0.5.",
+      "formulasShown": [
+        "E[x]=p=0.30",
+        "Var[x]=p(1-p)=0.30\\cdot 0.70=0.21",
+        "\\bar{x}_n=\\frac{1}{n}\\sum_{i=1}^{n}x_i\\to p"
+      ],
+      "challenge": "Trova i due valori di p per cui Var[x] = 0.16 (p = 0.2 e p = 0.8): la parabola è simmetrica rispetto a 0.5.",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p02-dalla-moneta-alla-binomiale",
+      "title": "Dalla moneta alla binomiale: esperimenti sì/no in serie",
+      "concepts": ["c11", "c12", "c13"],
+      "scenario": "fonte",
+      "realExample": "L'esempio della fonte è il lancio di una moneta (testa = success, croce = failure, p = probabilità di testa). Lo stesso schema serve a un team di moderazione che conta quante recensioni su n = 10 sono segnalate come spam: ogni recensione è una prova di Bernoulli, il numero totale segue una binomiale.",
+      "storyboard": [
+        "[Caricamento] Una moneta SVG con «Head = success» e «Tail = failure» e un badge verde come il riquadro della slide «Example: tossing a coin».",
+        "[Clic «Lancia», 600 ms] La moneta ruota e atterra; l'esito diventa 1 o 0 in una riga di caselle. Con n = 1 la riga ha una sola casella: è una Bernoulli.",
+        "[Slider n da 1 a 30] La riga si allunga a n caselle; «Lancia tutto» produce n esiti, il numero di teste h viene contato e cade come pallino in un istogramma di h (0 … n).",
+        "[Auto-play, 200 ripetizioni] L'istogramma di h si riempie e converge alla binomiale teorica sovrapposta (barre contornate); con n = 1 l'istogramma ha due sole barre ed è la PMF di Bernoulli.",
+        "[Selettore delle etichette] La moneta diventa un'email (spam/ham), un test diagnostico (positivo/negativo) o un pixel (acqua/non acqua): la Bernoulli è il modello di ogni esperimento sì/no."
+      ],
+      "interactions": [
+        "pulsanti «Lancia» e «Lancia tutto»",
+        "slider n da 1 a 30 (passo 1, default 10)",
+        "slider p da 0 a 1 (passo 0.01, default 0.5)",
+        "Auto-play di 200 ripetizioni (una ogni 50 ms, Pausa in qualsiasi momento)",
+        "selettore delle etichette (moneta, email, test, pixel)"
+      ],
+      "visual": "Moneta animata, riga di caselle 0/1, istogramma dei conteggi di teste con la binomiale teorica sovrapposta; il caso n = 1 evidenziato come Bernoulli.",
+      "aha": "La binomiale non è un oggetto nuovo: è la somma di n Bernoulli indipendenti con lo stesso p, e per n = 1 torna la Bernoulli.",
+      "formulasShown": [
+        "x_i\\sim\\text{Bernoulli}(p),\\qquad h=\\sum_{i=1}^{n}x_i",
+        "n=1:\\ P(h=1)=p,\\ P(h=0)=1-p"
+      ],
+      "challenge": "Con p = 0.5 e n = 10 prevedi quale valore di h sarà il più frequente dopo 200 ripetizioni (h = 5) e con quale frequenza circa (252/1024 ≈ 24.6%).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p02-esponenti-interruttore",
+      "title": "θ^x (1 − θ)^(1 − x): l'esponente fa da interruttore",
+      "concepts": ["c15", "c16", "c17"],
+      "scenario": "spam",
+      "realExample": "In un filtro naive Bayes di tipo Bernoulli, per la parola «gratis» si pone x = 1 se la parola compare nell'email e x = 0 se non compare, con θ = P(x = 1 | spam). Serve una formula unica per P(x|θ) che funzioni in entrambi i casi e si possa moltiplicare su tutte le email del training set: è θ^x(1 − θ)^{1−x}.",
+      "storyboard": [
+        "[Caricamento, 400 ms] La formula θ^x (1 − θ)^{1−x} in grande con una lampadina sopra ciascun fattore; slider θ = 0.7 e un'email campione con la parola «gratis» evidenziata (x = 1).",
+        "[x = 1, transizione 300 ms] L'esponente del primo fattore diventa 1 (lampadina accesa, fattore θ = 0.7 in piena opacità); l'esponente del secondo diventa 0 e il fattore (1 − θ)^0 si trasforma in 1 con una dissolvenza; risultato 0.7.",
+        "[Clic sull'email: la parola viene cancellata con una barra, x = 0, transizione 300 ms] Le lampadine si invertono: θ^0 = 1 sfuma, (1 − θ)^1 = 0.3 si accende; risultato 0.3. Si illumina la riga del Setting della fonte P(x = 0|θ) = 1 − θ.",
+        "[Trascina θ, aggiornamento continuo] Le due uscite P(x = 1|θ) e P(x = 0|θ) sono mostrate come due barre complementari che si aggiornano live insieme ai numeri nella formula.",
+        "[Pulsante «Prova x = 2», scuotimento 400 ms] La formula mostra θ²(1 − θ)^{−1} (per θ = 0.7 vale 1.63 > 1) e il widget segnala in rosso che non è una probabilità: x deve stare in {0, 1}, è un evento booleano."
+      ],
+      "interactions": [
+        "toggle x ∈ {0, 1} (clic sull'email per aggiungere o togliere la parola)",
+        "slider θ da 0 a 1 (passo 0.01, default 0.7)",
+        "pulsante «Prova x = 2» (caso non ammesso)",
+        "hover su ogni fattore per il suo valore numerico"
+      ],
+      "visual": "Formula grande con fattori che si accendono e si spengono (opacità e scala), barre P(x = 1|θ) e P(x = 0|θ), email stilizzata con la parola evidenziata.",
+      "aha": "Una sola espressione θ^x(1 − θ)^{1−x} contiene entrambi i casi della PMF: è questa forma che rende facile moltiplicare le verosimiglianze di molte email.",
+      "formulasShown": [
+        "P(x|\\theta)=\\theta^{x}(1-\\theta)^{1-x}",
+        "x=1:\\ 0.7^{1}\\cdot 0.3^{0}=0.7",
+        "x=0:\\ 0.7^{0}\\cdot 0.3^{1}=0.3"
+      ],
+      "challenge": "Senza guardare le barre calcola P(x|θ) per θ = 0.85 e x = 0 (0.15), poi verifica.",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p02-beta-conteggi-immaginari-forma",
+      "title": "Costruisci il prior Beta con email immaginarie",
+      "concepts": ["c18", "c19", "c20"],
+      "scenario": "spam",
+      "realExample": "Prima di vedere dati l'amministratore del server sa per esperienza che circa il 20% delle email è spam e ne è sicuro come se avesse già visto 10 email: lo codifica con un prior Beta(αh = 2, αt = 8) su θ = frazione di spam. La forma della Beta traduce questi conteggi immaginari in una densità su [0, 1].",
+      "storyboard": [
+        "[Caricamento] Due vaschette di email immaginarie: αh = 2 email rosse (spam immaginari) e αt = 8 verdi (ham immaginari). Sotto, la curva Beta(2, 8) viola su θ ∈ [0, 1] con area colorata.",
+        "[Clic «+» su una vaschetta] Un'email immaginaria vola nella vaschetta; la curva si deforma con un morph di 400 ms: più rosse spostano il picco a destra, più email in totale stringono la curva.",
+        "[Automatico] Sotto la curva la costante Γ(α)/(Γ(αh)Γ(αt)) è calcolata live: per Beta(2, 8) vale Γ(10)/(Γ(2)Γ(8)) = 362880/5040 = 72; un indicatore «area = 1» conferma che la costante normalizza θ^{αh−1}(1 − θ)^{αt−1}.",
+        "[Toggle «Solo il nucleo»] La costante viene tolta: la curva θ^1(1 − θ)^7 diventa minuscola e il badge d'area segna 1/72 ≈ 0.0139; riattivando la costante l'area torna 1.",
+        "[Preset] Pulsanti Beta(1, 1) (piatta), Beta(0.5, 0.5) (a U), Beta(2, 8) e Beta(20, 80) (stessa media 0.2, molto più stretta): la media dipende dal rapporto dei conteggi, la larghezza dal totale."
+      ],
+      "interactions": [
+        "pulsanti + e − per αh e αt (passo 1)",
+        "slider continui αh, αt in scala log (0.3-100)",
+        "toggle «Solo il nucleo» / «densità normalizzata»",
+        "preset Beta(1, 1), Beta(0.5, 0.5), Beta(2, 8), Beta(20, 80)"
+      ],
+      "visual": "Vaschette con icone email rosse e verdi, curva Beta SVG con area viola, linea verticale della media αh/α, valori live della costante Gamma e dell'area; per parametri interi i fattoriali (Γ(n) = (n − 1)!) mostrati esplicitamente.",
+      "aha": "αh e αt sono email immaginarie: il loro rapporto sposta la curva, il loro totale la stringe, e le funzioni Gamma servono solo a far valere 1 l'area.",
+      "formulasShown": [
+        "P(\\theta|\\alpha_h,\\alpha_t)=\\frac{\\Gamma(\\alpha)}{\\Gamma(\\alpha_h)\\Gamma(\\alpha_t)}\\theta^{\\alpha_h-1}(1-\\theta)^{\\alpha_t-1}",
+        "\\frac{\\Gamma(10)}{\\Gamma(2)\\Gamma(8)}=\\frac{9!}{1!\\,7!}=72",
+        "\\Gamma(n)=(n-1)!"
+      ],
+      "challenge": "Costruisci un prior con media 0.3 che valga come 20 email già viste (αh = 6, αt = 14); il widget controlla media e α.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p02-sette-email-likelihood",
+      "title": "Sette email, due numeri: likelihood e statistiche sufficienti",
+      "concepts": ["c22", "c23", "c28"],
+      "scenario": "spam",
+      "realExample": "Il filtro deve stimare θ = P(«gratis» compare | spam) da 7 email spam del training set: la parola compare nelle email 1, 2, 6, 7 e non compare in 3, 4, 5, la stessa sequenza H, H, T, T, T, H, H dell'esempio della fonte (h = 4, t = 3). La likelihood dipende solo da quanti 1 e quanti 0, non dal loro ordine. Dati sintetici.",
+      "storyboard": [
+        "[Caricamento] Sette email in fila con badge 1/0 (il toggle «vista moneta» le trasforma nelle monete H, H, T, T, T, H, H della fonte); sotto un asse θ ∈ [0, 1] vuoto e una barra «prodotto» a 1.",
+        "[Play, 500 ms per email] Ogni email lancia un fattore nella barra del prodotto: θ se la parola c'è (H), (1 − θ) se manca (T); la formula si scrive man mano θ·θ·(1 − θ)·(1 − θ)·(1 − θ)·θ·θ.",
+        "[Automatico, 600 ms] I fattori uguali si raggruppano con un'animazione di raccolta: i quattro θ scivolano a sinistra e diventano θ^4, i tre (1 − θ) a destra e diventano (1 − θ)^3.",
+        "[Slider θ] La curva L(θ) = θ^4(1 − θ)^3 si traccia per scansione; valori live: L(0.5) ≈ 0.0078, L(4/7) ≈ 0.0084 (massimo).",
+        "[Pulsante «Mescola l'ordine»] Le sette email si rimescolano (ad esempio T, H, H, T, H, T, H): la catena dei fattori cambia ordine ma dopo il raggruppamento resta θ^4(1 − θ)^3 e la curva non si muove; badge «h e t sono statistiche sufficienti».",
+        "[Pulsante «Comprimi il dataset»] Le sette email si compattano in due contatori h = 4, t = 3 e la likelihood ricalcolata dai soli contatori è identica."
+      ],
+      "interactions": [
+        "Play/Passo dei fattori",
+        "toggle «vista moneta» / «vista email»",
+        "slider θ (0-1)",
+        "pulsante «Mescola l'ordine»",
+        "clic su un'email per invertirne l'esito (h e t cambiano)",
+        "pulsante «Comprimi il dataset»"
+      ],
+      "visual": "Fila di email o monete, barra del prodotto con i fattori che volano, formula che si raggruppa, grafico L(θ) con maniglia su θ e valore numerico; i contatori h e t in evidenza come statistiche sufficienti.",
+      "aha": "Per la Bernoulli tutto ciò che il dataset dice su θ sta in due numeri, h e t: l'ordine delle email non conta.",
+      "formulasShown": [
+        "p(D|\\theta)=\\theta\\cdot\\theta\\cdot(1-\\theta)\\cdot(1-\\theta)\\cdot(1-\\theta)\\cdot\\theta\\cdot\\theta=\\theta^{h}(1-\\theta)^{t}",
+        "L(0.5)=0.5^{7}\\approx 0.0078",
+        "L(4/7)=(4/7)^{4}(3/7)^{3}\\approx 0.0084"
+      ],
+      "challenge": "Due dataset: A = H, T, H, T, H, T, H e B = H, H, H, H, T, T, T. Prevedi se le loro curve di likelihood coincidono (sì: h = 4, t = 3 in entrambi).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p02-derivata-log-likelihood-moneta",
+      "title": "Tiro alla fune tra teste e croci: θ* = h/(h + t)",
+      "concepts": ["c24", "c25", "c26", "c27"],
+      "scenario": "spam",
+      "realExample": "Stesso training set del filtro antispam (4 email spam con «gratis», 3 senza): per stimare θ = P(«gratis» | spam) si massimizza la log-likelihood. La derivata h/θ − t/(1 − θ) è un tiro alla fune tra le email con la parola, che spingono θ in alto, e quelle senza, che lo spingono in basso.",
+      "storyboard": [
+        "[Caricamento] Due pannelli impilati sullo stesso asse θ: sopra L(θ) = θ^4(1 − θ)^3, sotto ln L(θ) = 4 ln θ + 3 ln(1 − θ) (curva concava). Una maniglia θ = 0.3 condivisa tra i pannelli.",
+        "[Automatico, 600 ms] La log-likelihood si scompone in due curve colorate: 4 ln θ (rossa, crescente) e 3 ln(1 − θ) (verde, decrescente), la cui somma è la curva nera.",
+        "[Trascina θ] Sulla curva nera una retta tangente mostra la pendenza; sotto, due frecce opposte: una rossa lunga h/θ che spinge a destra e una verde lunga t/(1 − θ) che spinge a sinistra (a θ = 0.3: 13.3 contro 4.3). Il valore netto h/θ − t/(1 − θ) è mostrato live.",
+        "[Pulsante «Trova l'equilibrio», 1 s] La maniglia scivola dove le frecce si equivalgono; la tangente diventa orizzontale a θ* = 4/7 ≈ 0.571 (entrambe le frecce valgono 7). La derivazione compare passo passo: h(1 − θ) = tθ → θ* = h/(h + t) = 4/7.",
+        "[Contatori h e t] Il punto di equilibrio si sposta in h/(h + t) (ad esempio h = 9, t = 1 → 0.9); i massimi di L sopra e di ln L sotto restano sulla stessa verticale perché il logaritmo è monotono."
+      ],
+      "interactions": [
+        "maniglia θ trascinabile",
+        "contatori h e t (0-30)",
+        "pulsante «Trova l'equilibrio»",
+        "toggle «Mostra le due componenti del log»",
+        "toggle «Mostra la derivata seconda» (concavità)"
+      ],
+      "visual": "Pannelli SVG con L(θ) e ln L(θ), componenti colorate, tangente, frecce di forza con lunghezza proporzionale a h/θ e t/(1 − θ), linea verticale del massimo condivisa, derivazione LaTeX a comparsa.",
+      "aha": "Il massimo è dove la spinta delle teste h/θ bilancia quella delle croci t/(1 − θ): il risultato è la frequenza relativa h/(h + t).",
+      "formulasShown": [
+        "\\ln(p(D|\\theta))=4\\ln\\theta+3\\ln(1-\\theta)",
+        "\\frac{h}{\\theta}-\\frac{t}{1-\\theta}=\\frac{4}{0.3}-\\frac{3}{0.7}\\approx 13.33-4.29=9.05",
+        "\\theta^{*}=\\frac{h}{h+t}=\\frac{4}{7}\\approx 0.571"
+      ],
+      "challenge": "Con h = 4, t = 3 indica senza calcolare se a θ = 0.7 la derivata è positiva o negativa (negativa: 5.71 − 10 = −4.29), poi trova θ* per h = 12, t = 8 (0.6).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p02-beta-per-bernoulli-posterior",
+      "title": "Prior × likelihood: gli esponenti si sommano e resta una Beta",
+      "concepts": ["c21", "c29", "c30", "c31"],
+      "scenario": "spam",
+      "realExample": "Il filtro combina il prior dell'amministratore, Beta(2, 2) su θ = P(«gratis» | spam) («circa metà, poca fiducia»), con le 7 email di training (h = 4, t = 3). Moltiplicando likelihood e prior gli esponenti si sommano e la posterior è di nuovo una Beta, Beta(6, 5): nessun integrale da calcolare.",
+      "storyboard": [
+        "[Caricamento] Tre pannelli sullo stesso asse θ: prior Beta(αh, αt) viola, likelihood θ^h(1 − θ)^t grigia (riscalata), posterior arancione vuota. Default αh = αt = 2, h = 4, t = 3.",
+        "[Passo 1 «Moltiplica», 800 ms] Le due curve scendono nel terzo pannello e si moltiplicano punto per punto: una linea verticale che scorre da 0 a 1 disegna il prodotto non normalizzato.",
+        "[Passo 2 «Somma gli esponenti», 800 ms] Nella formula θ^h(1 − θ)^t θ^{αh−1}(1 − θ)^{αt−1} gli esponenti di θ volano insieme (4 + 2 − 1 = 5), così quelli di (1 − θ) (3 + 2 − 1 = 4): θ^5(1 − θ)^4.",
+        "[Passo 3 «Riconosci la Beta», 600 ms] Appare il badge «Beta(h + αh, t + αt) = Beta(6, 5)»; la costante Γ(11)/(Γ(6)Γ(5)) = 1260 solleva il prodotto a densità di area 1.",
+        "[Esplora] Slider αh, αt e contatori h, t: la posterior si aggiorna live mantenendo la forma Beta; il suo picco cade sempre tra il picco del prior e quello della likelihood."
+      ],
+      "interactions": [
+        "pulsanti Passo 1/2/3 e Play",
+        "slider αh e αt (0.5-50)",
+        "contatori h e t (0-50) o clic su email per aggiungerle",
+        "toggle «mostra prodotto non normalizzato»"
+      ],
+      "visual": "Tre pannelli SVG allineati: prior viola, likelihood grigia, posterior arancione con area; formula con esponenti che si sommano animati; valori live dei parametri della posterior e della costante di normalizzazione.",
+      "aha": "Coniugato significa che prior e likelihood hanno lo stesso nucleo θ^a(1 − θ)^b: moltiplicarli somma gli esponenti e la posterior resta una Beta con conteggi aggiornati.",
+      "formulasShown": [
+        "P(\\theta|D,\\psi)\\propto\\theta^{4}(1-\\theta)^{3}\\,\\theta^{2-1}(1-\\theta)^{2-1}=\\theta^{5}(1-\\theta)^{4}",
+        "\\text{Beta}(2,2)\\xrightarrow{h=4,\\ t=3}\\text{Beta}(6,5)",
+        "\\frac{\\Gamma(11)}{\\Gamma(6)\\Gamma(5)}=1260"
+      ],
+      "challenge": "Prior Beta(1, 9), dati h = 3, t = 2: scrivi la posterior (Beta(4, 11)) prima di premere Play.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p02-predizione-prossima-email",
+      "title": "La prossima email conterrà «gratis»? Media su tutti i θ",
+      "concepts": ["c32", "c33", "c34"],
+      "scenario": "spam",
+      "realExample": "Dopo il training arriva una nuova email spam: con che probabilità conterrà «gratis»? L'approccio bayesiano non sceglie un solo θ ma media P(x = 1|θ) = θ su tutta la posterior Beta(6, 5): la risposta è la media della Beta, (h + αh)/(h + t + αh + αt) = 6/11.",
+      "storyboard": [
+        "[Caricamento] Posterior Beta(6, 5) arancione su θ; accanto un termometro della probabilità predittiva ancora vuoto.",
+        "[Play «Scansione», 2 s] Una linea verticale scorre θ da 0 a 1; per ogni θ si disegna il prodotto θ·P(θ|D, ψ) (curva blu) e l'area sotto di essa si accumula nel termometro.",
+        "[Fine scansione] Il termometro si ferma a 6/11 ≈ 0.545 = area sotto θ·P(θ|D, ψ) = media della posterior; una bandierina arancione segna la media sull'asse θ.",
+        "[Toggle «Confronta con ML»] Una seconda bandierina verde a θ* = 4/7 ≈ 0.571: la predizione bayesiana è tirata verso la media del prior (0.5).",
+        "[Pulsante «Simula 1000 email future»] Si estrae θ dalla posterior e poi x da Bernoulli(θ): la frazione di email con «gratis» converge a 0.545, confermando l'integrale."
+      ],
+      "interactions": [
+        "Play/Pausa della scansione (2 s, ripetibile)",
+        "slider h e t da 0 a 50 (passo 1, default 4 e 3)",
+        "slider αh e αt da 0.1 a 50 in scala log (default 2 e 2)",
+        "toggle «Confronta con ML»",
+        "pulsante «Simula 1000 email future» (animazione di 2 s, istogramma della frazione simulata)"
+      ],
+      "visual": "Curva della posterior, curva θ·P(θ|D, ψ) con area che riempie il termometro, bandierine della media bayesiana e della stima ML con la distanza numerica.",
+      "aha": "Predire con Bayes significa mediare tutte le ipotesi su θ pesate dalla posterior; per la Bernoulli la media è una frazione di conteggi reali più immaginari.",
+      "formulasShown": [
+        "P(x|D)=\\int P(x|\\theta)P(\\theta|D,\\psi)\\,d\\theta=\\int\\theta\\,P(\\theta|D,\\psi)\\,d\\theta",
+        "E_{P(\\theta|D,\\psi)}[\\theta]=\\frac{h+\\alpha_h}{h+t+\\alpha_h+\\alpha_t}=\\frac{4+2}{7+4}=\\frac{6}{11}\\approx 0.545"
+      ],
+      "challenge": "Stima a occhio l'area sotto θ·P(θ|D, ψ) per la posterior Beta(2, 8) prima della scansione (0.2); vinci se sbagli di meno di 0.03.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p02-manopola-alpha-beta",
+      "title": "La manopola α: dubbioso o testardo?",
+      "concepts": ["c35", "c36", "c37", "c38"],
+      "scenario": "spam",
+      "realExample": "Due amministratori con lo stesso training set (4 email spam con «gratis», 3 senza) ma prior diversi: uno dubbioso con α = 0.1 e uno testardo con α = 200, entrambi con media a priori 0.5. La manopola α (equivalent sample size) decide quanto contano i dati rispetto alle email immaginarie.",
+      "storyboard": [
+        "[Caricamento] Asse θ con prior viola, posterior arancione, bandierina ML fissa a 4/7 (verde) e bandierina della media a priori αh/α = 0.5 (viola). Manopola α in scala log da 0.01 a 1000 (default 4), rapporto αh/α = 0.5.",
+        "[Ruota α verso 1000] Le email immaginarie nella vaschetta si moltiplicano (icone sempre più piccole), il prior diventa un picco stretto attorno a 0.5 e la bandierina della media posteriore scivola da 0.545 verso 0.5; il badge mostra (h + αh)/(h + t + α) → αh/(αh + αt).",
+        "[Ruota α verso 0.01] Le email immaginarie svaniscono, il prior si appiattisce al centro con le code che salgono verso 0 e 1, e la bandierina arancione raggiunge quella verde ML a 0.571: badge «Bayes → ML».",
+        "[Grafico sotto] Curva della media posteriore in funzione di log α con due asintoti orizzontali: h/(h + t) a sinistra, αh/α a destra; il punto corrente si muove con la manopola.",
+        "[Slider del rapporto αh/α] Cambiando la media a priori (ad esempio 0.2) l'asintoto destro si sposta e la curva si ridisegna; l'asintoto sinistro (ML) non cambia.",
+        "[Righello della concentrazione, aggiunto dal revisore] Sotto il prior una barra orizzontale lunga ±1 deviazione standard attorno alla media a priori si accorcia mentre α cresce; il valore live σ = √(m(1 − m)/(α + 1)) mostra che «more concentrated around its expected value» significa varianza che scende come 1/(α + 1) (0.224 per α = 4, 0.050 per α = 100)."
+      ],
+      "interactions": [
+        "manopola o slider α in scala log da 0.01 a 1000 (default 4); le curve si ridisegnano in continuo",
+        "slider media a priori αh/α da 0.01 a 0.99 (default 0.5)",
+        "contatori h e t da 0 a 50 (default 4 e 3)",
+        "pulsanti «Dubbioso (α = 0.1)» e «Testardo (α = 200)»: la manopola ruota fino al valore in 1.2 s su scala log, così si vede il percorso intermedio"
+      ],
+      "visual": "Asse θ con prior, posterior, bandierine ML e prior; vaschetta di email immaginarie la cui quantità segue α; grafico secondario media posteriore contro log α con asintoti; valori live di α, αh, αt, E[θ].",
+      "aha": "α conta le email immaginarie: con α grande domina il prior, con α → 0 parlano solo i dati e Bayes coincide con ML.",
+      "formulasShown": [
+        "\\alpha=\\alpha_h+\\alpha_t",
+        "\\frac{h+\\alpha_h}{h+t+\\alpha_h+\\alpha_t}\\to\\frac{\\alpha_h}{\\alpha_h+\\alpha_t}\\quad(\\alpha\\to\\infty)",
+        "\\frac{h+\\alpha_h}{h+t+\\alpha_h+\\alpha_t}\\to\\frac{h}{h+t}\\quad(\\alpha\\to 0)",
+        "\\alpha=200:\\ \\frac{4+100}{7+200}\\approx 0.502",
+        "Var[\\theta]=\\frac{m(1-m)}{\\alpha+1}:\\ \\ \\alpha=4\\Rightarrow\\sigma\\approx 0.224,\\ \\ \\alpha=100\\Rightarrow\\sigma\\approx 0.050"
+      ],
+      "challenge": "Trova α (con αh/α = 0.5) per cui la media posteriore sta esattamente a metà tra ML (0.571) e prior (0.5): α = h + t = 7, media (4 + 3.5)/14 ≈ 0.536.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p02-compromesso-ml-prior",
+      "title": "La bilancia tra dati e prior (e la moda che non è la media)",
+      "concepts": ["c68", "c70"],
+      "scenario": "spam",
+      "realExample": "Nel filtro antispam un team deve decidere quale numero usare come probabilità della parola nel classificatore: la media posteriore (usata dalle note per la predizione) o la moda della posterior (stima MAP). Con poche email le due differiscono, con molte coincidono; la media è sempre un compromesso pesato tra frequenza osservata e prior.",
+      "storyboard": [
+        "[Caricamento, 500 ms] Una bilancia a due piatti: sul sinistro la stima ML h/N (verde), sul destro la media a priori αh/α (viola); il fulcro si posiziona in E[θ] con pesi N/(N + α) e α/(N + α). Default h = 4, t = 3, αh = αt = 2.",
+        "[Pulsanti +H / +T, 400 ms] N cresce, il piatto dei dati diventa più pesante (icona che si ingrandisce) e il fulcro scivola verso h/N; i pesi numerici si aggiornano (con N = 7 e α = 4: 7/11 e 4/11).",
+        "[Toggle «Mostra la moda», comparsa 300 ms] Sulla posterior Beta(a, b) compaiono due marcatori: rombo della moda (a − 1)/(a + b − 2) e bandierina della media a/(a + b). Per Beta(6, 5): 5/9 ≈ 0.556 e 6/11 ≈ 0.545.",
+        "[Preset «Pochi dati»: h = 0, t = 1, αh = αt = 1, transizione 600 ms] La moda coincide con la stima ML (0) mentre la media vale 1/3: con pochi dati la differenza è massima.",
+        "[Pulsante «Salta a N = 1000», animazione 1.5 s con N che cresce in scala log e frequenza fissa 4/7] Moda, media e ML convergono sullo stesso valore (differenze sotto 0.001) e la bilancia pende tutta dal lato dei dati."
+      ],
+      "interactions": [
+        "pulsanti +H e +T (fino a N = 200)",
+        "slider αh e αt da 0.5 a 50 (scala log, default 2 e 2)",
+        "toggle «Mostra la moda (MAP)»",
+        "preset «Pochi dati»",
+        "pulsante «Salta a N = 1000»"
+      ],
+      "visual": "Bilancia animata con pesi proporzionali a N e α, curva Beta con marcatori di media (bandierina) e moda (rombo), tabella live con ML, media, moda e pesi.",
+      "aha": "La media posteriore è una media pesata tra frequenza osservata e media a priori con pesi N e α; la moda (MAP) è un'altra statistica della stessa posterior che con molti dati si confonde con la media.",
+      "formulasShown": [
+        "E[\\theta]=\\frac{N}{N+\\alpha}\\cdot\\frac{h}{N}+\\frac{\\alpha}{N+\\alpha}\\cdot\\frac{\\alpha_h}{\\alpha}=\\frac{7}{11}\\cdot\\frac{4}{7}+\\frac{4}{11}\\cdot\\frac{1}{2}=\\frac{6}{11}",
+        "\\theta_{MAP}=\\frac{h+\\alpha_h-1}{h+t+\\alpha_h+\\alpha_t-2}=\\frac{5}{9}"
+      ],
+      "challenge": "Per quale prior Beta la moda (MAP) coincide con la stima ML per ogni dataset? (αh = αt = 1, prior uniforme) E per quale scelta la media coincide con la ML? (α → 0).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p02-dado-one-hot",
+      "title": "Dal dado al vocabolario: la codifica one-hot",
+      "concepts": ["c39", "c40", "c41", "c42"],
+      "scenario": "spam",
+      "realExample": "In un filtro multinomial naive Bayes ogni parola di un'email spam è un evento categorico sul vocabolario: qui un vocabolario ridotto di r = 6 parole {gratis, offerta, clicca, fattura, riunione, progetto}, come le 6 facce del dado della fonte. Ogni occorrenza viene codificata one-hot per poterla contare e moltiplicare.",
+      "storyboard": [
+        "[Caricamento] A sinistra un dado a 6 facce, a destra un'email spam stilizzata. Sotto, un vettore di 6 caselle z(x) = [z1, …, z6] tutte a 0 e le 6 barre delle probabilità θ_k (default uniformi 1/6).",
+        "[Clic «Lancia il dado», 600 ms] Il dado rotola e mostra la faccia 3; la terza casella del vettore si accende a 1, le altre restano 0; didascalia «x = x^3 ⇒ z_3(x) = 1, z_k(x) = 0 altrimenti».",
+        "[Toggle «Vista parole»] Le facce del dado diventano le 6 parole; il clic su una parola dell'email (ad esempio «clicca») accende la casella corrispondente.",
+        "[Slider r da 2 a 10] Il numero di stati cambia: il dado diventa moneta (r = 2) o poliedro, il vettore one-hot si allunga o accorcia; con r = 2 compare la nota «caso Bernoulli».",
+        "[Trascina le barre θ_k] Le probabilità degli stati cambiano (la somma viene rinormalizzata con un'animazione) e i lanci successivi seguono le nuove probabilità."
+      ],
+      "interactions": [
+        "pulsanti «Lancia il dado» / «Estrai una parola»",
+        "slider r da 2 a 10 (passo 1, default 6); il vettore si allunga o accorcia in 300 ms",
+        "toggle «Vista dado» / «Vista parole»",
+        "barre θ_k trascinabili (rinormalizzate a somma 1 in 250 ms)"
+      ],
+      "visual": "Dado animato o email con parole cliccabili, vettore one-hot a caselle che si accendono, barre delle probabilità θ_k per stato con etichette x^1 … x^r.",
+      "aha": "Un evento con r esiti si scrive come un vettore di r bit con un solo 1: è la generalizzazione della Bernoulli e il modo naturale per contare.",
+      "formulasShown": [
+        "x\\in\\{x^{1},\\dots,x^{r}\\}",
+        "\\boldsymbol{z}(x)=[z_1(x),\\dots,z_r(x)]",
+        "x=x^{3}\\Rightarrow\\boldsymbol{z}(x)=[0,0,1,0,0,0]"
+      ],
+      "challenge": "Scrivi il vettore one-hot della parola «fattura» (4ª parola): [0, 0, 0, 1, 0, 0]; poi: quanti 1 contiene un vettore one-hot per qualsiasi r? (sempre uno).",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p02-simplesso-parametri",
+      "title": "Il triangolo delle proporzioni: θ sul simplesso",
+      "concepts": ["c43", "c44", "c45", "c46"],
+      "scenario": "telerilevamento",
+      "realExample": "In una mappa di copertura del suolo da immagini satellitari un pixel etichettato appartiene a una di r = 3 classi {acqua, vegetazione, urbano}. Il vettore θ = [θ1, θ2, θ3] delle proporzioni delle classi vive su un triangolo (simplesso) perché le tre probabilità sommano a 1; la PMF ∏θ_k^{z_k(x)} estrae la probabilità della classe del pixel osservato. Dati sintetici.",
+      "storyboard": [
+        "[Caricamento, 500 ms] Un triangolo equilatero con vertici «acqua», «vegetazione», «urbano»; un punto θ trascinabile all'interno (default [0.2, 0.5, 0.3]) e tre barre che mostrano θ1, θ2, θ3.",
+        "[Trascina il punto, aggiornamento continuo] Le barre cambiano in modo vincolato: se una cresce le altre calano e il badge «Σθ_k = 1» resta verde. Portando il punto su un vertice una classe ha probabilità 1.",
+        "[Clic «Estrai un pixel», 500 ms] Un pixel colorato (blu, verde o grigio) cade da una mini-immagine satellitare; il suo vettore one-hot (ad esempio [0, 1, 0]) appare e la formula ∏θ_k^{z_k(x)} mostra θ1^0·θ2^1·θ3^0, con i fattori a esponente 0 che sfumano a 1 in 300 ms: risultato θ2 = 0.5.",
+        "[Tentativo di uscire dal triangolo] Rilasciando il punto fuori, questo scivola sul bordo più vicino in 250 ms e compare la nota «le probabilità non possono essere negative né sommare a più di 1».",
+        "[Toggle «Vista 3D», rotazione 1 s] Il triangolo ruota nello spazio (θ1, θ2, θ3) e si mostra come la parte del piano θ1 + θ2 + θ3 = 1 nel primo ottante."
+      ],
+      "interactions": [
+        "punto θ trascinabile nel simplesso",
+        "pulsante «Estrai un pixel» (e «Estrai 20», uno ogni 100 ms, con istogramma delle classi estratte)",
+        "toggle «Vista 3D» del piano Σθ = 1",
+        "campi numerici per θ1 e θ2 da 0 a 1 (θ3 = 1 − θ1 − θ2 calcolato; errore se negativo)"
+      ],
+      "visual": "Simplesso 2D con colori per classe (blu acqua, verde vegetazione, grigio urbano), barre di θ_k, vettore one-hot del pixel estratto, formula prodotto con i fattori che sfumano; vista 3D opzionale.",
+      "aha": "I parametri della multinomiale non sono r numeri liberi: vivono su un simplesso, e la PMF con esponenti one-hot seleziona la probabilità della classe osservata.",
+      "formulasShown": [
+        "\\boldsymbol{\\theta}=[\\theta_1,\\theta_2,\\theta_3]=[0.2,\\,0.5,\\,0.3]",
+        "\\sum_{k=1}^{r}\\theta_k=1",
+        "P(x|\\boldsymbol{\\theta})=\\prod_{k=1}^{r}\\theta_k^{z_k(x)}=0.2^{0}\\cdot 0.5^{1}\\cdot 0.3^{0}=0.5"
+      ],
+      "challenge": "Posiziona θ in modo che un pixel urbano abbia probabilità 0.6 e uno di acqua 0.1 (θ = [0.1, 0.3, 0.6]).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p02-dirichlet-sul-triangolo",
+      "title": "La Dirichlet: una Beta stesa sul triangolo",
+      "concepts": ["c47", "c48"],
+      "scenario": "telerilevamento",
+      "realExample": "Un analista sa da mappe precedenti della stessa regione che l'area è per lo più vegetazione: esprime questa conoscenza con un prior Dirichlet(α1 = 2, α2 = 6, α3 = 2) sulle proporzioni delle classi, come se avesse già etichettato 10 pixel immaginari (2 acqua, 6 vegetazione, 2 urbano).",
+      "storyboard": [
+        "[Caricamento] Il simplesso delle tre classi colorato come heatmap della densità Dirichlet(2, 6, 2) (giallo = alta densità), con curve di livello e il punto della media [0.2, 0.6, 0.2].",
+        "[Slider α_k] Aumentare α2 sposta il picco verso il vertice vegetazione; aumentare tutti gli α_k in proporzione restringe la macchia attorno alla media; α_k < 1 spinge la densità verso bordi e vertici.",
+        "[Automatico] La costante Γ(α)/∏Γ(α_k) è calcolata live: per (2, 6, 2) vale Γ(10)/(Γ(2)Γ(6)Γ(2)) = 362880/120 = 3024; un indicatore conferma «integrale sul simplesso = 1».",
+        "[Pixel immaginari] Accanto al triangolo tre pile di pixel immaginari (2 blu, 6 verdi, 2 grigi) crescono o calano con gli slider; α = α1 + α2 + α3 è mostrato come totale.",
+        "[Preset] Dir(1, 1, 1) uniforme, Dir(0.5, 0.5, 0.5) verso i vertici, Dir(2, 6, 2), Dir(20, 60, 20) molto concentrata attorno alla stessa media."
+      ],
+      "interactions": [
+        "slider α1, α2, α3 da 0.3 a 60 in scala log (default 2, 6, 2), heatmap ricalcolata in continuo",
+        "slider «scala totale» che moltiplica tutti gli α (da 0.1× a 10×)",
+        "preset Dir(1, 1, 1), Dir(0.5, 0.5, 0.5), Dir(2, 6, 2), Dir(20, 60, 20) con transizione di 800 ms dei parametri",
+        "hover su un punto del simplesso: mostra θ e la densità"
+      ],
+      "visual": "Heatmap su canvas del triangolo con contorni, marcatore della media α_k/α, pile di pixel immaginari per classe, costante di normalizzazione live.",
+      "aha": "La Dirichlet è una Beta su un triangolo: ogni α_k è un conteggio immaginario per la classe k e il loro totale decide quanto la distribuzione è concentrata.",
+      "formulasShown": [
+        "P(\\boldsymbol{\\theta}|\\alpha_1,\\dots,\\alpha_r)=\\frac{\\Gamma(\\alpha)}{\\prod_{k=1}^{r}\\Gamma(\\alpha_k)}\\prod_{k=1}^{r}\\theta_k^{\\alpha_k-1}",
+        "\\frac{\\Gamma(10)}{\\Gamma(2)\\Gamma(6)\\Gamma(2)}=\\frac{9!}{1!\\,5!\\,1!}=3024"
+      ],
+      "challenge": "Costruisci un prior con media [0.5, 0.3, 0.2] equivalente a 20 pixel immaginari (α = [10, 6, 4]).",
+      "size": "L",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "p02-conteggi-dal-doppio-prodotto",
+      "title": "Dal doppio prodotto ai conteggi delle parole",
+      "concepts": ["c49", "c50", "c51", "c52"],
+      "scenario": "spam",
+      "realExample": "Il training set del filtro è una sequenza di N = 20 parole estratte dalle email spam (vocabolario di 6 parole). La likelihood è un doppio prodotto su parole e categorie, ma ogni occorrenza contribuisce un solo fattore θ_k: raggruppando si ottiene ∏θ_k^{N_k}, cioè bastano i conteggi per parola. Dati sintetici.",
+      "storyboard": [
+        "[Caricamento] Una griglia N × r (20 righe = parole del training, 6 colonne = vocabolario) vuota; accanto la formula ∏_j ∏_k θ_k^{z_k(x_j)}.",
+        "[Play, 300 ms per parola] Ogni parola estratta riempie la sua riga con un vettore one-hot (un solo 1 colorato); le celle a 0 restano grigie e rappresentano fattori θ_k^0 = 1.",
+        "[Automatico «Somma per colonna», 800 ms] Le celle a 1 scivolano in basso in ogni colonna e si impilano in barre: i conteggi N_k = Σ_j z_k(x_j) (gratis 9, offerta 6, clicca 4, fattura 1, riunione 0, progetto 0).",
+        "[Automatico «Raggruppa la formula», 800 ms] Nel prodotto i fattori della stessa colonna si fondono (θ_1 ripetuto 9 volte → θ_1^9) e la formula diventa ∏_k θ_k^{N_k} = θ1^9 θ2^6 θ3^4 θ4^1 θ5^0 θ6^0.",
+        "[Toggle «Vista dado»] Le colonne diventano le facce 1-6 del dado e le righe i lanci, come nell'esempio della fonte (N lanci di un dado)."
+      ],
+      "interactions": [
+        "Play/Passo delle estrazioni",
+        "slider N (5-100)",
+        "pulsante «Nuovo training set»",
+        "toggle «Vista dado» / «Vista parole»",
+        "clic su una riga per cambiarne la parola"
+      ],
+      "visual": "Griglia di celle one-hot, barre dei conteggi N_k che si impilano, formula che si compatta con animazione, valore numerico di ln p(D|θ) per il θ corrente.",
+      "aha": "Il doppio prodotto sembra complicato, ma ogni riga ha un solo 1: tutto si riduce a contare quante volte compare ogni categoria.",
+      "formulasShown": [
+        "N_k=\\sum_{j=1}^{N}z_k(x_j)",
+        "p(D|\\boldsymbol{\\theta})=\\prod_{j=1}^{N}\\prod_{k=1}^{r}\\theta_k^{z_k(x_j)}=\\prod_{k=1}^{r}\\theta_k^{N_k}",
+        "\\theta_1^{9}\\theta_2^{6}\\theta_3^{4}\\theta_4^{1}\\theta_5^{0}\\theta_6^{0}"
+      ],
+      "challenge": "Dato un training set di 12 parole mostrato come testo, scrivi i conteggi N_k e la likelihood compatta prima dell'animazione.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p02-mle-multinomiale-lagrange",
+      "title": "Perché N_i/θ_i = 0 non basta: il massimo vincolato sul simplesso",
+      "concepts": ["c53", "c54", "c55", "c56"],
+      "scenario": "telerilevamento",
+      "realExample": "Da 20 pixel etichettati (12 acqua, 5 vegetazione, 3 urbano) si stimano le proporzioni delle classi da usare come probabilità a priori delle classi nel classificatore della mappa. La derivata N_i/θ_i non si annulla mai: il massimo esiste solo grazie al vincolo Σθ_k = 1 e cade in θ_i = N_i/N = [0.6, 0.25, 0.15]. Dati sintetici.",
+      "storyboard": [
+        "[Caricamento] Il simplesso delle tre classi con la heatmap della log-likelihood 12 ln θ1 + 5 ln θ2 + 3 ln θ3 e le curve di livello; un punto θ trascinabile.",
+        "[Toggle «Senza vincolo»] Vista 1D per una sola coordinata: la curva N_i ln θ_i cresce sempre e la freccia della sua derivata N_i/θ_i è sempre positiva: «N_i/θ_i = 0 non ha soluzione, conviene sempre aumentare θ_i».",
+        "[Ritorno al vincolo] Sul triangolo il gradiente (N_1/θ_1, N_2/θ_2, N_3/θ_3) viene disegnato e scomposto nella componente lungo il triangolo (quella che conta) e in quella perpendicolare (bloccata dal vincolo).",
+        "[Trascina θ] La componente tangente si accorcia avvicinandosi al massimo e si annulla in θ* = [0.6, 0.25, 0.15]: lì il gradiente è parallelo a (1, 1, 1), cioè N_i/θ_i = λ per ogni i, con λ = N = 20 (tutti i rapporti valgono 20).",
+        "[Derivazione a comparsa] Passi: N_i/θ_i − λ = 0 → θ_i = N_i/λ → Σθ_i = N/λ = 1 → λ = N → θ*_i = N_i/N."
+      ],
+      "interactions": [
+        "punto θ trascinabile sul simplesso",
+        "toggle «Senza vincolo» (vista 1D)",
+        "contatori N_1, N_2, N_3 da 0 a 50 (default 12, 5, 3)",
+        "pulsante «Sali lungo il gradiente proiettato»: ascesa animata a passi di 150 ms (passo 0.02, al massimo 60 passi) con la traccia del percorso",
+        "toggle «mostra i rapporti N_i/θ_i»"
+      ],
+      "visual": "Heatmap della log-likelihood sul triangolo, frecce del gradiente e della sua proiezione, tabella live dei rapporti N_i/θ_i che al massimo diventano tutti uguali a N, derivazione LaTeX a passi.",
+      "aha": "Ogni termine N_i ln θ_i vorrebbe θ_i più grande possibile; è il vincolo Σθ = 1 a creare il compromesso, che dà le frequenze relative N_i/N.",
+      "formulasShown": [
+        "\\ln(p(D|\\boldsymbol{\\theta}))=\\sum_{k=1}^{r}N_k\\cdot\\ln(\\theta_k)=12\\ln\\theta_1+5\\ln\\theta_2+3\\ln\\theta_3",
+        "\\frac{d}{d\\theta_i}N_i\\cdot\\ln(\\theta_i)=\\frac{N_i}{\\theta_i}",
+        "\\frac{N_i}{\\theta_i}=\\lambda\\Rightarrow\\theta_i^{*}=\\frac{N_i}{N}=\\left[\\frac{12}{20},\\frac{5}{20},\\frac{3}{20}\\right]"
+      ],
+      "challenge": "Trascina θ fino al massimo della log-likelihood con tolleranza 0.02, poi indica il valore comune dei rapporti N_i/θ_i (20).",
+      "size": "L",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "p02-dirichlet-posterior-live",
+      "title": "Il drone scopre i pixel: la Dirichlet si aggiorna",
+      "concepts": ["c57", "c58", "c59", "c60"],
+      "scenario": "telerilevamento",
+      "realExample": "Un drone etichetta pixel uno alla volta durante un sorvolo; il prior Dirichlet(2, 6, 2) dell'analista si aggiorna a ogni pixel sommando 1 al parametro della classe osservata. Alla fine bastano i conteggi (N_1, N_2, N_3) per avere la posterior Dirichlet(N_k + α_k). Dati sintetici con proporzioni vere nascoste.",
+      "storyboard": [
+        "[Caricamento] Heatmap della Dirichlet(2, 6, 2) sul simplesso, pile di pixel immaginari e contatori N_k a zero; una mini-immagine da drone con i pixel ancora coperti.",
+        "[Clic «Scopri un pixel», 500 ms] Un pixel si scopre (ad esempio acqua): un +1 vola dal pixel al parametro α1 → 3, nella formula ∏θ_k^{N_k}θ_k^{α_k−1} l'esponente cresce e la heatmap si sposta verso il vertice acqua con un morph di 400 ms.",
+        "[Auto-play, 20 pixel] La macchia si restringe e migra verso le proporzioni vere nascoste ([0.6, 0.25, 0.15]); a ogni passo è mostrata la posterior Dir(N_1 + α_1, N_2 + α_2, N_3 + α_3) con i numeri.",
+        "[Pulsante «Mescola l'ordine dei pixel»] Il sorvolo viene ripetuto con i pixel in ordine diverso: la heatmap finale è identica perché dipende solo dai conteggi N_1, N_2, N_3 (badge «statistiche sufficienti»).",
+        "[Toggle «Rivela le proporzioni vere»] Una stella marca le proporzioni vere e si confronta con la media della posterior."
+      ],
+      "interactions": [
+        "pulsante «Scopri un pixel»",
+        "Auto-play/Pausa (un pixel ogni 600 ms, 20 pixel)",
+        "slider degli α iniziali da 0.5 a 30 per classe (default 2, 6, 2)",
+        "pulsante «Mescola l'ordine dei pixel»",
+        "toggle «Rivela le proporzioni vere»",
+        "Reset con nuovo seed"
+      ],
+      "visual": "Heatmap Dirichlet sul triangolo che si deforma, +1 animati dal pixel al parametro, contatori N_k e parametri N_k + α_k live, stella delle proporzioni vere.",
+      "aha": "Aggiornare una Dirichlet significa sommare i conteggi osservati ai conteggi immaginari: la posterior dipende dai dati solo tramite N_1, …, N_r.",
+      "formulasShown": [
+        "P(\\boldsymbol{\\theta}|D,\\psi)\\propto P(D|\\boldsymbol{\\theta})P(\\boldsymbol{\\theta}|\\psi)",
+        "P(\\boldsymbol{\\theta}|D,\\psi)\\propto\\prod_{k=1}^{r}\\theta_k^{N_k+\\alpha_k-1}",
+        "\\text{Dir}(2,6,2)\\xrightarrow{N=(12,5,3)}\\text{Dir}(14,11,5)"
+      ],
+      "challenge": "Dopo 5 pixel (acqua, acqua, urbano, vegetazione, acqua) partendo da Dir(2, 6, 2), scrivi i parametri della posterior (Dir(5, 7, 3)).",
+      "size": "L",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "p02-predizione-dirichlet",
+      "title": "Quale sarà la prossima parola? Conteggi reali più immaginari",
+      "concepts": ["c61", "c62"],
+      "scenario": "spam",
+      "realExample": "Il filtro multinomial naive Bayes deve assegnare una probabilità alla prossima parola di un'email spam: la predizione bayesiana è la media della posterior Dirichlet, (N_k + α_k)/(N + α). Con i conteggi (9, 6, 4, 1, 0, 0) e α_k = 1 la parola «riunione» riceve 1/26 invece di 0. Dati sintetici.",
+      "storyboard": [
+        "[Caricamento] Per ogni parola del vocabolario una barra verde con la frequenza ML N_k/N e accanto una barra arancione con la media posteriore (N_k + α_k)/(N + α).",
+        "[Automatico, 1 s] Ogni barra arancione si scompone: il numeratore N_k + α_k come pila di conteggi reali (pieni) e immaginari (tratteggiati), il denominatore N + α come pila totale.",
+        "[Clic su una parola] Si apre la marginale della Dirichlet per θ_k (una Beta(N_k + α_k, N + α − N_k − α_k)) con la sua media evidenziata: coincide con l'altezza della barra arancione (integrale ∫θ_k P(θ|D, ψ) dθ).",
+        "[Pulsante «Genera 1000 parole future»] Si estraggono θ dalla posterior e parole da θ: le frequenze simulate convergono alle barre arancioni.",
+        "[Slider α_k comune] Con α_k → 0 le barre arancioni raggiungono quelle verdi; con α_k grande tendono tutte a 1/6."
+      ],
+      "interactions": [
+        "slider α_k comune da 0.01 a 20 in scala log (default 1)",
+        "clic su una parola per aprirne la marginale (apertura 400 ms)",
+        "pulsante «Genera 1000 parole future» (puntini che cadono per 2 s)",
+        "campi per modificare i conteggi N_k (da 0 a 50, default 9, 6, 4, 1, 0, 0)"
+      ],
+      "visual": "Barre affiancate ML/Bayes per parola, pile di conteggi reali e immaginari, marginale Beta della parola scelta con area e media, frequenze simulate come puntini.",
+      "aha": "La predizione per la categoria k è la sua quota di conteggi, reali più immaginari, sul totale N + α.",
+      "formulasShown": [
+        "P(x_k|D)=\\int\\theta_k\\,P(\\boldsymbol{\\theta}|D,\\psi)\\,d\\boldsymbol{\\theta}=E_{P(\\boldsymbol{\\theta}|D,\\psi)}[\\theta_k]",
+        "E[\\theta_k]=\\frac{N_k+\\alpha_k}{N+\\alpha}=\\frac{9+1}{20+6}=\\frac{10}{26}\\approx 0.385"
+      ],
+      "challenge": "Con α_k = 1 e conteggi (9, 6, 4, 1, 0, 0): quale parola ha la stessa probabilità predittiva di «progetto»? («riunione», entrambe 1/26) E quanto vale «offerta»? (7/26 ≈ 0.269).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p02-smoothing-spam-alpha",
+      "title": "La parola mai vista: conteggi immaginari contro lo zero",
+      "concepts": ["c63", "c64", "c65", "c69"],
+      "scenario": "spam",
+      "realExample": "Classificazione di una nuova email «riunione gratis domani» con naive Bayes: con la stima ML P(«riunione» | spam) = 0 e l'intera probabilità di spam si annulla. I conteggi immaginari α_k (smoothing di Laplace per α_k = 1) evitano lo zero; la manopola α regola quanto il prior pesa rispetto ai dati. Dati sintetici.",
+      "storyboard": [
+        "[Caricamento, 500 ms] Una nuova email «riunione gratis domani» (le parole fuori vocabolario sono ignorate); a destra la tabella delle probabilità per parola nella classe spam (conteggi 9, 6, 4, 1, 0, 0 su N = 20) e il prodotto delle probabilità delle parole dell'email.",
+        "[α = 0 (ML)] La cella «riunione» vale 0/20 = 0 e lampeggia in rosso due volte; il prodotto crolla a 0 con un'animazione di schianto di 500 ms e il badge «l'email non può essere spam?».",
+        "[Ruota la manopola α, con α_k = α/r, aggiornamento continuo] A ogni parola si aggiungono conteggi immaginari tratteggiati; la cella «riunione» diventa α_k/(N + α) > 0 e il prodotto si risolleva sulla barra logaritmica.",
+        "[α grande, ad esempio 600] Tutte le probabilità convergono a 1/6, la distribuzione del prior: i dati non contano quasi più; badge «prior dominante».",
+        "[Grafico sotto] Probabilità di «gratis» in funzione di log α: da N_k/N = 0.45 (α → 0, ML) a 1/6 (α → ∞), con un punto che segue la manopola."
+      ],
+      "interactions": [
+        "manopola α in scala log da 0.001 a 1000 con α_k = α/r, più scatto a α = 0 (ML)",
+        "preset «ML (α = 0)», «Laplace (α_k = 1, α = 6)», «prior forte (α = 600)»: la manopola ruota al valore in 1 s",
+        "campo di testo per scrivere una nuova email con parole del vocabolario",
+        "modifica dei conteggi N_k (da 0 a 50)"
+      ],
+      "visual": "Tabella delle probabilità per parola con celle colorate (rosso se zero), prodotto finale su barra logaritmica, conteggi reali pieni e immaginari tratteggiati, grafico della probabilità di una parola contro log α.",
+      "aha": "Gli α_k sono osservazioni immaginarie: bastano pochi conteggi per togliere gli zeri che la stima ML dà alle parole mai viste, mentre un α enorme cancella l'informazione dei dati.",
+      "formulasShown": [
+        "\\alpha=\\sum_{k=1}^{r}\\alpha_k",
+        "\\alpha\\to 0:\\ \\frac{N_k+\\alpha_k}{N+\\alpha}\\to\\frac{N_k}{N}",
+        "N_5=0,\\ \\alpha_k=1:\\ \\frac{0+1}{20+6}=\\frac{1}{26}\\approx 0.038"
+      ],
+      "challenge": "Trova il più piccolo α_k, uguale per tutte le parole, per cui «riunione» ha probabilità almeno 0.02: α_k/(20 + 6α_k) ≥ 0.02 dà α_k ≥ 0.4/0.88 ≈ 0.455.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p02-da-tre-a-due-stati",
+      "title": "Fondi due classi: la Dirichlet diventa una Beta",
+      "concepts": ["c66", "c67"],
+      "scenario": "telerilevamento",
+      "realExample": "Se nella mappa si distinguono solo «acqua» e «non acqua» (r = 2) il simplesso a tre classi si riduce a un segmento: la multinomiale diventa una Bernoulli, la Dirichlet una Beta, e tutte le formule del modulo si corrispondono una a una.",
+      "storyboard": [
+        "[Caricamento] A sinistra il triangolo delle tre classi con la Dirichlet(2, 6, 2); a destra una tabella parallela vuota con le righe PMF, prior, likelihood, stima ML, posterior, predizione, equivalent sample size.",
+        "[Pulsante «Fondi vegetazione e urbano», 1 s] Due vertici del triangolo si avvicinano e si fondono: il triangolo si schiaccia in un segmento [0, 1] e la heatmap diventa la curva Beta(2, 8) (α_acqua = 2, α_non acqua = 6 + 2 = 8).",
+        "[Automatico] La tabella si riempie riga per riga con le formule della fonte nelle colonne «Bernoulli / Beta» e «Multinomiale / Dirichlet»; le parti corrispondenti si colorano uguali (h ↔ N_1, t ↔ N_2, αh ↔ α_1, αt ↔ α_2).",
+        "[Clic su una riga] Si mostra la sostituzione esplicita r = 2, θ_1 = θ, θ_2 = 1 − θ che trasforma la formula multinomiale in quella di Bernoulli.",
+        "[Pulsante «Separa di nuovo»] Il segmento si riapre in triangolo: la Beta è il caso r = 2 della Dirichlet."
+      ],
+      "interactions": [
+        "pulsanti «Fondi due classi» / «Separa di nuovo» (morph di 1 s)",
+        "selettore di quali due classi fondere (vegetazione+urbano, acqua+urbano, acqua+vegetazione)",
+        "clic su una riga della tabella (sostituzione r = 2 animata in 600 ms)",
+        "slider α delle tre classi da 0.5 a 30 (default 2, 6, 2)"
+      ],
+      "visual": "Morph tra simplesso 2D e segmento 1D, tabella parallela a due colonne con codici colore coerenti, formule della fonte con la sostituzione evidenziata.",
+      "aha": "Bernoulli-Beta è il caso r = 2 di Multinomiale-Dirichlet: imparata una coppia, l'altra si ottiene rinominando i conteggi.",
+      "formulasShown": [
+        "r=2:\\ \\prod_{k=1}^{2}\\theta_k^{z_k(x)}=\\theta^{x}(1-\\theta)^{1-x}",
+        "\\frac{N_k+\\alpha_k}{N+\\alpha}\\;\\xrightarrow{r=2}\\;\\frac{h+\\alpha_h}{h+t+\\alpha_h+\\alpha_t}",
+        "\\theta_i^{*}=\\frac{N_i}{N}\\;\\xrightarrow{r=2}\\;\\theta^{*}=\\frac{h}{h+t}"
+      ],
+      "challenge": "Completa la tabella parallela trascinando le 8 formule mancanti nella colonna giusta entro 2 minuti.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p02-dal-conteggio-al-grafo",
+      "title": "Il filtro antispam come grafo: somma, prodotto e primo modello grafico",
+      "concepts": ["c71", "c72"],
+      "scenario": "spam",
+      "realExample": "Il modello del filtro antispam usato in tutto il modulo (θ = P(«gratis» | spam), email indipendenti dato θ) disegnato come grafo: un nodo θ con frecce verso le email osservate x_1, …, x_7 e verso la nuova email x. Le operazioni fatte a mano (posterior e predittiva) diventano regole del prodotto e della somma lette sul grafo: è il ponte verso le reti bayesiane.",
+      "storyboard": [
+        "[Caricamento] Un nodo cerchiato θ in alto (viola, con la sua Beta in miniatura dentro) e sotto 7 nodi x_1 … x_7 (email osservate, ombreggiati con il loro valore 1/0) più un nodo x (nuova email, vuoto); una freccia da θ a ogni email.",
+        "[Clic «Comprimi in un plate», 600 ms] I 7 nodi osservati si fondono in un solo nodo x_j dentro un rettangolo con etichetta N = 7: la ripetizione i.i.d. scritta in modo conciso.",
+        "[Pulsante «Regola del prodotto»] Il grafo si legge come fattorizzazione P(θ)∏_j P(x_j|θ); ogni freccia accende il fattore corrispondente nella formula. Osservando le email, il nodo θ si aggiorna a Beta(6, 5) (posterior ∝ prodotto).",
+        "[Pulsante «Regola della somma», 1.5 s] Il nodo θ viene marginalizzato: una linea scorre θ da 0 a 1 e accumula θ·P(θ|D) nella probabilità del nodo x, che si riempie fino a 6/11 ≈ 0.545.",
+        "[Toggle «Rompi l'indipendenza»] Si aggiunge una freccia x_1 → x_2 (due email della stessa campagna di spam): il prodotto non si fattorizza più come prima e un badge avverte che le email non sono più indipendenti dato θ, cosa che il grafo mostra a colpo d'occhio."
+      ],
+      "interactions": [
+        "pulsanti «Comprimi in un plate» / «Espandi»",
+        "pulsanti «Regola del prodotto» e «Regola della somma»",
+        "clic su un nodo per osservarlo o nasconderlo",
+        "toggle «Rompi l'indipendenza» (aggiunge un arco)"
+      ],
+      "visual": "Grafo SVG con nodi circolari (osservati ombreggiati), frecce, piastra rettangolare con N, formula della fattorizzazione con fattori che si accendono in sincronia con le frecce, mini curva Beta dentro il nodo θ e termometro della predittiva nel nodo x.",
+      "aha": "Le formule di questo modulo sono regole della somma e del prodotto applicate al grafo minimo θ → x_j: le reti bayesiane generalizzano esattamente questo.",
+      "formulasShown": [
+        "P(\\theta,x_1,\\dots,x_N)=P(\\theta)\\prod_{j=1}^{N}P(x_j|\\theta)",
+        "P(x|D)=\\int P(x|\\theta)P(\\theta|D,\\psi)\\,d\\theta"
+      ],
+      "challenge": "Quale nodo devi osservare perché la nuova email x diventi indipendente da x_1? (θ: dato θ le email sono indipendenti). Anteprima della d-separazione.",
+      "size": "S",
+      "tech": "svg+motion"
+    }
+  ],
+  "exercises": [
+    {
+      "id": "es01",
+      "title": "Stima ML di una Bernoulli da una sequenza",
+      "type": "numerico",
+      "description": "Data una sequenza di n esiti H/T (o email con/senza una parola), calcolare h, t, la likelihood θ^h(1 − θ)^t, la log-likelihood e la stima θ* = h/(h + t); valutare la likelihood in θ* e in θ = 0.5. Parametri randomizzabili: n da 5 a 30, θ vero da 0.1 a 0.9, sequenza estratta con seed. Soluzione: contare le H (h) e le T (t); θ* = h/(h + t). Esempio di riferimento della fonte: H, H, T, T, T, H, H dà θ* = 4/7 ≈ 0.571, L(4/7) ≈ 0.00839.",
+      "concepts": ["c22", "c23", "c24", "c26", "c27"]
+    },
+    {
+      "id": "es02",
+      "title": "Posterior Beta, predizione, moda e pesi",
+      "type": "numerico",
+      "description": "Dati αh, αt, h, t calcolare: parametri della posterior (h + αh, t + αt), predizione (h + αh)/(h + t + α), moda (h + αh − 1)/(h + t + α − 2), stima ML, pesi N/(N + α) e α/(N + α). Parametri randomizzabili: αh, αt in {0.5, 1, 2, 5, 10, 50}, h e t da 0 a 30. Soluzione con le formule di c31, c34, c68, c70; controllo: la predizione sta tra h/N e αh/α. Esempio: αh = αt = 2, h = 4, t = 3 → Beta(6, 5), predizione 6/11 ≈ 0.545, moda 5/9 ≈ 0.556, pesi 7/11 e 4/11.",
+      "concepts": ["c31", "c34", "c68", "c70"]
+    },
+    {
+      "id": "es03",
+      "title": "Multinomiale: stima ML e predizione Dirichlet",
+      "type": "numerico",
+      "description": "Dati i conteggi N_1, …, N_r e i parametri α_1, …, α_r calcolare la stima ML N_i/N, la posterior Dirichlet(N_k + α_k) e la predizione (N_k + α_k)/(N + α). Parametri randomizzabili: r da 3 a 6, conteggi da 0 a 20 (almeno uno nullo in metà degli esercizi), α_k uguali in {0.1, 1, 5} o diversi. Esempio: conteggi (12, 5, 3), prior (2, 6, 2) → ML (0.6, 0.25, 0.15), posterior Dir(14, 11, 5), predizione (14/30, 11/30, 5/30) ≈ (0.467, 0.367, 0.167).",
+      "concepts": ["c56", "c60", "c62"]
+    },
+    {
+      "id": "es04",
+      "title": "Dimostra la stima ML della Bernoulli",
+      "type": "dimostrazione",
+      "description": "Partendo da un dataset i.i.d. di lanci con h teste e t croci, scrivere la likelihood, passare al logaritmo, derivare, risolvere e verificare con la derivata seconda che θ* = h/(h + t) è un massimo. Traccia: der01.",
+      "concepts": ["c23", "c24", "c25", "c26"]
+    },
+    {
+      "id": "es05",
+      "title": "Dimostra la stima ML della multinomiale con il vincolo",
+      "type": "dimostrazione",
+      "description": "Semplificare la likelihood ∏_j ∏_k θ_k^{z_k(x_j)} in ∏_k θ_k^{N_k}, scrivere la log-likelihood, spiegare perché N_i/θ_i = 0 non ha soluzione e ricavare θ*_i = N_i/N con un moltiplicatore di Lagrange (oppure sostituendo θ_r = 1 − Σ_{k<r}θ_k). Traccia: der06 e der07.",
+      "concepts": ["c51", "c52", "c53", "c54", "c55", "c56"]
+    },
+    {
+      "id": "es06",
+      "title": "Dimostra la coniugatezza di Beta e Dirichlet",
+      "type": "dimostrazione",
+      "description": "Mostrare che la posterior di una Bernoulli con prior Beta(αh, αt) è Beta(h + αh, t + αt) e che quella di una multinomiale con prior Dirichlet(α_1, …, α_r) è Dirichlet(N_1 + α_1, …, N_r + α_r), scrivendo anche la costante di normalizzazione. Traccia: der02 e der08.",
+      "concepts": ["c21", "c29", "c30", "c31", "c58", "c59", "c60"]
+    },
+    {
+      "id": "es07",
+      "title": "Calcola la media di una Beta con le funzioni Gamma",
+      "type": "dimostrazione",
+      "description": "Dimostrare che per θ ~ Beta(a, b) vale E[θ] = a/(a + b), usando l'integrale del nucleo della Beta e la proprietà Γ(z + 1) = zΓ(z); dedurre la predizione (h + αh)/(h + t + αh + αt). Estensione: stessa dimostrazione per la media della Dirichlet. Traccia: der03 e der09.",
+      "concepts": ["c20", "c33", "c34", "c61", "c62"]
+    },
+    {
+      "id": "es08",
+      "title": "Quando ML e Bayes coincidono?",
+      "type": "concettuale",
+      "description": "Spiegare, usando la riscrittura della predizione come media pesata, i due casi in cui la stima bayesiana coincide con la ML: α → 0 (prior non informativo) e N → ∞ con α fisso. Discutere anche perché la Beta(1, 1) uniforme non dà esattamente la stima ML per la media (dà (h + 1)/(h + t + 2)) mentre la sua moda sì. Risposta attesa: c38, c65, c68, c70.",
+      "concepts": ["c38", "c65", "c68", "c70"]
+    },
+    {
+      "id": "es09",
+      "title": "Tradurre una convinzione in conteggi immaginari",
+      "type": "numerico",
+      "description": "Un esperto pensa che circa una frazione m di email sia spam e dà a questa opinione il peso di α email già viste: scrivere αh = mα e αt = (1 − m)α; poi, dati h e t, calcolare la predizione. Parametri randomizzabili: m in {0.1, 0.2, 0.3, 0.5}, α in {2, 10, 20, 100}, h e t da 0 a 50. Esempio: m = 0.3, α = 20 → Beta(6, 14); con h = 12, t = 8 la predizione è 18/40 = 0.45 (ML 0.6, prior 0.3).",
+      "concepts": ["c35", "c36", "c37"]
+    },
+    {
+      "id": "es10",
+      "title": "Media e varianza di una Bernoulli",
+      "type": "numerico",
+      "description": "Dato p calcolare E[x] e Var[x]; trovare i valori di p che danno una varianza assegnata v ≤ 0.25 (p = (1 ± √(1 − 4v))/2) e dimostrare che la varianza è massima in p = 0.5. Parametri randomizzabili: p a passi di 0.05, v in {0.09, 0.16, 0.21, 0.24}. Esempio: v = 0.16 → p = 0.2 o 0.8.",
+      "concepts": ["c09", "c10", "c14"]
+    },
+    {
+      "id": "es11",
+      "title": "Statistiche sufficienti e ordine dei dati",
+      "type": "concettuale",
+      "description": "Dati due dataset con gli stessi conteggi in ordine diverso (per la Bernoulli e per la multinomiale), mostrare che hanno la stessa likelihood, la stessa stima ML e la stessa posterior; spiegare perché h, t (e N_1, …, N_r) sono statistiche sufficienti e perché aggiornare la posterior un dato alla volta o tutto insieme dà lo stesso risultato.",
+      "concepts": ["c28", "c57", "c02"]
+    },
+    {
+      "id": "es12",
+      "title": "Codifica one-hot e PMF multinomiale",
+      "type": "numerico",
+      "description": "Dati r, un vettore θ e un esito x^k, scrivere z(x) e calcolare P(x|θ) = ∏θ_j^{z_j(x)}; poi, per un dataset breve, calcolare i conteggi N_k = Σ_j z_k(x_j). Parametri randomizzabili: r da 3 a 8, θ estratto dal simplesso, dataset di 5-15 esiti. Controllo: P(x|θ) = θ_k e ΣN_k = N.",
+      "concepts": ["c42", "c46", "c50"]
+    },
+    {
+      "id": "es13",
+      "title": "La parola mai vista nel filtro naive Bayes",
+      "type": "concettuale",
+      "description": "Spiegare cosa succede al punteggio di un'email che contiene una parola mai vista nel training della classe spam se si usa la stima ML, e come il prior Dirichlet (smoothing di Laplace con α_k = 1) risolve il problema; calcolare la probabilità assegnata alla parola con N = 20, r = 6, α_k = 1 (1/26) e discutere l'effetto di α molto grande (tutto tende a 1/r).",
+      "concepts": ["c63", "c65", "c69"]
+    },
+    {
+      "id": "es14",
+      "title": "Aggiornamento sequenziale contro aggiornamento in blocco",
+      "type": "numerico",
+      "description": "Partendo da un prior Beta(a, b) aggiornare la posterior un'email alla volta per una sequenza data e confrontare con l'aggiornamento in blocco Beta(a + h, b + t). Parametri randomizzabili: a, b in {1, 2, 5}, sequenza di 5-10 esiti. Soluzione: ad ogni 1 si incrementa il primo parametro, ad ogni 0 il secondo; il risultato finale coincide.",
+      "concepts": ["c02", "c31"]
+    },
+    {
+      "id": "es15",
+      "title": "Quanto è concentrato il prior? Varianza della Beta al variare di α",
+      "type": "numerico",
+      "description": "Dati la media a priori m e l'equivalent sample size α, scrivere αh = mα e αt = (1 − m)α, calcolare la varianza Var[θ] = m(1 − m)/(α + 1) e la deviazione standard del prior, poi la predizione (h + αh)/(h + t + α) per un dataset dato. Parametri randomizzabili: m in {0.2, 0.3, 0.5}, α in {1, 4, 20, 100}, h e t da 0 a 20. Soluzione: formule di der11 e c34. Esempio: m = 0.5, α = 4 → Beta(2, 2), σ ≈ 0.224; α = 100 → Beta(50, 50), σ ≈ 0.050; con h = 4, t = 3 le predizioni sono 6/11 ≈ 0.545 e 54/107 ≈ 0.505. Domanda finale: perché un prior più stretto «pesa» di più sui dati?",
+      "concepts": ["c36", "c37"],
+      "addedBy": "revisore"
+    },
+    {
+      "id": "es16",
+      "title": "Limiti della predizione multinomiale",
+      "type": "numerico",
+      "description": "Dati i conteggi N_1, …, N_r e un prior simmetrico α_k = α/r, calcolare la predizione (N_k + α_k)/(N + α) per α in {0.01, 1, r, 10N, 1000N} e riconoscere i due limiti di p. 11: frequenza relativa N_k/N (α → 0) e probabilità uniforme 1/r (α → ∞). Parametri randomizzabili: r da 3 a 6, conteggi da 0 a 20. Esempio: conteggi (9, 6, 4, 1, 0, 0), r = 6: con α = 0.01 la parola 1 vale ≈ 0.450, con α = 6 vale 10/26 ≈ 0.385, con α = 20000 vale ≈ 0.167. Traccia: der12.",
+      "concepts": ["c62", "c64", "c65"],
+      "addedBy": "revisore"
+    }
+  ],
+  "examQuestions": [
+    {
+      "text": "Bayesian networks: formalization (DAG, local independencies, various case of d-separation criterion, general d-separation criterion and global independencies) and learning of the parameters (ML with complete data, MAP with prior knowledge, EM with incomplete data)",
+      "prof": "Passerini",
+      "concepts": ["c56", "c57", "c60", "c62", "c63", "c65", "c69", "c70"]
+    },
+    {
+      "text": "Learning Parameters  (ML with complete data, MAP), SVM (Hard Margin, Lagrangian, Soft Margin), NonLinear,  Kernel Machine, Perceptron)",
+      "prof": "Passerini",
+      "concepts": ["c26", "c56", "c34", "c62", "c70"]
+    },
+    {
+      "text": "Perceptron (All) + Parameter estimation Questions: - Problem with analytical solution for perceptron regression - Example of estimation of Gaussian parameters: why do we obtain a Gaussian also as posterior? - How to use parameter estimation in Bayesian Networks - Why ML is fast in Bayesian Network (CDP independence)",
+      "prof": "Passerini",
+      "concepts": ["c01", "c03", "c04", "c21", "c56", "c57"]
+    },
+    {
+      "text": "Hard or soft margin svm (choose one) + Learning bayesian network. Questions afterwards: canonical hyperplane, why do we use kkt, why solution of dual is equal to primal, disjoint cpd in BN, explain E-M in BN",
+      "prof": "Passerini",
+      "concepts": ["c56", "c60", "c62"]
+    },
+    {
+      "text": "What is the formula of Maximum Likelihood, why we can use the separate products of the probabilities and what the Likelihood describe.",
+      "prof": "Melgani",
+      "concepts": ["c23", "c51", "c52"]
+    },
+    {
+      "text": "How we can describe the goodness of an estimation and Is Maximum Likelihood Estimation a good estimator? Is it better or not with respect to the Bayesian Estimation? Why?",
+      "prof": "Melgani",
+      "concepts": ["c37", "c38", "c68", "c69"]
+    },
+    {
+      "text": "Then he asked me to apply Maximum Likelihood estimation on an exercise.",
+      "prof": "Melgani",
+      "concepts": ["c22", "c26", "c27", "c56"]
+    },
+    {
+      "text": "Last question was: In which case ML and Bayesian are the same?",
+      "prof": "Melgani",
+      "concepts": ["c38", "c65", "c68"]
+    },
+    {
+      "text": "Explain ML estimation, develop the first derivative for a gaussian and explain the meaning of the result.",
+      "prof": "Melgani",
+      "concepts": ["c24", "c25", "c26", "c53", "c54", "c56"],
+      "addedBy": "revisore"
+    }
+  ],
+  "crossLinks": [
+    {"moduleId": "p01-stima-parametri", "why": "Fornisce il quadro generale applicato qui: setting ML con dataset i.i.d. e log-likelihood, stima bayesiana con predittiva p(x|D) = ∫p(x|θ)p(θ|D)dθ, definizione di statistica sufficiente e di prior coniugato (inizio dei vantaggi a p. 4, conclusi a p. 5 in c01-c03)."},
+    {"moduleId": "p03-reti-bayesiane", "why": "Modulo adiacente: a p. 11 iniziano le reti bayesiane (regole della somma e del prodotto, definizione dei PGM: c71-c72, contenuto condiviso da deduplicare). Le CPD di variabili discrete sono tabelle di distribuzioni multinomiali, i cui parametri si stimano con i risultati di questo modulo."},
+    {"moduleId": "p05-apprendimento-reti", "why": "L'apprendimento dei parametri di una rete bayesiana riusa esattamente questi risultati: ogni colonna di una CPD è una multinomiale stimata con i conteggi (ML con dati completi, N_{u,x}/Σ_x N_{u,x}) e il MAP usa un prior Dirichlet con pseudo-conteggi α_{x|u} («imaginary observations»). La formula chiamata MAP in quel capitolo ha la forma della media posteriore (c70)."},
+    {"moduleId": "p07-regressione-multiclasse", "why": "Il classificatore naive Bayes (classificatori lineari generativi) stima le probabilità delle feature per classe con modelli di Bernoulli o multinomiali: gli scenari spam dei widget (parole presenti o contate, smoothing) anticipano quel modello."},
+    {"moduleId": "m05-max-likelihood", "why": "Stessa metodologia ML nella parte di Melgani (prodotto delle probabilità dei campioni i.i.d., logaritmo, derivata nulla), applicata lì al caso gaussiano; qui al caso discreto con vincolo."},
+    {"moduleId": "m07-stima-bayesiana", "why": "Stima bayesiana nel caso gaussiano (prior normale coniugato, ultima riga della tabella di p. 5) e discussione di quando ML e Bayes coincidono: qui lo stesso tema appare come α → 0 o N → ∞."},
+    {"moduleId": "m04-bonta-stimatori", "why": "Le proprietà degli stimatori (polarizzazione, consistenza) si possono verificare sulla frequenza relativa h/(h + t), non polarizzata e consistente, e sulla media posteriore, polarizzata verso il prior ma consistente."},
+    {"moduleId": "m17-bayes-map-ml", "why": "Attenzione ai nomi: MAP e ML come criteri di decisione per la classificazione (Melgani) sono diversi da MAP e ML come stime dei parametri (qui e in p05); il collegamento è che le probabilità a priori delle classi usate dal criterio MAP si stimano proprio come frequenze multinomiali (c56)."}
+  ],
+  "emptyPages": [],
+  "gaps": [
+    "part2 p5: la tabella «Examples» elenca Binomial → Beta mentre il testo tratta la Bernoulli; il prior coniugato è lo stesso perché la likelihood ha lo stesso nucleo θ^h(1 − θ)^t (differisce solo per il coefficiente binomiale costante).",
+    "part2 p5-6: il parametro della Bernoulli si chiama p (PMF P(x; p), E[x] = p) e poi θ (P(x|θ)): stesso significato, cambia solo la notazione (frequentista con «;» e bayesiana con «|»).",
+    "part2 p6 (Key Points): «each trial has exactly one success and one failure possibility» va letto come «ogni prova ha esattamente due esiti possibili».",
+    "part2 p6-7: αh e αt sono definiti «prior count of heads/tails», ma gli esponenti della Beta sono αh − 1 e αt − 1: l'interpretazione come conteggi è esatta per la media posteriore (h + αh)/(h + t + α), mentre per la moda i conteggi effettivi sono αh − 1 e αt − 1.",
+    "part2 p7: la formula della Beta usa Γ(α) senza aver definito α, che compare solo a p. 8 come α = αh + αt (equivalent sample size).",
+    "part2 p7: la condizione del secondo ordine (concavità della log-likelihood) non è verificata nelle note; aggiunta in der01.",
+    "part2 p8: P(x|D) = ∫θP(θ|D, ψ)dθ vale per x = 1 (testa); le note scrivono P(x|D) senza specificare x = 1 e omettono ψ nel membro sinistro. La media della Beta a/(a + b) è data senza derivazione (aggiunta in der03).",
+    "part2 p8: il limite (h + αh)/(h + t + αh + αt) → αh/(αh + αt) presuppone α → ∞ con rapporto αh/α fisso, non esplicitato.",
+    "part2 p8: «as α → 0, the prior becomes non-informative (uniform distribution)» è impreciso: la Beta uniforme è Beta(1, 1) (α = 2), che dà media (h + 1)/(h + t + 2) ≠ h/(h + t); il limite α → 0 corrisponde al prior improprio Beta(0, 0).",
+    "part2 p8: «rolling a fair dice with r = 6 faces»: per un dado equo le probabilità sarebbero note (1/6); l'esempio serve solo a illustrare r = 6 stati.",
+    "part2 p8-9: notazione degli stati incoerente, x^k con l'apice a p. 8 e p. 9 (PMF, Dirichlet) ma x_k con il pedice in «Each θ_k represents the probability of outcome x_k» (p. 9) e in P(x_k|D) (p. 11), dove x_j indica invece i campioni del dataset D = x_1, …, x_N (scritto senza parentesi graffe).",
+    "part2 p9: la «PMF of a multinomially distributed random variable» è la distribuzione di una singola estrazione, chiamata categorica in altri testi; la multinomiale sui conteggi di N estrazioni avrebbe il coefficiente multinomiale N!/(N_1!…N_r!), qui assente perché la likelihood è per la sequenza ordinata.",
+    "part2 p10: «since we are taking the derivative with respect to θ_k» dovrebbe essere θ_i; le note usano d/dθ_i al posto della derivata parziale.",
+    "part2 p10: dall'equazione N_i/θ_i = 0, che non ha soluzione, le note saltano a θ*_i = N_i/N con «some additional mathematical steps»: i passaggi mancanti (moltiplicatore di Lagrange o sostituzione del vincolo) sono ricostruiti in der07.",
+    "part2 p11: la media della Dirichlet (N_k + α_k)/(N + α) è data senza derivazione (aggiunta in der09); il limite α → 0 per la multinomiale è detto a parole, non in formula.",
+    "Le note di questo modulo usano la media della posterior per la predizione e non introducono la stima MAP (moda); nel capitolo sulle reti bayesiane (p05) la formula detta «MAP estimate» ha la forma della media posteriore. Chiarimento aggiunto in c70.",
+    "part2 p11: la parte bassa della pagina apre la sezione «Bayesian networks» (regole della somma e del prodotto, definizione dei PGM e primo punto «Visualize and understand»); è inventariata qui come c71-c72 ma appartiene soprattutto al modulo p03, dove l'elenco prosegue a p. 12: da deduplicare.",
+    "Le integrazioni didattiche non presenti nelle note sono dichiarate nei rispettivi campi detail e stepWhy: c20 (definizione di Γ), c66, c67, c68, c69, c70, der03, der04, der05, der07 (Lagrange), der09, der10 e le istanze numeriche di ex02 ed ex03.",
+    "part2 p6 (e seguenti): il simbolo ψ in P(θ|ψ), P(θ|D, ψ) non è mai definito nelle note; dal contesto (P(θ|ψ) = P(θ|αh, αt) e, a p. 9, P(θ|ψ) = P(θ|α_1, …, α_r)) indica la conoscenza a priori, cioè gli iperparametri del prior (precisato in c18). [revisore]",
+    "part2 p8: «as α increases, the prior distribution becomes more concentrated around its expected value» è affermato senza formula; la giustificazione tramite la varianza della Beta, m(1 − m)/(α + 1), è un'integrazione del revisore (c37, der11). [revisore]",
+    "part2 p10: il testo dice «we take the partial derivative of the likelihood with respect to each θ_k», ma le formule derivano la log-likelihood ln(p(D|θ)); stesso punto di massimo, ma va detto log-likelihood. [revisore]",
+    "part2 p11: la sezione multinomiale non riporta il limite α grande in formula né l'analogo di (h + αh)/(h + t + α) → αh/α; ricostruiti in der12 insieme al caso di prior simmetrico che tende a 1/r. [revisore]"
+  ]
+}

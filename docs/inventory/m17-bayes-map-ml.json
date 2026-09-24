@@ -1,7 +1,7 @@
 {
   "moduleId": "m17-bayes-map-ml",
   "title": "Classificazione bayesiana: criteri MAP e ML",
-  "stages": {"inventario": "done"},
+  "stages": {"inventario": "done", "completezza": "done", "formule": "done"},
   "pagesReviewed": [
     {"doc": "ch4", "from": 9, "to": 15},
     {"doc": "part1", "from": 80, "to": 84},
@@ -114,7 +114,7 @@
       "nameEn": "Minimax Criterion",
       "kind": "definizione",
       "sourcePages": [{"doc": "ch4", "page": 10}, {"doc": "part1", "page": 81}],
-      "detail": "Note p.81: 'Minimax Criterion: A conservative approach that minimizes the maximum possible risk, particularly useful in high-uncertainty scenarios'. Invece di minimizzare il rischio medio per un prior fissato (che non si conosce), si sceglie la regola il cui rischio nel caso peggiore è il più basso possibile: un approccio prudente (conservative). Esempio d'uso: una nuova epidemia di cui non si conosce la prevalenza. Nelle slide compare solo come nodo dell'albero, senza formule.",
+      "detail": "Note p.81: 'Minimax Criterion: A conservative approach that minimizes the maximum possible risk, particularly useful in high-uncertainty scenarios'. Invece di minimizzare il rischio medio per un prior fissato (che non si conosce), si sceglie la regola il cui rischio nel caso peggiore è il più basso possibile: un approccio prudente (conservative). Esempio d'uso: una nuova epidemia di cui non si conosce la prevalenza. Nelle slide compare solo come nodo dell'albero, senza formule. Illustrazione grafica didattica con i costi 0-1 in c69: l'errore di ogni regola fissa è una retta nel prior, e la regola minimax è quella con retta orizzontale all'altezza del massimo della curva dell'errore di Bayes.",
       "latex": [],
       "symbols": [],
       "examRelevance": 1
@@ -125,7 +125,7 @@
       "nameEn": "Neyman-Pearson Criterion",
       "kind": "definizione",
       "sourcePages": [{"doc": "ch4", "page": 10}, {"doc": "part1", "page": 81}],
-      "detail": "Note p.81: 'Neyman-Pearson Criterion: Often applied in hypothesis testing, this criterion maximizes detection power (true positive rate) while controlling for the type I error (false positive rate), making it suitable for unbalanced class distributions'. Si fissa un tetto alla probabilità di falso allarme (errore di tipo I) e sotto quel vincolo si massimizza la probabilità di rilevazione. Nasce nel test di ipotesi (radar, diagnostica); il legame con le curve ROC è nel modulo m22. Nelle slide compare solo come nodo dell'albero, senza formule.",
+      "detail": "Note p.81: 'Neyman-Pearson Criterion: Often applied in hypothesis testing, this criterion maximizes detection power (true positive rate) while controlling for the type I error (false positive rate), making it suitable for unbalanced class distributions'. Si fissa un tetto alla probabilità di falso allarme (errore di tipo I) e sotto quel vincolo si massimizza la probabilità di rilevazione. Nasce nel test di ipotesi (radar, diagnostica); il legame con le curve ROC è nel modulo m22. Nelle slide compare solo come nodo dell'albero, senza formule. Perché 'suitable for unbalanced class distributions': con classi sbilanciate il MAP, che minimizza l'errore medio pesato dai prior, può sacrificare quasi del tutto la classe rara (c71), mentre Neyman-Pearson fissa direttamente il livello di un tipo di errore.",
       "latex": [],
       "symbols": [],
       "examRelevance": 1
@@ -163,8 +163,8 @@
       "name": "Il MAP è il criterio a minimo errore",
       "nameEn": "Maximum A Posteriori (MAP) Criterion, also known as the minimum error criterion",
       "kind": "definizione",
-      "sourcePages": [{"doc": "part1", "page": 82}, {"doc": "ch4", "page": 11}],
-      "detail": "Note p.82: 'The Maximum A Posteriori (MAP) Criterion, also known as the minimum error criterion, aims to classify patterns by maximizing the probability of correctly identifying their class given the observed data. In MAP, we seek to assign each pattern to the class with the highest posterior probability, thus minimizing the average probability of error'. 'Maximum A Posteriori' significa massimo della probabilità a posteriori, cioè calcolata dopo aver osservato x. Il secondo nome, criterio a minimo errore, riassume la sua proprietà di ottimalità (c33, c34).",
+      "sourcePages": [{"doc": "part1", "page": 82}, {"doc": "ch4", "page": 11}, {"doc": "part1", "page": 81}],
+      "detail": "Note p.82: 'The Maximum A Posteriori (MAP) Criterion, also known as the minimum error criterion, aims to classify patterns by maximizing the probability of correctly identifying their class given the observed data. In MAP, we seek to assign each pattern to the class with the highest posterior probability, thus minimizing the average probability of error'. Nella panoramica dei criteri (note p.81) il MAP compare sotto 'Minimum Risk' con la descrizione 'Selects the class that has the highest posterior probability for the observed data, using both prior probability and likelihood': sono le due informazioni che il MAP combina (e che il ML non combina). 'Maximum A Posteriori' significa massimo della probabilità a posteriori, cioè calcolata dopo aver osservato x. Il secondo nome, criterio a minimo errore, riassume la sua proprietà di ottimalità (c33, c34).",
       "latex": ["\\omega_{MAP}(\\mathbf{x})=\\arg\\max_{i=1,\\dots,C}P(\\omega_i|\\mathbf{x})"],
       "symbols": [],
       "examRelevance": 3
@@ -330,7 +330,7 @@
       "nameEn": "Average probability of error",
       "kind": "formula",
       "sourcePages": [{"doc": "ch4", "page": 12}, {"doc": "part1", "page": 82}],
-      "detail": "Slide 12: 'The average probability of error is given by: P_e = Σ_{i=1}^{C} P(err|ω_i)P(ω_i) = Σ_{i=1}^{C} P(x ∉ ℜ_i|ω_i)P(ω_i)'. Per ogni classe si calcola la probabilità di sbagliare quando il pattern è davvero di quella classe, cioè che il suo x cada fuori dalla regione ℜ_i, e la si pesa con la frequenza della classe; la somma è l'errore medio (teorema della probabilità totale). Note p.82: 'can be defined as the sum of the probabilities of misclassifying a pattern'. Vale per un classificatore arbitrario: è la misura con cui si confrontano i criteri.",
+      "detail": "Slide 12: 'The average probability of error is given by: P_e = Σ_{i=1}^{C} P(err|ω_i)P(ω_i) = Σ_{i=1}^{C} P(x ∉ ℜ_i|ω_i)P(ω_i)'. Per ogni classe si calcola la probabilità di sbagliare quando il pattern è davvero di quella classe, cioè che il suo x cada fuori dalla regione ℜ_i, e la si pesa con la frequenza della classe; la somma è l'errore medio (teorema della probabilità totale). Note p.82: 'can be defined as the sum of the probabilities of misclassifying a pattern'. Vale per un classificatore arbitrario: è la misura con cui si confrontano i criteri. Trascrizione: nella slide P_e ha la P e il pedice 'e' in tondo, 'err' in corsivo, la somma va da i = 1 a C in entrambi i membri, e la x di P(x ∉ ℜ_i|ω_i) è scritta in tondo non grassetto (è lo stesso pattern x, in grassetto nelle slide 11 e 13: qui si usa il grassetto per coerenza).",
       "latex": ["\\mathrm{P_e}=\\sum_{i=1}^{C}P(err|\\omega_i)\\,P(\\omega_i)=\\sum_{i=1}^{C}P(\\mathbf{x}\\notin\\Re_i|\\omega_i)\\,P(\\omega_i)"],
       "symbols": [
         {"s": "\\mathrm{P_e}", "meaning": "probabilità media di errore del classificatore"},
@@ -355,7 +355,7 @@
       "nameEn": "Two-class case: probability of error as two weighted tail areas",
       "kind": "formula",
       "sourcePages": [{"doc": "ch4", "page": 12}],
-      "detail": "Specializzazione didattica della formula di slide 12 per C = 2 (non scritta nella fonte, ma è il disegno che si fa all'orale): P_e = P(ω_1)∫_{ℜ_2}p(x|ω_1)dx + P(ω_2)∫_{ℜ_1}p(x|ω_2)dx. Graficamente è l'area sotto la curva pesata P(ω_1)p(x|ω_1) nella regione assegnata a ω_2 più l'area sotto P(ω_2)p(x|ω_2) nella regione di ω_1. Se la soglia si allontana dall'incrocio delle curve pesate si aggiunge un'area 'riducibile'; nell'incrocio (regola MAP) resta solo l'area minima P_e* = ∫ min[P(ω_1)p(x|ω_1), P(ω_2)p(x|ω_2)]dx.",
+      "detail": "Specializzazione didattica della formula di slide 12 per C = 2 (non scritta nella fonte, ma è il disegno che si fa all'orale): P_e = P(ω_1)∫_{ℜ_2}p(x|ω_1)dx + P(ω_2)∫_{ℜ_1}p(x|ω_2)dx. Graficamente è l'area sotto la curva pesata P(ω_1)p(x|ω_1) nella regione assegnata a ω_2 più l'area sotto P(ω_2)p(x|ω_2) nella regione di ω_1. Se la soglia si allontana dall'incrocio delle curve pesate si aggiunge un'area 'riducibile'; nell'incrocio (regola MAP) resta solo l'area minima P_e* = ∫ min[P(ω_1)p(x|ω_1), P(ω_2)p(x|ω_2)]dx. In un problema di rilevazione (ω_1 = evento da rilevare, per esempio incendio o malattia) le due aree hanno un nome: la prima è la probabilità di mancato allarme (missed alarm, falso negativo) pesata con P(ω_1), la seconda quella di falso allarme (false alarm, falso positivo) pesata con P(ω_2). Spostare la soglia scambia un tipo di errore con l'altro; il MAP minimizza la loro somma pesata, non ciascuno dei due. È il collegamento con la domanda d'esame su come ridurre 'the probability of false alarm and the probability of missed alarm' (rischio minimo in m18, Neyman-Pearson in c11, curve ROC in m22).",
       "latex": [
         "\\mathrm{P_e}=P(\\omega_1)\\int_{\\Re_2}p(\\mathbf{x}|\\omega_1)\\,d\\mathbf{x}+P(\\omega_2)\\int_{\\Re_1}p(\\mathbf{x}|\\omega_2)\\,d\\mathbf{x}",
         "\\mathrm{P_e^{*}}=\\int\\min\\big[P(\\omega_1)\\,p(\\mathbf{x}|\\omega_1),\\,P(\\omega_2)\\,p(\\mathbf{x}|\\omega_2)\\big]\\,d\\mathbf{x}"
@@ -484,7 +484,7 @@
       "kind": "teorema",
       "sourcePages": [{"doc": "ch4", "page": 13}, {"doc": "part1", "page": 83}],
       "detail": "Slide 13: 'Note that if the priors are equal, the ML criterion is equivalent to the optimal MAP criterion'. Note p.83: 'When all classes have equal priors (i.e., P(ω_i) = P(ω_j) for all i, j), the ML criterion becomes equivalent to the MAP criterion. In this case, maximizing the likelihood p(x|ω_i) directly maximizes the posterior probability P(ω_i|x), and therefore both criteria yield the same classification decision'. Dimostrazione in der05: con P(ω_i) = 1/C il fattore comune si semplifica nella regola MAP riscritta. Il ML è quindi il MAP con prior uniformi, e in quel caso è anche ottimo.",
-      "latex": ["P(\\omega_i)=\\tfrac{1}{C}\\;\\forall i\\;\\Rightarrow\\;\\arg\\max_i P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i)=\\arg\\max_i p(\\mathbf{x}|\\omega_i)"],
+      "latex": ["P(\\omega_i)=P(\\omega_j)\\;\\;\\forall\\,i,j", "P(\\omega_i)=\\tfrac{1}{C}\\;\\forall i\\;\\Rightarrow\\;\\arg\\max_i P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i)=\\arg\\max_i p(\\mathbf{x}|\\omega_i)"],
       "symbols": [],
       "examRelevance": 3
     },
@@ -505,7 +505,7 @@
       "nameEn": "With unequal priors the ML error is greater than or equal to the MAP error",
       "kind": "proprieta",
       "sourcePages": [{"doc": "ch4", "page": 13}],
-      "detail": "Conseguenza didattica di c33 e c41, non scritta esplicitamente nella fonte: poiché il MAP è il criterio a errore minimo per i prior veri, ogni altra regola, compreso il ML, ha P_e maggiore o uguale; l'uguaglianza vale con prior uguali (o quando le due regole prendono le stesse decisioni quasi ovunque). Nella ricostruzione sintetica delle curve delle slide 14-15 (prior 2/3 e 1/3) si ottiene P_e(MAP) ≈ 0.316 contro P_e(ML) ≈ 0.378. Più i prior sono sbilanciati più il ML perde: con prior estremi può sbagliare più della regola banale 'sempre la classe più frequente'.",
+      "detail": "Conseguenza didattica di c33 e c41, non scritta esplicitamente nella fonte: poiché il MAP è il criterio a errore minimo per i prior veri, ogni altra regola, compreso il ML, ha P_e maggiore o uguale; l'uguaglianza vale con prior uguali (o quando le due regole prendono le stesse decisioni quasi ovunque). Nella ricostruzione sintetica delle curve delle slide 14-15 (prior 2/3 e 1/3) si ottiene P_e(MAP) ≈ 0.316 contro P_e(ML) ≈ 0.378. Più i prior sono sbilanciati più il ML perde, e può sbagliare più della regola banale 'sempre la classe più frequente': nella ricostruzione succede già con i prior della slide, perché 'sempre ω_1' sbaglia 1/3 ≈ 0.333 < 0.378 (c70). Graficamente l'errore del ML è una retta nel prior tangente alla curva concava dell'errore di Bayes nel punto P(ω_1) = 1/2 (c69, der11).",
       "latex": ["\\mathrm{P_e}(\\text{ML})\\geq\\mathrm{P_e}(\\text{MAP})=\\mathrm{P_e^{*}},\\quad\\text{uguaglianza se }P(\\omega_i)=\\tfrac{1}{C}\\;\\forall i"],
       "symbols": [],
       "examRelevance": 3
@@ -549,7 +549,7 @@
       "nameEn": "Shape of p(x|ω_1) (bimodal) and p(x|ω_2)",
       "kind": "figura",
       "sourcePages": [{"doc": "ch4", "page": 14}],
-      "detail": "Lettura del grafico di slide 14 (valori approssimati estratti dall'immagine). ω_2 (rossa): circa 0.02 a x = 9, sale fino al massimo ≈ 0.36 a x ≈ 11.4, scende con una 'spalla' ≈ 0.175 intorno a x ≈ 13 e si annulla verso x ≈ 14.5. ω_1 (nera): quasi nulla a x = 9, primo massimo ≈ 0.22 a x ≈ 10.8, minimo locale ≈ 0.15 a x ≈ 11.6, massimo principale ≈ 0.30 a x ≈ 13, scende a ≈ 0.03 a x = 15. ω_1 è bimodale (due gobbe): nessuna gaussiana singola la descrive, motivo per cui servono modelli a miscela o stime non parametriche. Le due curve si incrociano una sola volta, a x ≈ 12.3 (p ≈ 0.24).",
+      "detail": "Lettura del grafico di slide 14 (valori approssimati estratti dall'immagine). ω_2 (rossa): circa 0.02 a x = 9, sale fino al massimo ≈ 0.36 a x ≈ 11.4, scende con una 'spalla' ≈ 0.175 intorno a x ≈ 13 e si annulla verso x ≈ 14.5. ω_1 (nera): quasi nulla a x = 9, primo massimo ≈ 0.22 a x ≈ 10.8, minimo locale ≈ 0.15 a x ≈ 11.6, massimo principale ≈ 0.30 a x ≈ 13, scende a ≈ 0.04 a x = 15. ω_1 è bimodale (due gobbe): nessuna gaussiana singola la descrive, motivo per cui servono modelli a miscela o stime non parametriche. Le due curve si incrociano una sola volta, a x ≈ 12.3 (p ≈ 0.24).",
       "latex": [],
       "symbols": [],
       "examRelevance": 2
@@ -648,7 +648,7 @@
       "nameEn": "Posteriors depend on the ratio of weighted likelihoods, not on their absolute size",
       "kind": "osservazione",
       "sourcePages": [{"doc": "ch4", "page": 14}, {"doc": "ch4", "page": 15}],
-      "detail": "Confronto tra i due grafici: a x = 9 entrambe le pdf sono quasi nulle (p(x|ω_2) ≈ 0.02, p(x|ω_1) ≈ 0.001) eppure P(ω_2|x) ≈ 0.93; a x = 14 p(x|ω_1) ≈ 0.17 e p(x|ω_2) ≈ 0.03 e P(ω_1|x) ≈ 0.92. La posterior misura quanto una classe spiega il dato meglio delle altre, non quanto il dato sia probabile: una posterior alta non garantisce che x sia un pattern tipico (può essere un outlier per tutte le classi). Il valore assoluto è dato dall'evidenza p(x), che la regola MAP ignora (c25).",
+      "detail": "Confronto tra i due grafici: a x = 9 entrambe le pdf sono quasi nulle (p(x|ω_2) ≈ 0.02, p(x|ω_1) ≈ 0.001) eppure P(ω_2|x) ≈ 0.93; a x = 14 p(x|ω_1) ≈ 0.18 e p(x|ω_2) ≈ 0.03 e P(ω_1|x) ≈ 0.92 (sul grafico di slide 15 si legge ≈ 0.91). La posterior misura quanto una classe spiega il dato meglio delle altre, non quanto il dato sia probabile: una posterior alta non garantisce che x sia un pattern tipico (può essere un outlier per tutte le classi). Il valore assoluto è dato dall'evidenza p(x), che la regola MAP ignora (c25).",
       "latex": ["x=9:\\;p(x|\\omega_1)\\approx0.001,\\;p(x|\\omega_2)\\approx0.02\\;\\Rightarrow\\;P(\\omega_2|x)\\approx0.93"],
       "symbols": [],
       "examRelevance": 2
@@ -665,7 +665,7 @@
         "\\Lambda(\\mathbf{x})\\;\\underset{\\omega_2}{\\overset{\\omega_1}{\\gtrless}}\\;1\\quad(\\text{ML})",
         "\\ln p(\\mathbf{x}|\\omega_1)-\\ln p(\\mathbf{x}|\\omega_2)\\;\\underset{\\omega_2}{\\overset{\\omega_1}{\\gtrless}}\\;\\ln\\dfrac{P(\\omega_2)}{P(\\omega_1)}"
       ],
-      "symbols": [{"s": "\\Lambda(\\mathbf{x})", "meaning": "rapporto di verosimiglianza (likelihood ratio)"}],
+      "symbols": [{"s": "\\Lambda(\\mathbf{x})", "meaning": "rapporto di verosimiglianza (likelihood ratio); simbolo didattico di questo inventario: nelle note p.84 e nelle slide del rischio minimo la lettera Λ indica invece la matrice dei costi (c66)"}],
       "examRelevance": 3
     },
     {
@@ -699,7 +699,7 @@
       "nameEn": "Why MAP could not be the best one (approximation and estimation error)",
       "kind": "osservazione",
       "sourcePages": [{"doc": "ch4", "page": 9}, {"doc": "part1", "page": 84}],
-      "detail": "Ragionamento per la domanda d'esame 'Why MAP could not be the best one? (Linked to approximation error)'. L'ottimalità del MAP si regge sull'ipotesi della slide 9 che 'all of the relevant probability values are known'. In pratica pdf e prior sono stimati: se il modello scelto per p(x|ω_i) non può rappresentare la vera pdf (per esempio una gaussiana per la ω_1 bimodale dell'esempio) c'è errore di approssimazione; se i campioni di training sono pochi c'è errore di stima; se la prevalenza sul campo differisce da quella del training set i prior sono sbagliati. Il MAP 'stimato' non è più il classificatore di Bayes e può fare peggio del ML (per esempio con prior stimati male). Inoltre (note p.84) MAP e ML assumono che tutti gli errori costino uguale: con costi asimmetrici il criterio migliore è il rischio minimo. Errore di approssimazione e di stima sono trattati in m21.",
+      "detail": "Ragionamento per la domanda d'esame 'Why MAP could not be the best one? (Linked to approximation error)'. L'ottimalità del MAP si regge sull'ipotesi della slide 9 che 'all of the relevant probability values are known'. In pratica pdf e prior sono stimati: se il modello scelto per p(x|ω_i) non può rappresentare la vera pdf (per esempio una gaussiana per la ω_1 bimodale dell'esempio) c'è errore di approssimazione; se i campioni di training sono pochi c'è errore di stima; se la prevalenza sul campo differisce da quella del training set i prior sono sbagliati. Il MAP 'stimato' non è più il classificatore di Bayes e può fare peggio del ML (per esempio con prior stimati male). Inoltre (note p.84) MAP e ML assumono che tutti gli errori costino uguale: con costi asimmetrici il criterio migliore è il rischio minimo. E anche con probabilità esatte il MAP minimizza solo l'errore medio: con classi sbilanciate può sbagliare la maggior parte dei pattern della classe rara (nella ricostruzione dell'esempio 73% di errori su ω_2, c71). Errore di approssimazione e di stima sono trattati in m21.",
       "latex": [],
       "symbols": [],
       "examRelevance": 3
@@ -769,7 +769,7 @@
       "latex": ["A=\\{\\alpha_1,\\dots,\\alpha_R\\}", "\\Lambda\\in\\mathbb{R}^{R\\times C},\\qquad\\lambda_{ij}=\\lambda(\\alpha_i|\\omega_j)"],
       "symbols": [
         {"s": "\\alpha_i", "meaning": "i-esima azione possibile"},
-        {"s": "\\Lambda", "meaning": "matrice dei costi R × C"},
+        {"s": "\\Lambda", "meaning": "matrice dei costi R × C (notazione della fonte; da non confondere con il rapporto di verosimiglianza Λ(x) di c57)"},
         {"s": "\\lambda(\\alpha_i|\\omega_j)", "meaning": "costo dell'azione α_i quando la classe vera è ω_j"}
       ],
       "examRelevance": 2
@@ -787,6 +787,65 @@
       ],
       "symbols": [{"s": "R(\\alpha_i|\\mathbf{x})", "meaning": "rischio condizionale dell'azione α_i dato x"}],
       "examRelevance": 3
+    },
+    {
+      "id": "c68",
+      "name": "Posterior a due classi come sigmoide del log-rapporto",
+      "nameEn": "Two-class posterior as a logistic sigmoid of the log-odds",
+      "kind": "formula",
+      "sourcePages": [{"doc": "ch4", "page": 11}, {"doc": "ch4", "page": 15}],
+      "detail": "Integrazione didattica, non scritta nella fonte, che completa c57. Con due classi, dividendo numeratore e denominatore del teorema di Bayes (slide 11) per P(ω_1)p(x|ω_1) si ottiene P(ω_1|x) = 1/(1 + exp(−a(x))), dove a(x) = ln Λ(x) + ln[P(ω_1)/P(ω_2)] è il log-rapporto a posteriori (log-odds). Il prior entra solo come costante additiva sul log-rapporto di verosimiglianza: trasla la sigmoide senza cambiarne la forma. La frontiera MAP è a(x) = 0 (posterior 0.5, come nella slide 15), la frontiera ML è ln Λ(x) = 0. Esempio sulla ricostruzione delle slide 14-15 in x = 12: ln Λ ≈ −0.48, ln(2/3 ÷ 1/3) = ln 2 ≈ 0.69, quindi a ≈ 0.21 e P(ω_1|x) ≈ 0.55: il ML sceglie ω_2 (ln Λ < 0), il MAP sceglie ω_1 (a > 0). È anche il ponte verso la regressione logistica e l'uscita sigmoide/softmax delle reti (d01), che stimano direttamente questa posterior.",
+      "latex": [
+        "P(\\omega_1|\\mathbf{x})=\\dfrac{P(\\omega_1)\\,p(\\mathbf{x}|\\omega_1)}{P(\\omega_1)\\,p(\\mathbf{x}|\\omega_1)+P(\\omega_2)\\,p(\\mathbf{x}|\\omega_2)}=\\dfrac{1}{1+\\exp\\big(-a(\\mathbf{x})\\big)}",
+        "a(\\mathbf{x})=\\ln\\dfrac{p(\\mathbf{x}|\\omega_1)}{p(\\mathbf{x}|\\omega_2)}+\\ln\\dfrac{P(\\omega_1)}{P(\\omega_2)}=\\ln\\Lambda(\\mathbf{x})+\\ln\\dfrac{P(\\omega_1)}{P(\\omega_2)}",
+        "x=12:\\;a\\approx-0.48+0.69=0.21\\;\\Rightarrow\\;P(\\omega_1|x)\\approx0.55"
+      ],
+      "symbols": [{"s": "a(\\mathbf{x})", "meaning": "log-rapporto a posteriori (log-odds) tra ω_1 e ω_2"}],
+      "examRelevance": 2,
+      "addedBy": "revisore"
+    },
+    {
+      "id": "c69",
+      "name": "Errore in funzione del prior: retta per una regola fissa, curva concava per il MAP",
+      "nameEn": "The error of a fixed rule is linear in the prior; the Bayes (MAP) error is concave in the prior",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "ch4", "page": 12}, {"doc": "ch4", "page": 13}, {"doc": "ch4", "page": 10}],
+      "detail": "Integrazione didattica, non nelle slide del modulo, che rende visibili c43 e il criterio minimax (c10). Con due classi e regioni fissate la formula di slide 12 diventa P_e = P(ω_1)ε_1 + (1 − P(ω_1))ε_2, con ε_i = P(x ∉ ℜ_i|ω_i) costanti: l'errore di una regola fissa, per esempio il ML che non guarda i prior, è una retta nel prior. L'errore di Bayes P_e*(P(ω_1)) è il minimo punto per punto di tutte queste rette, quindi una curva concava che vale 0 agli estremi (P(ω_1) = 0 o 1: la classe è certa). La retta di una regola tocca la curva solo nel prior per cui quella regola è la MAP; per il ML nel punto P(ω_1) = 1/2 (der11), ovunque altrove sta sopra: è la prova grafica di P_e(ML) ≥ P_e(MAP). Ricostruzione delle slide 14-15: per il ML ε_1 ≈ 0.439 e ε_2 ≈ 0.256, quindi P_e(ML) ≈ 0.256 + 0.183·P(ω_1), cioè 0.347 a 1/2 (uguale a P_e*), 0.378 a 2/3, 0.420 a 0.9. Il criterio minimax (c10, 'minimizes the maximum possible risk') sceglie la regola con retta orizzontale (ε_1 = ε_2), il cui errore non dipende dal prior ignoto: è la regola MAP per il prior 'peggiore', dove P_e* è massima. Nella ricostruzione il massimo è P_e* ≈ 0.355 a P(ω_1) ≈ 0.55, dove ε_1 ≈ ε_2 ≈ 0.355 (widget m17-cupola-minimax).",
+      "latex": [
+        "\\mathrm{P_e}(P(\\omega_1))=P(\\omega_1)\\,\\varepsilon_1+\\big(1-P(\\omega_1)\\big)\\,\\varepsilon_2,\\qquad\\varepsilon_i=P(\\mathbf{x}\\notin\\Re_i|\\omega_i)",
+        "\\mathrm{P_e^{*}}(P(\\omega_1))=\\min_{\\Re_1,\\Re_2}\\mathrm{P_e}\\;\\text{ concava},\\qquad\\mathrm{P_e}(\\text{ML})\\geq\\mathrm{P_e^{*}}\\;\\text{con uguaglianza in }P(\\omega_1)=\\tfrac{1}{2}",
+        "\\text{ricostruzione: }\\mathrm{P_e}(\\text{ML})\\approx0.256+0.183\\,P(\\omega_1)"
+      ],
+      "symbols": [{"s": "\\varepsilon_i", "meaning": "probabilità di errore sulla classe ω_i, P(err|ω_i), fissata dalle regioni"}],
+      "examRelevance": 2,
+      "addedBy": "revisore"
+    },
+    {
+      "id": "c70",
+      "name": "Bilancio degli errori nell'esempio ricostruito: il ML perde anche contro la regola 'solo prior'",
+      "nameEn": "Error budget of the reconstructed MAP-ML example: MAP vs ML vs prior-only rule",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "ch4", "page": 14}, {"doc": "ch4", "page": 15}, {"doc": "part1", "page": 84}],
+      "detail": "Calcolo sulla ricostruzione sintetica delle curve delle slide 14-15 (miscele gaussiane indicate nei gaps; la fonte non dà numeri). Con i prior della slide 15 (2/3 e 1/3): MAP P_e* ≈ 0.316; ML P_e ≈ 0.378; regola 'solo prior' (dire sempre ω_1 senza misurare x) 1 − 2/3 ≈ 0.333. Con prior uguali ML e MAP coincidono e P_e ≈ 0.347. Lettura: la feature x separa poco le due classi (pdf molto sovrapposte, errore di Bayes intorno a 0.35 anche con prior uguali), per cui il guadagno del MAP sulla regola 'solo prior' è piccolo (0.316 contro 0.333), mentre il ML, ignorando i prior, fa peggio che non misurare affatto. È un esempio numerico del messaggio delle note p.84 ('how different prior probabilities can impact classification when using MAP, in contrast to ML, which would ignore these priors').",
+      "latex": ["\\mathrm{P_e}(\\text{MAP})\\approx0.316<\\mathrm{P_e}(\\text{solo prior})=\\tfrac{1}{3}\\approx0.333<\\mathrm{P_e}(\\text{ML})\\approx0.378"],
+      "symbols": [],
+      "examRelevance": 2,
+      "addedBy": "revisore"
+    },
+    {
+      "id": "c71",
+      "name": "Il MAP minimizza l'errore medio, non quello di ogni classe: paga la classe rara",
+      "nameEn": "MAP minimizes the average error, not the per-class errors: the minority class pays",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "ch4", "page": 12}, {"doc": "ch4", "page": 15}, {"doc": "part1", "page": 81}],
+      "detail": "Osservazione didattica sulla formula di slide 12: P_e = Σ_i P(err|ω_i)P(ω_i) pesa l'errore di ogni classe con il suo prior, quindi il MAP accetta di sbagliare molto sulla classe rara pur di sbagliare poco su quella frequente. Nella ricostruzione dell'esempio delle slide 14-15 con prior 2/3 e 1/3: il MAP ha P(err|ω_1) ≈ 0.11 ma P(err|ω_2) ≈ 0.73 (quasi tre pattern di ω_2 su quattro finiscono in ω_1); il ML, che non guarda i prior, ha P(err|ω_1) ≈ 0.44 e P(err|ω_2) ≈ 0.26. Quando la classe rara è quella che conta (malattia rara, frode, incendio) l'errore medio minimo non è l'obiettivo giusto: è una delle risposte a 'Why MAP could not be the best one?' (c60) e il motivo per cui le note p.81 indicano il criterio di Neyman-Pearson come 'suitable for unbalanced class distributions' e per cui il rischio minimo introduce i costi (m18). In valutazione (m22) si guardano per questo anche le metriche per classe (recall, matrice di confusione), non solo l'accuratezza.",
+      "latex": [
+        "\\mathrm{P_e}=P(\\omega_1)\\,P(err|\\omega_1)+P(\\omega_2)\\,P(err|\\omega_2)",
+        "\\text{MAP}:\\;P(err|\\omega_1)\\approx0.11,\\;P(err|\\omega_2)\\approx0.73\\qquad\\text{ML}:\\;P(err|\\omega_1)\\approx0.44,\\;P(err|\\omega_2)\\approx0.26"
+      ],
+      "symbols": [],
+      "examRelevance": 3,
+      "addedBy": "revisore"
     }
   ],
   "derivations": [
@@ -1001,6 +1060,50 @@
         "Scegliere l'azione a rischio minimo equivale a scegliere la classe con posterior massima: è il MAP, e il rischio condizionale coincide con P(err|x) (c32)."
       ],
       "concepts": ["c67", "c66", "c63"]
+    },
+    {
+      "id": "der11",
+      "title": "Errore di una regola fissa lineare nel prior; il ML tocca l'errore di Bayes solo a prior uguali",
+      "sourcePages": [{"doc": "ch4", "page": 12}, {"doc": "ch4", "page": 13}],
+      "goal": "Dimostrare graficamente e analiticamente che P_e(ML) ≥ P_e(MAP) per ogni prior, con uguaglianza solo per P(ω_1) = 1/2 (integrazione didattica, a due classi, per la domanda 'is better MAP or ML and why?').",
+      "steps": [
+        "\\mathrm{P_e}=P(\\omega_1)\\,P(\\mathbf{x}\\notin\\Re_1|\\omega_1)+P(\\omega_2)\\,P(\\mathbf{x}\\notin\\Re_2|\\omega_2)=\\pi\\,\\varepsilon_1+(1-\\pi)\\,\\varepsilon_2,\\qquad\\pi=P(\\omega_1)",
+        "\\Re_i^{ML}\\text{ non dipendono da }\\pi\\;\\Rightarrow\\;\\mathrm{P_e}(\\text{ML})(\\pi)=\\varepsilon_2^{ML}+\\pi\\,(\\varepsilon_1^{ML}-\\varepsilon_2^{ML})\\;\\text{è una retta}",
+        "\\mathrm{P_e^{*}}(\\pi)=\\min_{\\Re_1,\\Re_2}\\big[\\pi\\,\\varepsilon_1+(1-\\pi)\\,\\varepsilon_2\\big]\\;\\text{è concava (minimo di funzioni affini)}",
+        "\\mathrm{P_e}(\\text{ML})(\\pi)\\geq\\mathrm{P_e^{*}}(\\pi)\\quad\\forall\\,\\pi",
+        "\\pi=\\tfrac{1}{2}\\;\\Rightarrow\\;\\Re_i^{MAP}=\\Re_i^{ML}\\;\\Rightarrow\\;\\mathrm{P_e}(\\text{ML})(\\tfrac{1}{2})=\\mathrm{P_e^{*}}(\\tfrac{1}{2})",
+        "\\text{ricostruzione slide 14-15: }\\varepsilon_1^{ML}\\approx0.439,\\;\\varepsilon_2^{ML}\\approx0.256\\;\\Rightarrow\\;\\mathrm{P_e}(\\text{ML})(\\tfrac{2}{3})\\approx0.378>\\mathrm{P_e^{*}}(\\tfrac{2}{3})\\approx0.316"
+      ],
+      "stepWhy": [
+        "Formula di slide 12 con C = 2; si chiama π il prior di ω_1 e ε_i l'errore sulla classe ω_i, che dipende solo dalle regioni.",
+        "Il ML sceglie le regioni guardando solo le pdf (slide 13), quindi ε_1 ed ε_2 restano fissi al variare del prior: P_e è una funzione affine di π.",
+        "Per ogni π il MAP sceglie le regioni migliori (der03), cioè prende il minimo su una famiglia di rette: il minimo di funzioni affini è concavo, con valore 0 in π = 0 e π = 1.",
+        "La retta del ML è una delle rette della famiglia, quindi non può stare sotto il loro minimo.",
+        "Con prior uguali la regola MAP coincide con la ML (der05): in quel punto la retta tocca la curva, ed essendo sopra ovunque le è tangente.",
+        "Valori numerici della ricostruzione sintetica (c69, c70): il distacco cresce allontanandosi da π = 1/2."
+      ],
+      "concepts": ["c69", "c43", "c41", "c10"],
+      "addedBy": "revisore"
+    },
+    {
+      "id": "der12",
+      "title": "Dal teorema di Bayes alla sigmoide del log-rapporto (due classi)",
+      "sourcePages": [{"doc": "ch4", "page": 11}],
+      "goal": "Mostrare che con due classi la posterior è una sigmoide del log-rapporto e che il prior la trasla (integrazione didattica).",
+      "steps": [
+        "P(\\omega_1|\\mathbf{x})=\\dfrac{P(\\omega_1)\\,p(\\mathbf{x}|\\omega_1)}{P(\\omega_1)\\,p(\\mathbf{x}|\\omega_1)+P(\\omega_2)\\,p(\\mathbf{x}|\\omega_2)}",
+        "=\\dfrac{1}{1+\\dfrac{P(\\omega_2)\\,p(\\mathbf{x}|\\omega_2)}{P(\\omega_1)\\,p(\\mathbf{x}|\\omega_1)}}=\\dfrac{1}{1+\\exp\\big(-a(\\mathbf{x})\\big)}",
+        "a(\\mathbf{x})=\\ln\\dfrac{P(\\omega_1)\\,p(\\mathbf{x}|\\omega_1)}{P(\\omega_2)\\,p(\\mathbf{x}|\\omega_2)}=\\ln\\Lambda(\\mathbf{x})+\\ln\\dfrac{P(\\omega_1)}{P(\\omega_2)}",
+        "P(\\omega_1|\\mathbf{x})\\geq\\tfrac{1}{2}\\;\\Leftrightarrow\\;a(\\mathbf{x})\\geq0\\;\\Leftrightarrow\\;\\ln\\Lambda(\\mathbf{x})\\geq\\ln\\dfrac{P(\\omega_2)}{P(\\omega_1)}"
+      ],
+      "stepWhy": [
+        "Teorema di Bayes della slide 11 con l'evidenza scritta come somma sulle due classi (der01).",
+        "Si dividono numeratore e denominatore per P(ω_1)p(x|ω_1) e si scrive il rapporto rimasto come esponenziale del suo logaritmo cambiato di segno.",
+        "Il logaritmo del prodotto si separa in log-rapporto di verosimiglianza più log-rapporto dei prior: il prior è una costante additiva.",
+        "La sigmoide vale 1/2 in a = 0 ed è crescente: la regola MAP a due classi (c51) coincide con il test sul rapporto di verosimiglianza con soglia P(ω_2)/P(ω_1) (der06)."
+      ],
+      "concepts": ["c68", "c57", "c51"],
+      "addedBy": "revisore"
     }
   ],
   "workedExamples": [
@@ -1015,8 +1118,16 @@
       "id": "ex02",
       "title": "Decisioni ML e MAP punto per punto lette dai grafici",
       "sourcePages": [{"doc": "ch4", "page": 14}, {"doc": "ch4", "page": 15}],
-      "description": "Valori approssimati letti dai grafici delle slide 14 e 15 (P(ω_1) = 2/3, P(ω_2) = 1/3). x = 9: p(x|ω_1) ≈ 0.001, p(x|ω_2) ≈ 0.02 → ML ω_2; MAP 0.0007 contro 0.0067 → ω_2; P(ω_1|x) ≈ 0.07. x = 10.5: p ≈ 0.20 e 0.24 → ML ω_2; MAP 0.133 contro 0.080 → ω_1; P(ω_1|x) ≈ 0.62. x = 11.5: p ≈ 0.15 e 0.36 → ML ω_2; MAP 0.10 contro 0.12 → ω_2; P(ω_1|x) ≈ 0.46. x = 12: p ≈ 0.19 e 0.30 → ML ω_2; MAP 0.127 contro 0.100 → ω_1; P(ω_1|x) ≈ 0.56. x = 13: p ≈ 0.30 e 0.175 → ML ω_1; MAP ω_1; P(ω_1|x) ≈ 0.77. x = 14: p ≈ 0.17 e 0.03 → ML ω_1; MAP ω_1; P(ω_1|x) ≈ 0.92. Le due regole divergono a x = 10.5 e x = 12, coincidono negli altri punti; a x = 9 la posterior di ω_2 è 0.93 anche se entrambe le pdf sono quasi nulle.",
+      "description": "Valori approssimati letti dai grafici delle slide 14 e 15 (P(ω_1) = 2/3, P(ω_2) = 1/3). x = 9: p(x|ω_1) ≈ 0.001, p(x|ω_2) ≈ 0.02 → ML ω_2; MAP 0.0007 contro 0.0067 → ω_2; P(ω_1|x) ≈ 0.07. x = 10.5: p ≈ 0.20 e 0.24 → ML ω_2; MAP 0.133 contro 0.080 → ω_1; P(ω_1|x) ≈ 0.62. x = 11.5: p ≈ 0.15 e 0.36 → ML ω_2; MAP 0.10 contro 0.12 → ω_2; P(ω_1|x) ≈ 0.46. x = 12: p ≈ 0.19 e 0.30 → ML ω_2; MAP 0.127 contro 0.100 → ω_1; P(ω_1|x) ≈ 0.56. x = 13: p ≈ 0.30 e 0.175 → ML ω_1; MAP 0.200 contro 0.058 → ω_1; P(ω_1|x) ≈ 0.77. x = 14: p ≈ 0.18 e 0.03 → ML ω_1; MAP 0.120 contro 0.010 → ω_1; P(ω_1|x) ≈ 0.92. Le due regole divergono a x = 10.5 e x = 12, coincidono negli altri punti; a x = 9 la posterior di ω_2 è 0.93 anche se entrambe le pdf sono quasi nulle.",
       "concepts": ["c48", "c52", "c54", "c56"]
+    },
+    {
+      "id": "ex03",
+      "title": "Bilancio degli errori dell'esempio MAP-ML sulla ricostruzione sintetica",
+      "sourcePages": [{"doc": "ch4", "page": 14}, {"doc": "ch4", "page": 15}],
+      "description": "Calcolo sulla ricostruzione sintetica delle curve delle slide 14-15 (p(x|ω_1) ≈ 0.251·N(10.70, 0.50²) + 0.749·N(13.00, 0.995²); p(x|ω_2) ≈ 0.904·N(11.41, 0.997²) + 0.096·N(13.30, 0.389²)); la fonte non contiene questi numeri. Regioni: ML ω_2 per x < 12.33, ω_1 oltre; MAP con P(ω_1) = 2/3: ω_2 per x < 9.89 e per 11.22 < x < 11.83, ω_1 altrove. Errori per classe: ML P(err|ω_1) ≈ 0.439, P(err|ω_2) ≈ 0.256; MAP P(err|ω_1) ≈ 0.111, P(err|ω_2) ≈ 0.726. Errori medi con prior 2/3 e 1/3: MAP (2/3)(0.111) + (1/3)(0.726) ≈ 0.316; ML (2/3)(0.439) + (1/3)(0.256) ≈ 0.378; regola 'sempre ω_1' 1/3 ≈ 0.333. Con prior uguali ML = MAP e P_e ≈ 0.347. Andamento dell'errore ML con il prior: P_e(ML) ≈ 0.256 + 0.183·P(ω_1) (0.420 a P(ω_1) = 0.9). Massimo dell'errore di Bayes ≈ 0.355 a P(ω_1) ≈ 0.55. Isole di decisione MAP: quella di ω_1 intorno a x ≈ 10.5 compare per P(ω_1) ≥ ≈ 0.55, quella di ω_2 intorno a x ≈ 11.5 sparisce per P(ω_1) > ≈ 0.70.",
+      "concepts": ["c43", "c53", "c69", "c70", "c71"],
+      "addedBy": "revisore"
     }
   ],
   "figures": [
@@ -1035,64 +1146,152 @@
       "title": "Cosa sai decide il criterio: l'albero bayesiano interattivo",
       "concepts": ["c06", "c07", "c09", "c44"],
       "scenario": "medicina",
-      "realExample": "Reparto di cardiologia: un classificatore deve decidere 'ECG normale' o 'aritmia' dalla durata del complesso QRS. A seconda di cosa l'ospedale conosce (le pdf del QRS per le due classi stimate dagli archivi, la prevalenza dell'aritmia tra i pazienti, il costo di un'aritmia non vista) la teoria bayesiana prescrive un criterio diverso. Dati sintetici ispirati a misure ECG reali.",
+      "realExample": "Reparto di cardiologia: dalla durata del complesso QRS (ms) bisogna decidere 'conduzione normale' (ω_1) o 'blocco di branca' (ω_2). Dati sintetici ispirati a misure ECG reali: p(x|ω_1) = N(95, 12²), p(x|ω_2) = N(130, 12²), prevalenza del blocco P(ω_2) = 0.10, un blocco non visto costa λ_FN = 20 volte un falso allarme. A seconda di cosa l'ospedale conosce (pdf stimate dagli archivi, prevalenza dal registro, costi) la teoria bayesiana prescrive un criterio diverso, e la soglia sul QRS cambia: rischio minimo 109.2 ms, MAP 121.5 ms, ML 112.5 ms, minimax con i costi 103.1 ms, Neyman-Pearson con falsi allarmi ≤ 5% 114.7 ms.",
       "storyboard": [
-        "L'albero della slide 10 si disegna dall'alto: prima il nodo verde 'Bayes Decision Criterion', poi i due rami rossi 'Full' e 'Incomplete Problem Parameterization' (le linee si tracciano in 300 ms), poi i nodi blu e infine le foglie verdi MAP e ML.",
-        "A destra compare il pannello 'Cosa conosci?' con tre interruttori: pdf condizionate p(x|ω_i), prior P(ω_i), costi λ(α_i|ω_j). All'inizio sono tutti accesi: si illumina il percorso Full → Minimum Risk.",
-        "Spegnendo 'costi' (tutti gli errori costano uguale) il percorso scende sulla foglia MAP; spegnendo anche 'prior' scende su ML. Il ramo attivo pulsa e sotto l'albero compare la regola corrispondente in LaTeX.",
-        "Spegnendo 'prior' ma lasciando i costi, il percorso salta nel ramo Incomplete su Minimax; attivando 'vincolo sui falsi allarmi' si accende Neyman-Pearson. Sulla foglia ML compare un cartellino: 'nella slide sta sotto Full pur non usando i prior: è il MAP con prior supposti uguali (1/C)'.",
-        "Sotto l'albero, l'asse della durata QRS con le due pdf e la frontiera verticale del criterio attivo: cambiando criterio la frontiera scivola in 400 ms nella nuova posizione e il suo valore in ms si aggiorna."
+        "Ingresso (circa 1.2 s): l'albero della slide 10 si disegna dall'alto un livello ogni 300 ms: radice verde 'Bayes Decision Criterion', rami rossi 'Full' e 'Incomplete Problem Parameterization' (le linee si tracciano con stroke-dashoffset), nodi blu 'Minimum Risk', 'Minimax', 'Neyman-Pearson', foglie verdi 'MAP' e 'ML'.",
+        "A destra compare (fade 200 ms) il pannello 'Cosa conosci?' con tre interruttori accesi, pdf p(x|ω_i), prior P(ω_i), costi λ(α_i|ω_j), e la checkbox spenta 'vincolo sui falsi allarmi'. Il percorso Radice → Full → Minimum Risk si illumina (colore pieno, spessore 3 px, 400 ms); i nodi non raggiungibili scendono al 30% di opacità.",
+        "A ogni clic su un interruttore il percorso si ricalcola (transizione 400 ms) con questa tabella: pdf spente → nessun nodo e banner 'senza pdf non si decide: vanno stimate (Cap. 2)'; pdf + prior + costi → Minimum Risk; pdf + prior, costi spenti (ogni errore costa 1) → foglia MAP; solo pdf → foglia ML, con Minimax in tratteggio come alternativa a costi 0-1; pdf + costi, prior spenti → Minimax; checkbox dei falsi allarmi accesa → Neyman-Pearson (ha la precedenza).",
+        "Sotto l'albero, l'asse del QRS da 60 a 180 ms con le due gaussiane (blu normale, arancio blocco) pesate come richiede il criterio attivo; la frontiera verticale scivola (spring, circa 400 ms) nella nuova posizione e l'etichetta mostra il valore in ms (109.2, 121.5, 112.5, 103.1 o 114.7). Le aree di falso allarme e di mancata diagnosi si ricolorano e le loro percentuali si aggiornano.",
+        "Hover sulla foglia ML: cartellino 'nella slide sta sotto Full pur non usando i prior: è il MAP con prior supposti uguali (1/C), quindi il problema resta completamente parametrizzato'. Clic su un nodo: scheda con definizione IT/EN e ipotesi tratte dalle note p.81."
       ],
-      "interactions": ["tre interruttori: pdf, prior, costi", "checkbox 'vincolo sulla probabilità di falso allarme'", "clic su un nodo per leggere definizione IT/EN e ipotesi dalle note p.81", "hover sulla foglia ML per il cartellino sulla sua posizione"],
-      "visual": "Albero con i colori della slide (radice verde, parametrizzazione rossa, criteri blu, foglie verdi); nodi non raggiungibili in grigio al 30%; sotto, asse x = durata QRS (ms) con le curve p(x|normale) in blu e p(x|aritmia) in arancio e la frontiera del criterio attivo con il valore numerico.",
-      "aha": "Il criterio non si sceglie per gusto: lo impone l'informazione disponibile. Con pdf, prior e costi si scende nel ramo completo; se mancano prior o costi si finisce nel ramo incompleto.",
+      "interactions": [
+        "interruttore pdf p(x|ω_i) (on/off)",
+        "interruttore prior (on/off); quando è acceso, slider della prevalenza del blocco da 1% a 50% (default 10%)",
+        "interruttore costi (on/off); quando è acceso, slider λ_FN/λ_FP da 1 a 50 (default 20)",
+        "checkbox 'falsi allarmi ≤ α' con slider α da 1% a 20% (default 5%)",
+        "clic su un nodo per la scheda IT/EN; hover sulla foglia ML per il cartellino"
+      ],
+      "visual": "Albero con i colori della slide (radice verde, parametrizzazione rossa, criteri blu, foglie verdi); nodi non raggiungibili in grigio al 30%; sotto, asse x = durata QRS (ms) con p(x|normale) in blu e p(x|blocco) in arancio, aree d'errore semitrasparenti, frontiera del criterio attivo con il valore numerico e la regola del criterio con i numeri sostituiti.",
+      "aha": "Il criterio non si sceglie per gusto: lo impone l'informazione disponibile. Con pdf, prior e costi si scende nel ramo completo (rischio minimo, e MAP o ML quando i costi sono uguali); se mancano prior o costi, o si vuole un vincolo sui falsi allarmi, si finisce nel ramo incompleto.",
       "formulasShown": [
-        "\\mathbf{x}\\in\\omega_j\\Leftrightarrow P(\\omega_j)\\,p(\\mathbf{x}|\\omega_j)\\geq P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i)",
-        "\\mathbf{x}\\in\\omega_j\\Leftrightarrow p(\\mathbf{x}|\\omega_j)\\geq p(\\mathbf{x}|\\omega_i)"
+        "\\mathbf{x}\\in\\omega_j\\Leftrightarrow P(\\omega_j)\\,p(\\mathbf{x}|\\omega_j)\\geq P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i),\\;\\forall i=1,2,\\dots,C",
+        "\\mathbf{x}\\in\\omega_j\\Leftrightarrow p(\\mathbf{x}|\\omega_j)\\geq p(\\mathbf{x}|\\omega_i),\\;\\forall i=1,2,\\dots,C",
+        "x^{*}_{MAP}=112.5+\\dfrac{12^2}{35}\\ln\\dfrac{0.90}{0.10}=121.5\\text{ ms}"
       ],
-      "challenge": "Tre casi descritti a parole (prevalenza nota e costi uguali; prevalenza ignota; falsi allarmi al massimo 5%): porta l'albero sul criterio giusto per ciascuno al primo tentativo.",
+      "challenge": "Tre casi a parole: (a) 'prevalenza nota 10%, errori equivalenti'; (b) 'reparto nuovo, prevalenza ignota, errori equivalenti'; (c) 'il primario accetta al massimo 5% di falsi allarmi'. Porta l'albero sul criterio giusto al primo tentativo e prevedi da che parte si sposta la soglia rispetto al ML (risposte: MAP, 121.5 ms, verso destra; ML, 112.5 ms; Neyman-Pearson, 114.7 ms).",
       "size": "M",
       "tech": "svg+motion"
     },
     {
       "id": "m17-quale-criterio",
       "title": "Quale criterio per quale problema? Smistamento di scenari clinici",
-      "concepts": ["c05", "c08", "c10", "c11"],
+      "concepts": ["c05", "c08"],
       "scenario": "medicina",
-      "realExample": "Screening diagnostico: un test produce uno score continuo e bisogna fissare la regola di decisione. Situazioni diverse (prevalenza nota o ignota, costo del falso negativo noto, obbligo di tenere i falsi positivi sotto il 5%) richiedono criteri diversi: rischio minimo, minimax, Neyman-Pearson, MAP o ML. Scenari e dati sintetici.",
+      "realExample": "Screening diagnostico: un test produce uno score continuo e bisogna fissare la regola di decisione. Situazioni diverse (prevalenza nota o ignota, costo del falso negativo noto, obbligo di tenere i falsi positivi sotto il 5%) richiedono criteri diversi, come dice la slide 9 ('depending on the peculiarities and requirements of the considered classification problem, different decision criteria may be considered'). Scenari e dati sintetici.",
       "storyboard": [
-        "Sei carte-scenario scendono dall'alto, per esempio 'Prevalenza del 2% nota, un tumore non visto costa 100 volte un falso allarme', 'Epidemia nuova: prevalenza ignota, tra 1% e 40%', 'Il comitato etico impone falsi positivi ≤ 5%: massimizza i veri positivi', 'Prevalenza nota, errori tutti uguali', 'Solo le pdf dello score sono note'.",
-        "Lo studente trascina ogni carta su uno dei nodi dell'albero: Minimum Risk, Minimax, Neyman-Pearson, MAP, ML.",
-        "Rilascio corretto: il nodo si illumina e compare la frase delle note p.81 in inglese con la traduzione; rilascio errato: la carta rimbalza e un suggerimento indica quale informazione manca o è presente.",
-        "Anteprima minimax: un cursore della prevalenza scorre da 1% a 40%; la curva del rischio della regola ottimizzata per un prior fissato sale molto ai bordi, mentre la regola minimax resta più piatta con il massimo più basso (illustrazione qualitativa: la fonte non dà formule).",
-        "Anteprima Neyman-Pearson: sulle due distribuzioni dello score la soglia si sposta finché l'area di falso allarme (rossa) vale il 5%; il contatore della potenza di rilevazione (TPR) si aggiorna."
+        "Sei carte-scenario entrano dall'alto una alla volta (stagger 120 ms, caduta con spring di circa 300 ms): (1) 'Prevalenza 2% nota; un tumore non visto costa 100 volte un falso allarme'; (2) 'Epidemia nuova: prevalenza ignota tra 1% e 40%, costi degli errori noti'; (3) 'Il comitato etico impone falsi positivi ≤ 5%: massimizza i veri positivi'; (4) 'Prevalenza 10% nota, tutti gli errori contano uguale'; (5) 'Si conoscono solo le pdf dello score'; (6) 'Pdf, prevalenza e costi noti, anche quello dell'azione ripeti il test'.",
+        "In basso l'albero compatto con cinque nodi bersaglio: Minimum Risk, Minimax, Neyman-Pearson, MAP, ML. Lo studente trascina ogni carta su un nodo; durante il trascinamento il nodo sotto il cursore si ingrandisce del 5%.",
+        "Rilascio corretto: la carta si incastra nel nodo (scale da 1 a 0.9, 200 ms), il nodo si illumina, compare la frase delle note p.81 in inglese con la traduzione e la regola del nodo con i numeri della carta (per la carta 4: soglia sul rapporto p(x|malato)/p(x|sano) pari a P(sano)/P(malato) = 0.90/0.10 = 9). Sotto, una riga 'informazione usata: pdf ✓ prior ✓ costi ✗'.",
+        "Rilascio errato: la carta torna al punto di partenza (spring 350 ms) e un suggerimento indica l'informazione che il criterio richiede e la carta non offre, per esempio 'il MAP vuole i prior: questa carta dice che la prevalenza è ignota'.",
+        "Fine partita: tabella riassuntiva nodo per nodo con le informazioni richieste (pdf, prior, costi, vincolo sui falsi allarmi) e il nodo Minimum Risk evidenziato come padre di MAP e ML (note p.81: 'minimizes the total expected risk by balancing prior probabilities and the costs'). Due pulsanti portano ai widget m17-cupola-minimax e m17-neyman-pearson-frodi."
       ],
-      "interactions": ["drag & drop delle carte sui nodi", "cursore della prevalenza nell'anteprima minimax", "cursore α (falsi positivi massimi) nell'anteprima Neyman-Pearson", "pulsante 'nuove carte'"],
-      "visual": "Albero compatto in basso, carte in alto con icone (termometro, bilancia, allarme); nell'anteprima minimax un grafico rischio contro prevalenza con due curve; nell'anteprima Neyman-Pearson due gaussiane con aree di falso allarme (rosso) e di rilevazione (verde) e i valori FPR e TPR live.",
-      "aha": "I criteri bayesiani sono una famiglia: si usa quello le cui ipotesi coincidono con ciò che il problema offre. Minimax e Neyman-Pearson esistono proprio per quando manca qualche probabilità o costo.",
-      "formulasShown": ["\\text{FPR}\\leq\\alpha\\;\\Rightarrow\\;\\max\\text{TPR}"],
-      "challenge": "Smista correttamente tutte le carte con al massimo un errore.",
+      "interactions": [
+        "drag & drop delle carte sui cinque nodi",
+        "hover su un nodo per vedere le ipotesi che richiede",
+        "pulsante 'nuove carte': pesca 6 carte da un mazzo di 15 scenari (seed)",
+        "cronometro opzionale per la modalità sfida"
+      ],
+      "visual": "Albero compatto in basso con i colori della slide 10, carte in alto con icone (termometro per la prevalenza, bilancia per i costi, allarme per il vincolo); ogni carta mostra badge 'pdf / prior / costi / vincolo' accesi o spenti; contatore di risposte giuste; tabella finale a cinque righe.",
+      "aha": "I criteri bayesiani sono una famiglia: si usa quello le cui ipotesi coincidono con ciò che il problema offre. Il rischio minimo è il criterio generale del ramo completo; minimax e Neyman-Pearson esistono per quando manca qualche probabilità o costo o si vuole controllare un tipo di errore.",
+      "formulasShown": [
+        "\\text{MAP}:\\;\\arg\\max_i P(\\omega_i)\\,p(\\mathbf{x}|\\omega_i)\\qquad\\text{ML}:\\;\\arg\\max_i p(\\mathbf{x}|\\omega_i)",
+        "\\text{NP}:\\;\\max\\,\\text{TPR}\\;\\text{con}\\;\\text{FPR}\\leq\\alpha",
+        "\\dfrac{p(x|\\text{malato})}{p(x|\\text{sano})}\\geq\\dfrac{P(\\text{sano})}{P(\\text{malato})}=\\dfrac{0.90}{0.10}=9"
+      ],
+      "challenge": "Smista le sei carte con al massimo un errore (soluzione: 1 Minimum Risk, 2 Minimax, 3 Neyman-Pearson, 4 MAP, 5 ML, 6 Minimum Risk con R = C + 1 azioni); poi pesca un nuovo mazzo e finisci sotto i 30 secondi.",
       "size": "M",
       "tech": "svg+motion"
+    },
+    {
+      "id": "m17-cupola-minimax",
+      "title": "La cupola dell'errore di Bayes: rette delle regole fisse e minimax",
+      "concepts": ["c10", "c69"],
+      "scenario": "pesce",
+      "realExample": "Il nastro dell'impianto riceve carichi la cui composizione (quota di ω_1) cambia ogni giorno e non è nota in anticipo: il prior è ignoto. Con le curve ricostruite dell'esempio delle slide 14-15 (miscele gaussiane sintetiche indicate nei gaps) si confrontano la regola ML, le regole MAP 'congelate' a un prior scelto e la regola minimax, il cui errore non dipende dal prior. Illustrazione didattica con costi 0-1: la fonte nomina il minimax solo nell'albero della slide 10 e nelle note p.81 ('minimizes the maximum possible risk').",
+      "storyboard": [
+        "Pannello sinistro: le pdf ricostruite della slide 14 (nera ω_1, rossa ω_2) con sotto la striscia di decisione della regola corrente. Pannello destro vuoto con assi P(ω_1) da 0 a 1 (orizzontale) e P_e da 0 a 0.5 (verticale).",
+        "Pulsante 'disegna la cupola': un punto scorre su P(ω_1) da 0 a 1 in 1.5 s; per ogni prior si ricalcola la regola MAP (la striscia a sinistra cambia colore in tempo reale) e si traccia P_e*(P(ω_1)): curva concava che vale 0 agli estremi e ha il massimo ≈ 0.355 a P(ω_1) ≈ 0.55.",
+        "Pulsante 'retta del ML' (tracciata in 500 ms): compare P_e(ML) = 0.256 + 0.183·P(ω_1); le estremità a P(ω_1) = 0 e 1 sono etichettate ε_2 ≈ 0.256 ed ε_1 ≈ 0.439; il punto di tangenza a P(ω_1) = 0.5 (P_e = 0.347) pulsa.",
+        "Slider 'congela la regola al prior π_0': la striscia a sinistra mostra le regioni MAP per π_0 e a destra compare la retta di quella regola, P_e = π·ε_1(π_0) + (1 − π)·ε_2(π_0), tangente alla cupola in π_0; ε_1(π_0), ε_2(π_0) e l'equazione della retta con i numeri si aggiornano a ogni movimento (per π_0 = 2/3: ε_1 ≈ 0.111, ε_2 ≈ 0.726, retta molto inclinata).",
+        "Pulsante 'minimax': π_0 scivola (800 ms) fino a ≈ 0.55, dove ε_1 ≈ ε_2 ≈ 0.355 e la retta diventa orizzontale all'altezza del massimo della cupola; etichetta 'errore garantito ≤ 0.355 qualunque sia il prior'. Tre marcatori confrontano il caso peggiore: minimax 0.355, ML 0.439 (carico tutto ω_1), regola MAP della slide 15 0.726 (carico tutto ω_2)."
+      ],
+      "interactions": [
+        "pulsante 'disegna la cupola'",
+        "pulsante 'retta del ML'",
+        "slider π_0 da 0.05 a 0.95 (passo 0.005) per congelare una regola MAP",
+        "slider 'prior vero' π da 0 a 1 con un marcatore che scorre sulla retta attiva e sulla cupola e mostra la distanza verticale",
+        "pulsante 'minimax'"
+      ],
+      "visual": "A sinistra pdf e striscia di decisione; a destra cupola concava blu, retta del ML viola, retta della regola congelata verde, retta minimax arancio orizzontale; segmenti verticali tra retta e cupola nel prior vero (errore in più rispetto al MAP) con il valore numerico; ε_1 ed ε_2 scritti alle estremità di ogni retta.",
+      "aha": "L'errore di una regola fissa è lineare nel prior; il MAP sceglie per ogni prior la retta più bassa, e l'inviluppo è la cupola concava dell'errore di Bayes. Se il prior è ignoto, la regola minimax è quella con retta orizzontale al massimo della cupola: sbaglia un po' di più del MAP giusto, ma limita il danno nel caso peggiore.",
+      "formulasShown": [
+        "\\mathrm{P_e}(\\pi)=\\pi\\,\\varepsilon_1+(1-\\pi)\\,\\varepsilon_2,\\qquad\\varepsilon_i=P(\\mathbf{x}\\notin\\Re_i|\\omega_i)",
+        "\\mathrm{P_e}(\\text{ML})\\approx0.256+0.183\\,\\pi",
+        "\\text{minimax}:\\;\\varepsilon_1=\\varepsilon_2\\approx0.355\\;\\Rightarrow\\;\\mathrm{P_e}(\\pi)\\approx0.355\\;\\;\\forall\\pi"
+      ],
+      "challenge": "Prima di premere 'minimax', trova con lo slider π_0 la regola la cui retta è orizzontale (risposta: π_0 ≈ 0.55) e di' di quanto riduce l'errore nel caso peggiore rispetto al ML (0.355 contro 0.439).",
+      "size": "M",
+      "tech": "canvas2d",
+      "addedBy": "verificatore"
+    },
+    {
+      "id": "m17-neyman-pearson-frodi",
+      "title": "Neyman-Pearson sulle frodi con carta: falsi allarmi sotto controllo",
+      "concepts": ["c11"],
+      "scenario": "banca",
+      "realExample": "Rilevamento di frodi con carta di credito: uno score di anomalia per transazione, legittime ~ N(0, 1), frodi ~ N(2.5, 1), prevalenza delle frodi 0.5% (dati sintetici). Con classi così sbilanciate la regola MAP (soglia 3.37) cattura solo il 19% delle frodi. Il criterio di Neyman-Pearson fissa il tasso di falsi allarmi α (errore di tipo I, false positive rate) e sotto quel vincolo massimizza la potenza di rilevazione (true positive rate). Illustrazione didattica: la fonte descrive il criterio solo a parole (note p.81) e lo colloca nel ramo 'Incomplete Problem Parameterization' della slide 10.",
+      "storyboard": [
+        "Due gaussiane dello score: verde legittime, rossa frodi disegnata ingrandita ×20 con l'etichetta 'scala ×20' (a prevalenza reale sarebbe invisibile). Una soglia verticale t: a destra 'blocca la carta'.",
+        "Slider α: la soglia si porta in t = Φ⁻¹(1 − α) (transizione 300 ms); l'area rosa sotto la curva delle legittime a destra di t (FPR = α) e l'area verde scuro sotto la curva delle frodi a destra di t (TPR) si ricolorano; contatori FPR e TPR a tre decimali (α = 1%: t = 2.326, TPR = 0.569; α = 5%: t = 1.645, TPR = 0.804).",
+        "Pulsante 'soglia MAP': la soglia vola a 3.37 (spring 400 ms): FPR = 0.0004 e TPR = 0.193, errore medio minimo ma quattro frodi su cinque passano. Etichetta: 'il MAP pesa gli errori con i prior: la classe rara conta poco'.",
+        "Pulsante 'simula 10 000 transazioni' (4 s): puntini che attraversano la soglia (circa 50 frodi); contatori di frodi bloccate, frodi perse e clienti onesti bloccati per la soglia corrente.",
+        "Riquadro in basso: curva TPR contro FPR (anteprima della ROC di m22) con il punto della soglia corrente che scorre lungo la curva quando si muove α."
+      ],
+      "interactions": [
+        "slider α da 0.1% a 20% (scala logaritmica, default 1%)",
+        "pulsante 'soglia MAP'",
+        "pulsante 'simula 10 000 transazioni' (seed)",
+        "slider della distanza tra le medie da 1 a 4 (varianze fisse a 1)"
+      ],
+      "visual": "Asse dello score da −4 a 7, gaussiane verde e rossa (×20), soglia verticale nera, aree FPR in rosa e TPR in verde scuro con i valori; pannello dei contatori della simulazione; mini-curva ROC con punto mobile e punto della soglia MAP segnato.",
+      "aha": "Neyman-Pearson non usa i prior: fissa il livello di un tipo di errore e massimizza la rilevazione. Con classi molto sbilanciate è più sensato del MAP, che minimizza l'errore medio sacrificando la classe rara.",
+      "formulasShown": [
+        "\\text{FPR}(t)=1-\\Phi(t)\\leq\\alpha\\;\\Rightarrow\\;t=\\Phi^{-1}(1-\\alpha)",
+        "\\text{TPR}(t)=1-\\Phi(t-2.5)",
+        "\\alpha=0.01:\\;t=2.326,\\;\\text{TPR}=1-\\Phi(-0.174)=0.569"
+      ],
+      "challenge": "Trova il più piccolo α che garantisce TPR ≥ 90% (risposta: α ≈ 11%, t ≈ 1.22) e confronta i clienti onesti bloccati con quelli della soglia MAP.",
+      "size": "M",
+      "tech": "svg+motion",
+      "addedBy": "verificatore"
     },
     {
       "id": "m17-bilancia-delle-decisioni",
       "title": "La bilancia bayesiana: probabilità e costi sul nastro del pesce",
       "concepts": ["c01", "c02", "c03", "c12"],
       "scenario": "pesce",
-      "realExample": "Nastro di un impianto di confezionamento: un pesce con luminosità misurata x deve finire nella cassa 'salmone' o 'spigola'. La teoria bayesiana della decisione tratta la scelta come un compromesso quantificato tra la probabilità che sia l'una o l'altra specie e il costo di ciascun errore (un salmone venduto come spigola fa perdere margine, una spigola venduta come salmone fa arrabbiare il cliente). Dati sintetici ispirati all'esempio del Cap. 1.",
+      "realExample": "Nastro di un impianto di confezionamento: un pesce con luminosità misurata x deve finire nella cassa 'salmone' (ω_1) o 'spigola' (ω_2). Dati sintetici ispirati all'esempio del Cap. 1: p(x|salmone) = N(4, 1.2²), p(x|spigola) = N(7, 1.2²), 70% di salmoni nel carico. La teoria bayesiana della decisione tratta la scelta come un compromesso quantificato tra la probabilità di ciascuna specie e il costo di ciascun errore (un salmone venduto come spigola fa perdere margine, una spigola venduta come salmone fa arrabbiare il cliente).",
       "storyboard": [
-        "Un pesce stilizzato scorre sul nastro e si ferma sotto un sensore che mostra la luminosità, per esempio x = 5.8.",
-        "Compare una bilancia a due piatti: sul piatto 'salmone' cade un peso proporzionale a P(salmone|x), sull'altro a P(spigola|x); l'ago oscilla (molla con smorzamento) e si ferma: vince il piatto più pesante e il pesce scivola nella cassa corrispondente.",
-        "Si attiva 'costi': i pesi vengono moltiplicati per il costo dell'errore che eviterebbero (slider del rapporto dei costi); la bilancia può invertirsi. Una didascalia mostra 'tradeoff = probabilità × costo'.",
-        "Interruttore 'probabilità note?': se spento i piatti diventano punti interrogativi e la bilancia resta bloccata: senza le probabilità del problema la teoria non si applica (ipotesi della slide 9).",
-        "Riquadro finale con la frase della slide 9 e la chiusura delle note p.81 ('most effective and cost-efficient decisions')."
+        "Un pesce stilizzato entra da sinistra sul nastro (translateX, 800 ms) e si ferma sotto il sensore; il display mostra la luminosità, per esempio x = 5.8.",
+        "Compare una bilancia a due piatti: sul piatto 'salmone' cade (300 ms) un peso alto P(salmone|x), sull'altro P(spigola|x) (con x = 5.8 e 70% di salmoni: 0.555 e 0.445). L'asta ruota con una molla smorzata (circa 600 ms) e si ferma dal lato più pesante; il pesce scivola nella cassa corrispondente e il contatore della cassa sale.",
+        "Interruttore 'costi': i pesi diventano λ_21·P(salmone|x) (quanto costerebbe dire 'spigola' a un salmone) e λ_12·P(spigola|x) (quanto costerebbe dire 'salmone' a una spigola); spostando lo slider λ_12/λ_21 la bilancia si inverte (a x = 5.8 oltre 0.555/0.445 ≈ 1.25). Didascalia: 'tradeoff = probabilità × costo'.",
+        "Interruttore 'probabilità note?' spento: i pesi diventano punti interrogativi, la bilancia si blocca con un lucchetto e compare l'ipotesi della slide 9 'all of the relevant probability values are known'.",
+        "Riquadro finale (fade 300 ms) con la frase della slide 9 ('Bayesian decision theory is a fundamental statistical approach...') e la chiusura delle note p.81 ('most effective and cost-efficient decisions')."
       ],
-      "interactions": ["slider della luminosità x", "slider del rapporto dei costi (1 a 10)", "interruttore 'probabilità note'", "pulsante 'nuovo pesce'"],
-      "visual": "Nastro orizzontale con il pesce, bilancia al centro con piatti arancio (salmone) e grigio-blu (spigola), numeri live P(ω_i|x) e pesi con i costi, due casse in basso che si riempiono con contatori.",
+      "interactions": [
+        "slider della luminosità x da 0 a 11 (passo 0.1)",
+        "slider della quota di salmoni P(ω_1) da 0.1 a 0.9 (default 0.7)",
+        "slider del rapporto dei costi λ_12/λ_21 da 0.1 a 10 (scala logaritmica)",
+        "interruttori 'costi' e 'probabilità note'",
+        "pulsante 'nuovo pesce' (luminosità estratta dalla miscela, seed)"
+      ],
+      "visual": "Nastro orizzontale con il pesce, bilancia al centro con piatti arancio (salmone) e grigio-blu (spigola), numeri live P(ω_i|x) e pesi con i costi, due casse in basso con contatori; formula di Bayes con i valori sostituiti sotto la bilancia.",
       "aha": "Decidere significa pesare: le probabilità dicono quanto è plausibile ogni classe, i costi quanto fa male sbagliare. La teoria bayesiana mette entrambi sulla stessa bilancia, ma solo se le probabilità sono note.",
-      "formulasShown": ["P(\\omega_i|x)", "\\lambda_{12}\\,P(\\omega_2|x)\\;\\text{vs}\\;\\lambda_{21}\\,P(\\omega_1|x)"],
-      "challenge": "Trova un pesce con P(salmone|x) = 0.6 che finisce comunque tra le spigole: quale rapporto di costi serve?",
+      "formulasShown": [
+        "P(\\omega_1|x)=\\dfrac{0.7\\cdot0.108}{0.7\\cdot0.108+0.3\\cdot0.202}=0.555",
+        "\\lambda_{21}\\,P(\\omega_1|x)\\;\\gtrless\\;\\lambda_{12}\\,P(\\omega_2|x)"
+      ],
+      "challenge": "Trova un pesce con P(salmone|x) = 0.6 che finisce comunque tra le spigole: quale rapporto dei costi serve? (risposta: λ_12/λ_21 > 0.6/0.4 = 1.5)",
       "size": "S",
       "tech": "svg+motion"
     },
@@ -1101,18 +1300,26 @@
       "title": "Indovinare senza guardare: quanto vale il prior",
       "concepts": ["c04", "c18"],
       "scenario": "pesce",
-      "realExample": "Prima ancora di misurare il pesce, il responsabile sa che in questa stagione il carico è per il 70% salmone: è conoscenza a priori P(ω_i). La classificazione bayesiana la integra; un classificatore che la ignora spreca informazione. Dati sintetici.",
+      "realExample": "Prima ancora di misurare il pesce, il responsabile sa che in questa stagione il carico è per il 70% salmone: è conoscenza a priori P(ω_i). La classificazione bayesiana la integra con la misura della luminosità (salmone N(4, 1.2²), spigola N(7, 1.2²)); un classificatore che la ignora spreca informazione. Dati sintetici.",
       "storyboard": [
-        "Una cassa si riempie di 20 pesci coperti da un telo (classe ignota); lo slider 'quota di salmoni nel carico' va da 5% a 95% e aggiorna le due barre dei prior, che sommano sempre a 1.",
-        "Pulsante 'Indovina senza misurare': la regola migliore senza dati è dire sempre la classe con prior maggiore; il telo si alza, i pesci sbagliati si colorano di rosso e il contatore mostra l'errore, che tende a 1 − max P(ω_i).",
-        "Seconda fase: si accende il sensore di luminosità; i prior diventano pesi delle curve p(x|ω_i) (anteprima del MAP) e il contatore dell'errore scende sotto quello della regola 'solo prior'.",
-        "Ripetendo con prior 50% la regola 'solo prior' sbaglia metà delle volte, mentre il sensore porta l'errore molto più in basso: con classi bilanciate il prior da solo non aiuta."
+        "Una cassa con 20 pesci coperti da un telo (griglia 4×5). Lo slider 'quota di salmoni nel carico' aggiorna due barre verticali P(salmone) e P(spigola) (transizione 200 ms), che sommano sempre a 1.",
+        "Pulsante 'Indovina senza misurare': su ogni pesce compare l'etichetta della classe con prior maggiore; i teli si alzano con un flip sfalsato (40 ms tra un pesce e l'altro, 300 ms ciascuno); i pesci sbagliati si bordano di rosso; il contatore mostra la frazione di errori e, accanto, il valore teorico 1 − max P(ω_i) (con 70% di salmoni: 0.30).",
+        "Interruttore 'accendi il sensore': sopra la griglia compare l'asse della luminosità con le curve pesate P(ω_i)p(x|ω_i); ogni pesce riceve la sua misura (puntino che cade sull'asse, 150 ms) e viene classificato con il MAP; il contatore scende (errore teorico 0.094 con 70% di salmoni).",
+        "Tabella che si completa spostando lo slider: prior 50% → 'solo prior' 0.50, sensore 0.106; prior 70% → 0.30 e 0.094; prior 90% → 0.10 e 0.051. La misura aiuta tanto più quanto più il prior è incerto."
       ],
-      "interactions": ["slider del prior del salmone", "pulsante 'Indovina senza misurare'", "interruttore 'accendi il sensore'", "pulsante 'nuovo carico' (seed)"],
-      "visual": "Griglia 4×5 di pesci coperti che si scoprono con un flip; due barre verticali dei prior; contatori d'errore delle due regole affiancati; nella seconda fase due curve pesate sull'asse della luminosità.",
-      "aha": "Il prior è ciò che si sa prima di guardare il campione: da solo dà già una regola (sempre la classe più frequente) e la classificazione bayesiana lo combina con la misura.",
-      "formulasShown": ["\\sum_{i}P(\\omega_i)=1", "P_e^{\\text{solo prior}}=1-\\max_i P(\\omega_i)"],
-      "challenge": "Con quale prior la regola 'solo prior' sbaglia il 50%? E con quale il 5%?",
+      "interactions": [
+        "slider della quota di salmoni da 5% a 95% (passo 1%)",
+        "pulsante 'Indovina senza misurare'",
+        "interruttore 'accendi il sensore'",
+        "pulsante 'nuovo carico': 20 pesci estratti con la quota scelta (seed)"
+      ],
+      "visual": "Griglia 4×5 di pesci coperti che si scoprono con un flip; due barre verticali dei prior; contatori d'errore delle due regole affiancati con valore empirico e teorico; nella seconda fase due curve pesate sull'asse della luminosità con la soglia MAP.",
+      "aha": "Il prior è ciò che si sa prima di guardare il campione: da solo dà già una regola (sempre la classe più frequente, errore 1 − max P(ω_i)) e la classificazione bayesiana lo combina con la misura.",
+      "formulasShown": [
+        "\\sum_{i=1}^{C}P(\\omega_i)=1",
+        "P_e^{\\text{solo prior}}=1-\\max_i P(\\omega_i)=1-0.70=0.30"
+      ],
+      "challenge": "Con quale prior la regola 'solo prior' sbaglia il 50%? E con quale il 5%? (risposte: 0.5; 0.95 o 0.05) In quale dei due casi il sensore fa guadagnare di più?",
       "size": "S",
       "tech": "svg+motion"
     },
@@ -1121,18 +1328,27 @@
       "title": "Anatomia di Bayes: verosimiglianze, prior ed evidenza nel carico di pesce",
       "concepts": ["c16", "c17", "c19"],
       "scenario": "pesce",
-      "realExample": "Luminosità dei pesci sul nastro: p(x|salmone) e p(x|spigola) descrivono ciascuna specie da sola; l'evidenza p(x) è la distribuzione della luminosità di tutto il carico mescolato, che un sensore vede senza sapere la specie. Dati sintetici.",
+      "realExample": "Luminosità dei pesci sul nastro: p(x|salmone) = N(4, 1.2²) e p(x|spigola) = N(7, 1.2²) descrivono ciascuna specie da sola; l'evidenza p(x) è la distribuzione della luminosità di tutto il carico mescolato, che un sensore vede senza sapere la specie. Dati sintetici.",
       "storyboard": [
-        "Due curve p(x|ω_i) disegnate in due pannelli separati: ognuna si riempie sotto e compare l'etichetta '∫ = 1'.",
-        "Le curve scendono in un pannello comune e si scalano in P(ω_i)p(x|ω_i) secondo lo slider del prior; sotto compare la loro somma p(x), curva nera: l'evidenza.",
-        "500 pesci sintetici cadono uno alla volta sull'asse, colorati per specie, e si accumulano in un istogramma grigio che converge alla curva p(x); attivando 'mostra specie' l'istogramma si separa nelle due componenti.",
-        "Trascinando x una linea verticale taglia le curve: tre numeri live p(x|ω_1), p(x|ω_2), p(x); le barre delle posterior si riempiono come quota di ciascun contributo nella somma, e sommano sempre a 1."
+        "Due pannelli separati: le due verosimiglianze si disegnano (600 ms ciascuna), l'area sotto si riempie di colore e compare l'etichetta '∫ p(x|ω_i) dx = 1'.",
+        "Le curve scivolano (500 ms) in un pannello comune e si scalano in P(ω_i)p(x|ω_i) secondo lo slider del prior; sopra si traccia la loro somma p(x) in nero: l'evidenza, anch'essa di area 1.",
+        "Pulsante 'lancia 500 pesci': i pesci cadono uno ogni 8 ms (4 s in tutto), colorati per specie, e si accumulano in un istogramma grigio normalizzato che converge alla curva p(x); con 'mostra specie' l'istogramma si separa nelle due componenti impilate.",
+        "Trascinando x una linea verticale taglia le curve: numeri live p(x|ω_1), p(x|ω_2), p(x) e due barre impilate delle posterior, ciascuna uguale alla quota del proprio contributo P(ω_i)p(x|ω_i)/p(x) (a x = 5.8 con 70% di salmoni: p(x) = 0.136, posterior 0.555 e 0.445); la somma resta 1."
       ],
-      "interactions": ["slider del prior", "trascinamento della linea x", "pulsante 'lancia 500 pesci'", "interruttore 'mostra specie'"],
-      "visual": "Curve arancio (salmone) e grigio-blu (spigola), evidenza in nero, istogramma grigio semitrasparente; a destra barre impilate delle posterior al 100% con valori numerici.",
+      "interactions": [
+        "slider del prior P(salmone) da 0.05 a 0.95 (default 0.7)",
+        "slider della media della spigola μ_2 da 4.5 a 9 (σ = 1.2 fisso)",
+        "trascinamento della linea x da 0 a 11",
+        "pulsante 'lancia 500 pesci' (seed) e interruttore 'mostra specie'"
+      ],
+      "visual": "Curve arancio (salmone) e grigio-blu (spigola), evidenza in nero, istogramma grigio semitrasparente; a destra barre impilate delle posterior al 100% con valori numerici; formule con i numeri sostituiti sotto il grafico.",
       "aha": "La verosimiglianza descrive una classe, il prior pesa le classi, l'evidenza è il miscuglio; la posterior è la fetta di evidenza dovuta a ciascuna classe in quel punto.",
-      "formulasShown": ["p(x)=\\sum_{k}p(x|\\omega_k)\\,P(\\omega_k)", "P(\\omega_i|x)=\\dfrac{p(x|\\omega_i)\\,P(\\omega_i)}{p(x)}", "\\sum_i P(\\omega_i|x)=1"],
-      "challenge": "Trova la luminosità in cui l'evidenza è massima e spiega perché non coincide con il picco di nessuna delle due specie.",
+      "formulasShown": [
+        "p(x)=\\sum_{k=1}^{C}p(x|\\omega_k)\\,P(\\omega_k)=0.7\\cdot0.108+0.3\\cdot0.202=0.136",
+        "P(\\omega_i|x)=\\dfrac{p(x|\\omega_i)\\,P(\\omega_i)}{p(x)}",
+        "\\sum_{i}P(\\omega_i|x)=1,\\qquad\\int p(x|\\omega_i)\\,dx=1"
+      ],
+      "challenge": "Con P(salmone) = 0.5 trova i due massimi dell'evidenza: stanno a ≈ 4.18 e ≈ 6.82, non a 4 e 7 (la coda dell'altra specie li tira verso il centro). Poi avvicina μ_2 finché l'evidenza ha una sola gobba (succede per μ_2 − μ_1 ≤ 2σ = 2.4).",
       "size": "M",
       "tech": "canvas2d"
     },
@@ -1141,18 +1357,27 @@
       "title": "Dal registro clinico alla posterior: il teorema di Bayes in corsia",
       "concepts": ["c22", "c23", "c25"],
       "scenario": "medicina",
-      "realExample": "ECG: la durata del QRS di un paziente (ms). Le pdf p(x|normale) e p(x|blocco di branca) sono stimate da archivi clinici, la prevalenza dal registro dell'ospedale; il medico non ha direttamente P(blocco|x), e il teorema di Bayes la costruisce da ciò che si conosce. Dati sintetici.",
+      "realExample": "ECG: durata del QRS di un paziente (ms). Le pdf p(x|normale) = N(95, 12²) e p(x|blocco di branca) = N(130, 12²) sono stimate da archivi clinici, la prevalenza del blocco (10%) dal registro dell'ospedale; il medico non ha direttamente P(blocco|x), e il teorema di Bayes la costruisce da ciò che si conosce. Dati sintetici.",
       "storyboard": [
-        "Tre tessere 'likelihood', 'prior', 'evidence' mostrano i valori numerici per il QRS scelto; la tessera 'posterior' è vuota con un punto interrogativo (le posterior spesso non sono note direttamente).",
-        "Animazione: likelihood e prior si moltiplicano (le tessere si fondono in 'likelihood × prior'), poi il risultato si divide per 'evidence' e la posterior si riempie.",
-        "Interruttore 'dividi per p(x)': con la normalizzazione le barre sommano a 1; senza, cambiano altezza ma l'ordine resta lo stesso, e il vincitore è evidenziato in entrambe le viste.",
-        "Trascinando il QRS lungo l'asse si vede che p(x) varia molto (curva grigia) mentre la classe vincente dipende solo dai prodotti prior × likelihood."
+        "Tre tessere 'likelihood', 'prior', 'evidence' mostrano i valori per il QRS scelto; la tessera 'posterior' è vuota con un punto interrogativo che pulsa (le posterior 'are often not directly known', slide 11).",
+        "Pulsante Play (circa 2 s): per ciascuna classe le tessere likelihood e prior scivolano l'una sull'altra (600 ms) e si fondono in 'likelihood × prior'; poi il risultato si divide per 'evidence' (600 ms) e la tessera posterior si riempie dal basso (600 ms). A QRS = 120 ms: normale 0.0038 × 0.90 = 0.00342, blocco 0.0235 × 0.10 = 0.00235, evidenza 0.00577, posterior 0.592 e 0.408.",
+        "Interruttore 'dividi per p(x)': acceso, le barre sono le posterior (sommano a 1); spento, sono i prodotti non normalizzati; le altezze cambiano (transizione 300 ms) ma il vincitore, con il bordo evidenziato, resta lo stesso.",
+        "Trascinando il QRS da 60 a 180 ms il grafico piccolo mostra p(x) (curva grigia, in scala logaritmica) che varia di ordini di grandezza, mentre la classe vincente dipende solo dal confronto dei prodotti; la frontiera MAP a 121.5 ms è segnata sull'asse."
       ],
-      "interactions": ["slider della durata QRS", "slider della prevalenza", "interruttore 'dividi per p(x)'", "pulsante Play dell'animazione"],
-      "visual": "Tessere con numeri a tre decimali, barre delle posterior o dei prodotti non normalizzati, piccolo grafico con p(x) e il marcatore del QRS; la formula di Bayes con i numeri sostituiti live.",
+      "interactions": [
+        "slider della durata QRS da 60 a 180 ms (passo 1)",
+        "slider della prevalenza del blocco da 1% a 50% (default 10%)",
+        "interruttore 'dividi per p(x)'",
+        "pulsanti Play e Passo dell'animazione"
+      ],
+      "visual": "Tessere con numeri a tre cifre significative, barre delle posterior o dei prodotti non normalizzati, piccolo grafico con p(x) e il marcatore del QRS; formula di Bayes con i numeri sostituiti live.",
       "aha": "Il teorema di Bayes converte ciò che si sa stimare (pdf della classe, frequenza della classe) in ciò che serve per decidere (posterior); il denominatore p(x) è uguale per tutte le classi e non sposta la decisione.",
-      "formulasShown": ["P(\\omega_i|x)=\\dfrac{p(x|\\omega_i)\\,P(\\omega_i)}{p(x)}", "\\arg\\max_i\\dfrac{P(\\omega_i)\\,p(x|\\omega_i)}{p(x)}=\\arg\\max_i P(\\omega_i)\\,p(x|\\omega_i)"],
-      "challenge": "Prima di cliccare, prevedi se togliere la normalizzazione cambia il vincitore in un punto dove p(x) è minuscola.",
+      "formulasShown": [
+        "\\text{posterior}=\\dfrac{\\text{likelihood}\\times\\text{prior}}{\\text{evidence}}",
+        "P(\\omega_1|x)=\\dfrac{0.0038\\cdot0.90}{0.0038\\cdot0.90+0.0235\\cdot0.10}=\\dfrac{0.00342}{0.00577}=0.592",
+        "\\arg\\max_i\\dfrac{P(\\omega_i)\\,p(x|\\omega_i)}{p(x)}=\\arg\\max_i P(\\omega_i)\\,p(x|\\omega_i)"
+      ],
+      "challenge": "A QRS = 120 ms la verosimiglianza favorisce il blocco (0.0235 contro 0.0038) ma il MAP dice 'normale': prevedi a quale prevalenza del blocco la decisione si ribalta (risposta: 0.0038/(0.0038 + 0.0235) ≈ 13.9%) e verifica che togliere la normalizzazione non cambia la risposta.",
       "size": "S",
       "tech": "html+motion"
     },
@@ -1161,18 +1386,28 @@
       "title": "La regola MAP su un'immagine satellitare a tre classi",
       "concepts": ["c13", "c15", "c20", "c21"],
       "scenario": "telerilevamento",
-      "realExample": "Pixel di un'immagine satellitare multispettrale: dall'indice NDVI (feature x) bisogna assegnare acqua, suolo nudo o vegetazione (C = 3). Supponendo di conoscere le posterior P(ω_i|x), per esempio da un modello già calibrato, il MAP sceglie la classe con posterior massima. Dati sintetici ispirati a scene Sentinel-2.",
+      "realExample": "Pixel di un'immagine satellitare multispettrale: dall'indice NDVI (feature x) bisogna assegnare acqua, suolo nudo o vegetazione (C = 3). Si suppongono note le posterior P(ω_i|x), per esempio da un modello già calibrato: qui sono generate da pdf sintetiche acqua N(0.00, 0.12²), suolo N(0.25, 0.10²), vegetazione N(0.50, 0.15²) con prior 0.2, 0.3, 0.5 (dati ispirati a scene Sentinel-2). Il MAP sceglie la classe con posterior massima.",
       "storyboard": [
-        "Asse NDVI da −0.5 a 1; tre curve posterior colorate (blu acqua, marrone suolo, verde vegetazione) disegnate come fascia impilata al 100% per mostrare che sommano a 1 in ogni punto.",
-        "Un pixel (quadratino) si trascina sull'asse; a destra tre barre verticali con i valori P(ω_i|x); la barra più alta si riempie di colore e compare 'x ∈ ω_j' con le C − 1 disuguaglianze verificate una per una (spunte verdi).",
-        "Sotto l'asse si colora la striscia delle regioni MAP: ogni tratto prende il colore della posterior massima.",
-        "Pulsante 'classifica la mappa': una mini-scena 8×8 di pixel si colora cella per cella con la regola; il contatore 'errore medio atteso' = media di 1 − max posterior si aggiorna (anteprima dell'obiettivo del MAP)."
+        "Asse NDVI da −0.5 a 1; le tre posterior (blu acqua, marrone suolo, verde vegetazione) si disegnano come fascia impilata al 100% con un riempimento da sinistra a destra (800 ms), per mostrare che sommano a 1 in ogni x.",
+        "Un pixel si trascina sull'asse; a destra tre barre verticali con P(ω_i|x) a tre decimali (a x = 0.20: acqua 0.118, suolo 0.753, vegetazione 0.128); la barra più alta si colora, le altre restano grigie, e sotto compare 'x ∈ ω_j' con le C − 1 disuguaglianze P(ω_j|x) ≥ P(ω_i|x) spuntate una ogni 150 ms.",
+        "Sotto l'asse si colora la striscia delle regioni MAP: acqua fino a 0.109, suolo fino a 0.344, vegetazione oltre.",
+        "Pulsante 'classifica la mappa': una scena sintetica 8×8 di valori NDVI si colora cella per cella (30 ms per cella, a spirale); il contatore 'errore medio atteso' somma 1 − max_i P(ω_i|x) cella per cella e mostra la media, anteprima dell'obiettivo del MAP ('minimize the average probability of error').",
+        "Selettore C = 2 (solo acqua e vegetazione, frontiera a 0.197) o C = 3: barre e disuguaglianze si adattano; con C = 2 il vincitore ha sempre posterior ≥ 0.5, con C = 3 no."
       ],
-      "interactions": ["trascinamento del pixel lungo l'asse NDVI", "pulsante 'classifica la mappa'", "selettore C = 2 o C = 3 classi"],
-      "visual": "Fascia impilata delle posterior, barre a destra con valori, striscia delle regioni sotto l'asse, mini-mappa 8×8 con i colori di classe; notazione x, ω_i, C visibile nelle etichette.",
+      "interactions": [
+        "trascinamento del pixel lungo l'asse NDVI da −0.5 a 1 (passo 0.001)",
+        "pulsante 'classifica la mappa' (scena generata con seed)",
+        "selettore C = 2 o C = 3 classi",
+        "tre slider dei prior (vincolati a somma 1, da 0.05 a 0.9)"
+      ],
+      "visual": "Fascia impilata delle posterior, barre a destra con valori, striscia delle regioni sotto l'asse, mini-mappa 8×8 con i colori di classe; notazione x, ω_i, i = 1, ..., C visibile nelle etichette; formula della regola con i valori sostituiti.",
       "aha": "MAP significa: in ogni x scegli la classe con la posterior più alta. Con C classi la disuguaglianza va verificata contro tutte le altre C − 1, e l'obiettivo è sbagliare il meno possibile in media.",
-      "formulasShown": ["\\mathbf{x}\\in\\omega_j\\Leftrightarrow P(\\omega_j|\\mathbf{x})\\geq P(\\omega_i|\\mathbf{x}),\\;\\forall i=1,\\dots,C", "\\omega^{*}=\\arg\\max_i P(\\omega_i|\\mathbf{x})"],
-      "challenge": "Trova un valore di NDVI dove la classe vincente ha posterior sotto 0.5: la decisione MAP resta valida? Perché?",
+      "formulasShown": [
+        "\\mathbf{x}\\in\\omega_j\\Leftrightarrow P(\\omega_j|\\mathbf{x})\\geq P(\\omega_i|\\mathbf{x}),\\;\\forall i=1,2,\\dots,C",
+        "\\omega^{*}(\\mathbf{x})=\\arg\\max_{i=1,\\dots,C}P(\\omega_i|\\mathbf{x})",
+        "x=0.20:\\;P(\\omega_{\\text{suolo}}|x)=0.753\\geq0.128,\\;0.118"
+      ],
+      "challenge": "Trova un valore di NDVI dove la classe vincente ha posterior sotto 0.5 (risposta: vicino alla frontiera acqua/suolo, tra ≈ 0.104 e 0.114; a x = 0.109: acqua 0.475, suolo 0.478, vegetazione 0.048). La decisione MAP resta valida? Perché?",
       "size": "M",
       "tech": "svg+motion"
     },
@@ -1181,17 +1416,25 @@
       "title": "Prior per verosimiglianza: la frontiera MAP che scivola",
       "concepts": ["c24", "c26"],
       "scenario": "pesce",
-      "realExample": "Salmone contro spigola con la luminosità come feature: le curve pesate P(ω_i)p(x|ω_i) si confrontano direttamente, senza calcolare l'evidenza. Cambiando la composizione del carico (prior) cambia la frontiera di smistamento. Dati sintetici.",
+      "realExample": "Salmone N(4, 1.2²) contro spigola N(7, 1.2²) con la luminosità come feature: le curve pesate P(ω_i)p(x|ω_i) si confrontano direttamente, senza calcolare l'evidenza. Cambiando la composizione del carico (prior) cambia la frontiera di smistamento. Dati sintetici.",
       "storyboard": [
-        "Due verosimiglianze tratteggiate e, sopra, le curve piene P(ω_i)p(x|ω_i).",
-        "Slider P(salmone) da 0.05 a 0.95: la curva piena del salmone si alza, l'altra si abbassa; l'incrocio delle curve piene (frontiera MAP, linea verde) scorre sull'asse, mentre la frontiera ML (incrocio delle tratteggiate) resta ferma come linea fantasma viola.",
-        "Un pesce trascinabile mostra 'la classe più probabile dato x' con i due prodotti numerici affiancati e il segno ≥ che si gira quando si attraversa la frontiera."
+        "Due verosimiglianze tratteggiate p(x|ω_i) (salmone arancio, spigola grigio-blu) e sopra le curve piene P(ω_i)p(x|ω_i), disegnate in 600 ms.",
+        "Slider P(salmone): le curve piene si scalano in tempo reale; il loro incrocio (frontiera MAP, linea verde) scorre sull'asse secondo x* = 5.5 + 0.48·ln(P(ω_1)/P(ω_2)), mentre la frontiera ML (incrocio delle tratteggiate, x = 5.5) resta ferma come linea viola.",
+        "Un pesce trascinabile mostra i due prodotti numerici affiancati (a x = 5.8 con P(salmone) = 0.7: 0.7·0.108 = 0.076 contro 0.3·0.202 = 0.060) e il simbolo ≥ che ruota di 180° (200 ms) quando si attraversa la frontiera; l'etichetta dice 'la classe più probabile dato x'.",
+        "Interruttore 'mostra evidenza': compare p(x) in grigio con la nota 'non serve per decidere'."
       ],
-      "interactions": ["slider del prior", "trascinamento del pesce", "interruttore 'mostra frontiera ML'"],
-      "visual": "Curve piene e tratteggiate, frontiera MAP verde e ML viola, zone sotto l'asse colorate per classe, riquadro con P(ω_1)p(x|ω_1) e P(ω_2)p(x|ω_2) numerici.",
+      "interactions": [
+        "slider del prior P(salmone) da 0.05 a 0.95 (passo 0.005)",
+        "trascinamento del pesce da x = 0 a 11",
+        "interruttori 'mostra frontiera ML' e 'mostra evidenza'"
+      ],
+      "visual": "Curve piene e tratteggiate, frontiera MAP verde e ML viola con il valore numerico, zone sotto l'asse colorate per classe, riquadro con P(ω_1)p(x|ω_1) e P(ω_2)p(x|ω_2) numerici.",
       "aha": "Per decidere con il MAP non serve p(x): basta confrontare prior × verosimiglianza. Il prior spinge la frontiera verso la classe meno probabile e allarga la regione di quella più frequente.",
-      "formulasShown": ["P(\\omega_1)\\,p(x|\\omega_1)\\;\\gtrless\\;P(\\omega_2)\\,p(x|\\omega_2)"],
-      "challenge": "Porta la frontiera MAP esattamente su x = 6.0 regolando solo il prior.",
+      "formulasShown": [
+        "P(\\omega_1)\\,p(x|\\omega_1)\\;\\gtrless\\;P(\\omega_2)\\,p(x|\\omega_2)",
+        "0.7\\cdot0.108=0.076\\;>\\;0.3\\cdot0.202=0.060\\;\\Rightarrow\\;x\\in\\omega_1"
+      ],
+      "challenge": "Porta la frontiera MAP esattamente su x = 6.0 regolando solo il prior (risposta: P(salmone) ≈ 0.739).",
       "size": "S",
       "tech": "svg+motion"
     },
@@ -1200,22 +1443,27 @@
       "title": "Disegna il tuo classificatore e paga il suo errore",
       "concepts": ["c27", "c28", "c29", "c31"],
       "scenario": "pesce",
-      "realExample": "Un tecnico regola a mano il separatore dell'impianto: ogni scelta di soglie sulla luminosità definisce le regioni ℜ_1 (salmone) e ℜ_2 (spigola), cioè un classificatore arbitrario, e un tasso d'errore misurabile. Dati sintetici.",
+      "realExample": "Un tecnico regola a mano il separatore dell'impianto: ogni scelta di soglie sulla luminosità definisce le regioni ℜ_1 (salmone) e ℜ_2 (spigola), cioè un classificatore arbitrario, con un tasso d'errore misurabile. Salmone N(4, 1.2²), spigola N(7, 1.2²), 70% di salmoni; dati sintetici.",
       "storyboard": [
-        "Asse della luminosità con le curve pesate P(ω_i)p(x|ω_i); due maniglie definiscono ℜ_1 (fascia arancio) e ℜ_2 (fascia grigio-blu); con un clic si aggiungono intervalli per creare regioni non connesse.",
-        "Le aree di errore si colorano: sotto P(ω_1)p(x|ω_1) dove x ∈ ℜ_2 (salmone scambiato per spigola) e sotto P(ω_2)p(x|ω_2) dove x ∈ ℜ_1.",
-        "Pannello a destra, riga per riga: P(err|ω_1) e P(err|ω_2) come percentuali (integrali delle pdf fuori dalla propria regione), poi i prodotti con i prior, poi la somma P_e; sotto P_c = 1 − P_e in verde.",
-        "Pulsante 'lancia 1000 pesci': una pioggia di pesci sintetici attraversa il separatore; il contatore degli errori empirici converge verso P_e."
+        "Asse della luminosità da 0 a 11 con le curve pesate P(ω_i)p(x|ω_i). Una maniglia iniziale a x = 5 divide l'asse: ℜ_1 (fascia arancio) a sinistra, ℜ_2 (fascia grigio-blu) a destra. Un clic su una fascia inserisce un intervallo dell'altra classe largo 0.5 (regioni non connesse), con due nuove maniglie.",
+        "Le aree d'errore si campiscono in rosso tratteggiato: sotto P(ω_1)p(x|ω_1) dove x ∈ ℜ_2 e sotto P(ω_2)p(x|ω_2) dove x ∈ ℜ_1; l'aggiornamento durante il trascinamento è immediato, senza animazione.",
+        "Pannello a destra riga per riga: P(err|ω_1) = P(x ∉ ℜ_1|ω_1) e P(err|ω_2) in percentuale, i prodotti con i prior, la somma P_e e sotto P_c = 1 − P_e in verde; ogni numero che cambia lampeggia per 150 ms. Con la soglia a 5: P(err|ω_1) = 0.202, P(err|ω_2) = 0.048, P_e = 0.156.",
+        "Pulsante 'lancia 1000 pesci' (3 s): una pioggia di pesci sintetici attraversa il separatore; i mal classificati diventano rossi e il contatore dell'errore empirico converge verso P_e, dentro la banda ±1.96·√(P_e(1 − P_e)/n) disegnata attorno al valore teorico."
       ],
-      "interactions": ["trascinamento delle maniglie delle regioni", "clic per aggiungere o togliere intervalli", "slider del prior", "pulsante 'lancia 1000 pesci'"],
+      "interactions": [
+        "trascinamento delle maniglie delle regioni (x da 0 a 11, passo 0.01)",
+        "clic su una fascia per aggiungere un intervallo dell'altra classe, doppio clic per toglierlo",
+        "slider del prior P(salmone) da 0.1 a 0.9 (default 0.7)",
+        "pulsante 'lancia 1000 pesci' (seed)"
+      ],
       "visual": "Curve pesate, fasce colorate delle regioni, aree d'errore tratteggiate in rosso, tabella con P(err|ω_i), P(ω_i), prodotti, P_e e P_c; istogramma dei pesci lanciati con i mal classificati in rosso.",
       "aha": "P_e si calcola per qualunque classificatore: è la somma, pesata dai prior, delle masse di probabilità di ogni classe che cadono fuori dalla sua regione.",
       "formulasShown": [
-        "\\mathrm{P_e}=\\sum_{i}P(\\mathbf{x}\\notin\\Re_i|\\omega_i)\\,P(\\omega_i)",
+        "\\mathrm{P_e}=\\sum_{i=1}^{C}P(err|\\omega_i)\\,P(\\omega_i)=\\sum_{i=1}^{C}P(\\mathbf{x}\\notin\\Re_i|\\omega_i)\\,P(\\omega_i)",
         "P(err|\\omega_i)=1-\\int_{\\Re_i}p(x|\\omega_i)\\,dx",
-        "P_c=1-\\mathrm{P_e}"
+        "\\text{soglia }5:\\;\\mathrm{P_e}=0.7\\cdot0.202+0.3\\cdot0.048=0.156,\\qquad P_c=0.844"
       ],
-      "challenge": "Usando solo le maniglie, porta P_e sotto il 10%; poi prova a scendere ancora aggiungendo intervalli.",
+      "challenge": "Con P(salmone) = 0.7 porta P_e sotto il 10% usando una sola maniglia (serve una soglia tra ≈ 5.61 e ≈ 6.22; il minimo è 0.0936 a x ≈ 5.91); poi prova a scendere sotto 0.0936 aggiungendo intervalli: è impossibile.",
       "size": "M",
       "tech": "svg+motion"
     },
@@ -1224,21 +1472,27 @@
       "title": "Caccia all'errore minimo: perché il MAP vince sempre",
       "concepts": ["c14", "c30", "c33", "c34"],
       "scenario": "medicina",
-      "realExample": "Screening della fibrillazione atriale da smartwatch: uno score di irregolarità del battito; si cerca la soglia che minimizza la probabilità media di errore quando falsi allarmi e mancate diagnosi contano uguale. Dati sintetici.",
+      "realExample": "Screening della fibrillazione atriale da smartwatch: un indice di irregolarità degli intervalli RR tra 0 e 1, ritmo sinusale ω_1 ~ N(0.30, 0.10²), fibrillazione ω_2 ~ N(0.60, 0.10²), prevalenza 20% (dati sintetici). Si cerca la soglia che minimizza la probabilità media di errore quando falsi allarmi e mancate diagnosi contano uguale.",
       "storyboard": [
-        "In alto le due curve pesate P(ω_i)p(x|ω_i) con la soglia trascinabile e le aree d'errore colorate; in basso il grafico P_e(soglia) che si traccia punto per punto mentre si trascina.",
-        "Il triangolo 'errore riducibile' (area tra le curve pesate, fra la soglia corrente e il loro incrocio) lampeggia in giallo e si restringe fino a sparire quando la soglia raggiunge l'incrocio.",
-        "Pulsante 'Mostra MAP': la soglia vola sull'incrocio (spring 250 ms); nel grafico in basso compare il minimo con l'etichetta 'errore di Bayes P_e*' e una linea orizzontale tratteggiata sotto cui nessuna soglia scende.",
-        "Modalità 'regioni libere': lo studente può disegnare regioni fatte a pezzi; il contatore conferma che anche così P_e non scende sotto P_e*."
+        "In alto le curve pesate P(ω_i)p(x|ω_i) (blu ritmo sinusale, arancio fibrillazione) con la soglia trascinabile (a destra 'fibrillazione'); aree di mancata diagnosi e di falso allarme in rosso. In basso il grafico P_e(soglia) si traccia punto per punto mentre si trascina (i punti già visitati restano).",
+        "Il triangolo 'errore riducibile', l'area tra le due curve pesate compresa tra la soglia corrente e il loro incrocio, lampeggia in giallo (opacità da 0.4 a 0.8, periodo 1 s) e si restringe fino a sparire quando la soglia raggiunge l'incrocio.",
+        "Pulsante 'Mostra MAP': la soglia vola all'incrocio x* = 0.496 (spring di circa 250 ms); nel grafico in basso compare il minimo con l'etichetta 'errore di Bayes P_e* = 0.050' e una linea orizzontale tratteggiata sotto cui nessuna soglia scende; accanto la soglia ML (0.45) con P_e = 0.067.",
+        "Modalità 'regioni libere': lo studente dipinge sull'asse regioni fatte a pezzi; il contatore conferma che P_e non scende mai sotto P_e*, e ogni pezzo assegnato alla classe 'sbagliata' mostra la sua area riducibile in giallo."
       ],
-      "interactions": ["trascinamento della soglia", "pulsante 'Mostra MAP'", "modalità regioni libere", "slider della prevalenza"],
-      "visual": "Curve pesate blu e arancio, aree d'errore in rosso, triangolo riducibile in giallo, grafico P_e(soglia) con minimo marcato; valori numerici di P_e e P_e* a tre decimali.",
+      "interactions": [
+        "trascinamento della soglia da 0 a 1 (passo 0.001)",
+        "pulsante 'Mostra MAP'",
+        "modalità regioni libere (pennello su intervalli di 0.01)",
+        "slider della prevalenza della fibrillazione da 1% a 50% (default 20%)"
+      ],
+      "visual": "Curve pesate blu e arancio, aree d'errore in rosso, triangolo riducibile in giallo, grafico P_e(soglia) con il minimo marcato; valori di P_e e P_e* a tre decimali; formula della soglia MAP con i numeri sostituiti.",
       "aha": "Il MAP è il criterio a errore minimo: nel punto di incrocio delle curve pesate non resta area riducibile, e nessun classificatore può fare meglio con le stesse pdf e gli stessi prior.",
       "formulasShown": [
         "\\mathrm{P_e}=P(\\omega_1)\\int_{\\Re_2}p(x|\\omega_1)\\,dx+P(\\omega_2)\\int_{\\Re_1}p(x|\\omega_2)\\,dx",
-        "\\mathrm{P_e^{*}}=\\int\\min\\big[P(\\omega_1)p(x|\\omega_1),P(\\omega_2)p(x|\\omega_2)\\big]\\,dx"
+        "\\mathrm{P_e^{*}}=\\int\\min\\big[P(\\omega_1)\\,p(x|\\omega_1),\\,P(\\omega_2)\\,p(x|\\omega_2)\\big]\\,dx=0.050",
+        "x^{*}=0.45+\\dfrac{0.1^2}{0.3}\\ln\\dfrac{0.8}{0.2}=0.496"
       ],
-      "challenge": "Posiziona a occhio la soglia ottima prima di premere 'Mostra MAP'; il punteggio è la distanza da P_e*.",
+      "challenge": "Posiziona a occhio la soglia ottima prima di premere 'Mostra MAP'; il punteggio è P_e(soglia) − P_e* (sotto 0.001 è perfetto). Poi porta la prevalenza al 5% e prevedi dove andrà la soglia (risposta: 0.548, P_e* = 0.021).",
       "size": "M",
       "tech": "svg+motion"
     },
@@ -1247,18 +1501,27 @@
       "title": "L'errore email per email: P(err|x) nel filtro antispam",
       "concepts": ["c32", "c51"],
       "scenario": "spam",
-      "realExample": "Filtro antispam: x è la frazione di parole sospette in un'email; P(spam|x) e P(ham|x) sono complementari. L'errore commesso su una singola email con score x è la posterior della classe non scelta; l'errore medio è la loro media pesata su tutte le email. Dati sintetici.",
+      "realExample": "Filtro antispam: x è la frazione di parole sospette in un'email (tra 0 e 1), con p(x|spam) = Beta(6, 3), p(x|ham) = Beta(2, 7) e 40% di spam (dati sintetici). P(spam|x) e P(ham|x) sono complementari; l'errore commesso su una singola email con score x è la posterior della classe non scelta, e l'errore medio è la loro media pesata su tutte le email.",
       "storyboard": [
-        "Due curve posterior complementari (spam rosso, ham verde), simmetriche rispetto alla retta 0.5; una barra impilata che scorre con x mostra che sommano sempre a 1.",
-        "Un cursore x: accanto compare la barra dell'errore condizionato P(err|x) = 1 − posterior della classe scelta; con il MAP è sempre la barra più corta, al massimo 0.5.",
-        "Interruttore 'regola sbagliata' (dice sempre spam): P(err|x) diventa P(ham|x) e cresce dove l'ham domina.",
-        "Sweep automatico da sinistra a destra: si integra P(err|x)p(x) (area che si riempie sotto una curva) e un contatore accumula P_e; alla fine confronto MAP contro regola sbagliata."
+        "Due curve posterior complementari (spam rosso, ham verde) che si specchiano rispetto alla retta tratteggiata 0.5; una barra impilata verticale segue il cursore e mostra che sommano sempre a 1.",
+        "Cursore x (per esempio x = 0.5: P(spam|x) = 0.667, P(ham|x) = 0.333): accanto la barra grigio scuro dell'errore condizionato P(err|x) = 1 − posterior della classe scelta; con il MAP è la più corta delle due e non supera 0.5, valore raggiunto proprio sulla frontiera x ≈ 0.457.",
+        "Interruttore 'regola sbagliata' (dice sempre spam): la barra dell'errore diventa P(ham|x) e cresce fino a quasi 1 dove l'ham domina (transizione 300 ms).",
+        "Play dello sweep (3 s): il cursore scorre da 0 a 1 e nel pannello inferiore l'area sotto P(err|x)p(x) si riempie; un contatore accumula l'integrale: MAP ≈ 0.073, regola 'sempre spam' = 0.60."
       ],
-      "interactions": ["cursore x", "interruttore 'regola sbagliata'", "pulsante Play dello sweep"],
-      "visual": "Posterior in rosso e verde, barra dell'errore puntuale in grigio scuro, pannello inferiore con P(err|x)p(x) che si riempie e il valore cumulato di P_e.",
+      "interactions": [
+        "cursore x da 0 a 1 (passo 0.005)",
+        "slider P(spam) da 0.05 a 0.95 (default 0.4)",
+        "interruttore 'regola sbagliata'",
+        "pulsante Play/Pausa dello sweep"
+      ],
+      "visual": "Posterior in rosso e verde, barra dell'errore puntuale in grigio scuro, pannello inferiore con p(x) in grigio chiaro e P(err|x)p(x) che si riempie; valore cumulato di P_e.",
       "aha": "Il MAP minimizza l'errore in ogni singolo punto, e quindi anche la media: P_e è l'integrale degli errori puntuali pesati da p(x).",
-      "formulasShown": ["P(err|x)=1-\\max_i P(\\omega_i|x)", "\\mathrm{P_e}=\\int P(err|x)\\,p(x)\\,dx", "P(\\omega_1|x)+P(\\omega_2|x)=1"],
-      "challenge": "In quale x l'errore puntuale del MAP è massimo e quanto vale al più con due classi?",
+      "formulasShown": [
+        "P(err|x)=1-\\max_i P(\\omega_i|x)",
+        "\\mathrm{P_e}=\\int P(err|x)\\,p(x)\\,dx",
+        "x=0.5:\\;P(err|x)=1-0.667=0.333,\\qquad P(\\omega_1|x)+P(\\omega_2|x)=1"
+      ],
+      "challenge": "In quale x l'errore puntuale del MAP è massimo e quanto vale al più con due classi? (sulla frontiera, 0.5) E con C classi? (al più 1 − 1/C)",
       "size": "S",
       "tech": "svg+motion"
     },
@@ -1267,17 +1530,27 @@
       "title": "Quale classe ha generato questo pixel? La regola ML",
       "concepts": ["c35", "c36", "c39", "c40"],
       "scenario": "telerilevamento",
-      "realExample": "Classificazione di pixel iperspettrali con la riflettanza nel vicino infrarosso: le pdf di acqua, vegetazione e urbano sono stimate da poligoni di training, ma la quota di territorio coperta da ciascuna classe nella nuova scena è ignota. Il criterio ML sceglie la classe sotto cui la riflettanza osservata è più verosimile. Dati sintetici.",
+      "realExample": "Classificazione di pixel iperspettrali con la riflettanza nel vicino infrarosso (NIR): le pdf di acqua N(0.04, 0.02²), urbano N(0.20, 0.05²) e vegetazione N(0.40, 0.08²) sono stimate da poligoni di training, ma la quota di territorio coperta da ciascuna classe nella nuova scena è ignota. Il criterio ML sceglie la classe sotto cui la riflettanza osservata è più verosimile. Dati sintetici.",
       "storyboard": [
-        "Tre curve p(x|ω_i) sull'asse della riflettanza NIR; la tessera 'prior' nel pannello è barrata: il ML non li usa.",
-        "Un pixel si trascina: tre segmenti verticali salgono dall'asse alle curve e mostrano le verosimiglianze; il segmento più alto si colora e l'etichetta dice 'la classe che più verosimilmente ha generato x'.",
-        "La striscia delle regioni ML si colora sotto l'asse; una scena 10×10 si classifica pixel per pixel con un'onda da sinistra a destra."
+        "Tre curve p(x|ω_i) sull'asse della riflettanza NIR da 0 a 0.7; la tessera 'prior' nel pannello viene barrata da una linea rossa animata (300 ms): il ML non li usa.",
+        "Un pixel si trascina: tre segmenti verticali salgono (200 ms) dall'asse alle curve e mostrano le verosimiglianze (a x = 0.25: urbano 4.84, vegetazione 0.86, acqua ≈ 0); il segmento più alto si colora e l'etichetta dice 'la classe che più verosimilmente ha generato x'.",
+        "Quando il pixel è vicino a 0.04 compare una nota: la densità dell'acqua vale quasi 20, 'una densità non è una probabilità, può superare 1'.",
+        "La striscia delle regioni ML si colora sotto l'asse (acqua fino a 0.091, urbano fino a 0.286, vegetazione oltre); pulsante 'classifica la scena': una scena sintetica 10×10 si classifica pixel per pixel con un'onda da sinistra a destra (20 ms per colonna)."
       ],
-      "interactions": ["trascinamento del pixel", "pulsante 'classifica la scena'", "hover su una curva per l'etichetta IT/EN"],
-      "visual": "Curve blu (acqua), verde (vegetazione), grigio (urbano); segmenti di verosimiglianza con valori numerici; striscia delle regioni; scena 10×10.",
+      "interactions": [
+        "trascinamento del pixel da 0 a 0.7 (passo 0.001)",
+        "pulsante 'classifica la scena' (seed)",
+        "slider della deviazione standard dell'urbano da 0.02 a 0.10 (le frontiere si ricalcolano)",
+        "hover su una curva per l'etichetta IT/EN"
+      ],
+      "visual": "Curve blu (acqua), grigia (urbano), verde (vegetazione); segmenti di verosimiglianza con valori numerici; striscia delle regioni; scena 10×10; formula della regola con i valori sostituiti.",
       "aha": "Il ML guarda solo quanto il valore x è tipico per ciascuna classe; non chiede quanto la classe sia frequente.",
-      "formulasShown": ["\\mathbf{x}\\in\\omega_j\\Leftrightarrow p(\\mathbf{x}|\\omega_j)\\geq p(\\mathbf{x}|\\omega_i),\\;\\forall i", "\\omega_{ML}=\\arg\\max_i p(\\mathbf{x}|\\omega_i)"],
-      "challenge": "Trova una riflettanza in cui la classe ML ha una densità più bassa di 0.5 ma vince comunque.",
+      "formulasShown": [
+        "\\mathbf{x}\\in\\omega_j\\Leftrightarrow p(\\mathbf{x}|\\omega_j)\\geq p(\\mathbf{x}|\\omega_i),\\;\\forall i=1,2,\\dots,C",
+        "\\omega_{ML}(\\mathbf{x})=\\arg\\max_i p(\\mathbf{x}|\\omega_i)",
+        "x=0.25:\\;p(x|\\omega_{\\text{urb}})=4.84>p(x|\\omega_{\\text{veg}})=0.86>p(x|\\omega_{\\text{acq}})\\approx0"
+      ],
+      "challenge": "Trova una riflettanza in cui la classe ML ha densità minore di 0.5 ma vince comunque (risposta: x ≳ 0.57, coda della vegetazione, per esempio 0.22 a x = 0.60): cosa dice questo sulla confidenza della decisione?",
       "size": "S",
       "tech": "svg+motion"
     },
@@ -1286,18 +1559,27 @@
       "title": "Il filtro che non guarda i prior: ML contro MAP su un flusso di email",
       "concepts": ["c37", "c38", "c42", "c43"],
       "scenario": "spam",
-      "realExample": "Un filtro antispam addestrato con le pdf di un dataset bilanciato va in produzione in un'azienda dove l'80% della posta è spam (o solo il 10%). Il ML non usa i prior e la sua frontiera resta ferma; il MAP la sposta. Si contano gli errori su un flusso di 1000 email sintetiche.",
+      "realExample": "Un filtro antispam con pdf p(x|spam) = Beta(6, 3) e p(x|ham) = Beta(2, 7) sulla frazione di parole sospette va in produzione in un'azienda dove la quota di spam è ignota o diversa dal 50%. Il ML non usa i prior e la sua frontiera resta ferma a x ≈ 0.432; il MAP la sposta. Si contano gli errori su un flusso di 1000 email sintetiche.",
       "storyboard": [
-        "Due pdf p(x|spam) e p(x|ham) e due frontiere: ML (viola, fissa) e MAP (verde, dipende dal prior).",
-        "Slider 'quota reale di spam' dal 5% al 95%: la frontiera MAP scorre, quella ML non si muove.",
-        "Parte il flusso di 1000 email come puntini che attraversano le frontiere; due contatori d'errore (ML e MAP) avanzano. Un grafico P_e(prior) traccia le due curve: quella MAP sta sempre sotto o tocca quella ML, e si toccano al 50%.",
-        "Interruttore 'prior ignoti': il MAP non è calcolabile (si ingrigisce) e il ML resta l'unica regola disponibile; banner con la frase delle note 'useful when only the probability density function is available'."
+        "Pannello delle pdf (rossa spam, verde ham) con due frontiere: ML (viola, fissa a x ≈ 0.432, con un lucchetto) e MAP (verde, dipende dal prior).",
+        "Slider 'quota reale di spam': la frontiera MAP scorre (0.613 al 5%, 0.432 al 50%, 0.267 al 95%) con una transizione di 150 ms, quella ML non si muove.",
+        "Pulsante 'avvia flusso': 1000 email sintetiche con la quota scelta attraversano il pannello come puntini (4 s); due contatori d'errore avanzano; alla fine due barre con l'errore empirico e quello teorico (al 10% di spam: ML 0.076, MAP 0.038).",
+        "Grafico P_e contro prior: curva MAP verde (concava, 0 agli estremi) e curva ML viola, quasi piatta tra 0.073 e 0.077 perché i due errori per classe del ML sono simili (ε_spam ≈ 0.073, ε_ham ≈ 0.077); le due curve si toccano solo al 50%. Il marcatore del prior corrente mostra il distacco numerico.",
+        "Interruttore 'prior ignoti': il MAP si ingrigisce (non è calcolabile) e il ML resta l'unica regola; banner con le frasi delle note 'useful when only the probability density function is available' (p.81) e 'assuming they are equal or unavailable' (p.84)."
       ],
-      "interactions": ["slider della quota di spam", "pulsante 'avvia flusso'", "interruttore 'prior ignoti'"],
-      "visual": "Pannello delle pdf con le due frontiere, flusso animato di puntini rossi e verdi, contatori d'errore, grafico P_e contro prior con due curve (viola ML, verde MAP) e marcatore del prior corrente.",
-      "aha": "Il ML ha lo stesso obiettivo del MAP (errore minimo) ma lo raggiunge solo se i prior sono davvero uguali; quando i prior non sono disponibili è la scelta naturale, ma con classi sbilanciate paga errore in più.",
-      "formulasShown": ["\\mathrm{P_e}(\\text{ML})\\geq\\mathrm{P_e}(\\text{MAP})", "\\mathbf{x}\\in\\omega_j\\Leftrightarrow p(\\mathbf{x}|\\omega_j)\\geq p(\\mathbf{x}|\\omega_i)"],
-      "challenge": "Per quale quota di spam il vantaggio del MAP sul ML è massimo? Prevedi e verifica con lo slider.",
+      "interactions": [
+        "slider della quota di spam da 5% a 95% (passo 1%)",
+        "pulsante 'avvia flusso' (seed)",
+        "interruttore 'prior ignoti'"
+      ],
+      "visual": "Pannello delle pdf con le due frontiere, flusso animato di puntini rossi e verdi, contatori d'errore, grafico P_e contro prior con due curve (viola ML, verde MAP) e marcatore del prior corrente; formula di P_e(ML) con i numeri sostituiti.",
+      "aha": "Il ML ha lo stesso obiettivo dichiarato del MAP (errore minimo) ma lo raggiunge solo se i prior sono davvero uguali; quando i prior non sono disponibili è la scelta naturale, ma con classi sbilanciate paga errore in più.",
+      "formulasShown": [
+        "\\mathbf{x}\\in\\omega_j\\Leftrightarrow p(\\mathbf{x}|\\omega_j)\\geq p(\\mathbf{x}|\\omega_i),\\;\\forall i=1,2,\\dots,C",
+        "\\mathrm{P_e}(\\text{ML})=\\pi\\,\\varepsilon_{\\text{spam}}+(1-\\pi)\\,\\varepsilon_{\\text{ham}}=0.1\\cdot0.0725+0.9\\cdot0.0769=0.0765",
+        "\\mathrm{P_e}(\\text{ML})\\geq\\mathrm{P_e}(\\text{MAP})"
+      ],
+      "challenge": "Per quale quota di spam il vantaggio del MAP sul ML è massimo? Prevedi e verifica con lo slider (risposta: agli estremi, circa 0.053 al 5% e 0.051 al 95%; nullo al 50%).",
       "size": "M",
       "tech": "canvas2d"
     },
@@ -1306,18 +1588,27 @@
       "title": "Prior uguali: quando ML e MAP diventano la stessa regola",
       "concepts": ["c41", "c61"],
       "scenario": "pesce",
-      "realExample": "Un carico con metà salmoni e metà spigole: MAP e ML devono dare la stessa decisione per ogni pesce. Poi si aggiunge l'orata (C = 3) e si verifica di nuovo con prior 1/3. Dati sintetici.",
+      "realExample": "Un carico con metà salmoni e metà spigole (salmone N(4, 1.2²), spigola N(7, 1.2²)): MAP e ML devono dare la stessa decisione per ogni pesce. Poi si aggiunge l'orata N(9.5, 1.2²) (C = 3) e si verifica di nuovo con prior 1/3. Dati sintetici.",
       "storyboard": [
-        "Due strisce di decisione, MAP sopra e ML sotto, e lo slider del prior; quando il prior arriva a 0.5 le strisce si fondono con un effetto a scatto e compare 'ML ≡ MAP'.",
-        "La formula MAP si trasforma: P(ω_i) viene sostituito da 1/C, i due 1/C si cancellano con un'animazione di barratura e resta la regola ML.",
-        "Tabella di confronto che si riempie riga per riga: ipotesi, informazione richiesta, regola, obiettivo, ottimalità, soglia sul rapporto di verosimiglianza, quando coincidono.",
-        "Estensione a C = 3 (compare l'orata): con prior 1/3 ciascuno le strisce coincidono di nuovo; spostando un solo prior si separano."
+        "Due strisce di decisione sull'asse della luminosità, MAP sopra e ML sotto; lo slider del prior parte da 0.7: le frontiere sono diverse (5.91 per il MAP, 5.5 per il ML) e la zona di disaccordo è evidenziata in giallo.",
+        "Portando il prior a 0.5 (scatto magnetico entro ±0.01) la zona gialla si chiude, le strisce si fondono con un effetto a scatto (scale da 1.05 a 1, 200 ms) e compare 'ML ≡ MAP'.",
+        "La formula MAP si trasforma passo per passo (Passo o Play, 600 ms per passo): P(ω_i) diventa 1/C, i due 1/C vengono barrati da una linea animata e resta la regola ML.",
+        "Tabella di confronto che si riempie riga per riga (stagger 150 ms): ipotesi, informazione richiesta, regola, obiettivo dichiarato, ottimalità, soglia sul rapporto di verosimiglianza (P(ω_2)/P(ω_1) contro 1), quando coincidono.",
+        "Pulsante 'aggiungi orata' (C = 3): con prior 1/3 ciascuno le strisce coincidono di nuovo; alzando il prior di una sola classe le strisce si separano nei tratti di confine."
       ],
-      "interactions": ["slider del prior (con scatto magnetico a 1/C)", "pulsante 'aggiungi orata'", "clic sulle righe della tabella per nasconderle e fare il quiz"],
-      "visual": "Due strisce colorate per classe, formula con animazione di semplificazione, tabella a due colonne MAP e ML con righe che entrano in sequenza.",
+      "interactions": [
+        "slider del prior P(salmone) da 0.05 a 0.95 con scatto magnetico a 1/C",
+        "pulsante 'aggiungi/togli orata' (con C = 3 tre slider dei prior vincolati a somma 1)",
+        "Passo/Play della semplificazione",
+        "clic sulle righe della tabella per nasconderle e fare il quiz"
+      ],
+      "visual": "Due strisce colorate per classe con la zona di disaccordo in giallo, formula con animazione di semplificazione, tabella a due colonne MAP e ML con righe che entrano in sequenza.",
       "aha": "Il ML è il MAP con prior uniformi: tutta la differenza tra i due sta nel peso P(ω_i).",
-      "formulasShown": ["\\tfrac{1}{C}\\,p(\\mathbf{x}|\\omega_j)\\geq\\tfrac{1}{C}\\,p(\\mathbf{x}|\\omega_i)\\Leftrightarrow p(\\mathbf{x}|\\omega_j)\\geq p(\\mathbf{x}|\\omega_i)"],
-      "challenge": "Quiz: completa le celle nascoste della tabella di confronto (ipotesi, regola, quando coincidono, quale è ottimo).",
+      "formulasShown": [
+        "\\tfrac{1}{C}\\,p(\\mathbf{x}|\\omega_j)\\geq\\tfrac{1}{C}\\,p(\\mathbf{x}|\\omega_i)\\Leftrightarrow p(\\mathbf{x}|\\omega_j)\\geq p(\\mathbf{x}|\\omega_i)",
+        "x^{*}_{MAP}=5.5+0.48\\,\\ln\\dfrac{0.5}{0.5}=5.5=x^{*}_{ML}"
+      ],
+      "challenge": "Quiz: completa le celle nascoste della tabella di confronto (ipotesi, regola, quando coincidono, quale è ottimo); poi, con C = 3, trova i prior per cui le strisce coincidono (tutti 1/3).",
       "size": "S",
       "tech": "html+motion"
     },
@@ -1326,38 +1617,56 @@
       "title": "L'esempio della slide 14 ricostruito: due specie, una soglia ML",
       "concepts": ["c46", "c47", "c48"],
       "scenario": "pesce",
-      "realExample": "Ricostruzione delle curve della slide 14 lette come luminosità di due specie di pesce (nella letteratura classica questa figura illustra proprio la luminosità del pesce): p(x|ω_1) ≈ 0.251·N(10.70, 0.50²) + 0.749·N(13.00, 0.995²), bimodale (per esempio due popolazioni di salmone), e p(x|ω_2) ≈ 0.904·N(11.41, 0.997²) + 0.096·N(13.30, 0.389²). Parametri ottenuti adattando miscele gaussiane ai valori estratti dal grafico: dati sintetici che riproducono la figura (incrocio ML a x ≈ 12.32).",
+      "realExample": "Ricostruzione delle curve della slide 14 lette come luminosità di due specie di pesce (nella letteratura classica questa figura illustra proprio la luminosità del pesce): p(x|ω_1) ≈ 0.251·N(10.70, 0.50²) + 0.749·N(13.00, 0.995²), bimodale (per esempio due popolazioni di salmone), e p(x|ω_2) ≈ 0.904·N(11.41, 0.997²) + 0.096·N(13.30, 0.389²). Parametri ottenuti adattando miscele gaussiane ai valori estratti dal grafico: dati sintetici che riproducono la figura (incrocio ML a x ≈ 12.33).",
       "storyboard": [
-        "Il grafico della slide si ridisegna: assi con x da 9 a 15 e y fino a 0.4; la curva rossa ω_2 si traccia da sinistra a destra (600 ms), poi la nera ω_1 con le sue due gobbe.",
-        "Etichette di lettura compaiono sui punti chiave: picco di ω_2 ≈ 0.36 a x ≈ 11.4; spalla di ω_2 ≈ 0.175 a x ≈ 13; gobbe di ω_1 ≈ 0.22 a x ≈ 10.8 e ≈ 0.30 a x ≈ 13; minimo locale di ω_1 ≈ 0.15 a x ≈ 11.6.",
-        "Un marcatore x trascinabile: due segmenti verticali confrontano le verosimiglianze; sotto l'asse la striscia ML è rossa (ω_2) fino a x ≈ 12.3 e nera (ω_1) oltre.",
-        "Pulsante 'scomponi': ω_1 si separa nelle due gaussiane della miscela, colorate in due tonalità di grigio, che poi si risommano (anticipazione dei modelli a miscela e dell'EM)."
+        "Il grafico della slide si ridisegna: assi con x da 9 a 15 e y da 0 a 0.4; la curva rossa ω_2 si traccia da sinistra a destra (600 ms, stroke-dashoffset), poi la nera ω_1 con le sue due gobbe (600 ms).",
+        "Etichette di lettura compaiono in sequenza (stagger 200 ms) sui punti chiave: picco di ω_2 ≈ 0.36 a x ≈ 11.4; spalla di ω_2 ≈ 0.175 a x ≈ 13; gobbe di ω_1 ≈ 0.22 a x ≈ 10.8 e ≈ 0.30 a x ≈ 13; minimo locale di ω_1 ≈ 0.15 a x ≈ 11.6; incrocio a x ≈ 12.3 (p ≈ 0.24).",
+        "Un marcatore x trascinabile: due segmenti verticali salgono alle curve con i valori live (a x = 12: p(x|ω_1) = 0.188, p(x|ω_2) = 0.304); il segmento più alto si colora; sotto l'asse la striscia ML è rossa (ω_2) fino a x ≈ 12.33 e nera (ω_1) oltre, e il tratto sotto il marcatore pulsa.",
+        "Pulsante 'scomponi ω_1' (800 ms): la curva nera si separa nelle due gaussiane della miscela, in due tonalità di grigio, che poi si risommano (anticipazione dei modelli a miscela e dell'EM, m10).",
+        "Interruttore 'mostra valori letti dalla slide': sovrappone alla ricostruzione i punti estratti dall'immagine (cerchietti), con uno scarto tipico sotto 0.01."
       ],
-      "interactions": ["trascinamento del marcatore x", "pulsante 'scomponi ω_1'", "interruttore 'mostra valori letti dalla slide'"],
+      "interactions": [
+        "trascinamento del marcatore x da 9 a 15 (passo 0.01)",
+        "pulsante 'scomponi ω_1'",
+        "interruttore 'mostra valori letti dalla slide'"
+      ],
       "visual": "Riproduzione fedele del grafico (nero per ω_1, rosso per ω_2), valori numerici live di p(x|ω_1) e p(x|ω_2), striscia ML, etichette di lettura.",
       "aha": "Il criterio ML taglia l'asse dove le verosimiglianze si incrociano: qui in un solo punto, x ≈ 12.3, anche se ω_1 ha due gobbe.",
-      "formulasShown": ["p(x|\\omega_1)\\;\\gtrless\\;p(x|\\omega_2)"],
-      "challenge": "Prima di trascinare, indica sull'asse dove pensi che il ML cambi decisione (tolleranza ±0.2).",
+      "formulasShown": [
+        "p(x|\\omega_1)\\;\\gtrless\\;p(x|\\omega_2)",
+        "x=12:\\;p(x|\\omega_1)=0.188<p(x|\\omega_2)=0.304\\;\\Rightarrow\\;\\omega_2",
+        "p(x|\\omega_1)\\approx0.251\\,\\mathcal{N}(10.70,\\,0.50^2)+0.749\\,\\mathcal{N}(13.00,\\,0.995^2)"
+      ],
+      "challenge": "Prima di trascinare, indica sull'asse dove pensi che il ML cambi decisione (tolleranza ±0.2; risposta 12.33) e quante volte cambia (una sola, anche se ω_1 ha due gobbe).",
       "size": "M",
       "tech": "svg+motion"
     },
     {
       "id": "m17-esempio-slide-posterior",
       "title": "L'esempio della slide 15: prior 2/3 e 1/3 e le isole di decisione",
-      "concepts": ["c49", "c50", "c52", "c53"],
+      "concepts": ["c49", "c50", "c52", "c53", "c70"],
       "scenario": "pesce",
-      "realExample": "Le stesse curve ricostruite della slide 14 con i prior della slide 15, P(ω_1) = 2/3 e P(ω_2) = 1/3: le posterior calcolate con Bayes riproducono il grafico della slide 15 e le frontiere MAP a x ≈ 9.89, 11.21, 11.82. Nella ricostruzione P_e(MAP) ≈ 0.316. Dati sintetici.",
+      "realExample": "Le stesse curve ricostruite della slide 14 con i prior della slide 15, P(ω_1) = 2/3 e P(ω_2) = 1/3: le posterior calcolate con Bayes riproducono il grafico della slide 15 e le frontiere MAP a x ≈ 9.89, 11.22, 11.83. Nella ricostruzione P_e(MAP) ≈ 0.316. Dati sintetici.",
       "storyboard": [
-        "Dalle verosimiglianze della slide 14: le curve si moltiplicano per 2/3 e 1/3 (si schiacciano o si allungano), poi si normalizzano dividendo per la somma e si trasformano (morphing di 800 ms) nelle curve della slide 15.",
-        "La striscia MAP sotto l'asse si colora: rosso fino a 9.9, nero fino a 11.2, rosso fino a 11.8, nero oltre. Una graffa evidenzia che la regione di ω_2 (e quella di ω_1) è fatta di due pezzi.",
-        "Slider P(ω_1) da 0.05 a 0.95 con il valore della slide (2/3) marcato: le posterior si deformano in tempo reale; l'isola di ω_1 attorno a 10.5 compare sopra ≈ 0.55 e l'isola di ω_2 attorno a 11.5 sparisce sopra ≈ 0.70; a 0.5 resta un'unica frontiera a 12.3.",
-        "Contatore della probabilità d'errore della ricostruzione e numero di frontiere, aggiornati a ogni movimento."
+        "Dalle verosimiglianze della slide 14: le curve si moltiplicano per 2/3 e 1/3 (si allungano o si schiacciano, 400 ms), poi si normalizzano dividendo per la somma e si trasformano (morphing di 800 ms) nelle curve della slide 15.",
+        "La striscia MAP sotto l'asse si colora da sinistra (600 ms): rosso fino a 9.9, nero fino a 11.2, rosso fino a 11.8, nero oltre. Due graffe evidenziano che la regione di ω_2 e quella di ω_1 sono fatte di due pezzi ciascuna.",
+        "Slider P(ω_1) con il valore della slide (2/3) marcato: le posterior si deformano in tempo reale; l'isola di ω_1 attorno a 10.5 compare sopra ≈ 0.55 e l'isola di ω_2 attorno a 11.5 sparisce sopra ≈ 0.70; a 0.5 resta un'unica frontiera a 12.33.",
+        "Contatori della probabilità d'errore della ricostruzione e del numero di frontiere, aggiornati a ogni movimento; un marcatore trascinabile legge le posterior (a x = 12: P(ω_1|x) = 0.553).",
+        "Pannello 'bilancio': tre barre orizzontali con l'errore medio di MAP (0.316), della regola 'sempre ω_1' senza misurare (0.333) e del ML (0.378) ai prior della slide; la barra del ML supera quella della regola banale e lampeggia. Muovendo lo slider le tre barre si aggiornano; a 0.5 MAP e ML si fondono (0.347)."
       ],
-      "interactions": ["slider P(ω_1)", "pulsante 'torna ai valori della slide'", "trascinamento di x con lettura delle posterior"],
-      "visual": "Grafico delle posterior (nero ω_1, rosso ω_2) con la retta 0.5 tratteggiata, striscia MAP con graffe sulle regioni non connesse, contatori di P_e e del numero di frontiere.",
+      "interactions": [
+        "slider P(ω_1) da 0.05 a 0.95 (passo 0.005)",
+        "pulsante 'torna ai valori della slide'",
+        "trascinamento di x da 9 a 15 con lettura delle posterior"
+      ],
+      "visual": "Grafico delle posterior (nero ω_1, rosso ω_2) con la retta 0.5 tratteggiata, striscia MAP con graffe sulle regioni non connesse, contatori di P_e e del numero di frontiere, barre del bilancio.",
       "aha": "I prior cambiano la forma delle posterior e possono creare più frontiere: le regioni di decisione MAP non devono essere intervalli unici.",
-      "formulasShown": ["P(\\omega_1|x)=\\dfrac{2\\,p(x|\\omega_1)}{2\\,p(x|\\omega_1)+p(x|\\omega_2)}", "P(\\omega_1)=\\tfrac{2}{3},\\;P(\\omega_2)=\\tfrac{1}{3}"],
-      "challenge": "Trova il valore di P(ω_1) oltre il quale l'isola di ω_2 intorno a x ≈ 11.5 scompare (risposta nella ricostruzione: ≈ 0.70).",
+      "formulasShown": [
+        "P(\\omega_1|x)=\\dfrac{2\\,p(x|\\omega_1)}{2\\,p(x|\\omega_1)+p(x|\\omega_2)}",
+        "x=12:\\;P(\\omega_1|x)=\\dfrac{2\\cdot0.188}{2\\cdot0.188+0.304}=0.553",
+        "P(\\omega_1)=\\tfrac{2}{3},\\;P(\\omega_2)=\\tfrac{1}{3}"
+      ],
+      "challenge": "Trova il valore di P(ω_1) oltre il quale l'isola di ω_2 intorno a x ≈ 11.5 scompare (risposta nella ricostruzione: ≈ 0.70) e quello sotto il quale scompare l'isola di ω_1 intorno a 10.5 (≈ 0.55).",
       "size": "M",
       "tech": "svg+motion"
     },
@@ -1368,15 +1677,23 @@
       "scenario": "pesce",
       "realExample": "Stesso esempio delle slide 14-15 ricostruito: si confrontano le decisioni dei due criteri pesce per pesce e si osserva dove e perché divergono. Dati sintetici.",
       "storyboard": [
-        "Due strisce sovrapposte (ML sopra, MAP sotto) sotto il grafico delle pdf; le zone di disaccordo, circa (9.9, 11.2) e (11.8, 12.3), lampeggiano in giallo.",
-        "Cliccando in una zona gialla compare un riquadro: 'p(x|ω_1) = 0.19 < p(x|ω_2) = 0.30, ma (2/3)(0.19) = 0.127 > (1/3)(0.30) = 0.10': il prior doppio ribalta un rapporto di verosimiglianza compreso tra 1/2 e 1.",
-        "Pulsante 'vai agli estremi': il marcatore salta a x = 9 e poi a x = 14; le pdf sono quasi nulle o piccole (0.02 e 0.001; 0.17 e 0.03) ma le posterior valgono 0.93 e 0.92. Un'etichetta avverte: 'posterior alta ≠ pesce tipico'.",
-        "Gioco finale: 10 pesci con luminosità casuali; lo studente prevede ML e MAP per ciascuno prima della rivelazione."
+        "Due strisce sovrapposte (ML sopra, MAP sotto) sotto il grafico delle pdf; le zone di disaccordo, circa (9.9, 11.2) e (11.8, 12.3), lampeggiano in giallo (opacità da 0.3 a 0.7, periodo 1.2 s).",
+        "Cliccando in una zona gialla compare (fade 200 ms) un riquadro con i numeri del punto: a x = 12, 'p(x|ω_1) = 0.19 < p(x|ω_2) = 0.30, ma (2/3)(0.19) = 0.127 > (1/3)(0.30) = 0.10': il prior doppio ribalta un rapporto di verosimiglianza compreso tra 1/2 e 1.",
+        "Pulsante 'vai agli estremi': il marcatore salta (400 ms) a x = 9 e poi a x = 14; le pdf sono quasi nulle o piccole (a x = 9: p(x|ω_1) ≈ 0.001, p(x|ω_2) ≈ 0.02; a x = 14: 0.18 e 0.03) ma le posterior valgono 0.93 (ω_2) e 0.92 (ω_1). Un'etichetta avverte: 'posterior alta ≠ pesce tipico'.",
+        "Gioco finale: 10 pesci con luminosità casuali in [9, 15]; per ciascuno lo studente sceglie la classe ML e la classe MAP prima della rivelazione (flip della carta, 300 ms)."
       ],
-      "interactions": ["clic sulle zone di disaccordo", "pulsante 'vai agli estremi'", "gioco di previsione con 10 pesci"],
+      "interactions": [
+        "clic sulle zone di disaccordo",
+        "pulsante 'vai agli estremi'",
+        "trascinamento del marcatore x da 9 a 15",
+        "gioco di previsione con 10 pesci (seed)"
+      ],
       "visual": "Grafico delle pdf con le due strisce, zone gialle, riquadri numerici; nel gioco carte-pesce con due pulsanti ω_1/ω_2 per ciascun criterio e punteggio.",
       "aha": "ML e MAP divergono esattamente dove il prior 2/3 basta a compensare un rapporto di verosimiglianza tra 1/2 e 1. E una posterior vicina a 1 non richiede una verosimiglianza grande, solo molto più grande dell'altra.",
-      "formulasShown": ["\\tfrac{1}{2}<\\dfrac{p(x|\\omega_1)}{p(x|\\omega_2)}<1\\;\\Rightarrow\\;\\text{ML}:\\omega_2,\\;\\text{MAP}:\\omega_1"],
+      "formulasShown": [
+        "\\tfrac{1}{2}<\\dfrac{p(x|\\omega_1)}{p(x|\\omega_2)}<1\\;\\Rightarrow\\;\\text{ML}:\\omega_2,\\;\\text{MAP}:\\omega_1",
+        "x=12:\\;\\tfrac{2}{3}(0.19)\\approx0.127>\\tfrac{1}{3}(0.30)=0.10"
+      ],
       "challenge": "Classifica 10 pesci con entrambi i criteri prima che il widget lo faccia; almeno 18 risposte giuste su 20.",
       "size": "S",
       "tech": "svg+motion"
@@ -1384,22 +1701,30 @@
     {
       "id": "m17-soglia-dei-prior",
       "title": "Come il prior sposta la soglia: rapporto di verosimiglianza e caso gaussiano",
-      "concepts": ["c57", "c58"],
+      "concepts": ["c57", "c58", "c68"],
       "scenario": "pesce",
       "realExample": "Salmone e spigola con luminosità gaussiana: salmone μ_1 = 4, spigola μ_2 = 7, σ = 1.2 (dati sintetici). Il ML mette la soglia a metà (5.5); se il carico è per il 70% salmone il MAP la sposta a ≈ 5.91. Risponde alla domanda d'esame su come i prior cambiano la soglia rispetto al ML.",
       "storyboard": [
-        "Pannello alto: le due gaussiane della luminosità. Pannello basso: il log-rapporto di verosimiglianza ln Λ(x), una retta decrescente perché le varianze sono uguali.",
+        "Pannello alto: le due gaussiane della luminosità. Pannello basso: il log-rapporto di verosimiglianza ln Λ(x), una retta decrescente perché le varianze sono uguali (disegnata in 500 ms).",
         "Una linea orizzontale a quota ln(P(ω_2)/P(ω_1)): con prior uguali sta a 0 e interseca la retta in x = 5.5, il punto medio (soglia ML).",
-        "Slider P(salmone): la linea orizzontale scende o sale, l'intersezione scivola e la soglia x* si sposta anche nel pannello alto; la formula x* = 5.5 + (1.44/3)·ln(P_1/P_2) si aggiorna con i numeri (P_1 = 0.7 → x* ≈ 5.91).",
+        "Slider P(salmone): la linea orizzontale scende o sale, l'intersezione scivola e la soglia x* si sposta anche nel pannello alto (le due linee verticali sono collegate da un tratteggio); la formula x* = 5.5 + (1.44/3)·ln(P_1/P_2) si aggiorna con i numeri (P_1 = 0.7 → x* ≈ 5.91).",
         "Slider σ: con σ grande lo stesso prior sposta la soglia molto di più (termine σ²/(μ_2 − μ_1)); con σ piccolo quasi non la sposta.",
-        "Modalità 'slide 15': le gaussiane vengono sostituite dalle curve ricostruite dell'esempio e la soglia 1/2 sul rapporto produce tre intersezioni, cioè tre frontiere."
+        "Modalità 'slide 15': le gaussiane vengono sostituite dalle curve ricostruite dell'esempio e la soglia 1/2 sul rapporto produce tre intersezioni, cioè tre frontiere.",
+        "Terzo pannello 'sigmoide': in ascissa il log-rapporto ln Λ(x), in ordinata P(ω_1|x) = 1/(1 + e^{−a}); muovendo lo slider del prior la sigmoide trasla di ln(P(ω_1)/P(ω_2)) senza cambiare forma, e il punto dove attraversa 0.5 (frontiera MAP) si stacca dall'origine (frontiera ML). Un pesce trascinabile mostra ln Λ, il log-rapporto dei prior, a e la posterior con i numeri (in modalità slide 15, x = 12: −0.48 + 0.69 = 0.21 → 0.55)."
       ],
-      "interactions": ["slider P(salmone)", "slider σ da 0.5 a 2.5", "slider delle medie", "interruttore 'modalità slide 15'"],
-      "visual": "Pannello delle gaussiane con la soglia ML (viola tratteggiata) e MAP (verde), pannello di ln Λ(x) con la linea della soglia dei prior; formula di x* con i valori sostituiti live.",
+      "interactions": [
+        "slider P(salmone) da 0.05 a 0.95",
+        "slider σ da 0.5 a 2.5",
+        "slider delle medie (μ_1 da 2 a 5, μ_2 da 5.5 a 9)",
+        "interruttore 'modalità slide 15'",
+        "trascinamento del pesce nel pannello della sigmoide"
+      ],
+      "visual": "Pannello delle gaussiane con la soglia ML (viola tratteggiata) e MAP (verde), pannello di ln Λ(x) con la linea della soglia dei prior, pannello della sigmoide; formula di x* con i valori sostituiti live.",
       "aha": "Il prior non cambia le curve: cambia la soglia sul rapporto di verosimiglianza. Il ML confronta Λ(x) con 1, il MAP con P(ω_2)/P(ω_1), e l'effetto è tanto più grande quanto più le classi si sovrappongono.",
       "formulasShown": [
         "\\Lambda(x)=\\dfrac{p(x|\\omega_1)}{p(x|\\omega_2)}\\;\\underset{\\omega_2}{\\overset{\\omega_1}{\\gtrless}}\\;\\dfrac{P(\\omega_2)}{P(\\omega_1)}",
-        "x^{*}=\\dfrac{\\mu_1+\\mu_2}{2}+\\dfrac{\\sigma^2}{\\mu_2-\\mu_1}\\ln\\dfrac{P(\\omega_1)}{P(\\omega_2)}"
+        "x^{*}=\\dfrac{\\mu_1+\\mu_2}{2}+\\dfrac{\\sigma^2}{\\mu_2-\\mu_1}\\ln\\dfrac{P(\\omega_1)}{P(\\omega_2)}=5.5+\\dfrac{1.44}{3}\\ln\\dfrac{0.7}{0.3}\\approx5.91",
+        "P(\\omega_1|x)=\\dfrac{1}{1+\\exp(-a)},\\quad a=\\ln\\Lambda(x)+\\ln\\dfrac{P(\\omega_1)}{P(\\omega_2)}"
       ],
       "challenge": "Con σ = 1.2 trova il prior del salmone che porta la soglia a x = 6.5 (risposta: P(ω_1) ≈ 0.89).",
       "size": "M",
@@ -1410,19 +1735,28 @@
       "title": "MAP sulla carta e MAP stimato: quando il migliore non vince",
       "concepts": ["c45", "c59", "c60"],
       "scenario": "medicina",
-      "realExample": "Diagnosi di COVID-19 da uno score estratto da radiografie del torace: le pdf delle due classi sono stimate (stima ML di media e varianza) da N radiografie di training e la prevalenza dal registro di un solo ospedale. Il MAP teorico è ottimo; quello costruito con stime rumorose o prevalenza sbagliata no. Dati sintetici.",
+      "realExample": "Diagnosi di COVID-19 da uno score estratto da radiografie del torace (tra 0 e 1): negativi N(0.30, 0.10²), positivi N(0.70, 0.10²), prevalenza vera 10% (dati sintetici). Le pdf delle due classi sono stimate (stima ML di media e varianza) da N radiografie di training e la prevalenza dal registro di un altro ospedale. Il MAP vero è ottimo (P_e = 0.012); quello costruito con stime rumorose, un modello sbagliato o una prevalenza sbagliata no; il ML stimato ha P_e = 0.023.",
       "storyboard": [
-        "Tre colonne: 'mondo vero' (pdf e prevalenza vere, frontiera MAP ottima), 'stime' (gaussiane stimate da N campioni e prevalenza stimata), 'decisione' (frontiere del MAP vero, del MAP stimato e del ML stimato).",
-        "Slider N da 10 a 2000: con N piccolo le gaussiane stimate 'ballano' a ogni ricampionamento animato e la frontiera del MAP stimato si allontana da quella vera; la barra della sua P_e reale resta sopra la linea dell'errore di Bayes.",
-        "Slider 'prevalenza stimata' separato da quella vera (per esempio registro al 30%, realtà al 10%): oltre un certo errore il MAP stimato fa peggio del ML e le barre di P_e si scambiano di posto.",
-        "Due etichette distinte: 'stima ML (dei parametri)' sulla colonna delle stime e 'criterio ML (di classificazione)' sulla colonna delle decisioni, con una freccia che mostra la cascata stima → classificazione.",
-        "Verdetto finale in tre righe: pdf e prior affidabili → MAP; prior ignoti o inaffidabili → ML; errori con costi diversi → rischio minimo (m18)."
+        "Tre colonne: 'mondo vero' (pdf e prevalenza vere, frontiera MAP ottima a 0.555), 'stime' (gaussiane stimate da N campioni e prevalenza stimata), 'decisione' (frontiere del MAP vero, del MAP stimato e del ML stimato, con le barre della loro P_e reale).",
+        "Slider N: con N piccolo le gaussiane stimate 'ballano' a ogni ricampionamento (animazione di 300 ms tra un campione e l'altro) e la frontiera del MAP stimato si allontana da quella vera; la sua P_e reale resta sopra la linea dell'errore di Bayes 0.012.",
+        "Slider 'prevalenza stimata' (registro) separato da quella vera: con 30% la frontiera stimata va a 0.521 e P_e = 0.016, ancora meglio del ML; oltre il 50% (o sotto circa 0.7%) il MAP stimato fa peggio del ML e le barre si scambiano di posto con un'animazione di 400 ms.",
+        "Interruttore 'modello sbagliato': i positivi reali diventano bimodali ma si continua a stimare una sola gaussiana; la frontiera stimata si sposta e compare l'etichetta 'errore di approssimazione'.",
+        "Due etichette distinte: 'stima ML (dei parametri)' sulla colonna delle stime e 'criterio ML (di classificazione)' sulla colonna delle decisioni, con una freccia che mostra la cascata stima → classificazione. Verdetto finale in tre righe: pdf e prior affidabili → MAP; prior ignoti o inaffidabili → ML; errori con costi diversi → rischio minimo (m18)."
       ],
-      "interactions": ["slider N (campioni di training)", "slider prevalenza vera e prevalenza stimata", "pulsante 'ricampiona'", "interruttore 'modello sbagliato' (una gaussiana su dati bimodali)"],
-      "visual": "Tre colonne con curve vere (linea continua) e stimate (tratteggiate), frontiere colorate, barre di P_e reale per MAP vero, MAP stimato e ML stimato, linea dell'errore di Bayes.",
-      "aha": "Il MAP è il migliore solo sulla carta: con pdf e prior stimati (errore di approssimazione e di stima) o con costi asimmetrici può non essere la scelta giusta.",
-      "formulasShown": ["\\hat{\\theta}_{ML}=\\arg\\max_\\theta p(\\mathcal{X}|\\theta)", "\\hat{\\omega}(\\mathbf{x})=\\arg\\max_i\\hat{P}(\\omega_i)\\,\\hat{p}(\\mathbf{x}|\\omega_i)"],
-      "challenge": "Con N = 2000 trova l'errore di prevalenza minimo per cui il ML batte il MAP stimato.",
+      "interactions": [
+        "slider N (campioni di training per classe) da 10 a 2000, scala logaritmica",
+        "slider prevalenza vera da 1% a 50% e prevalenza stimata da 0.5% a 90%",
+        "pulsante 'ricampiona' (nuovo seed)",
+        "interruttore 'modello sbagliato' (una gaussiana su dati bimodali)"
+      ],
+      "visual": "Tre colonne con curve vere (linea continua) e stimate (tratteggiate), frontiere colorate, barre di P_e reale per MAP vero, MAP stimato e ML stimato, linea dell'errore di Bayes; formula della regola plug-in con le stime numeriche.",
+      "aha": "Il MAP è il migliore solo sulla carta: con pdf e prior stimati (errore di approssimazione e di stima) o con costi asimmetrici può non essere la scelta giusta. Un prior sbagliato di poco però non basta a farlo perdere contro il ML.",
+      "formulasShown": [
+        "\\hat{\\theta}_{ML}=\\arg\\max_{\\theta}p(\\mathcal{X}|\\theta)",
+        "\\hat{\\omega}(\\mathbf{x})=\\arg\\max_i\\hat{P}(\\omega_i)\\,\\hat{p}(\\mathbf{x}|\\omega_i)",
+        "\\hat{x}^{*}=0.5+\\dfrac{0.1^2}{0.4}\\ln\\dfrac{0.70}{0.30}=0.521"
+      ],
+      "challenge": "Con N = 2000 (stime quasi esatte) e prevalenza vera 10%, trova per quali prevalenze stimate il ML batte il MAP stimato (risposta: sopra il 50% o sotto circa 0.7%).",
       "size": "L",
       "tech": "canvas2d"
     },
@@ -1431,18 +1765,26 @@
       "title": "Tutti gli errori costano uguale? Dal MAP al rischio minimo",
       "concepts": ["c62", "c63", "c64", "c65"],
       "scenario": "medicina",
-      "realExample": "Pronto soccorso: 'infarto' o 'dolore non cardiaco' dal livello di troponina. Mandare a casa un infarto è molto più grave che ricoverare un paziente sano; MAP e ML trattano i due errori come uguali, la teoria del rischio minimo li distingue (anteprima di m18). Dati sintetici.",
+      "realExample": "Pronto soccorso: 'dolore non cardiaco' (ω_1) o 'infarto' (ω_2) dal livello di troponina (ng/L), con non cardiaco N(15, 8²), infarto N(40, 8²) e prevalenza dell'infarto 20% (dati sintetici). Mandare a casa un infarto è molto più grave che ricoverare un paziente sano; MAP e ML trattano i due errori come uguali, la teoria del rischio minimo li distingue (anteprima di m18).",
       "storyboard": [
-        "Posterior complementari dei due esiti e frontiera MAP; sotto due icone d'errore (falso negativo: paziente mandato a casa; falso positivo: ricovero inutile) con lo stesso peso '1'.",
-        "Slider 'costo del falso negativo' da 1 a 100: la frontiera si sposta verso valori più bassi di troponina e la regione 'ricovera' si allarga; il numero di pazienti ricoverati su 1000 si aggiorna.",
-        "Una matrice 2×2 azioni × classi vere si colora: il costo dipende dalla classe vera e non solo dall'azione (frase delle note p.84).",
-        "Riportando i costi a 1 la frontiera torna esattamente su quella MAP (animazione di ritorno) e compare l'albero della slide 10 con il percorso Minimum Risk → MAP evidenziato."
+        "Posterior complementari dei due esiti e frontiera MAP a 31.0 ng/L; sotto due icone d'errore (falso negativo: paziente mandato a casa; falso positivo: ricovero inutile) con lo stesso peso '1'.",
+        "Slider 'costo del falso negativo' λ_FN: la frontiera si sposta verso valori più bassi di troponina (transizione 200 ms) e la regione 'ricovera' si allarga; su 1000 pazienti sintetici si aggiornano i contatori di ricoverati, falsi negativi e falsi positivi.",
+        "Una matrice 2×2 azioni × classi vere si colora (celle con intensità proporzionale al costo): il costo dipende dalla classe vera, non solo dall'azione (note p.84: 'the cost of an action depends on the true class').",
+        "Pulsante 'costi uguali': i costi tornano a 1 e la frontiera rientra esattamente su quella MAP (animazione di ritorno, 500 ms); compare l'albero della slide 10 con il percorso Minimum Risk → MAP evidenziato."
       ],
-      "interactions": ["slider del costo del falso negativo", "slider del costo del falso positivo", "pulsante 'costi uguali'"],
-      "visual": "Posterior con frontiera, icone d'errore con pesi, matrice dei costi 2×2, mini-albero dei criteri; contatori di falsi negativi e falsi positivi su 1000 pazienti sintetici.",
+      "interactions": [
+        "slider del costo del falso negativo λ_FN da 1 a 100 (scala logaritmica)",
+        "slider del costo del falso positivo λ_FP da 1 a 10",
+        "pulsante 'costi uguali'",
+        "slider della prevalenza dell'infarto da 5% a 50%"
+      ],
+      "visual": "Posterior con frontiera, icone d'errore con pesi, matrice dei costi 2×2, mini-albero dei criteri; contatori di falsi negativi e falsi positivi su 1000 pazienti sintetici; formula della soglia con i numeri sostituiti.",
       "aha": "MAP e ML minimizzano quante volte si sbaglia, non quanto costa sbagliare. Quando gli errori hanno gravità diverse serve il rischio minimo, che contiene MAP e ML come casi particolari.",
-      "formulasShown": ["\\lambda_{12}=\\lambda_{21}\\;\\Rightarrow\\;\\text{rischio minimo}\\equiv\\text{MAP}"],
-      "challenge": "Trova il costo del falso negativo per cui la frontiera si sposta di 10 ng/L rispetto al MAP.",
+      "formulasShown": [
+        "\\lambda_{FN}=\\lambda_{FP}\\;\\Rightarrow\\;\\text{rischio minimo}\\equiv\\text{MAP}",
+        "x^{*}=27.5+\\dfrac{8^2}{25}\\ln\\dfrac{\\lambda_{FP}\\cdot0.8}{\\lambda_{FN}\\cdot0.2}\\qquad(\\lambda_{FN}=\\lambda_{FP}:\\;x^{*}=31.0\\text{ ng/L})"
+      ],
+      "challenge": "Con λ_FP = 1 trova il costo del falso negativo per cui la frontiera si sposta di 10 ng/L rispetto al MAP (risposta: λ_FN ≈ 50).",
       "size": "M",
       "tech": "svg+motion"
     },
@@ -1451,23 +1793,59 @@
       "title": "La matrice dei costi dell'allarme antincendio e il caso 0-1",
       "concepts": ["c66", "c67"],
       "scenario": "incendio",
-      "realExample": "Allarme antincendio: classi ω_1 = fuoco e ω_2 = niente fuoco; azioni α_1 = chiamare i vigili del fuoco e α_2 = non chiamarli. La matrice Λ (R × C = 2 × 2) raccoglie i costi λ(α_i|ω_j); con costi 0-1 la scelta a rischio minimo coincide con il MAP. Dati sintetici; l'esempio completo con i costi 10^3 € e 10^6 € è nel modulo m18.",
+      "realExample": "Allarme antincendio: classi ω_1 = fuoco e ω_2 = niente fuoco; azioni α_1 = chiamare i vigili del fuoco e α_2 = non chiamarli. Lettura del sensore di fumo x tra 0 e 10, con p(x|fuoco) = N(6, 1.5²), p(x|niente fuoco) = N(2, 1²) e P(fuoco) = 0.02 (dati sintetici). La matrice Λ (R × C = 2 × 2) raccoglie i costi λ(α_i|ω_j); con costi 0-1 la scelta a rischio minimo coincide con il MAP. L'esempio completo con i costi del corso è nel modulo m18.",
       "storyboard": [
         "Una griglia 2×2 con righe = azioni α_i e colonne = classi ω_j; ogni cella editabile mostra λ_ij = λ(α_i|ω_j).",
-        "Un sensore di fumo dà una lettura x; accanto le barre delle posterior P(fuoco|x) e P(no fuoco|x).",
-        "Pulsante 'costi 0-1': diagonale a 0, fuori diagonale a 1. Per ciascuna azione il rischio condizionale si calcola come riga × posterior (animazione dei prodotti che scivolano nella somma) e vale 1 − P(ω_i|x): la barra di rischio più bassa corrisponde alla posterior più alta, cioè al MAP.",
-        "Modificando una cella (mancata chiamata con fuoco = 10^6 €) le decisioni del rischio minimo e del MAP divergono; il widget segnala la differenza e rimanda a m18."
+        "Slider della lettura del sensore: accanto le barre delle posterior P(fuoco|x) e P(niente fuoco|x) (a x = 5: 0.495 e 0.505).",
+        "Pulsante 'costi 0-1': diagonale a 0, fuori diagonale a 1 (le celle si ricolorano, 200 ms). Per ciascuna azione il rischio condizionale si calcola come riga × posterior: i prodotti scivolano nella somma (400 ms) e il risultato vale 1 − P(ω_i|x); la barra di rischio più bassa corrisponde alla posterior più alta, cioè al MAP.",
+        "Modificando una cella (per esempio mancata chiamata con fuoco λ(α_2|ω_1) = 100) le decisioni del rischio minimo e del MAP divergono su un intervallo di letture che si colora in giallo; il widget segnala 'rischio minimo ≠ MAP' e rimanda a m18."
       ],
-      "interactions": ["modifica delle celle della matrice", "pulsante 'costi 0-1'", "slider della lettura del sensore"],
-      "visual": "Matrice con celle colorate per costo (scala logaritmica), barre delle posterior, barre dei rischi condizionali con la più bassa evidenziata, etichetta 'MAP' o 'rischio minimo ≠ MAP'.",
+      "interactions": [
+        "modifica delle quattro celle della matrice (valori da 0 a 1000, scala logaritmica)",
+        "pulsante 'costi 0-1'",
+        "slider della lettura del sensore x da 0 a 10 (passo 0.05)",
+        "slider di P(fuoco) da 0.005 a 0.5"
+      ],
+      "visual": "Matrice con celle colorate per costo (scala logaritmica), barre delle posterior, barre dei rischi condizionali con la più bassa evidenziata, etichetta 'MAP' o 'rischio minimo ≠ MAP'; formula del rischio con i numeri sostituiti.",
       "aha": "Con costi 0-1 il rischio minimo è esattamente il MAP; la matrice dei costi è l'informazione che MAP e ML non usano.",
       "formulasShown": [
         "\\Lambda=\\begin{pmatrix}\\lambda(\\alpha_1|\\omega_1) & \\lambda(\\alpha_1|\\omega_2)\\\\ \\lambda(\\alpha_2|\\omega_1) & \\lambda(\\alpha_2|\\omega_2)\\end{pmatrix}",
-        "R(\\alpha_i|\\mathbf{x})=\\sum_{j}\\lambda(\\alpha_i|\\omega_j)\\,P(\\omega_j|\\mathbf{x})=1-P(\\omega_i|\\mathbf{x})"
+        "R(\\alpha_i|\\mathbf{x})=\\sum_{j=1}^{C}\\lambda(\\alpha_i|\\omega_j)\\,P(\\omega_j|\\mathbf{x})=1-P(\\omega_i|\\mathbf{x})",
+        "x=5:\\;R(\\alpha_1|x)=0\\cdot0.495+1\\cdot0.505=0.505,\\quad R(\\alpha_2|x)=1\\cdot0.495+0\\cdot0.505=0.495"
       ],
-      "challenge": "Imposta una matrice in cui l'azione scelta è 'chiama i vigili' anche con P(fuoco|x) = 0.01.",
+      "challenge": "Con diagonale a 0 e λ(α_1|ω_2) = 1, imposta λ(α_2|ω_1) in modo che l'azione scelta sia 'chiama i vigili' anche con P(fuoco|x) = 0.01 (risposta: λ(α_2|ω_1) > 99).",
       "size": "S",
       "tech": "html+motion"
+    },
+    {
+      "id": "m17-chi-paga-l-errore",
+      "title": "Chi paga l'errore minimo? Errori per classe del MAP con classi sbilanciate",
+      "concepts": ["c71", "c28", "c30"],
+      "scenario": "medicina",
+      "realExample": "Screening di una cardiopatia da un indice standardizzato estratto dall'ECG: sani N(0, 1), malati N(2, 1), prevalenza della malattia 30% (dati sintetici). Il MAP minimizza la probabilità media di errore, ma lo fa sacrificando la classe rara: molti malati vengono dichiarati sani. Si confrontano gli errori per classe di MAP e ML su 1000 pazienti sintetici e, in modalità 'slide 15', sulla ricostruzione dell'esempio del corso (prior 2/3 e 1/3: MAP 11% di errori su ω_1 e 73% su ω_2).",
+      "storyboard": [
+        "In alto le due pdf dell'indice (sani in blu, malati in arancio) con le frontiere MAP (verde, 1.42 al 30%) e ML (viola, 1.0).",
+        "Pulsante 'lancia 1000 pazienti' (3 s): puntini che cadono nelle due regioni; sotto si riempie una matrice di confusione 2×2 per ciascun criterio, con le celle degli errori in rosso.",
+        "Tre barre per criterio: errore sui sani, errore sui malati ed errore medio P_e. Al 30%: MAP 0.077, 0.282 e 0.139; ML 0.159, 0.159 e 0.159. La P_e del MAP è la più bassa, ma la sua barra 'errore sui malati' è molto più alta.",
+        "Abbassando la prevalenza (transizione della frontiera 200 ms) la frontiera MAP scivola verso la regione dei malati: al 5% P_e scende a 0.041 mentre i malati mancati salgono al 68%; compare il cartello 'errore medio minimo ≠ errore minimo su ogni classe'.",
+        "Pulsante 'modalità slide 15': le pdf diventano quelle ricostruite dell'esempio del corso e le barre mostrano 0.11 e 0.73 (MAP) contro 0.44 e 0.26 (ML); un rimando porta a Neyman-Pearson ('suitable for unbalanced class distributions', widget m17-neyman-pearson-frodi) e al rischio minimo."
+      ],
+      "interactions": [
+        "slider della prevalenza da 1% a 50% (default 30%)",
+        "pulsante 'lancia 1000 pazienti' (seed)",
+        "pulsante 'modalità slide 15'",
+        "interruttore 'mostra ML'"
+      ],
+      "visual": "Pdf con frontiere colorate, pioggia di puntini, due matrici di confusione affiancate con conteggi, barre degli errori per classe e dell'errore medio con valori a due decimali; formula di P_e con i numeri sostituiti.",
+      "aha": "Il MAP ottimizza una media pesata dai prior: con classi sbilanciate può sbagliare quasi sempre sulla classe rara e restare comunque 'ottimo'. Se la classe rara è quella che conta, l'errore medio non è l'obiettivo giusto.",
+      "formulasShown": [
+        "\\mathrm{P_e}=P(\\omega_1)\\,P(err|\\omega_1)+P(\\omega_2)\\,P(err|\\omega_2)",
+        "\\text{MAP, prevalenza 30\\%}:\\;\\mathrm{P_e}=0.7\\cdot0.077+0.3\\cdot0.282=0.139"
+      ],
+      "challenge": "Trova la prevalenza sotto la quale il MAP manca più della metà dei malati (risposta: 1/(1 + e²) ≈ 11.9%, dove la frontiera MAP arriva a 2) e confronta lì la sua P_e con quella del ML (0.080 contro 0.159).",
+      "size": "M",
+      "tech": "canvas2d",
+      "addedBy": "revisore"
     }
   ],
   "exercises": [
@@ -1481,14 +1859,16 @@
     {"id": "es08", "title": "Scegliere il criterio giusto", "type": "concettuale", "description": "Per ciascuno scenario (screening con prevalenza nota ed errori equivalenti; prevalenza ignota; falsi positivi al massimo 5%; costi degli errori noti e asimmetrici; solo pdf disponibili) dire quale nodo dell'albero della slide 10 si applica e perché, citando le ipotesi di ciascun criterio.", "concepts": ["c06", "c07", "c09", "c10", "c11"]},
     {"id": "es09", "title": "Perché il MAP potrebbe non essere il migliore", "type": "concettuale", "description": "Rispondere alla domanda d'esame: 'At the end of the day is better MAP or ML and why? Why MAP could not be the best one?'. La risposta deve citare l'ipotesi della slide 9 (probabilità note), l'errore di approssimazione (modello sbagliato per le pdf), l'errore di stima (pochi campioni, prior stimati male) e l'assunzione di costi uguali (note p.84).", "concepts": ["c59", "c60", "c62"]},
     {"id": "es10", "title": "Costi 0-1 e rischio condizionale", "type": "numerico", "description": "Date le posterior di C classi in un punto x e la matrice dei costi 0-1, calcolare i rischi condizionali R(α_i|x) = Σ_j λ(α_i|ω_j)P(ω_j|x) e verificare che valgono 1 − P(ω_i|x) e che il minimo corrisponde alla classe MAP. Poi alzare un costo fuori diagonale (per esempio 10) e mostrare un caso in cui la decisione a rischio minimo diverge dal MAP. Randomizzare le posterior su un simplesso.", "concepts": ["c66", "c67", "c62"]},
-    {"id": "es11", "title": "Bayes con la regola 'solo prior'", "type": "numerico", "description": "Con prior P(ω_1) = p e nessuna misura, qual è la regola migliore e quale errore commette? Confrontare con l'errore del MAP quando si misura una feature gaussiana (es03) e commentare il caso p = 0.5. Randomizzare p in [0.05, 0.95].", "concepts": ["c04", "c18"]}
+    {"id": "es11", "title": "Bayes con la regola 'solo prior'", "type": "numerico", "description": "Con prior P(ω_1) = p e nessuna misura, qual è la regola migliore e quale errore commette? Confrontare con l'errore del MAP quando si misura una feature gaussiana (es03) e commentare il caso p = 0.5. Randomizzare p in [0.05, 0.95].", "concepts": ["c04", "c18"]},
+    {"id": "es12", "title": "Errore del ML e del MAP al variare del prior", "type": "numerico", "description": "Due classi gaussiane 1-D con medie μ_1 < μ_2 e stessa σ. (a) Calcolare gli errori per classe della regola ML (soglia (μ_1 + μ_2)/2): ε_1 = 1 − Φ((μ_2 − μ_1)/(2σ)) = ε_2. (b) Scrivere P_e(ML)(π) = πε_1 + (1 − π)ε_2 e osservare che è costante (retta orizzontale) perché ε_1 = ε_2: in questo caso simmetrico il ML è anche la regola minimax. (c) Per π in {0.1, 0.3, 0.5, 0.7, 0.9} calcolare la soglia MAP (c58) e P_e*(π) = π[1 − Φ((x* − μ_1)/σ)] + (1 − π)Φ((x* − μ_2)/σ), verificare P_e* ≤ P_e(ML) con uguaglianza a 0.5 e disegnare la curva concava. (d) Per π = 0.9 calcolare anche gli errori per classe del MAP e commentare quale classe paga. Randomizzare μ_1 in [2, 5], μ_2 − μ_1 in [1, 4], σ in [0.5, 2].", "concepts": ["c69", "c43", "c71"], "addedBy": "revisore"},
+    {"id": "es13", "title": "Posterior come sigmoide del log-rapporto", "type": "numerico", "description": "Date p(x|ω_1), p(x|ω_2) in un punto e i prior, calcolare ln Λ(x), ln(P(ω_1)/P(ω_2)), il log-odds a = ln Λ + ln(P(ω_1)/P(ω_2)) e la posterior P(ω_1|x) = 1/(1 + e^{−a}); verificare che coincide con la formula di Bayes e dire le decisioni ML (segno di ln Λ) e MAP (segno di a). Caso di controllo dalla ricostruzione delle slide 14-15: x = 12, p(x|ω_1) ≈ 0.188, p(x|ω_2) ≈ 0.304, prior 2/3 e 1/3 → ln Λ ≈ −0.48, a ≈ 0.21, P(ω_1|x) ≈ 0.55 (ML ω_2, MAP ω_1). Randomizzare le verosimiglianze in [0.02, 0.4] e P(ω_1) in [0.05, 0.95].", "concepts": ["c68", "c57"], "addedBy": "revisore"}
   ],
   "examQuestions": [
-    {"text": "MAP criterion: comparison and main differences between ML. Example of how priors change the threshold compared to ML criterion. Proof of MAP as error minimization. At the end of the day is better MAP or ML and why? Why MAP could not be the best one? (Linked to approximation error)", "prof": "Melgani", "concepts": ["c14", "c21", "c24", "c28", "c33", "c34", "c39", "c41", "c43", "c54", "c57", "c58", "c59", "c60", "c61"]},
-    {"text": "How does the Minimum risk criterium work, comparison with MAP and ML classification. Which is the best one (minimum risk). He also asked me the formula of the Gaussian curve in a multi dimensional space (with mean vector and covariance matrix).", "prof": "Melgani", "concepts": ["c08", "c59", "c61", "c62", "c63"]},
+    {"text": "MAP criterion: comparison and main differences between ML. Example of how priors change the threshold compared to ML criterion. Proof of MAP as error minimization. At the end of the day is better MAP or ML and why? Why MAP could not be the best one? (Linked to approximation error)", "prof": "Melgani", "concepts": ["c14", "c21", "c24", "c28", "c33", "c34", "c39", "c41", "c43", "c54", "c57", "c58", "c59", "c60", "c61", "c68", "c69", "c70", "c71"]},
+    {"text": "How does the Minimum risk criterium work, comparison with MAP and ML classification. Which is the best one (minimum risk). He also asked me the formula of the Gaussian curve in a multi dimensional space (with mean vector and covariance matrix).", "prof": "Melgani", "concepts": ["c08", "c59", "c61", "c62", "c63", "c71"]},
     {"text": "Discuss minimum risk theory (with all formulas of MAP and ML too) + discuss ROC curves", "prof": "Melgani", "concepts": ["c21", "c23", "c24", "c28", "c39", "c63", "c67"]},
     {"text": "(Assistant) “Minimum risk theory: tell me about it.” I explained the general concept and then i drew the table of α1,α2... ω1,ω2... λ(α1|ωi) ecc with the example of the fire and the call to firefighters. He stopped me here and asked me what is, given this table, the rule we use to choose an action (R(α1)><R(α2)  → p(α1|x)/p(α2|x)><...) and to write it passing through the demonstration if i wanted. Then “What happens if the risks are unknown or equal?” (we have the MAP criterion). Then he asked me what is the ROC curve.", "prof": "Assistant", "concepts": ["c62", "c66", "c67", "c57"]},
-    {"text": "Block scheme/Design phases of an ML system, describe all the blocks and phases with examples (in particular at the beginning of data acquisition and feature extraction, which is the best feature in terms of discrimination, cit. of LDA). Then speaking about the selection (cit. of overfitting), the training and the evaluation of the model (cit. of k-fold), we reach the probabilities regarding the binary classifier  (cit. of MAP). At the end, what can we do when the model has low accuracy or in general if a final user wants to reduce the probability of false alarm and the probability of missed alarm?", "prof": "Melgani", "concepts": ["c21", "c24", "c30", "c57"]}
+    {"text": "Block scheme/Design phases of an ML system, describe all the blocks and phases with examples (in particular at the beginning of data acquisition and feature extraction, which is the best feature in terms of discrimination, cit. of LDA). Then speaking about the selection (cit. of overfitting), the training and the evaluation of the model (cit. of k-fold), we reach the probabilities regarding the binary classifier  (cit. of MAP). At the end, what can we do when the model has low accuracy or in general if a final user wants to reduce the probability of false alarm and the probability of missed alarm?", "prof": "Melgani", "concepts": ["c11", "c21", "c24", "c30", "c57", "c71"]}
   ],
   "crossLinks": [
     {"moduleId": "m16-mdm-box", "why": "Modulo precedente e pagina condivisa (note p.80): il Box è un classificatore bayesiano con pdf uniformi (ML: vince la densità 1/V_i più alta; MAP: P(ω_i)/V_i); l'MDM coincide con il ML/MAP nel caso gaussiano a covarianza sferica e prior uguali."},
@@ -1511,13 +1891,17 @@
   ],
   "emptyPages": [],
   "gaps": [
-    "ch4 p.12: la slide dà solo la definizione di regione di decisione e di P_e (il testo estratto contiene molte righe vuote, forse segnaposto di animazioni); la dimostrazione che il MAP minimizza P_e, chiesta all'orale ('Proof of MAP as error minimization'), non è né nelle slide né nelle note: der03 e der04 sono completamenti didattici standard.",
+    "ch4 p.12: la slide dà solo la definizione di regione di decisione e di P_e (nel testo estratto la formula è spezzata in frammenti di simboli del font Symbol: la trascrizione è fatta dall'immagine, dove la x di P(x ∉ ℜ_i|ω_i) compare in tondo e non in grassetto come nelle slide 11 e 13; nell'inventario si usa \\mathbf{x} per coerenza); la dimostrazione che il MAP minimizza P_e, chiesta all'orale ('Proof of MAP as error minimization'), non è né nelle slide né nelle note: der03 e der04 sono completamenti didattici standard.",
     "ch4 p.14-15 e note p.83-84: le curve dell'esempio sono solo grafiche, senza formula né numeri. Frontiere (ML ≈ 12.3; MAP ≈ 9.9, 11.2, 11.8) e valori delle pdf e delle posterior sono letti dall'immagine (estrazione dei pixel delle curve) e sono approssimati. La ricostruzione come miscele gaussiane (p(x|ω_1) ≈ 0.251·N(10.70, 0.50²) + 0.749·N(13.00, 0.995²); p(x|ω_2) ≈ 0.904·N(11.41, 0.997²) + 0.096·N(13.30, 0.389²)) e i valori P_e(MAP) ≈ 0.316, P_e(ML) ≈ 0.378 sono sintetici. Le due figure sembrano tratte da Duda, Hart & Stork, Pattern Classification (Fig. 2.1-2.2, luminosità del pesce), ma la slide non cita la fonte.",
     "ch4 p.13: il 'Goal' del ML è scritto identico a quello del MAP ('minimize the average probability of error'), ma il ML raggiunge il minimo solo con prior uguali; la slide lo lascia intendere solo con la nota finale 'if the priors are equal, the ML criterion is equivalent to the optimal MAP criterion'.",
     "ch4 p.10 e note p.81: il ML sta sotto 'Full Problem Parameterization / Minimum Risk' pur non richiedendo i prior; minimax e Neyman-Pearson compaiono solo nell'albero e nella descrizione a parole delle note (p.81), senza formule né esempi in tutto il Cap. 4.",
     "Notazione: le slide usano ℜ_i e x in grassetto; le note usano R_i e x normale. Le note (p.82) elencano come 'Hypotheses' del MAP anche pdf condizionata, prior ed evidenza, mentre la slide 11 ha come ipotesi solo le posterior note.",
     "part1 p.80: la metà superiore della pagina (Box classifier, figura dei tre box, limiti) appartiene al modulo m16; qui è inventariata solo la parte 'Bayesian Classification' in fondo alla pagina.",
     "part1 p.84: la metà inferiore apre la teoria del rischio minimo (modulo m18); qui sono inventariati il legame con MAP e ML, l'esempio medico e la definizione di azioni e matrice dei costi (c62-c67), da deduplicare con m18.",
-    "Rapporto di verosimiglianza (c57), caso gaussiano (c58, der07), P(err|x) (c32) ed errore di Bayes (c34) sono integrazioni didattiche per rispondere alle domande d'esame, non contenuto esplicito delle pagine del modulo."
+    "Rapporto di verosimiglianza (c57), caso gaussiano (c58, der07), P(err|x) (c32) ed errore di Bayes (c34) sono integrazioni didattiche per rispondere alle domande d'esame, non contenuto esplicito delle pagine del modulo.",
+    "Revisione di completezza: c68-c71, der11, der12, ex03 ed es12-es13 sono integrazioni didattiche (sigmoide del log-rapporto, errore lineare nel prior e curva concava dell'errore di Bayes come ponte verso il minimax, bilancio d'errore ed errori per classe dell'esempio). Tutti i numeri (P_e(MAP) ≈ 0.316, P_e(ML) ≈ 0.378, regola 'solo prior' 0.333, errori per classe MAP 0.11/0.73 e ML 0.44/0.26, massimo di P_e* ≈ 0.355 a P(ω_1) ≈ 0.55) sono calcolati sulla ricostruzione sintetica delle curve delle slide 14-15, non letti dalla fonte.",
+    "ch4 p.10 e note p.81: la fonte non dà né formula né figura per il minimax; il legame 'regola minimax = retta orizzontale tangente al massimo della curva dell'errore di Bayes' (c69) è la costruzione standard dei testi (Duda-Hart-Stork, costi 0-1), usata qui solo come illustrazione del nodo dell'albero.",
+    "Notazione: Λ(x) per il rapporto di verosimiglianza (c57, c68, der06, der12) è una scelta didattica di questo inventario; nelle note p.84 (e nelle slide del rischio minimo, m18) la stessa lettera Λ indica la matrice dei costi R × C (c66). Nell'app conviene distinguerle graficamente o usare l(x) per il rapporto.",
+    "Verifica finale (stadio formule): tutte le formule delle slide 11-13 e delle note p.82-84 confrontate simbolo per simbolo con le immagini, nessun refuso nella fonte. Le note scrivono '∀i = 1, ..., C' dove le slide scrivono '∀ i = 1, 2, ..., C' (stesso significato). I valori letti dai grafici delle slide 14-15 sono stati ricontrollati estraendo i pixel delle curve (x = 9: 0.001/0.02, posterior 0.07; x = 10.5: 0.20/0.24, 0.62; x = 11.5: 0.15/0.36, 0.46; x = 12: 0.19/0.30, 0.55; x = 13: 0.30/0.175, 0.77; x = 14: 0.18/0.035, 0.91; frontiere MAP 9.9, 11.25, 11.8; frontiera ML 12.33) e i numeri della ricostruzione sintetica ricalcolati (P_e(MAP) 0.316, P_e(ML) 0.378, errori per classe 0.111/0.726 e 0.439/0.256, massimo di P_e* 0.355 a P(ω_1) ≈ 0.552 con ε_1 ≈ ε_2 ≈ 0.355, isole per P(ω_1) tra ≈ 0.55 e ≈ 0.70). I dati sintetici dei widget (gaussiane del pesce, QRS, fibrillazione, troponina, frodi, spam Beta, NDVI, NIR) sono dichiarati nel campo realExample e i valori delle sfide sono calcolati su quei parametri."
   ]
 }

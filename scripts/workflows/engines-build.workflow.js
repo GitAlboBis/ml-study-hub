@@ -64,7 +64,6 @@ const run = async (label, phase, body, schema = TASK) => {
   if (!r) { failures++; log(`Agente fallito: ${label}`) }
   return r
 }
-const moduleOf = (wid) => wid.split('-')[0]
 const wl = (e) => (e.widgets ? e.widgets.join(', ') : `quelli elencati da: node -e "console.log(require('${ROOT}/docs/plan/widget-map.json').engines['${e.name}'].widgets.join(', '))"`)
 
 const build = (e) => run(`motore:${e.name}`, 'Costruzione', `IL TUO COMPITO: costruire il motore "${e.name}"${e.purpose ? ` (${e.purpose})` : ''}.
@@ -99,7 +98,8 @@ const sharedPhase = async () => {
   if (args && args.sharedDone) return { skipped: true }
   const built = await parallel(SHARED.map(([key, body]) => () => run(`base:${key}`, 'Base comune', `IL TUO COMPITO: una parte della base comune dei motori, src/widgets/engines/shared/ (leggi in docs/plan/engines.md la "Parte comune a tutti i motori" e la tabella "Pezzi che mancano al kit"). Tre agenti lavorano in parallelo su file disgiunti della stessa cartella: scrivi SOLO i tuoi file; index.ts di shared lo scrive chi ha i tipi (shared-tipi-e-grafici) ed esporta anche i file degli altri: se quando finisci un tuo file non e esportato, dillo nelle note (non riscrivere index.ts se non sei quell'agente). La base deve servire a TUTTI i 20 motori elencati in engines.md: guarda come la usano le sezioni dei motori prima di fissare le API.\n${body}\nScrivi alla fine ${ROOT}/docs/production/_engines/${key}.done con una riga di riepilogo, SOLO se test, tsc e oxlint passano.`)))
   const rev = await run('base:revisione', 'Base comune', `SEI IL REVISORE INDIPENDENTE della base comune dei motori src/widgets/engines/shared/, appena scritta da tre agenti in parallelo. NON modificare i file del progetto (scratchpad per i temporanei). Controlla con prove (test temporanei, node, comandi): (1) index.ts esporta tutto e i tre pezzi combaciano (tipi usati in modo coerente); (2) la matematica e giusta su valori noti (misure fra gaussiane, Jacobi, EM, classificatori, proiezione 3D); (3) le API bastano ai motori di docs/plan/engines.md (prendi 6 sezioni di motori diverse e controlla che trovino cio che servono); (4) accessibilita e tastiera delle maniglie (skill "ui-design:fixing-accessibility"); (5) niente colori letterali, niente animazioni di layout nei loop, listener e requestAnimationFrame ripuliti. Esiti dei costruttori: ${built.map((b, i) => `${SHARED[i][0]}: ${b ? `${b.ok ? 'ok' : 'NON ok'}; ${String(b.presetApi).slice(0, 600)}; note ${String(b.notes).slice(0, 500)}` : 'fallito'}`).join(' | ')}`, FINDINGS)
-  const findings = rev ? rev.findings : []
+  if (!rev) return { built: built.map((b) => b && b.ok), reviewFailed: true }
+  const findings = rev.findings
   const fix = findings.length ? await run('base:correzioni', 'Base comune', `SEI IL CORRETTORE della base comune src/widgets/engines/shared/. Per ogni rilievo: riproducilo (se non si riproduce scartalo spiegando perche), test di regressione che fallisce, correzione, test verde. Completa cio che i costruttori non hanno finito (vedi le loro note). Alla fine: npx vitest run src/widgets/engines/shared ; npx tsc -p tsconfig.app.json --noEmit ; npx oxlint src/widgets/engines/shared. Riporta l'output reale.\n\nRILIEVI (${findings.length}):\n${JSON.stringify(findings, null, 1)}`, FIX) : null
   return { built: built.map((b) => b && b.ok), findings: findings.length, fix: fix && fix.ok }
 }
@@ -112,7 +112,8 @@ const results = await pipeline(
   (e) => build(e),
   (b, e) => review(e, b).then((r) => ({ b, r })),
   ({ b, r }, e) => {
-    const findings = r ? r.findings : []
+    if (!r) return { engine: e.name, ok: !!(b && b.ok), reviewFailed: true }
+    const findings = r.findings
     if (!findings.length) return { engine: e.name, ok: !!(b && b.ok), findings: 0 }
     return fixIt(e, findings).then((f) => ({ engine: e.name, ok: !!(b && b.ok && f && f.ok), findings: findings.length, fixed: f && f.fixed.length, unresolved: f && f.unresolved, api: b && String(b.presetApi).slice(0, 600) }))
   },

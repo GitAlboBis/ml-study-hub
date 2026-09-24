@@ -30,13 +30,37 @@ for (let i = 0; i < rest.length; i++) {
 }
 const url = /^https?:/.test(target) ? target : `http://localhost:5173${target.startsWith('/') ? '' : '/'}${target}`
 
+// Senza server la fotografia sarebbe la pagina d'errore del browser: meglio fermarsi subito e dirlo.
+try {
+  const res = await fetch(new URL('/', url), { signal: AbortSignal.timeout(8000) })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+} catch (e) {
+  console.error(`Server di sviluppo non raggiungibile su ${new URL('/', url).origin} (${e.message}): va acceso dalla sessione principale (npm run dev). Nessuna fotografia scattata.`)
+  process.exit(3)
+}
+
 const CHROME = ['C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'].find((p) => fs.existsSync(p))
 if (!CHROME) { console.error('Chrome o Edge non trovato'); process.exit(1) }
 const port = 9300 + Math.floor(Math.random() * 500)
-const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'snap-'))
+// Profili temporanei tutti in una cartella: a ogni avvio si tolgono quelli rimasti da esecuzioni interrotte
+// (su Windows Chrome tiene i file ancora un po' dopo la chiusura e la pulizia può fallire).
+const PROFILES = path.join(os.tmpdir(), 'ml-snap-profiles')
+fs.mkdirSync(PROFILES, { recursive: true })
+for (const d of fs.readdirSync(PROFILES)) {
+  const p = path.join(PROFILES, d)
+  try { if (Date.now() - fs.statSync(p).mtimeMs > 10 * 60 * 1000) fs.rmSync(p, { recursive: true, force: true }) } catch { /* ancora in uso */ }
+}
+const profile = fs.mkdtempSync(path.join(PROFILES, 'snap-'))
 const chrome = spawn(CHROME, ['--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, '--no-first-run', '--hide-scrollbars', '--force-device-scale-factor=1', 'about:blank'], { stdio: 'ignore' })
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
-const cleanup = () => { try { chrome.kill() } catch { /* già chiuso */ } setTimeout(() => fs.rmSync(profile, { recursive: true, force: true }), 500) }
+const cleanup = async () => {
+  // chiude tutto l'albero dei processi di Chrome, poi toglie il profilo riprovando finché i file sono liberi
+  try { if (process.platform === 'win32') spawn('taskkill', ['/PID', String(chrome.pid), '/T', '/F'], { stdio: 'ignore' }); else chrome.kill() } catch { /* già chiuso */ }
+  for (let i = 0; i < 20; i++) {
+    await sleep(250)
+    try { fs.rmSync(profile, { recursive: true, force: true }); return } catch { /* file ancora bloccati */ }
+  }
+}
 
 try {
   let wsUrl

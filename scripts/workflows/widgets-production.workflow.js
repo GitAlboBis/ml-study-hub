@@ -107,7 +107,8 @@ const results = await pipeline(
   (impl, b, i) => reviewB(b, impl, i).then((r) => ({ impl, r })),
   ({ impl, r }, b, i) => {
     const findings = r ? r.findings : []
-    const base = { module: b.module.id, widgets: b.widgets.map((w) => w.id), done: impl ? impl.done : [], skipped: impl ? impl.skipped : ['implementatore fallito'] }
+    const base = { module: b.module.id, widgets: b.widgets.map((w) => w.id), done: impl ? impl.done : [], skipped: impl ? impl.skipped : ['implementatore fallito'], reviewFailed: !r }
+    if (!r) return base
     if (!findings.length) return { ...base, findings: 0 }
     return fixB(b, findings, i).then((f) => ({ ...base, findings: findings.length, fixed: f && f.fixed.length, unresolved: f && f.unresolved, ok: f && f.ok }))
   },

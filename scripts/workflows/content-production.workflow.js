@@ -33,7 +33,7 @@ const CONV = (m) => {
   const INV = `${ROOT}/docs/inventory/${m.id}.json`
   const MOD = `${ROOT}/src/content/modules/${m.id}`
   const derFiles = m.splitDerivations ? `derivations-a.ts ("export const derivationsA: Derivation[]", derivazioni ${m.derivationsA.join(', ')}) e derivations-b.ts ("export const derivationsB: Derivation[]", derivazioni ${m.derivationsB.join(', ')})` : `derivations.ts ("export const derivations: Derivation[]")`
-  return `FOGLIO ${m.id} - "${m.title}" (${m.titleEn}) - ${m.chapter}, prof. ${PROF[m.course]}.
+  return `FOGLIO ${m.id} - "${m.title}"${m.titleEn ? ` (${m.titleEn})` : ""} - ${m.chapter}, prof. ${PROF[m.course]}.
 Leggi prima ${ROOT}/docs/CONTENT_GUIDE.md (formato, regole MDX, md\`...\`, esempi verificati, rimandi interni) e src/content/types.ts. Foglio di riferimento gia completo e revisionato, da usare come modello di livello e di forma (non di contenuto): ${ROOT}/src/content/modules/m09-parzen-windows/ (guarda un paio di voci per file, non leggerlo tutto).
 Inventario completo e verificato: ${INV} (${m.n.concepts} concetti, ${m.n.latex} stringhe LaTeX nei concetti, ${m.n.derivations} derivazioni, ${m.n.examples} esempi svolti, ${m.n.figures} figure di cui ${m.n.figuresImp2} con importanza >= 2, ${m.n.widgets} widget, ${m.n.exercises} esercizi, ${m.n.bank} domande della banca). Estrai con node -e, per esempio: node -e "const i=require('${INV}'); for (const c of i.concepts) console.log(c.id, c.kind, c.name, '|', c.nameEn)".
 Pagine delle fonti: ${pages(m)}; immagini ${imgs(m)}; testo per pagina in ${ROOT}/_sources/src_text/<doc>.txt (marcatori "===== <doc> PAGE n ====="). Le formule delle slide sono immagini: la notazione si controlla sulle immagini.
@@ -198,7 +198,9 @@ const produce = async (m) => {
     if (halted()) return { ...out, stopped: `revisione-${round}` }
     const prior = handled.length ? JSON.stringify(handled.slice(-80)) : ''
     const revs = await parallel(lenses(m).map(([lens, body]) => () => run(`rev-${lens}-${round}:${m.id}`, 'Revisione', reviewPrompt(m, body, round, prior), FINDINGS)))
-    const findings = revs.filter(Boolean).flatMap((r) => r.findings.map((f) => ({ ...f, lens: r.lens })))
+    // un revisore fallito (limite di sessione) non vale come "nessun rilievo": il giro si rifa alla ripresa
+    if (revs.some((r) => !r)) return { ...out, stopped: `revisione-${round}` }
+    const findings = revs.flatMap((r) => r.findings.map((f) => ({ ...f, lens: r.lens })))
     const material = findings.filter((f) => MATERIAL.has(f.severity))
     log(`${m.id} giro ${round}: ${findings.length} rilievi, ${material.length} materiali`)
     if (!findings.length) { out.rounds.push({ round, findings: 0, clean: true }); break }
