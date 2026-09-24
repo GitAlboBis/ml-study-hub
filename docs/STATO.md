@@ -43,10 +43,11 @@ L'utente ha chiesto di continuare fino alla fine senza fermarsi: il pilota è co
 - **Contenuti del Cap. 2** (run `wf_4ed47038-00d`, `scripts/workflows/content-production.workflow.js`): m03, m04, m05, m06, m07, m08, m10. Per foglio: 8-9 pezzi in parallelo (teoria, formule A/B, derivazioni A/B, figure, pratica 1/2), integratore con validatore PASS, poi giri di revisione (copertura, fedeltà formule, logica e numeri) + correttore fino a esaurimento (max 3 giri nel Cap. 2, 2 altrove). Marcatori in `docs/production/<id>/<stadio>.done`, resoconti in `docs/reports/content/<id>.md`. Args: `node scripts/production-args.mjs <prefissi>`; stato: `node scripts/production-args.mjs --status`.
 - **Architettura dei motori dei widget** (run `wf_c1d05d76-dbf`): catalogo dei widget di m01-m16, architetto, critico. Produce `docs/plan/engines.md` e `docs/plan/widget-map.json`.
 
+- **Motori dei widget** (run `wf_2895428c-753`, `scripts/workflows/engines-build.workflow.js`): prima la base comune `src/widgets/engines/shared/` (tipi, maniglie e segni, matematica; revisore e correttore), poi i 20 motori di `docs/plan/engines.md` in pipeline (costruttore con widget di riferimento e guida `docs/engines/<nome>.md` → revisore → correttore). Marcatori in `docs/production/_engines/`. Per riprendere: args `{ engines: [{ name, reference }], sharedDone: true, done: [motori finiti] }`.
+- **Pagine globali** (run `wf_766c360d-2f0`, `scripts/workflows/app-pages.workflow.js`).
+
 Workflow pronti, da lanciare in quest'ordine:
-- `scripts/workflows/engines-build.workflow.js` (args: `{ engines: [...] }` da `widget-map.json`): un costruttore, un revisore e un correttore per motore; guida di ogni motore in `docs/engines/<nome>.md`; marcatori in `docs/production/_engines/`.
 - `scripts/workflows/widgets-production.workflow.js` (args: `node scripts/production-args.mjs --widgets <prefissi>`): lotti di widget per foglio, implementazione → revisione → correzione; marcatori `docs/production/<id>/w-<widgetId>.done`.
-- `scripts/workflows/app-pages.workflow.js`: pagine globali (mappa, pagine corso, formulario, glossario, ricerca, flashcard e quiz globali, banca d'esame e simulatore dell'orale, giochi, copertura, progressi, impostazioni, script dei gate G5 e G7).
 
 Il server di sviluppo della sessione principale resta acceso sulla porta 5173: gli agenti fotografano con `scripts/snap.mjs` ma non lo avviano.
 

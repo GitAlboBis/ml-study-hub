@@ -65,9 +65,10 @@ const run = async (label, phase, body, schema = TASK) => {
   return r
 }
 const moduleOf = (wid) => wid.split('-')[0]
+const wl = (e) => (e.widgets ? e.widgets.join(', ') : `quelli elencati da: node -e "console.log(require('${ROOT}/docs/plan/widget-map.json').engines['${e.name}'].widgets.join(', '))"`)
 
-const build = (e) => run(`motore:${e.name}`, 'Costruzione', `IL TUO COMPITO: costruire il motore "${e.name}" (${e.purpose}).
-Sezione del motore in docs/plan/engines.md: leggila per intera (cerca "${e.name}"). Widget che il motore deve poter rendere FEDELMENTE (id; la cartella del modulo e quella il cui id inizia con il prefisso, es. m06- -> src/widgets/m06-modelli-pdf-gaussiana/): ${e.widgets.join(', ')}.
+const build = (e) => run(`motore:${e.name}`, 'Costruzione', `IL TUO COMPITO: costruire il motore "${e.name}"${e.purpose ? ` (${e.purpose})` : ''}.
+Sezione del motore in docs/plan/engines.md: leggila per intera (cerca "${e.name}"). Widget che il motore deve poter rendere FEDELMENTE (id; la cartella del modulo e quella il cui id inizia con il prefisso, es. m06- -> src/widgets/m06-modelli-pdf-gaussiana/): ${wl(e)}.
 1. Leggi le specifiche COMPLETE (storyboard, interactions, visual, formulasShown, challenge) di TUTTI i widget coperti (non solo del riferimento): l'API del preset deve bastare a ognuno senza perdere cio che lo rende unico. Dove l'architettura non basta, estendila e scrivilo nelle note.
 2. Costruisci src/widgets/engines/${e.name}/ (types.ts, logica pura con test, componente, index.ts). Storyboard a fasi configurabile con PlayControls, formule vive (LiveFormula con \\val), Readout, Challenge con criterio calcolato da una funzione del preset, strati attivabili, scenario del cast con dati sintetici a seed (src/lib/rng.ts e src/lib/datasets; se servono generatori nuovi, mettili nel motore).
 3. Implementa il widget di riferimento ${e.reference} sul motore (widget, preset, test), fedele alla sua specifica dell'inventario: e la prova che il motore vale e il modello per chi scrivera gli altri preset.
@@ -78,7 +79,7 @@ Scrivi alla fine ${ROOT}/docs/production/_engines/${e.name}.done con una riga di
 const review = (e, b) => run(`revisione:${e.name}`, 'Revisione', `SEI IL REVISORE INDIPENDENTE del motore "${e.name}" appena costruito (src/widgets/engines/${e.name}/, guida docs/engines/${e.name}.md, riferimento ${e.reference}). NON modificare i file del progetto; file temporanei solo nello scratchpad. Ogni difetto va DIMOSTRATO (test temporaneo, comando, screenshot aperto con Read) con l'output osservato.
 Esito del costruttore: ${b ? `API: ${String(b.presetApi).slice(0, 1500)}. Limiti dichiarati: ${String(b.limits).slice(0, 800)}` : 'costruttore fallito: controlla lo stato dei file'}
 LENTI (tutte):
-1. ESPRESSIVITA: per almeno 6 dei widget coperti (${e.widgets.join(', ')}), scegliendo quelli piu lontani dal riferimento, leggi la specifica completa nell'inventario e prova a scrivere (nello scratchpad) lo scheletro del preset: se qualcosa dello storyboard, delle interazioni, della formula viva o della sfida non si puo esprimere, e un difetto alto.
+1. ESPRESSIVITA: per almeno 6 dei widget coperti (${wl(e)}), scegliendo quelli piu lontani dal riferimento, leggi la specifica completa nell'inventario e prova a scrivere (nello scratchpad) lo scheletro del preset: se qualcosa dello storyboard, delle interazioni, della formula viva o della sfida non si puo esprimere, e un difetto alto.
 2. CORRETTEZZA: la matematica del motore (calcola a mano o con node alcuni valori e confrontali con la logica), dati deterministici per seed, niente NaN.
 3. MOTO E PRESTAZIONI (skill "ui-design:fixing-motion-performance"): niente proprieta di layout animate nei loop, niente setState per frame su tutto l'albero, requestAnimationFrame ripuliti (monta e smonta 30 volte), canvas nitidi con devicePixelRatio.
 4. ACCESSIBILITA (skill "ui-design:fixing-accessibility"): solo tastiera, focus, nomi, aria-live, reduced motion a passi, 390px.
