@@ -35,18 +35,33 @@ Aggiornare questo file a ogni fase chiusa o workflow lanciato. Date e ore assolu
 
 - **Git** (2026-09-18): repository privato https://github.com/GitAlboBis/ml-study-hub creato su richiesta dell'utente, 9 commit per argomento su `main`, push fatto. Da qui: un commit e un push per ogni fase chiusa.
 
-## In corso
+## In corso (sessione del 2026-09-24)
 
-- **Inventario** (run `wf_3a16f9a2-230`, lanciato il 2026-09-18 alle 12:50): 3 corsie, prima il resto del Cap. 2 (m03 → m05 → m06 → m07 → m10), poi Cap. 1 e gli altri. Completi finora: m04, m08, m09.
+L'utente ha chiesto di continuare fino alla fine senza fermarsi: il pilota è considerato approvato e la decisione sui widget è presa (motori parametrici condivisi più widget su misura dove un motore perderebbe la specifica). Workflow lanciati, tutti ripristinabili:
+
+- **Inventario** del resto dei moduli (run `wf_579fb0c5-124`, `scripts/workflows/inventory-v2.workflow.js`, 5 corsie): m17 → m22, poi Passerini, poi Ricci. Riprendere con `node scripts/inventory-status.mjs --args` (togliere `modules`, aggiungere `"lanes": 5`).
+- **Contenuti del Cap. 2** (run `wf_4ed47038-00d`, `scripts/workflows/content-production.workflow.js`): m03, m04, m05, m06, m07, m08, m10. Per foglio: 8-9 pezzi in parallelo (teoria, formule A/B, derivazioni A/B, figure, pratica 1/2), integratore con validatore PASS, poi giri di revisione (copertura, fedeltà formule, logica e numeri) + correttore fino a esaurimento (max 3 giri nel Cap. 2, 2 altrove). Marcatori in `docs/production/<id>/<stadio>.done`, resoconti in `docs/reports/content/<id>.md`. Args: `node scripts/production-args.mjs <prefissi>`; stato: `node scripts/production-args.mjs --status`.
+- **Architettura dei motori dei widget** (run `wf_c1d05d76-dbf`): catalogo dei widget di m01-m16, architetto, critico. Produce `docs/plan/engines.md` e `docs/plan/widget-map.json`.
+
+Workflow pronti, da lanciare in quest'ordine:
+- `scripts/workflows/engines-build.workflow.js` (args: `{ engines: [...] }` da `widget-map.json`): un costruttore, un revisore e un correttore per motore; guida di ogni motore in `docs/engines/<nome>.md`; marcatori in `docs/production/_engines/`.
+- `scripts/workflows/widgets-production.workflow.js` (args: `node scripts/production-args.mjs --widgets <prefissi>`): lotti di widget per foglio, implementazione → revisione → correzione; marcatori `docs/production/<id>/w-<widgetId>.done`.
+- `scripts/workflows/app-pages.workflow.js`: pagine globali (mappa, pagine corso, formulario, glossario, ricerca, flashcard e quiz globali, banca d'esame e simulatore dell'orale, giochi, copertura, progressi, impostazioni, script dei gate G5 e G7).
+
+Il server di sviluppo della sessione principale resta acceso sulla porta 5173: gli agenti fotografano con `scripts/snap.mjs` ma non lo avviano.
 
 ## Prossimi passi, nell'ordine
 
-1. **Mostrare il pilota all'utente** e raccogliere le sue osservazioni (Task 6.1, step 1) prima di produrre gli altri 49 fogli.
-2. Finire l'inventario (Cap. 2 per primo).
-3. Contenuti e widget del resto del Cap. 2 con la stessa pipeline del pilota (`scripts/workflows/pilot-m09.workflow.js`, ramo contenuti + ramo widget, parametrizzati per modulo).
-4. Revisione finale del design (finish review di impeccable, `DESIGN.md`) quando ci sono almeno 3-4 fogli.
-5. Revisori avversariali della Fase 3 (`scripts/workflows/phase3-infrastructure.workflow.js`, solo la parte di revisione).
+1. Motori dei widget (dopo l'architettura), poi widget del Cap. 2, poi degli altri fogli man mano che hanno contenuti e inventario.
+2. Contenuti di m01, m02, m11-m22, poi Passerini, poi Ricci (stessa pipeline dei contenuti), appena i loro inventari sono completi.
+3. Pagine globali (workflow `app-pages`).
+4. Seconda architettura dei motori per Passerini e Ricci quando i loro inventari sono pronti.
+5. Fase 9: gate automatici su tutti i fogli, revisioni di accessibilità, moto, design (impeccable finish review, `DESIGN.md`), verifica nel browser; Fase 10: README e consegna.
+
+## Decisioni prese
+
+- **Architettura dei widget** (2026-09-24): motori parametrici condivisi (`src/widgets/engines/<nome>/`, un preset per widget) più widget su misura dove un motore perderebbe lo storyboard, le interazioni o la sfida della specifica. Mappa in `docs/plan/widget-map.json`.
 
 ## Decisioni aperte (da portare all'utente)
 
-- **Architettura dei widget**: circa 1.200 widget scritti a mano non sono sostenibili con i limiti di utilizzo. Proposta: 40-60 "motori" parametrici (esploratore di densità, di confini di decisione, di discesa del gradiente, di reti bayesiane, gridworld, mappe di attenzione…) configurati dall'inventario, così ogni concetto ha comunque la sua istanza animata con scenario, storyboard, formule vive e sfida, e restano scritti a mano solo i widget che lo meritano. Da decidere dopo aver visto il pilota.
+- Nessuna al momento. Il deploy (per esempio Vercel) si chiede all'utente solo alla consegna.
