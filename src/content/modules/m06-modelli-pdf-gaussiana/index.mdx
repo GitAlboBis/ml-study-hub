@@ -1,0 +1,1392 @@
+## Panoramica
+
+La stima a massima verosimiglianza (*Maximum Likelihood*, ML) trova i parametri di una pdf, ma solo dopo che hai scelto la famiglia: il vettore $\boldsymbol{\theta}$ ha senso solo dentro una forma analitica già decisa per $p(\mathbf{x}|\boldsymbol{\theta})$. Questo foglio risponde alla domanda che la ML lascia aperta: quale forma dai a $p(\mathbf{x})$? Le slide 20-31 del Cap. 2 e le pagine 21-26 delle note seguono quest'ordine:
+
+1. i tre aspetti che guidano la scelta del modello statistico: il fenomeno, il rumore, le elaborazioni prima del classificatore;
+2. sei famiglie di pdf con formula e grafico: gaussiana, gaussiana generalizzata, Gamma, Rayleigh, chi-quadro e log-normale;
+3. il modello gaussiano: perché lo trovi ovunque (teorema del limite centrale), la pdf multivariata $N(\mathbf{m}, \Sigma)$, il vettore media, la matrice di covarianza e le sue proprietà;
+4. la geometria della campana: isolivelli ellittici con gli assi lungo gli autovettori di $\Sigma$, prima in 2-D, poi in $n$-D, poi un esempio 3-D;
+5. le stime ML di $\mathbf{m}$ e $\Sigma$ da $N$ campioni iid, le loro proprietà, il bias $(N-1)/N$ della covarianza ML e lo stimatore corretto con $1/(N-1)$.
+
+In fondo alla pagina 26 le note aprono la stima bayesiana: qui ne trovi l'idea di partenza, il resto è in <ModLink to="m07-stima-bayesiana">stima bayesiana</ModLink>. <SourceRef doc="ch2" page={20} /> <SourceRef doc="part1" page={21} />
+
+<Callout kind="intuizione">
+Sul nastro dell'impianto passano salmoni e spigole. Per ogni pesce la telecamera misura luminosità e larghezza, cioè un vettore $\mathbf{x} = (x_1, x_2)$. Il classificatore bayesiano ha bisogno di $p(\mathbf{x}|\text{salmone})$. Se scegli la gaussiana bivariata, ti bastano cinque numeri: due medie, due varianze e una covarianza. Dai salmoni etichettati stimi questi cinque numeri con la media campionaria dei vettori e con la media dei prodotti esterni degli scarti (slide 31), e la densità è pronta per il classificatore.
+</Callout>
+
+<KeyIdea>
+Una gaussiana in $n$ dimensioni è definita per intero da due parametri, il vettore media $\mathbf{m}$ e la matrice di covarianza $\Sigma$. $\mathbf{m}$ dice dove sta la campana. $\Sigma$ ne decide la forma: gli autovettori danno le direzioni degli assi delle ellissi di livello, le radici degli autovalori le loro lunghezze. Dai dati li stimi con la media dei campioni e con la media dei prodotti esterni degli scarti.
+</KeyIdea>
+
+<Callout kind="esame">
+Melgani chiede spesso «the formula of the Gaussian curve in a multi dimensional space (with mean vector and covariance matrix)», come si costruisce la matrice di covarianza, l'equazione caratteristica con autovalori e autovettori, e di sviluppare la derivata prima della log-verosimiglianza per una gaussiana spiegando il significato del risultato. Passerini parte da qui per il passo M dell'EM sulle misture di gaussiane. Le dieci domande della banca sono in fondo, nella sezione per l'orale.
+</Callout>
+
+## Il punto di partenza: le proprietà asintotiche della stima ML
+
+La pagina 21 delle note si apre chiudendo un elenco iniziato a pagina 20. La slide 19 del Cap. 2 aveva appena detto che, sotto certe ipotesi su $p(\mathbf{x}|\boldsymbol{\theta})$, se esiste una stima efficiente e la stima ML è non distorta, allora la stima efficiente è proprio quella ML. Poi aggiunge: anche quando una stima efficiente non esiste (*even if it does not exist an efficient estimate*), la stima ML ha buone proprietà asintotiche. Sono tre, definite formalmente alla pagina 19 delle note, con $\boldsymbol{\varepsilon} = \hat{\boldsymbol{\theta}} - \boldsymbol{\theta}$ errore di stima e $N$ numero di campioni di training. <SourceRef doc="ch2" page={19} /> <SourceRef doc="part1" page={19} />
+
+**Non distorsione asintotica** (*asymptotic unbiasedness*). Al crescere di $N$ il valore atteso dell'errore tende a zero, cioè il valore atteso della stima tende al vero parametro. Per $N$ finito la stima può essere distorta.
+
+<Formula id="f-c01" />
+
+**Efficienza asintotica** (*asymptotic efficiency*). Il bound di Cramér-Rao dice che la varianza di ogni componente dell'errore di uno stimatore non distorto non scende sotto $[I^{-1}(\boldsymbol{\theta})]_{ii}$, l'elemento diagonale dell'inversa della matrice di informazione di Fisher. Lo stimatore ML raggiunge questo minimo quando $N$ cresce: il rapporto tra la sua varianza e il bound tende a 1, per ognuna delle $r$ componenti del vettore dei parametri.
+
+<Formula id="f-c01-2" />
+
+**Consistenza** (*consistency*). Per qualunque tolleranza $\delta > 0$ la probabilità che l'errore abbia norma minore di $\delta$ tende a 1: con abbastanza dati la stima cade vicino al vero valore quanto vuoi.
+
+<Formula id="f-c01-3" />
+
+La pagina 19 dà anche le condizioni necessarie per la consistenza: lo stimatore deve essere asintoticamente non distorto e la sua varianza deve tendere a zero al crescere di $N$. Le note concludono che queste proprietà spiegano l'uso diffuso della ML nei problemi reali, «a preferred method in statistical analysis and machine learning». <SourceRef doc="part1" page={21} />
+
+Le stesse tre parole tornano alla fine del foglio, nella slide 31, riferite alle stime ML di media e covarianza della gaussiana: lì vedrai che la media campionaria le soddisfa anche per $N$ finito, mentre la covarianza ML è distorta e le soddisfa solo al limite. Bias, efficienza e bound di Cramér-Rao sono definiti in <ModLink to="m04-bonta-stimatori">bontà degli stimatori</ModLink>; la definizione della stima ML è in <ModLink to="m05-max-likelihood">stima a massima verosimiglianza</ModLink>. Il widget che rende visibili le tre proprietà, [«asintoticamente non distorte, efficienti, consistenti»](#widget:m06-proprieta-asintotiche-stime), sta nella sezione sulle proprietà delle stime gaussiane.
+
+<Check id="chk-01" />
+
+## La scelta del modello statistico
+
+La stima parametrica presuppone la forma di $p(\mathbf{x}|\boldsymbol{\theta})$. Chi la sceglie? La slide 20, «Statistical Model Selection», risponde che nella selezione di un modello statistico per
+
+<Formula id="f-c02" />
+
+vanno considerati tre aspetti principali (*three main aspects should be considered*). Le note ribadiscono che scegliere il modello giusto è vitale per catturare con accuratezza i processi sottostanti, e che selezionare e applicare bene questi passi migliora l'efficacia del modello scelto. <SourceRef doc="ch2" page={20} /> <SourceRef doc="part1" page={21} />
+
+Leggili come una catena. Il fenomeno fisico genera un segnale, il mezzo e il sensore lo sporcano di rumore, il pre-processing e l'estrazione delle feature lo trasformano. La pdf che devi modellare è quella dei numeri che arrivano in fondo alla catena, non quella del fenomeno puro.
+
+### Primo aspetto: la natura statistica del fenomeno
+
+La slide: «The intrinsic statistical nature of the physical phenomenon under analysis». Le note: capire le caratteristiche fondamentali del fenomeno fisico analizzato è essenziale per scegliere un modello appropriato.
+
+Qualche caso che vedrai nei grafici del foglio. L'ampiezza di un'eco radar prodotta da tanti diffusori ha per natura una distribuzione di Rayleigh. Una durata o un tempo d'attesa è positivo e asimmetrico, e si presta alla Gamma. Una grandezza che nasce dal prodotto di molti fattori positivi è log-normale. Un errore che nasce dalla somma di molte piccole cause indipendenti è gaussiano.
+
+### Secondo aspetto: il rumore di trasmissione e di acquisizione
+
+La slide: «The noise introduced during the (passive/active) signal transmission and acquisition phases by the propagation medium and the sensor, respectively». Letta alla lettera, la frase associa la trasmissione al <Term en="propagation medium">mezzo di propagazione</Term> e l'acquisizione al <Term en="sensor">sensore</Term>, in quest'ordine («respectively»). «Passive/active» qualifica il tipo di rilevamento: sensori passivi, che misurano un segnale emesso dalla scena, o attivi, che emettono il segnale e ne raccolgono l'eco, come nel Cap. 1.
+
+Le note riformulano in modo diverso: il rumore può originare dal mezzo di propagazione (passivo) o dai sensori (attivi), e influenza in modo significativo le prestazioni del modello. Tieni presente la lettura della slide, che è più precisa. Il punto operativo è lo stesso: il dato osservato è fenomeno più rumore, quindi la pdf da modellare è quella del segnale già disturbato. <SourceRef doc="part1" page={21} />
+
+### Terzo aspetto: pre-processing ed estrazione delle feature
+
+La slide: «The pre-processing and feature extraction steps adopted before feeding the recognition system». Le note: i metodi usati per il pre-processing e l'estrazione delle feature prima di dare i dati al sistema di riconoscimento possono influenzare la scelta del modello.
+
+Ogni trasformazione cambia la distribuzione. Se elevi al quadrato un'ampiezza di Rayleigh ottieni un'intensità esponenziale. Se fai la media di molte letture ti avvicini alla gaussiana, per il limite centrale. Se prendi il logaritmo di una variabile log-normale ottieni una gaussiana.
+
+<Widget id="m06-catena-acquisizione-modello" />
+
+<Callout kind="intuizione">
+Vuoi classificare i pixel di un'immagine radar satellitare (SAR) in acqua e tetti metallici, usando come feature l'ampiezza del pixel. L'acqua calma rimanda l'eco di tanti diffusori deboli e la sua ampiezza è di tipo Rayleigh; un tetto metallico ha un riflettore dominante e una distribuzione diversa. Il rumore del sensore si somma a entrambe. Se poi fai la media su una finestra di pixel (*multilook*), le due distribuzioni si stringono e si avvicinano alla gaussiana. Tre anelli della catena, tre modifiche alla forma di $p(x|\text{classe})$.
+</Callout>
+
+<Check id="chk-02" />
+
+## I modelli statistici più diffusi
+
+La slide 21 elenca i modelli statistici popolari (*popular statistical models*): gaussiano, gaussiano generalizzato, Gamma, Rayleigh, chi-quadro e log-normale. Solo le note aggiungono, per ciascuno, una riga sull'uso tipico. <SourceRef doc="ch2" page={21} /> <SourceRef doc="part1" page={21} />
+
+| Modello | Uso tipico secondo le note |
+|---|---|
+| Gaussiano (*Gaussian model*) | dati che seguono una distribuzione normale |
+| Gaussiano generalizzato (*Generalized Gaussian*) | alternativa flessibile, rappresenta varie distribuzioni |
+| Gamma | dati continui non negativi, spesso nella teoria delle code (*queuing theory*) |
+| Rayleigh | radar e comunicazioni, per modellare segnali diffusi (*scattered signals*) |
+| Chi-quadro (*Chi-square*) | test d'ipotesi e bontà di adattamento (*goodness-of-fit*) |
+| Log-normale (*Log-Normal*) | variabili con asimmetria positiva (*positively skewed*), come i dati finanziari |
+
+Le slide 22-24, «PDF Examples», danno per ogni famiglia la formula e un grafico con più curve. Nelle note i sei grafici sono impaginati in una griglia 3×2 a pagina 22. Per ogni curva conviene sapere dove sta il massimo e quanto vale: sono i numeri che ti permettono di leggere il grafico e di controllare la formula.
+
+### La gaussiana
+
+La prima pdf è la <Term en="Gaussian pdf">gaussiana</Term> a una dimensione, con due parametri: la media $\mu$, che fissa la posizione del centro, e la deviazione standard $\sigma$, che fissa la larghezza. <SourceRef doc="ch2" page={22} />
+
+<Formula id="f-c08" />
+
+È definita su tutto l'asse reale ed è simmetrica rispetto a $\mu$. L'esponente è il quadrato dello scarto $x - \mu$ misurato in deviazioni standard, cambiato di segno e diviso per due: la pdf cala in fretta appena ti allontani dal centro di qualche $\sigma$. Il fattore davanti, $1/(\sigma\sqrt{2\pi})$, rende unitaria l'area ed è anche l'altezza del picco, raggiunto in $x = \mu$:
+
+<Formula id="f-c09" />
+
+Nella legenda del grafico i parametri sono dati come $\mu$ e $\sigma^2$ (varianza), mentre la formula è scritta con $\sigma$: per calcolare il picco devi prima fare la radice. Questa formula è il caso $n = 1$ della gaussiana multivariata della slide 26; il passaggio è nella dimostrazione [«dalla gaussiana multivariata alla univariata»](#derivation:der01), più avanti.
+
+<Figure id="fig01" />
+
+Il grafico mostra quattro curve. Tre hanno $\mu = 0$ e varianze diverse, la quarta è spostata in $\mu = -2$. Il messaggio: $\mu$ trasla la campana senza deformarla; $\sigma^2$ ne regola la larghezza e, poiché l'area resta 1, l'altezza del picco scende quando $\sigma$ cresce.
+
+<Example id="ex01" title="Le quattro gaussiane del grafico">
+
+Grafico «Gaussian» della slide 22, asse $x$ da -5 a 5. Dalla legenda leggi $\mu$ e $\sigma^2$, dalla formula calcoli il picco.
+
+<Step title="Rossa: μ = 0, σ² = 0.2">
+
+$\sigma = \sqrt{0.2} = 0.447$, quindi
+
+$$
+f(0) = \frac{1}{0.447 \cdot 2.507} = 0.892
+$$
+
+La curva più stretta e più alta, come nel grafico.
+
+</Step>
+
+<Step title="Verde: μ = 0, σ² = 1.0">
+
+È la normale standard: $\sigma = 1$ e $f(0) = 1/\sqrt{2\pi} = 0.399$.
+
+</Step>
+
+<Step title="Blu: μ = 0, σ² = 5.0">
+
+$\sigma = \sqrt{5} = 2.236$ e $f(0) = 1/(2.236 \cdot 2.507) = 0.178$: la campana più larga e più bassa, ancora visibile ai bordi del grafico.
+
+</Step>
+
+<Step title="Magenta: μ = -2, σ² = 0.5">
+
+$\sigma = 0.707$ e il picco vale $1/(0.707 \cdot 2.507) = 0.564$, raggiunto in $x = -2$.
+
+</Step>
+
+<Step title="Che cosa insegnano">
+
+Le prime tre condividono la media e differiscono solo per la varianza; la quarta mostra la traslazione. Tutte hanno area 1: stringere la curva la alza. Il picco supera 1 quando $\sigma < 1/\sqrt{2\pi} = 0.399$, cioè $\sigma^2 < 0.159$: una densità può valere più di 1, una probabilità no.
+
+</Step>
+
+</Example>
+
+<Widget id="m06-gaussiana-mu-sigma" />
+
+<Check id="chk-03" />
+
+### La gaussiana generalizzata
+
+La seconda pdf della slide 22 ha tre parametri: $m$, la posizione del centro di simmetria; $b$, un parametro di scala inversa (con $b$ grande la curva è stretta); $\beta$, il parametro di forma, che fa da esponente del decadimento. <SourceRef doc="ch2" page={22} />
+
+<Formula id="f-c10" />
+
+$\Gamma$ è la funzione Gamma di Eulero, che per interi vale $\Gamma(k) = (k-1)!$ e soddisfa $\Gamma(z+1) = z\,\Gamma(z)$. La costante $b\beta/(2\Gamma(1/\beta))$ normalizza l'area a 1. Come la gaussiana, la curva è definita su tutto l'asse reale e simmetrica rispetto a $m$. Le note la descrivono come «a flexible alternative that can represent various data distributions».
+
+Il grafico della slide mostra quattro curve centrate in 0, con $\beta = 0.8, 1, 2, 10$. La slide non dà $m$ né $b$. Dai valori dei picchi si deduce che le curve hanno $m = 0$ e varianza unitaria, con $b$ scelto di conseguenza per ogni $\beta$. La varianza della famiglia vale
+
+<Formula id="f-c11" />
+
+<Figure id="fig02" />
+
+Con $\beta = 0.8$ vedi una punta acutissima e code pesanti; con $\beta = 1$ una cuspide; con $\beta = 2$ una campana liscia; con $\beta = 10$ un profilo quasi rettangolare, quasi piatto a circa 0.29 fino a $\vert x \vert \approx 1.3$, poi una caduta ripida: in $\pm 1.78$ vale già circa 0.11 e si annulla verso $\pm 2.1$. Al crescere di $\beta$ la punta si appiattisce e le code si accorciano.
+
+Tre casi particolari spiegano il nome «generalizzata» (la slide mostra solo le curve etichettate: i casi si verificano dalla formula).
+
+**β = 2: la gaussiana.** Poiché $\Gamma(1/2) = \sqrt{\pi}$, la costante diventa $2b/(2\sqrt{\pi}) = b/\sqrt{\pi}$ e l'esponente $b^2(x - m)^2$. Confrontando con la gaussiana, $b^2 = 1/(2\sigma^2)$:
+
+<Formula id="f-c12" />
+
+**β = 1: la laplaciana**, o doppia esponenziale, con $\Gamma(1) = 1$. La cuspide in $x = m$ viene dal valore assoluto:
+
+<Formula id="f-c12-2" />
+
+**β molto grande: quasi uniforme.** Se $b\vert x - m \vert < 1$, la potenza $[b\vert x - m\vert]^{\beta}$ tende a 0 e l'esponenziale a 1; se $b\vert x - m\vert > 1$ la potenza esplode e l'esponenziale va a zero. La costante tende a $b/2$, perché $\Gamma(1/\beta) \approx \beta$ quando $1/\beta$ è piccolo. Resta una pdf uniforme su $[m - 1/b,\ m + 1/b]$, alta $b/2$ e larga $2/b$: area 1.
+
+La gaussiana è quindi un membro della famiglia, e $\beta$ ti permette di modellare dati più piccati ($\beta < 2$) o più piatti ($\beta > 2$). I conti completi sono nella dimostrazione [«casi particolari della gaussiana generalizzata»](#derivation:der02).
+
+<Derivation id="der02" />
+
+<Example id="ex02" title="Le quattro gaussiane generalizzate del grafico">
+
+Grafico «Generalized Gaussian» della slide 22, asse $x$ da -3 a 3, curve centrate in $m = 0$. La slide non dà $b$: lo ricavi imponendo varianza unitaria.
+
+<Step title="Il valore di b per varianza 1">
+
+Dalla formula della varianza con $var\{x\} = 1$:
+
+$$
+b = \sqrt{\frac{\Gamma(3/\beta)}{\Gamma(1/\beta)}}, \qquad f(m) = \frac{b\beta}{2\Gamma(1/\beta)}
+$$
+
+</Step>
+
+<Step title="β = 0.8">
+
+$\Gamma(3.75) = 4.423$ e $\Gamma(1.25) = 0.906$, quindi $b = 2.209$ e il picco vale $2.209 \cdot 0.8/(2 \cdot 0.906) = 0.975$: la punta che sfiora 1 nel grafico.
+
+</Step>
+
+<Step title="β = 1">
+
+$\Gamma(3) = 2$ e $\Gamma(1) = 1$: $b = \sqrt{2} = 1.414$ e picco $1.414/2 = 0.707$.
+
+</Step>
+
+<Step title="β = 2">
+
+$\Gamma(1.5)/\Gamma(0.5) = 0.5$: $b = 0.707$ e picco $0.707 \cdot 2/(2 \cdot 1.772) = 0.399$. È la normale standard.
+
+</Step>
+
+<Step title="β = 10">
+
+$\Gamma(0.3) = 2.992$ e $\Gamma(0.1) = 9.514$: $b = 0.561$ e picco $0.561 \cdot 10/(2 \cdot 9.514) = 0.295$. Il plateau resta quasi a quota 0.29 fino a $\vert x \vert \approx 1.3$ (in $1.3$ vale $0.28$), poi la curva crolla: in $\pm 1/b = \pm 1.78$ vale $0.295 \cdot e^{-1} \approx 0.11$, il 37% del picco, e si annulla verso $\pm 2.1$. Il supporto $[m - 1/b,\ m + 1/b]$ con i fianchi verticali è il limite per $\beta \to \infty$: con $\beta = 10$ i fianchi sono ancora inclinati.
+
+</Step>
+
+<Step title="Confronto con il grafico">
+
+I quattro picchi calcolati (0.975, 0.707, 0.399, 0.295) coincidono con quelli che leggi sul grafico: la slide usa quattro curve con la stessa varianza e forme diverse.
+
+</Step>
+
+</Example>
+
+<Widget id="m06-gaussiana-generalizzata-beta" />
+
+<Check id="chk-04" />
+
+### La Gamma
+
+La slide 23 apre con la pdf Gamma, definita solo per $x > 0$: la slide lo scrive esplicitamente, «for $x > 0$». Ha un parametro di forma $k$ e un parametro di scala $\theta$. <SourceRef doc="ch2" page={23} />
+
+<Formula id="f-c13" />
+
+Il termine $x^{k-1}$ fa partire la curva da zero quando $k > 1$; l'esponenziale $e^{-x/\theta}$ la fa decadere; $\theta^k\,\Gamma(k)$ normalizza l'area. Con $k = 1$ il primo fattore vale 1 e resta l'esponenziale di media $\theta$, che parte dal valore $1/\theta$; con $k < 1$ la curva diverge in zero. Le note la indicano per dati continui non negativi, spesso nella teoria delle code.
+
+Tre proprietà (integrazione, non scritte nella slide) ti bastano per leggere il grafico:
+
+<Formula id="f-c14" />
+
+La moda $(k-1)\theta$ vale per $k \ge 1$. Una lettura fisica aiuta: se gli eventi arrivano a caso con un tempo medio $\theta$ tra l'uno e l'altro, il tempo che serve per vederne $k$ segue una Gamma di forma $k$ e scala $\theta$. Per questo $k$ cambia la forma (quante attese sommi) e $\theta$ solo la scala (quanto dura ciascuna).
+
+Attenzione ai simboli: qui $\theta$ è la scala della Gamma, non il vettore dei parametri di $p(\mathbf{x}|\boldsymbol{\theta})$; $k$ è la forma, non l'indice dei campioni $\mathbf{x}_k$ della slide 31.
+
+<Figure id="fig03" />
+
+Il grafico ha $x$ da 0 a 20 e cinque curve. $k$ decide la forma: con $k = 1$ la curva è monotona decrescente; con $k > 1$ è una campana asimmetrica con la coda a destra, sempre più simmetrica al crescere di $k$ (per $k$ grande la Gamma somiglia a una gaussiana). $\theta$ stira o comprime l'asse $x$. Tre curve hanno la stessa moda, 4, ma larghezze diverse.
+
+<Example id="ex03" title="Le cinque Gamma del grafico">
+
+Grafico «Gamma» della slide 23, $x$ da 0 a 20, $y$ da 0 a 0.5. Per ogni coppia $(k, \theta)$ calcoli moda $(k-1)\theta$, valore nel massimo, media $k\theta$ e varianza $k\theta^2$.
+
+<Step title="Rossa: k = 1, θ = 2">
+
+È l'esponenziale di media 2: parte da $f(0) = 1/\theta = 0.5$ e decresce. Media 2, varianza 4.
+
+</Step>
+
+<Step title="Verde: k = 2, θ = 2">
+
+Moda $(2-1) \cdot 2 = 2$. Il picco:
+
+$$
+f(2) = 2^{1}\,\frac{e^{-1}}{2^{2}\,\Gamma(2)} = \frac{2 \cdot 0.368}{4} = 0.184
+$$
+
+Media 4, varianza 8.
+
+</Step>
+
+<Step title="Blu: k = 3, θ = 2">
+
+Moda 4, picco $4^2 e^{-2}/(2^3 \cdot 2) = 16 \cdot 0.135/16 = 0.135$. Media 6, varianza 12.
+
+</Step>
+
+<Step title="Magenta: k = 5, θ = 1">
+
+Moda 4, picco $4^4 e^{-4}/(1 \cdot 24) = 256 \cdot 0.0183/24 = 0.195$. Media 5, varianza 5.
+
+</Step>
+
+<Step title="Nera: k = 9, θ = 0.5">
+
+Moda $8 \cdot 0.5 = 4$, picco $4^8 e^{-8}/(0.5^9 \cdot 40320) = 0.279$. Media 4.5, varianza 2.25.
+
+</Step>
+
+<Step title="Stessa moda, larghezze diverse">
+
+Le ultime tre curve hanno moda 4, ma varianze 12, 5 e 2.25: più cresce $k$ e più scende $\theta$, più la campana si stringe e si alza. È quello che vedi nel grafico, con la nera più alta di tutte.
+
+</Step>
+
+</Example>
+
+<Widget id="m06-gamma-attesa-k-eventi" />
+
+### La Rayleigh
+
+Nella stessa slide 23, a destra, c'è la Rayleigh, con un solo parametro $\sigma$. La slide non scrive il supporto: dalla formula e dal grafico si ricava $x \ge 0$. <SourceRef doc="ch2" page={23} />
+
+<Formula id="f-c15" />
+
+Il fattore $x$ fa partire la curva da zero, la parte gaussiana $\exp(-x^2/(2\sigma^2))$ la fa decadere. È la distribuzione del modulo di un vettore a due componenti gaussiane indipendenti, a media nulla e con la stessa $\sigma$: se $I$ e $Q$ sono le componenti in fase e in quadratura di un'eco, $x = \sqrt{I^2 + Q^2}$ è Rayleigh. Il fattore $x$ davanti all'esponenziale viene dalla circonferenza di raggio $x$, lunga $2\pi x$, su cui cadono tutti i vettori con quel modulo: il $2\pi$ si semplifica con la costante $1/(2\pi\sigma^2)$ della gaussiana 2-D e resta $x/\sigma^2$. Le note la citano per radar e comunicazioni, per modellare segnali diffusi.
+
+Qui $\sigma$ non è la deviazione standard di $x$: è quella delle due componenti gaussiane. Derivando la pdf e annullando la derivata trovi dove sta il massimo e quanto vale:
+
+<Formula id="f-c16" />
+
+Il picco vale $1/(\sigma\sqrt{e}) \approx 0.607/\sigma$: raddoppiare $\sigma$ sposta la moda al doppio e dimezza l'altezza. I passaggi sono nella dimostrazione [«moda e picco della Rayleigh»](#derivation:der13).
+
+<Derivation id="der13" />
+
+<Figure id="fig04" />
+
+<Example id="ex04" title="Le cinque Rayleigh del grafico">
+
+Grafico «Rayleigh» della slide 23, $x$ da 0 a 10, $y$ da 0 a 1.2. Ogni curva ha la moda in $x = \sigma$ e il picco $1/(\sigma\sqrt{e})$, con $\sqrt{e} = 1.649$.
+
+<Step title="σ = 0.5 (blu)">
+
+$$
+f(0.5) = \frac{1}{0.5 \cdot 1.649} = 1.213
+$$
+
+È il picco che supera 1.2 in cima al grafico.
+
+</Step>
+
+<Step title="σ = 1.0 (nera)">
+
+Picco $0.607$ in $x = 1$.
+
+</Step>
+
+<Step title="σ = 2.0, 3.0, 4.0 (verde, rossa, magenta)">
+
+Picchi $0.303$ in $x = 2$, $0.202$ in $x = 3$, $0.152$ in $x = 4$.
+
+</Step>
+
+<Step title="La regola">
+
+Tutte partono da 0 e hanno la coda a destra. Il prodotto moda per picco vale sempre $1/\sqrt{e} = 0.607$: $\sigma$ è un puro parametro di scala.
+
+</Step>
+
+</Example>
+
+<Widget id="m06-rayleigh-eco-radar" />
+
+### Il chi-quadro
+
+La slide 24 apre con il chi-quadro, con un solo parametro $k$, i gradi di libertà (*degrees of freedom*). La slide non scrive il supporto: la pdf vive su $x \ge 0$, e per $k = 1$ solo su $x > 0$ perché diverge in zero. <SourceRef doc="ch2" page={24} />
+
+<Formula id="f-c17" />
+
+Il chi-quadro con $k$ gradi di libertà è la distribuzione della somma dei quadrati di $k$ variabili gaussiane standard indipendenti (integrazione, non nella slide). Da qui il legame con il modello gaussiano: una distanza al quadrato di dati gaussiani standardizzati è un chi-quadro. Le note lo citano per i test d'ipotesi e per la valutazione della bontà di adattamento.
+
+Confronta la formula con quella della Gamma della slide 23: se nella Gamma metti forma $k/2$ e scala $\theta = 2$ ottieni $x^{k/2-1} e^{-x/2}/(2^{k/2}\Gamma(k/2))$, cioè esattamente il chi-quadro, perché $(1/2)^{k/2} = 1/2^{k/2}$.
+
+<Formula id="f-c18" />
+
+Due slide consecutive parlano quindi della stessa famiglia. La curva blu del chi-quadro con $k = 2$ coincide con la Gamma rossa $k = 1$, $\theta = 2$ della slide 23 (un'esponenziale che parte da 0.5); la rossa $k = 4$ coincide con la Gamma verde $k = 2$, $\theta = 2$. Dalla Gamma erediti media $k$, varianza $2k$ e moda $k - 2$ per $k \ge 2$.
+
+<Derivation id="der03" />
+
+<Figure id="fig05" />
+
+<Example id="ex05" title="I cinque chi-quadro del grafico">
+
+Grafico «Chi-Square» della slide 24, $x$ da 0 a 8, $y$ da 0 a 1. Media $k$, varianza $2k$, moda $\max(k-2,\ 0)$.
+
+<Step title="k = 1 (nera)">
+
+L'esponente di $x$ è $k/2 - 1 = -1/2$: la pdf diverge per $x \to 0$ ed esce dal grafico in alto a sinistra.
+
+</Step>
+
+<Step title="k = 2 (blu)">
+
+L'esponente di $x$ è 0: resta $\frac{1}{2}e^{-x/2}$, un'esponenziale con $f(0) = 0.5$.
+
+</Step>
+
+<Step title="k = 3 (verde)">
+
+Moda 1. Il picco:
+
+$$
+f(1) = \frac{(1/2)^{3/2}}{\Gamma(3/2)}\,e^{-1/2} = \frac{0.354}{0.886} \cdot 0.607 = 0.242
+$$
+
+</Step>
+
+<Step title="k = 4 (rossa) e k = 5 (magenta)">
+
+$k = 4$: moda 2, picco $0.25 \cdot 2 \cdot e^{-1} = 0.184$, lo stesso della Gamma $k = 2$, $\theta = 2$. $k = 5$: moda 3, picco 0.154.
+
+</Step>
+
+<Step title="Che cosa insegnano">
+
+Al crescere di $k$ la massa si sposta a destra (media $k$) e la curva si allarga (varianza $2k$). La coincidenza della curva $k = 4$ con una Gamma del grafico precedente conferma che il chi-quadro è una Gamma con forma $k/2$ e scala 2.
+
+</Step>
+
+</Example>
+
+<Widget id="m06-chi-quadro-somma-quadrati" />
+
+<Check id="chk-05" />
+
+### La log-normale
+
+A destra nella slide 24 c'è la log-normale, definita per $x > 0$. <SourceRef doc="ch2" page={24} />
+
+<Formula id="f-c19" />
+
+Una variabile è <Term en="log-normal">log-normale</Term> quando il suo logaritmo naturale è gaussiano con media $\mu$ e deviazione standard $\sigma$. Quindi $\mu$ e $\sigma$ non sono media e deviazione standard di $x$, ma di $\ln x$. Rispetto alla gaussiana compaiono $\ln x$ al posto di $x$ nell'esponente e un fattore $1/x$ davanti: viene dal cambio di variabile $y = \ln x$, perché $dy = dx/x$ e la densità deve conservare la probabilità di ogni intervallo. Le note la indicano per variabili con asimmetria positiva, come i dati finanziari.
+
+<Derivation id="der14" />
+
+Il grafico ha sei curve, tutte con $\mu = 0$: la scritta «μ=0» è un'annotazione aggiunta a mano accanto alla legenda. Per leggerlo ti servono moda, mediana e media:
+
+<Formula id="f-c20" />
+
+Con $\mu = 0$ la mediana vale sempre $e^0 = 1$. Con $\sigma$ piccola la curva è una campana stretta, quasi simmetrica attorno a 1; al crescere di $\sigma$ la moda $e^{-\sigma^2}$ scivola verso 0 e la coda destra si allunga: è l'asimmetria positiva. Per stimare $\mu$ e $\sigma$ da dati log-normali basta prendere il logaritmo dei dati e usare le stime della gaussiana.
+
+<Figure id="fig06" />
+
+<Example id="ex06" title="Le sei log-normali del grafico (μ=0)">
+
+Grafico «Log-Normal» della slide 24, $x$ da 0 a 3, $y$ da 0 a 2, $\mu = 0$ per tutte. La moda vale $e^{-\sigma^2}$ e sostituendola nella formula il valore nel massimo diventa $e^{\sigma^2/2}/(\sigma\sqrt{2\pi})$.
+
+<Step title="σ = 10 (nera)">
+
+Moda $e^{-100}$, praticamente zero: tutta la massa è schiacciata contro $x = 0$ e la curva sembra un segmento verticale sull'asse.
+
+</Step>
+
+<Step title="σ = 3/2 (blu) e σ = 1 (verde)">
+
+$\sigma = 1.5$: moda $e^{-2.25} = 0.105$, picco $e^{1.125}/(1.5 \cdot 2.507) = 0.819$. $\sigma = 1$: moda $e^{-1} = 0.368$, picco $e^{0.5}/2.507 = 0.658$.
+
+</Step>
+
+<Step title="σ = 1/2 (gialla) e σ = 1/4 (rossa)">
+
+$\sigma = 0.5$: moda $0.779$, picco $0.904$. $\sigma = 0.25$: moda $0.939$, picco $1.646$.
+
+</Step>
+
+<Step title="σ = 1/8 (magenta)">
+
+Moda $e^{-1/64} = 0.985$ e picco
+
+$$
+\frac{e^{1/128}}{0.125 \cdot 2.507} = 3.217
+$$
+
+Il grafico arriva a 2: la curva magenta esce dalla scala.
+
+</Step>
+
+<Step title="Che cosa insegnano">
+
+Con $\sigma$ piccola la log-normale somiglia a una gaussiana stretta attorno a 1; con $\sigma$ grande diventa molto asimmetrica. La mediana resta 1 per tutte.
+
+</Step>
+
+</Example>
+
+<Widget id="m06-log-normale-prezzi-case" />
+
+<Check id="chk-06" />
+
+### Sei modelli a confronto
+
+Leggi i sei grafici insieme, come nella griglia 3×2 delle note. <SourceRef doc="part1" page={22} />
+
+| Famiglia | Supporto | Forma | Parametri |
+|---|---|---|---|
+| Gaussiana | tutto l'asse reale | simmetrica | 2: $\mu$, $\sigma$ |
+| Gaussiana generalizzata | tutto l'asse reale | simmetrica | 3: $m$, $b$, $\beta$ |
+| Gamma | $x > 0$ | asimmetrica, coda a destra | 2: $k$, $\theta$ |
+| Rayleigh | $x \ge 0$ | asimmetrica, coda a destra | 1: $\sigma$ |
+| Chi-quadro | $x \ge 0$ | asimmetrica, coda a destra | 1: $k$ |
+| Log-normale | $x > 0$ | asimmetrica, coda a destra | 2: $\mu$, $\sigma$ |
+
+<Figure id="fig07" />
+
+Tutte sono modelli parametrici: scelta la famiglia, stimare $p(x)$ significa stimare da uno a tre numeri, per esempio con la ML. Prima di guardare la forma, guarda il supporto: una famiglia con il supporto sbagliato, come una gaussiana su dati solo positivi vicini a zero, assegna probabilità a valori impossibili.
+
+<Widget id="m06-indovina-il-modello" />
+
+<Check id="chk-07" />
+
+### Scegliere il modello non è banale
+
+Dopo la griglia dei sei grafici le note avvertono: «Model selection is not a trivial task». La frase è solo nelle note, non nelle slide. <SourceRef doc="part1" page={22} />
+
+Due motivi concreti. Famiglie diverse possono adattarsi quasi ugualmente bene agli stessi dati: una Gamma e una log-normale descrivono entrambe dati positivi con la coda a destra, e con pochi campioni l'istogramma non le distingue. E la ML sceglie i parametri, non la famiglia: se la famiglia è sbagliata, ottieni i parametri migliori di un modello sbagliato, per quanto buono sia lo stimatore. In quel caso decide la conoscenza del fenomeno, cioè i tre aspetti della slide 20.
+
+## Il modello gaussiano e il limite centrale
+
+### Un modello parametrico usato ovunque
+
+La slide 25 apre la parte sul modello gaussiano: «The Gaussian model is a parametric model widely used in numerous applications», con *widely used* in rosso. Parametrico significa che la pdf è determinata per intero da un numero finito di parametri: media e varianza in una dimensione, vettore media e matrice di covarianza in $n$ dimensioni. La motivazione di questo successo, dice la slide, sta nel <Term en="central limit theorem">teorema del limite centrale</Term>. Le note ripetono che la popolarità del modello gaussiano è dovuta in larga parte al *Central Limit Theorem* (CLT). <SourceRef doc="ch2" page={25} /> <SourceRef doc="part1" page={22} />
+
+### Il teorema del limite centrale
+
+L'enunciato della slide, in verde e tra virgolette: «if the sum of many iid variables has a finite variance, then it will be approximately normally distributed». Le note lo riscrivono in grassetto: se la somma di molte variabili aleatorie indipendenti e identicamente distribuite (*independent and identically distributed*, iid) ha varianza finita, allora la somma sarà distribuita in modo approssimativamente normale. <SourceRef doc="part1" page={23} />
+
+<Formula id="f-c23" />
+
+È un enunciato informale. Non dice nulla sulla forma della distribuzione delle singole variabili, che può essere qualunque: uniforme, esponenziale, discreta. Conta solo che siano tante, iid e con varianza finita.
+
+La forma rigorosa (integrazione, non nella slide) deve tenere conto di un fatto: se ogni $x_i$ ha media $\mu$ e varianza $\sigma^2$, la somma ha media $n\mu$ e varianza $n\sigma^2$, che crescono con $n$. La somma da sola non converge a niente. Converge la somma **standardizzata**, cioè centrata e divisa per la sua deviazione standard, che per $n \to +\infty$ tende in distribuzione alla normale standard $N(0, 1)$:
+
+<Formula id="f-c23-2" />
+
+Un esempio che puoi rifare con un foglio di calcolo. Somma 12 numeri uniformi tra 0 e 1 e sottrai 6. Ogni uniforme ha media 1/2 e varianza 1/12, quindi il risultato ha media $12 \cdot 1/2 - 6 = 0$ e varianza $12 \cdot 1/12 = 1$. Il suo istogramma è già quasi indistinguibile da una $N(0, 1)$, anche se ogni singola uniforme è piatta.
+
+### Le tre ipotesi del teorema
+
+L'enunciato contiene tre condizioni. <SourceRef doc="ch2" page={25} />
+
+1. **Molte variabili** (*many*): l'approssimazione migliora al crescere del numero di termini. Con $n = 1$ non c'è alcuna gaussianizzazione: la somma ha la forma della singola variabile.
+2. **iid**: indipendenti e identicamente distribuite. Se le variabili sono totalmente dipendenti, per esempio tutte uguali a $x_1$, la somma vale $n\,x_1$ e conserva la forma originale.
+3. **Varianza finita** (*finite variance*). Con varianza infinita la conclusione cade: la media di variabili di Cauchy ha la stessa distribuzione di Cauchy di una sola variabile, per quanto grande sia $n$.
+
+La slide attribuisce la varianza finita alla somma; la forma rigorosa la chiede alle singole variabili. Le due richieste coincidono: per variabili indipendenti le varianze si sommano.
+
+<Formula id="f-c24" />
+
+### Perché la gaussiana è ovunque
+
+La slide chiude: «Since many real processes take origin from many independent causes and yield distributions with finite variance, this explains the ubiquity of the Gaussian pdf». Le note allargano: molti fenomeni in natura e nell'industria nascono dalla combinazione di numerosi fattori indipendenti, ciascuno con un piccolo effetto; combinandosi producono distribuzioni ben approssimate da un modello gaussiano, soprattutto quando la varianza totale è finita. Per questo la pdf gaussiana è adottata in molti campi: *signal processing*, *machine learning*, economia, ingegneria. <SourceRef doc="part1" page={23} />
+
+<Callout kind="intuizione">
+L'errore di lettura di un sensore di temperatura è la somma di tante piccole cause: rumore termico dell'elettronica, quantizzazione del convertitore, vibrazioni, oscillazioni dell'alimentazione. Nessuna è gaussiana di per sé, ma la loro somma lo è quasi. Per questo il rumore di misura si modella gaussiano, e la gaussiana è il modello predefinito per $p(\mathbf{x}|\omega_i)$ in tanti classificatori.
+</Callout>
+
+<Widget id="m06-limite-centrale-somma-cause" />
+
+<Check id="chk-08" />
+
+## La gaussiana multivariata
+
+### La formula
+
+Con più feature il vettore $\mathbf{x}$ ha $n$ componenti. La slide 26: «The multivariate Gaussian pdf takes the following analytical expression». <SourceRef doc="ch2" page={26} /> <SourceRef doc="part1" page={23} />
+
+<Formula id="f-c26" />
+
+Il vettore dei parametri $\boldsymbol{\theta}$ coincide con la coppia $(\mathbf{m}, \Sigma)$: per questo la slide scrive $p(\mathbf{x}|\theta) = p(\mathbf{x}|\mathbf{m}, \Sigma)$. La formula ha due pezzi.
+
+- La **costante di normalizzazione** $1/((2\pi)^{n/2}\vert\Sigma\vert^{1/2})$, che non dipende da $\mathbf{x}$: rende unitario il volume sotto la campana.
+- L'**esponenziale** di meno un mezzo della forma quadratica $(\mathbf{x}-\mathbf{m})^t\Sigma^{-1}(\mathbf{x}-\mathbf{m})$: vale 1 in $\mathbf{x} = \mathbf{m}$ e decresce allontanandoti dalla media.
+
+Nella slide due frecce verdi etichettano i parametri. «Covariance matrix» punta alla $\Sigma$ di $p(\mathbf{x}|\mathbf{m}, \Sigma)$ nel membro di sinistra, non al determinante del denominatore; «Mean vector» punta alla $\mathbf{m}$ del primo fattore $(\mathbf{x}-\mathbf{m})^t$ dell'esponente. Una freccia blu collega la parentesi quadra finale alla sigla $N(\mathbf{m}, \Sigma)$ in basso a destra.
+
+La formula ha senso solo se $\Sigma$ è invertibile, cioè se il suo determinante è positivo: servono $\Sigma^{-1}$ all'esponente e $\vert\Sigma\vert^{1/2}$ al denominatore.
+
+<Figure id="fig08" />
+
+<Callout kind="esame">
+«He also asked me the formula of the Gaussian curve in a multi dimensional space (with mean vector and covariance matrix).» Scrivila con la costante e l'esponente, nomina ogni simbolo con le sue dimensioni e controlla il caso $n = 1$: devi ritrovare la gaussiana della slide 22.
+</Callout>
+
+<Widget id="m06-formula-viva-bivariata" />
+
+### I simboli e la notazione compatta
+
+Le note elencano i simboli dopo la formula («Where:»): <SourceRef doc="part1" page={23} />
+
+- $\mathbf{x}$ è il vettore di feature $n$-dimensionale;
+- $\mathbf{m}$ è il <Term en="mean vector">vettore media</Term>;
+- $\Sigma$ è la <Term en="covariance matrix">matrice di covarianza</Term>;
+- $\vert\Sigma\vert$ è il determinante della matrice di covarianza;
+- $(\mathbf{x}-\mathbf{m})^t\Sigma^{-1}(\mathbf{x}-\mathbf{m})$ è la distanza di Mahalanobis tra $\mathbf{x}$ e il vettore media.
+
+<Formula id="f-c27" />
+
+Controlla le dimensioni: $\mathbf{x}$ e $\mathbf{m}$ sono vettori colonna $n \times 1$, $\Sigma$ è $n \times n$. La forma quadratica è il prodotto di un vettore riga $1 \times n$, di una matrice $n \times n$ e di un vettore colonna $n \times 1$: un numero. Anche $p(\mathbf{x})$ è un numero.
+
+La sigla blu della slide dà un nome all'intera espressione:
+
+<Formula id="f-c28" />
+
+Si legge «$\mathbf{x}$ segue una gaussiana multivariata di media $\mathbf{m}$ e covarianza $\Sigma$». In una dimensione diventa $N(\mu, \sigma^2)$, con la varianza (non la deviazione standard) al secondo posto. La notazione dice anche che bastano $\mathbf{m}$ e $\Sigma$ per individuare la pdf.
+
+### La distanza di Mahalanobis all'esponente
+
+Solo le note dicono che la forma quadratica all'esponente «is the Mahalanobis distance between x and the mean vector»; nella slide 26 il termine non compare. <SourceRef doc="part1" page={23} />
+
+<Formula id="f-c29" />
+
+A rigore questa forma quadratica è il **quadrato** della <Term en="Mahalanobis distance">distanza di Mahalanobis</Term>; la distanza è la sua radice:
+
+<Formula id="f-c29-2" />
+
+Misura quanto $\mathbf{x}$ è lontano dalla media in unità di deviazione standard lungo ogni direzione, tenendo conto delle correlazioni. Con $\Sigma = I$ la distanza di Mahalanobis coincide con quella euclidea, e la forma quadratica con la distanza euclidea al quadrato. Poiché $p(\mathbf{x})$ dipende da $\mathbf{x}$ solo attraverso questa quantità, i punti con la stessa distanza di Mahalanobis hanno la stessa densità: sono gli isolivelli della slide 28.
+
+Un esempio con i salmoni, dati sintetici: luminosità e larghezza con
+
+$$
+\mathbf{m} = \begin{bmatrix} 4 \\ 2 \end{bmatrix}, \qquad \Sigma = \begin{bmatrix} 2 & 1 \\ 1 & 2 \end{bmatrix}, \qquad \vert\Sigma\vert = 3, \qquad \Sigma^{-1} = \frac{1}{3}\begin{bmatrix} 2 & -1 \\ -1 & 2 \end{bmatrix}
+$$
+
+Prendi due pesci alla stessa distanza euclidea $\sqrt{2}$ dalla media.
+
+| Pesce | $\mathbf{x}-\mathbf{m}$ | forma quadratica | $p(\mathbf{x})$ |
+|---|---|---|---|
+| $(5, 3)$ | $(1, 1)$ | $\frac{1}{3}(2 - 2 + 2) = 2/3$ | $0.0919 \cdot e^{-1/3} = 0.0658$ |
+| $(5, 1)$ | $(1, -1)$ | $\frac{1}{3}(2 + 2 + 2) = 2$ | $0.0919 \cdot e^{-1} = 0.0338$ |
+
+Il primo scarto va nella direzione in cui luminosità e larghezza crescono insieme, dove i dati variano molto: per Mahalanobis è vicino. Il secondo va di traverso, dove i dati variano poco: è lontano, e la densità si dimezza. La costante $0.0919 = 1/(2\pi\sqrt{3})$ è il valore della pdf nella media.
+
+<Widget id="m06-mahalanobis-contro-euclidea" />
+
+<Check id="chk-09" />
+
+### Che cosa rappresentano media e covarianza
+
+Le note («In this expression:») danno ai due parametri un significato statistico. Il vettore media $\mathbf{m}$ rappresenta la tendenza centrale dei dati (*central tendency*). La matrice di covarianza $\Sigma$ cattura la variabilità e la correlazione tra le diverse dimensioni dei dati. <SourceRef doc="part1" page={23} />
+
+Geometricamente, $\mathbf{m}$ è il punto in cui la campana raggiunge il massimo; $\Sigma$ ne decide larghezza, allungamento e orientazione. Cambiare $\mathbf{m}$ trasla la campana senza deformarla, come $\mu$ in una dimensione.
+
+### L'esempio bivariato
+
+In basso nella slide 26 c'è una superficie a rete, «Example of a bivariate Gaussian pdf», con gli assi $x_1$, $x_2$ e la quota
+
+<Formula id="f-c31" />
+
+La campana è allungata in diagonale. Le note: nel caso bivariato la pdf forma una superficie 3-D a campana che rappresenta la distribuzione congiunta di due variabili correlate. L'allungamento obliquo è l'effetto visibile della covarianza non nulla tra $x_1$ e $x_2$: con covarianza zero gli assi della campana sarebbero paralleli agli assi coordinati. <SourceRef doc="part1" page={23} />
+
+<Figure id="fig09" />
+
+### La costante di normalizzazione e il determinante
+
+Questa sezione collega le formule delle slide 22 e 26 (integrazione). In $\mathbf{x} = \mathbf{m}$ l'esponenziale vale 1, quindi la costante di normalizzazione è il valore della pdf nel picco:
+
+<Formula id="f-c32" />
+
+$\vert\Sigma\vert$ misura il «volume» della nuvola di dati. Se $\vert\Sigma\vert$ cresce la campana si allarga e il picco si abbassa, perché il volume sotto la campana resta 1. Se $\vert\Sigma\vert$ tende a 0 il picco tende all'infinito e la pdf non è più definita: succede con feature perfettamente correlate, oppure con una feature a varianza nulla. Nell'esempio dei salmoni $\vert\Sigma\vert = 3$ e il picco vale $1/(2\pi\sqrt{3}) = 0.0919$; con $\Sigma = I$ varrebbe $1/(2\pi) = 0.159$.
+
+Per $n = 1$ hai $\Sigma = \sigma^2$, $\vert\Sigma\vert^{1/2} = \sigma$, $\Sigma^{-1} = 1/\sigma^2$, e la formula si riduce esattamente alla gaussiana univariata:
+
+<Derivation id="der01" />
+
+Per $n = 2$, con $\sigma_{12}$ covarianza tra le due feature:
+
+<Formula id="f-c32-2" />
+
+In generale il determinante è il prodotto degli autovalori, cioè delle varianze lungo gli assi dell'iperellisse di livello:
+
+<Formula id="f-c32-3" />
+
+Per questo la costante è proprio quella che rende 1 il volume: la dimostrazione [«perché la campana ha volume 1»](#derivation:der15) è nella sezione sulla forma 2-D. Il legame tra $\vert\Sigma\vert$ e il volume è preciso: l'iperellisse con distanza di Mahalanobis $r$ ha semiassi $r\sqrt{\lambda_i}$, quindi il suo volume vale $V_n r^n \vert\Sigma\vert^{1/2}$, con $V_n$ volume della sfera unitaria in $n$ dimensioni.
+
+<Formula id="f-c32-4" />
+
+In 2-D l'area dell'ellisse di livello è $\pi r^2 \vert\Sigma\vert^{1/2}$: con $\vert\Sigma\vert = 3$ e $r = 1$ vale $\pi\sqrt{3} = 5.44$.
+
+## Vettore media e matrice di covarianza
+
+### Due parametri definiscono tutto
+
+La slide 27: «The parameters defining completely the multivariate Gaussian pdf are the mean vector and the covariance matrix, which are defined as:». Le note: la pdf è «fully defined by two key parameters». <SourceRef doc="ch2" page={27} /> <SourceRef doc="part1" page={23} />
+
+Conseguenza pratica: per stimare una gaussiana in $n$ dimensioni ti servono $n$ numeri per $\mathbf{m}$ e $n(n+1)/2$ numeri per $\Sigma$, che è simmetrica, e nient'altro. Il conteggio non è scritto nella fonte, ma spiega un problema che rivedrai:
+
+<Formula id="f-c33" />
+
+Con $n = 2$ i parametri sono 5, con $n = 10$ sono 65, con $n = 100$ sono 5150. Crescono con il quadrato del numero di feature: con pochi campioni di training la covarianza stimata diventa inaffidabile o addirittura non invertibile. È una delle cause dell'effetto Hughes, in <ModLink to="m11-hughes-feature-selection">effetto Hughes e selezione delle feature</ModLink>.
+
+<Check id="chk-10" />
+
+### Il vettore media
+
+<Definition term="Vettore media" en="mean vector">
+Il valore atteso del vettore di feature. Componente per componente, $m_i = E\{x_i\}$: è il vettore delle medie delle singole feature e individua il centro della campana.
+</Definition>
+
+<Formula id="f-c34" />
+
+Le note: rappresenta il valore atteso, o tendenza centrale, dei dati. <SourceRef doc="part1" page={23} />
+
+### La matrice di covarianza
+
+<Definition term="Matrice di covarianza" en="covariance matrix">
+Il valore atteso del prodotto esterno dello scarto dalla media per se stesso: $\Sigma = Cov\{\mathbf{x}\} = E\{(\mathbf{x}-\mathbf{m})(\mathbf{x}-\mathbf{m})^t\}$.
+</Definition>
+
+<Formula id="f-c35" />
+
+$(\mathbf{x}-\mathbf{m})$ è un vettore colonna $n \times 1$ e $(\mathbf{x}-\mathbf{m})^t$ un vettore riga $1 \times n$: il loro prodotto, nell'ordine colonna per riga, è una matrice $n \times n$. Il prodotto nell'ordine opposto, riga per colonna, darebbe invece uno scalare. Le note: la covarianza descrive la variabilità e le relazioni tra le feature dei dati. <SourceRef doc="part1" page={24} />
+
+Vedi come si costruisce con un solo campione. Se lo scarto è $\mathbf{x}-\mathbf{m} = (1, -2)$:
+
+$$
+(\mathbf{x}-\mathbf{m})(\mathbf{x}-\mathbf{m})^t = \begin{bmatrix} 1 \\ -2 \end{bmatrix}\begin{bmatrix} 1 & -2 \end{bmatrix} = \begin{bmatrix} 1 & -2 \\ -2 & 4 \end{bmatrix}
+$$
+
+Sulla diagonale trovi i quadrati degli scarti, fuori diagonale il prodotto degli scarti delle due feature; la matrice è simmetrica e ha rango 1. $\Sigma$ è la media di queste matrici su tutta la distribuzione. Il segno della covarianza viene dai quadranti: scarti concordi danno prodotti positivi, scarti discordi prodotti negativi.
+
+La slide prosegue la catena di uguaglianze con una seconda forma:
+
+<Formula id="f-c36" />
+
+La covarianza è la matrice dei momenti del secondo ordine $E\{\mathbf{x}\mathbf{x}^t\}$ (la matrice di correlazione) meno il prodotto esterno della media con se stessa. È la versione matriciale della formula scalare $var\{x\} = E\{x^2\} - (E\{x\})^2$. La slide dà solo il risultato; i passaggi sono qui sotto. La stessa struttura ricompare nella seconda forma della stima ML.
+
+<Derivation id="der04" />
+
+<Callout kind="esame">
+«Asked me to explain PCA. When I started explaining he asked about covariance matrix, how it is created, what is cov matrix.» Rispondi con la definizione come valore atteso del prodotto esterno, le dimensioni, la seconda forma, il significato di diagonale e fuori diagonale, le proprietà della slide 27 e la stima dai campioni della slide 31.
+</Callout>
+
+<Widget id="m06-costruisci-la-covarianza" />
+
+### Varianze sulla diagonale, covarianze fuori
+
+Le note: $\Sigma$ «captures both the variance of each feature and the covariance between different features». Elemento per elemento: <SourceRef doc="part1" page={24} />
+
+<Formula id="f-c37" />
+
+<Formula id="f-c37-2" />
+
+Sulla diagonale principale c'è la varianza $\sigma_i^2$ della feature $i$. Fuori diagonale, in posizione $(i, j)$, c'è la covarianza $\sigma_{ij}$ tra le feature $i$ e $j$: positiva se crescono insieme, negativa se una cresce quando l'altra cala, nulla se sono incorrelate. La matrice diagonale in fondo alla slide 27 mostra proprio le $\sigma_i^2$ sulla diagonale.
+
+### Due feature e il coefficiente di correlazione
+
+Le note dicono che $\Sigma$ «captures the variability and correlation between the different dimensions of the data». Il caso $n = 2$ rende concreto il termine *correlation*, che userai in tutti i widget 2-D del foglio (integrazione). <SourceRef doc="part1" page={23} />
+
+<Formula id="f-c69" />
+
+La covarianza normalizzata dalle due deviazioni standard è il <Term en="correlation coefficient">coefficiente di correlazione</Term>, un numero puro:
+
+<Formula id="f-c69-2" />
+
+Con $\rho > 0$ le due feature crescono insieme e l'ellisse è inclinata verso l'alto a destra, come nelle figure delle slide 26 e 28. Con $\rho < 0$ una cresce quando l'altra cala. Con $\rho = 0$ la matrice è diagonale e, per la gaussiana, le feature sono indipendenti. Il determinante:
+
+<Formula id="f-c69-3" />
+
+Si annulla per $\vert\rho\vert = 1$: le feature sono legate linearmente, la nuvola collassa su una retta, $\Sigma$ non è invertibile e la pdf non è definita. Il vincolo $\vert\rho\vert \le 1$, cioè $\sigma_{12}^2 \le \sigma_1^2\sigma_2^2$, è la forma 2-D della semidefinitezza positiva. Per i salmoni dell'esempio precedente $\sigma_1 = \sigma_2 = \sqrt{2}$ e $\sigma_{12} = 1$: $\rho = 1/2$ e $\vert\Sigma\vert = 2 \cdot 2 \cdot (1 - 1/4) = 3$.
+
+<Check id="chk-11" />
+
+### Prima proprietà: la simmetria
+
+Sotto «Properties of the covariance matrix», in blu, la slide 27 elenca tre voci. La prima: $\Sigma$ è simmetrica. <SourceRef doc="ch2" page={27} />
+
+<Formula id="f-c38" />
+
+Segue dal fatto che la covarianza tra la feature $i$ e la feature $j$ è la stessa di quella tra $j$ e $i$: nella definizione $E\{(x_i - m_i)(x_j - m_j)\}$ i due fattori commutano. Anche ogni prodotto esterno $(\mathbf{x}-\mathbf{m})(\mathbf{x}-\mathbf{m})^t$ è simmetrico, e la media di matrici simmetriche è simmetrica. Conseguenze: gli elementi indipendenti sono $n(n+1)/2$ e non $n^2$; gli autovalori sono reali e gli autovettori si possono scegliere ortogonali (lo vedrai nella slide 29).
+
+### Seconda proprietà: semidefinita positiva
+
+La seconda voce: $\Sigma$ è <Term en="positive semidefinite">semidefinita positiva</Term>. Le note spiegano: tutti i suoi autovalori sono non negativi, e questo assicura che la varianza sia sempre non negativa. <SourceRef doc="part1" page={24} />
+
+Prendi una direzione qualunque $\mathbf{a}$ e proietta i dati su di essa: ottieni lo scalare $\mathbf{a}^t\mathbf{x}$, una combinazione lineare delle feature. La sua varianza è $E\{(\mathbf{a}^t(\mathbf{x}-\mathbf{m}))^2\} = \mathbf{a}^t\Sigma\,\mathbf{a}$, e una varianza non può essere negativa:
+
+<Formula id="f-c39" />
+
+Per esempio, con due bande spettrali, rosso e vicino infrarosso, e $\Sigma = \begin{bmatrix} 2.5 & 1.5 \\ 1.5 & 2.5 \end{bmatrix}$ (dati sintetici), l'indice «infrarosso meno rosso» ha $\mathbf{a} = (-1, 1)$ e varianza $2.5 - 2 \cdot 1.5 + 2.5 = 2$; la somma delle bande ha $\mathbf{a} = (1, 1)$ e varianza $2.5 + 3 + 2.5 = 8$. Qualunque indice tu costruisca, la varianza esce non negativa.
+
+Per una matrice simmetrica la definizione con la forma quadratica e quella delle note con gli autovalori sono equivalenti. Scrivi $\mathbf{a}$ nella base ortonormale degli autovettori $\mathbf{e}_i$: la forma quadratica diventa una somma di quadrati pesati dagli autovalori.
+
+<Formula id="f-c39-2" />
+
+Perché la pdf gaussiana esista serve qualcosa in più: $\Sigma$ **definita** positiva, con autovalori strettamente positivi. Altrimenti $\Sigma^{-1}$ non esiste e $\vert\Sigma\vert = 0$.
+
+<Derivation id="der05" />
+
+<Widget id="m06-varianza-proiezione-psd" />
+
+<Check id="chk-12" />
+
+### Feature indipendenti: la matrice diagonale
+
+La terza voce della slide 27: «For independent features», seguita dalla matrice diagonale. <SourceRef doc="ch2" page={27} />
+
+<Formula id="f-c40" />
+
+Le note: quando le feature sono indipendenti la matrice di covarianza è diagonale e gli elementi fuori diagonale, che rappresentano le covarianze, sono zero; $\sigma_i^2$ rappresenta la varianza della $i$-esima feature. <SourceRef doc="part1" page={24} />
+
+Il caso ancora più particolare $\Sigma = \sigma^2 I$ ha simmetria sferica: tutte le feature hanno la stessa varianza e gli isolivelli sono cerchi o sfere. È il kernel gaussiano di <ModLink to="m09-parzen-windows">Parzen</ModLink>.
+
+<Figure id="fig10" />
+
+### La pdf congiunta diventa un prodotto
+
+Nella slide una freccia verde va dalla matrice diagonale a
+
+<Formula id="f-c41" />
+
+Le note: per feature indipendenti la pdf gaussiana multivariata si semplifica nel prodotto delle singole gaussiane univariate, e ogni feature è distribuita indipendentemente dalle altre. Il meccanismo: con $\Sigma$ diagonale, $\Sigma^{-1}$ ha $1/\sigma_i^2$ sulla diagonale, $\vert\Sigma\vert = \prod_i \sigma_i^2$ e la forma quadratica perde i termini misti, diventando $\sum_i (x_i - m_i)^2/\sigma_i^2$. L'esponenziale di una somma è un prodotto di esponenziali:
+
+<Formula id="f-c41-2" />
+
+<Derivation id="der06" />
+
+È l'ipotesi del classificatore naive Bayes gaussiano: invece di una gaussiana $n$-D stimi $n$ gaussiane 1-D, e i parametri della covarianza scendono da $n(n+1)/2$ a $n$. L'ipotesi è esatta se le feature sono davvero indipendenti; altrimenti ignori le correlazioni.
+
+<Widget id="m06-feature-indipendenti-prodotto" />
+
+### Indipendenza e covarianza nulla
+
+La freccia della slide va in una sola direzione. Conviene capire quando si può percorrere al contrario (integrazione).
+
+**Feature indipendenti ⟹ covarianza nulla**, per qualunque distribuzione. Se $x_i$ e $x_j$ sono indipendenti, il valore atteso del prodotto dei due scarti è il prodotto dei valori attesi, e ciascuno vale zero:
+
+<Formula id="f-c71" />
+
+**Covarianza nulla ⟹ indipendenza**, solo per un vettore congiuntamente gaussiano. Con $\Sigma$ diagonale la pdf gaussiana si fattorizza, come hai appena visto:
+
+<Formula id="f-c71-2" />
+
+In generale il viceversa è falso. Controesempio: $x$ gaussiana standard e $y = x^2$. La covarianza vale $E\{x^3\} - E\{x\}E\{x^2\} = 0$, perché i momenti dispari di una gaussiana centrata sono nulli; eppure $y$ è una funzione di $x$, quindi le due variabili sono dipendenti al massimo grado.
+
+<Formula id="f-c71-3" />
+
+<Derivation id="der18" />
+
+Nel modello gaussiano, quindi, «$\Sigma$ diagonale», «feature incorrelate» e «feature indipendenti» dicono la stessa cosa. È questo che permette alla slide 30 di dedurre l'indipendenza di $x_1$ e $x_3$ dalla sola forma di un'ellisse. Si tratta di indipendenza a coppie (marginale), non condizionata alle altre feature.
+
+<Check id="chk-13" />
+
+## La forma di una gaussiana 2-D
+
+La slide 28, «Shape of a 2-D Gaussian PDF», descrive la geometria della campana in tre punti; le note ne aggiungono un quarto. <SourceRef doc="ch2" page={28} /> <SourceRef doc="part1" page={24} />
+
+### Una campana di volume unitario
+
+Primo punto: $p(\mathbf{x})$ può essere vista come una campana di volume unitario (*bell of unitary volume*, in rosso). Le note: forma una superficie a campana con volume unitario.
+
+<Formula id="f-c42" />
+
+È la versione 2-D della condizione che l'area sotto una pdf 1-D vale 1. L'integrale doppio di $p(x_1, x_2)$ su tutto il piano vale 1 qualunque siano $\mathbf{m}$ e $\Sigma$: lo garantisce la costante di normalizzazione. Il volume è vincolato, quindi larghezza e altezza si compensano: se la nuvola si allarga (cresce $\vert\Sigma\vert$) la campana si abbassa. La dimostrazione passa agli assi degli autovettori, dove l'integrale si spezza in $n$ integrali di gaussiane 1-D.
+
+<Derivation id="der15" />
+
+<Widget id="m06-volume-unitario" />
+
+### Gli isolivelli sono ellissi
+
+Secondo punto: le fette orizzontali della campana corrispondenti agli isolivelli (*isolevels*, in rosso) sono ellissi i cui assi sono diretti dagli autovettori di $\Sigma$. Nella slide manca la parola *of*: «directed by the eigenvectors Σ». Le note: queste ellissi rappresentano regioni a densità di probabilità costante.
+
+Perché ellissi? Tagliare la campana a quota $z = c$ significa prendere i punti con $p(\mathbf{x}) = c$. Poiché $p$ dipende da $\mathbf{x}$ solo attraverso la forma quadratica, fissare la quota equivale a fissare la distanza di Mahalanobis da $\mathbf{m}$: prendi il logaritmo e isola l'esponente.
+
+<Formula id="f-c43" />
+
+L'equazione $(\mathbf{x}-\mathbf{m})^t\Sigma^{-1}(\mathbf{x}-\mathbf{m}) = r^2$ descrive un'ellisse centrata in $\mathbf{m}$. Tutte le ellissi di livello sono concentriche, con la stessa orientazione e lo stesso rapporto tra gli assi: sono copie in scala l'una dell'altra, con fattore $r$.
+
+Condizione di esistenza (integrazione): poiché $r^2 \ge 0$, l'isolivello esiste solo se la quota non supera il picco.
+
+<Formula id="f-c43-2" />
+
+Alla quota del picco $r = 0$ e l'ellisse degenera nel punto $\mathbf{m}$; per $c \to 0$ si ha $r \to \infty$ e l'ellisse si allarga senza limite. Quota alta, ellisse piccola; quota bassa, ellisse grande. Il perché dell'orientazione lungo gli autovettori e della lunghezza degli assi è nella dimostrazione qui sotto.
+
+<Derivation id="der07" />
+
+<Widget id="m06-affetta-la-campana" />
+
+### Gli assi seguono gli autovettori
+
+Le note: gli assi delle ellissi sono allineati lungo gli autovettori della matrice di covarianza $\Sigma$. Nella figura di destra i due assi sono etichettati $\mathbf{e}_1$ ed $\mathbf{e}_2$ e sono ruotati rispetto agli assi coordinati $x_1$, $x_2$: la rotazione è l'effetto della covarianza non nulla. <SourceRef doc="part1" page={24} />
+
+Un <Term en="eigenvector">autovettore</Term> $\mathbf{e}$ di $\Sigma$ è una direzione che $\Sigma$ non ruota, ma solo allunga del fattore $\lambda$, l'<Term en="eigenvalue">autovalore</Term>:
+
+<Formula id="f-c44" />
+
+Gli autovalori sono le soluzioni dell'<Term en="characteristic equation">equazione caratteristica</Term>:
+
+<Formula id="f-c44-2" />
+
+Un esempio con due bande spettrali fortemente correlate, dati sintetici:
+
+$$
+\Sigma = \begin{bmatrix} 2.5 & 1.5 \\ 1.5 & 2.5 \end{bmatrix}, \qquad \det(\Sigma - \lambda I) = (2.5 - \lambda)^2 - 1.5^2 = \lambda^2 - 5\lambda + 4 = 0
+$$
+
+Le radici sono $\lambda_1 = 4$ e $\lambda_2 = 1$. Per $\lambda_1 = 4$ la prima riga di $(\Sigma - 4I)\mathbf{e} = \mathbf{0}$ dà $-1.5\,e_{1} + 1.5\,e_{2} = 0$, cioè $\mathbf{e}_1 = (1, 1)/\sqrt{2}$, a 45°; per $\lambda_2 = 1$ trovi $\mathbf{e}_2 = (1, -1)/\sqrt{2}$, perpendicolare al primo. In generale per $n = 2$ l'equazione caratteristica è $\lambda^2 - (\sigma_1^2 + \sigma_2^2)\lambda + (\sigma_1^2\sigma_2^2 - \sigma_{12}^2) = 0$: la somma degli autovalori è la traccia (*trace*), il loro prodotto è il determinante. Con $\sigma_{12} = 0$ gli autovettori sono gli assi coordinati e l'ellisse è dritta.
+
+<Callout kind="esame">
+Nella domanda sulla PCA Melgani ha chiesto «some detailed questions about characteristic equation, eigenvalues/vectors». Scrivi $\det(\Sigma - \lambda I) = 0$ per una $2 \times 2$, risolvi, trova gli autovettori con $(\Sigma - \lambda_i I)\mathbf{e}_i = \mathbf{0}$, normalizzali e disegna l'ellisse con gli assi lungo $\mathbf{e}_1$ ed $\mathbf{e}_2$ e semiassi proporzionali a $\sqrt{\lambda_1}$ e $\sqrt{\lambda_2}$.
+</Callout>
+
+<Widget id="m06-autovettori-assi-ellisse" />
+
+### L'asse principale e la massima varianza
+
+Terzo punto della slide: l'autovettore corrispondente al massimo autovalore definisce l'asse principale (*main axis*) dell'ellisse. Le note scrivono *major axis* e aggiungono il significato: è la direzione lungo cui i dati hanno la varianza maggiore. Nella figura è $\mathbf{e}_1$, che punta in alto a destra lungo l'allungamento. <SourceRef doc="part1" page={24} />
+
+La varianza dei dati proiettati su una direzione unitaria $\mathbf{a}$ è $\mathbf{a}^t\Sigma\,\mathbf{a}$. Il massimo su tutte le direzioni è il massimo autovalore, e lo raggiungi lungo il suo autovettore:
+
+<Formula id="f-c45" />
+
+Nell'esempio delle bande spettrali la varianza lungo $\mathbf{e}_1$ vale 4 e quella lungo $\mathbf{e}_2$ vale 1: nessun'altra direzione dà più di 4 o meno di 1. È esattamente la prima componente principale della <ModLink to="m14-pca">PCA</ModLink>. La dimostrazione usa i moltiplicatori di Lagrange per massimizzare $\mathbf{a}^t\Sigma\,\mathbf{a}$ con il vincolo $\Vert\mathbf{a}\Vert = 1$.
+
+<Derivation id="der17" />
+
+### Gli autovalori fissano la lunghezza degli assi
+
+Solo le note aggiungono un quarto punto: «The eigenvalue magnitudes determine the lengths of the ellipse axes, with larger eigenvalues corresponding to longer axes». <SourceRef doc="part1" page={24} />
+
+La relazione precisa viene dalla dimostrazione sugli isolivelli: sull'ellisse di distanza di Mahalanobis $r$ il semiasse lungo $\mathbf{e}_i$ misura
+
+<Formula id="f-c46" />
+
+La lunghezza va quindi con la radice dell'autovalore, cioè con la deviazione standard lungo quella direzione, non con l'autovalore stesso. Con $\lambda_1 = 4$ e $\lambda_2 = 1$ i semiassi dell'ellisse $r = 1$ sono 2 e 1: rapporto 2, non 4. Se $\lambda_1 = \lambda_2$ l'ellisse è un cerchio e ogni direzione è un autovettore.
+
+<Check id="chk-14" />
+
+### La figura della slide 28
+
+Due disegni affiancati. A sinistra la campana $z = P(\mathbf{x})$ sopra il piano $(x_1, x_2)$, con molte fette orizzontali tracciate sulla superficie e una freccetta che indica il verso di discesa. A destra la vista dall'alto: le ellissi disegnate sono **tre**, concentriche, etichettate dall'interno all'esterno $z = 2$, $z = 0.5$, $z = 0.01$. L'etichetta $z = 3$ non corrisponde a un'ellisse ma al punto nero centrale, cioè alla media $\mathbf{m}$, dove la campana raggiunge la quota massima: l'isolivello alla quota del picco è un punto. Due rette oblique passano per il centro, $\mathbf{e}_1$ verso l'alto a destra lungo l'asse maggiore ed $\mathbf{e}_2$ verso l'alto a sinistra, perpendicolare. La figura scrive $P$ maiuscolo dove il testo usa $p$. Nelle note la stessa coppia di disegni apre la pagina 25. <SourceRef doc="ch2" page={28} />
+
+<Formula id="f-c47" />
+
+<Figure id="fig11" />
+
+I valori di $z$ sono illustrativi: la slide non dà né $\mathbf{m}$ né $\Sigma$. Sono però coerenti tra loro. Poiché $p(\mathbf{x}) = z_{max}\,e^{-r^2/2}$, dal picco e dalla quota ricavi il raggio di Mahalanobis di ogni ellisse:
+
+<Formula id="f-c47-2" />
+
+<Example id="ex07" title="Isolivelli z=3, 2, 0.5, 0.01 di una gaussiana 2-D">
+
+Vista dall'alto della slide 28: quattro etichette, tre ellissi. Il picco vale $z_{max} = 3$ nel punto nero centrale, la media $\mathbf{m}$.
+
+<Step title="Il punto z = 3">
+
+Con $z = z_{max}$ hai $r = \sqrt{2\ln 1} = 0$: l'isolivello del picco degenera nel punto $\mathbf{m}$.
+
+</Step>
+
+<Step title="Le tre ellissi">
+
+$$
+r(2) = \sqrt{2\ln 1.5} = 0.90, \qquad r(0.5) = \sqrt{2\ln 6} = 1.89, \qquad r(0.01) = \sqrt{2\ln 300} = 3.38
+$$
+
+Rapporti tra le dimensioni: $1 : 2.1 : 3.75$. Nel disegno misuri circa $1 : 1.9 : 2.9$: la figura è qualitativa.
+
+</Step>
+
+<Step title="Stesso centro, stessa orientazione">
+
+Ogni ellisse ha semiassi $r\sqrt{\lambda_1}$ lungo $\mathbf{e}_1$ e $r\sqrt{\lambda_2}$ lungo $\mathbf{e}_2$: il rapporto tra gli assi, $\sqrt{\lambda_1}/\sqrt{\lambda_2}$, è lo stesso per tutte. Cambia solo la scala $r$.
+
+</Step>
+
+<Step title="Quanta probabilità contiene ogni ellisse">
+
+In 2-D la frazione di campioni dentro l'ellisse di quota $z$ vale $1 - e^{-r^2/2} = 1 - z/z_{max}$: il 33.3% dentro $z = 2$, l'83.3% dentro $z = 0.5$, il 99.7% dentro $z = 0.01$.
+
+</Step>
+
+</Example>
+
+<Check id="chk-15" />
+
+## La forma di una gaussiana n-D
+
+La slide 29, «Shape of a n-D Gaussian PDF»: le osservazioni fatte per il caso 2-D si generalizzano al caso $n$-D (*the previous observations done for the 2-D case can be generalized to the n-D one*). <SourceRef doc="ch2" page={29} /> <SourceRef doc="part1" page={25} />
+
+### Autovalori e autovettori in n dimensioni
+
+Siano $\lambda_1, \lambda_2, \dots, \lambda_n$ gli autovalori di $\Sigma$ ed $\mathbf{e}_1, \mathbf{e}_2, \dots, \mathbf{e}_n$ i corrispondenti autovettori:
+
+<Formula id="f-c48" />
+
+<Formula id="f-c48-2" />
+
+Una matrice $n \times n$ simmetrica ha $n$ autovalori reali, contati con la loro molteplicità, e $n$ autovettori che si possono scegliere indipendenti. In $n$-D non puoi più disegnare l'iperellisse, ma questa lista la descrive per intero: quanti assi lunghi, quanti corti, in quali direzioni.
+
+### L'ordinamento degli autovalori
+
+Per convenzione autovalori e autovettori sono ordinati in modo decrescente:
+
+<Formula id="f-c49" />
+
+Così $\mathbf{e}_1$ è sempre la direzione di massima varianza ed $\mathbf{e}_n$ quella di minima. La PCA usa la stessa convenzione per decidere quali componenti tenere: le prime.
+
+### Autovalori positivi
+
+La slide: poiché $\Sigma$ è simmetrica e semidefinita positiva, gli autovalori assumeranno valori positivi (*will take positive values*). Le note scrivono invece «the eigenvalues are non-negative». <SourceRef doc="part1" page={25} />
+
+A rigore la semidefinitezza dà $\lambda_i \ge 0$. Il valore zero corrisponde a una direzione lungo cui i dati non variano affatto: $\vert\Sigma\vert = 0$ e la pdf gaussiana non è definita. Quando la gaussiana esiste, quindi, gli autovalori sono strettamente positivi, come dice la slide. Ogni $\lambda_i$ è la varianza dei dati proiettati sul suo autovettore:
+
+<Formula id="f-c50" />
+
+La catena logica completa: la simmetria garantisce autovalori reali e autovettori ortogonali; la semidefinitezza dice che ogni autovalore, essendo una varianza, è non negativo.
+
+### Gli autovettori formano una base ortogonale
+
+La slide: «The eigenvectors will form an orthogonal basis», con *orthogonal basis* in rosso. Le note: gli autovettori sono mutuamente perpendicolari. <SourceRef doc="ch2" page={29} />
+
+<Formula id="f-c51" />
+
+È una conseguenza della simmetria di $\Sigma$: per autovalori distinti gli autovettori sono per forza ortogonali, per autovalori ripetuti si possono scegliere ortogonali. Normalizzandoli a lunghezza 1 e mettendoli come colonne di una matrice $U$ ottieni la decomposizione spettrale:
+
+<Formula id="f-c51-2" />
+
+La lettera $U$ evita la confusione con l'operatore di valore atteso $E\{\cdot\}$. Gli autovettori definiscono un nuovo sistema di assi, ruotato rispetto a quello delle feature, in cui la covarianza è la matrice diagonale $\Lambda$: nelle nuove coordinate le feature sono incorrelate, e per la gaussiana indipendenti. È l'idea da cui parte la PCA.
+
+<Derivation id="der16" />
+
+<Widget id="m06-spettro-autovalori-nd" />
+
+### Gli isolivelli sono iperellissi
+
+La slide: gli isolivelli di $p(\mathbf{x})$ sono iperellissi (*hyperellipses*, in rosso) in $\Re^n$, le cui direzioni degli assi sono governate dagli autovettori. Le note: superfici ellittiche in dimensione superiore.
+
+<Formula id="f-c52" />
+
+Per $n = 3$ sono ellissoidi (*ellipsoids*). Nelle coordinate $y_i$ lungo gli autovettori l'equazione perde i termini misti e diventa una somma di quadrati pesati dagli autovalori:
+
+<Formula id="f-c52-2" />
+
+### Asse principale e asse più piccolo
+
+La slide: il primo autovettore definirà l'asse principale (*principal axis*), mentre l'ultimo determinerà l'asse più piccolo (*smallest axis*). Le note: il primo autovettore, associato al massimo autovalore, rappresenta la direzione di massima varianza; l'ultimo, associato al minimo autovalore, la direzione di minima varianza. Nelle due frasi delle note manca il simbolo dell'autovalore tra parentesi, perso nell'impaginazione. <SourceRef doc="part1" page={25} />
+
+Con l'ordinamento decrescente i semiassi sono anch'essi in ordine decrescente:
+
+<Formula id="f-c53" />
+
+## Un esempio in tre dimensioni
+
+### La nuvola e le sue ombre
+
+La slide 30, «Example of a 3-D Gaussian Distribution», mostra una nuvola di punti neri campionati da una gaussiana 3-D, dentro un cubo con gli assi $x_1$ (verso sinistra), $x_2$ (verso destra) e $x_3$ (verticale). Sulle tre facce del cubo sono proiettate le distribuzioni marginali a coppie, disegnate come ellissi concentriche in tre toni di grigio, cioè tre isolivelli: sul pavimento il piano $(x_1, x_2)$, sulla parete sinistra il piano $(x_1, x_3)$, sulla parete destra il piano $(x_2, x_3)$. <SourceRef doc="ch2" page={30} />
+
+La nuvola è più densa al centro, vicino a $\mathbf{m}$, e si dirada verso l'esterno. Gli isolivelli in 3-D sono ellissoidi e le loro ombre sulle pareti sono ellissi. Ogni coppia di feature di una gaussiana è ancora gaussiana, con la sotto-matrice $2 \times 2$ di $\Sigma$ corrispondente: ogni parete ti mostra una di queste sotto-matrici.
+
+<Figure id="fig13" />
+
+### Perché x1 e x3 sono indipendenti
+
+Sulla slide c'è un'annotazione obliqua: «Nota: In this example, the features x1 and x3 are independent!». Le note la ripetono. <SourceRef doc="part1" page={25} />
+
+Si vede dalla figura. Nel disegno prospettico l'asse $x_1$ è obliquo, quindi l'ellisse della parete sinistra va confrontata con l'asse $x_1$ disegnato, non con il bordo della slide: il suo asse maggiore è quasi parallelo a $x_1$, cioè l'ellisse non è inclinata e la covarianza $\sigma_{13}$ è nulla. Sul pavimento e sulla parete destra invece gli assi delle ellissi sono obliqui rispetto agli assi disegnati: quelle coppie di feature sono correlate. Per una gaussiana covarianza nulla vuol dire indipendenza:
+
+<Formula id="f-c55" />
+
+Attenzione a che cosa dice questa indipendenza (integrazione). $\sigma_{13} = 0$ dà l'indipendenza marginale di $x_1$ e $x_3$, non l'indipendenza condizionata dato $x_2$. Per una gaussiana quest'ultima richiederebbe l'elemento $(1, 3)$ nullo nell'inversa $\Sigma^{-1}$, che è un'altra cosa:
+
+<Formula id="f-c55-2" />
+
+Nelle note, a pagina 25, le figure delle slide 28 e 30 compaiono ridotte nella stessa pagina: in cima la campana affettata con le ellissi di livello, più in basso la nuvola 3-D seguita dalla frase «Note that in this example the features $x_1$ and $x_3$ are independent». <SourceRef doc="part1" page={25} />
+
+<Figure id="fig12" />
+
+<Example id="ex08" title="Gaussiana 3-D con x1 e x3 indipendenti">
+
+La fonte non dà valori numerici: la figura non ha scale né la matrice $\Sigma$. Ricostruisci la struttura di $\Sigma$ dalla nota e dalle ombre.
+
+<Step title="Leggi le tre ombre">
+
+Parete sinistra, piano $(x_1, x_3)$: ellisse allineata agli assi, quindi $\sigma_{13} = 0$. Pavimento $(x_1, x_2)$ e parete destra $(x_2, x_3)$: ellissi inclinate, quindi $\sigma_{12} \ne 0$ e $\sigma_{23} \ne 0$.
+
+</Step>
+
+<Step title="Scrivi la struttura della covarianza">
+
+$$
+\Sigma = \begin{bmatrix} \sigma_1^2 & \sigma_{12} & 0 \\ \sigma_{12} & \sigma_2^2 & \sigma_{23} \\ 0 & \sigma_{23} & \sigma_3^2 \end{bmatrix}
+$$
+
+Gli elementi $(1, 3)$ e $(3, 1)$ sono nulli, per la simmetria.
+
+</Step>
+
+<Step title="Deduci l'indipendenza">
+
+La coppia $(x_1, x_3)$ è gaussiana con covarianza diagonale $diag(\sigma_1^2, \sigma_3^2)$, quindi $p(x_1, x_3) = p(x_1)\,p(x_3)$: è la nota della slide.
+
+</Step>
+
+<Step title="Un caso numerico: indipendenza marginale, non condizionata">
+
+Valori scelti per illustrare, non della fonte: $\sigma_1^2 = \sigma_2^2 = \sigma_3^2 = 1$, $\sigma_{12} = 0.6$, $\sigma_{23} = 0.5$. Il determinante vale $1 \cdot (1 - 0.25) - 0.6 \cdot 0.6 = 0.39$ e il cofattore di posto $(1, 3)$ vale $0.6 \cdot 0.5 - 1 \cdot 0 = 0.3$, quindi
+
+$$
+\left[\Sigma^{-1}\right]_{13} = \frac{0.3}{0.39} = 0.77 \ne 0
+$$
+
+$x_1$ e $x_3$ sono indipendenti da sole, ma diventano dipendenti se conosci $x_2$: entrambe sono correlate con $x_2$.
+
+</Step>
+
+</Example>
+
+<Widget id="m06-nuvola-3d-proiezioni" />
+
+<Check id="chk-16" />
+
+## La stima ML della gaussiana
+
+### L'impostazione: N campioni iid
+
+L'ultima slide del modello gaussiano, «Gaussian Model: ML Estimation», torna alla stima: «It can be shown that the ML estimation of the mean vector and the covariance matrix of a multivariate Gaussian pdf, given a set of N iid training samples $\boldsymbol{X} = \{\mathbf{x}_1, \mathbf{x}_2, \dots, \mathbf{x}_N\}$, leads to:», seguito dalle formule di $\hat{\mathbf{m}}$ e $\hat{\Sigma}$. <SourceRef doc="ch2" page={31} /> <SourceRef doc="part1" page={25} />
+
+<Formula id="f-c56" />
+
+La fonte non riporta la dimostrazione: dice solo *it can be shown*. L'ipotesi iid è quella che la rende possibile. L'indipendenza permette di scrivere la verosimiglianza dell'insieme come prodotto delle densità dei singoli campioni; l'identica distribuzione fa sì che ogni fattore abbia gli stessi $\mathbf{m}$ e $\Sigma$. Il logaritmo trasforma il prodotto in somma:
+
+<Formula id="f-c56-2" />
+
+La dimostrazione annulla il gradiente di questa somma rispetto a $\mathbf{m}$ e rispetto a $\Sigma$. Le due derivazioni sono qui sotto: prima il caso a una dimensione, che è la domanda d'esame, poi il caso multivariato.
+
+### La stima del vettore media
+
+La stima ML del vettore media è la media aritmetica dei campioni, la <Term en="sample mean">media campionaria</Term>:
+
+<Formula id="f-c57" />
+
+Che cosa significa il risultato? Il gradiente della log-verosimiglianza rispetto a $\mathbf{m}$ vale $\Sigma^{-1}\sum_k(\mathbf{x}_k - \mathbf{m})$: è proporzionale alla somma degli scarti dei campioni dalla media candidata. Si annulla quando gli scarti si bilanciano, cioè nel baricentro dei dati. I campioni tirano la media verso di sé, ciascuno con una forza proporzionale alla sua distanza, e la media campionaria è il punto di equilibrio. La stima non dipende da $\Sigma$: puoi calcolarla senza sapere nulla della covarianza.
+
+### La derivata prima nel caso a una dimensione
+
+Con una sola feature ($n = 1$) i campioni $x_k$ sono scalari, $\hat{m}$ è uno scalare e $\hat{\Sigma}$ diventa $\hat{\sigma}^2$. Specializzando la slide 31 (integrazione) ottieni la media campionaria e la varianza campionaria ML, con fattore $1/N$, che è anche la media dei quadrati meno il quadrato della media:
+
+<Formula id="f-c70" />
+
+Il valore atteso della varianza ML è più piccolo di quello vero di un fattore $(N-1)/N$; lo stimatore non distorto elementare divide per $N - 1$ e si indica spesso con $s^2$:
+
+<Formula id="f-c70-2" />
+
+Questi risultati li ottieni sviluppando la derivata prima della log-verosimiglianza, ed è proprio ciò che chiede la domanda d'esame «develop the first derivative for a gaussian and explain the meaning of the result». Scrivi la verosimiglianza come prodotto, passa al logaritmo, deriva rispetto a $m$, annulla, interpreta; poi ripeti rispetto a $\sigma^2$ e verifica che il punto trovato sia un massimo.
+
+<Derivation id="der08" />
+
+Il significato da dire a voce: la derivata rispetto a $m$ è $\frac{1}{\sigma^2}\sum_k (x_k - m)$, la somma degli scarti; annullarla impone che gli scarti positivi e negativi si compensino, e questo accade solo nella media aritmetica. La derivata seconda $-N/\sigma^2$ è negativa, quindi è un massimo, e diventa più ripida con più campioni: la stima si fa più precisa. Il caso particolare con varianza nota e un solo campione, dove $\hat{m} = x_0$, è l'esempio di <ModLink to="m05-max-likelihood">stima a massima verosimiglianza</ModLink>.
+
+<Widget id="m06-derivata-log-verosimiglianza" />
+
+<Check id="chk-17" />
+
+### La stima della matrice di covarianza
+
+La stima ML della covarianza è la media dei prodotti esterni degli scarti dei campioni dalla media stimata:
+
+<Formula id="f-c58" />
+
+È la definizione di $\Sigma$ della slide 27 con il valore atteso sostituito dalla media sui campioni e $\mathbf{m}$ sostituito da $\hat{\mathbf{m}}$. Il fattore è $1/N$. La derivazione nel caso multivariato annulla il gradiente rispetto a $\mathbf{m}$ e poi rispetto a $\Sigma^{-1}$, con il trucco della traccia per derivare la forma quadratica e il determinante.
+
+<Derivation id="der09" />
+
+Ogni addendo è una matrice $n \times n$ di rango 1. Gli $N$ scarti $\mathbf{x}_k - \hat{\mathbf{m}}$ hanno somma nulla, quindi sono linearmente dipendenti e generano uno spazio di dimensione al più $N - 1$. Il rango di $\hat{\Sigma}$ è perciò limitato:
+
+<Formula id="f-c58-2" />
+
+Servono almeno $n + 1$ campioni, non contenuti in un sottospazio affine di dimensione minore, perché la stima sia invertibile, cioè perché $\vert\hat{\Sigma}\vert > 0$ e la gaussiana stimata esista. Caso limite $N = 1$: $\hat{\Sigma}$ è la matrice nulla. Con $n = 2$ e $N = 2$ l'ellisse stimata è un segmento tra i due punti. È l'altra faccia del conteggio dei parametri: con 100 feature ti servono almeno 101 campioni solo perché $\hat{\Sigma}$ sia invertibile, e molti di più perché sia affidabile.
+
+### La seconda forma della stima
+
+La slide 31 prosegue l'uguaglianza con una seconda forma, la media dei prodotti esterni $\mathbf{x}_k\mathbf{x}_k^t$ meno il prodotto esterno della media stimata:
+
+<Formula id="f-c59" />
+
+È la versione campionaria di $\Sigma = E\{\mathbf{x}\mathbf{x}^t\} - \mathbf{m}\mathbf{m}^t$. Nel calcolo è comoda: ti basta accumulare in una sola passata sui dati la somma dei campioni e la somma dei loro prodotti esterni. Nelle note c'è un unico cappello largo sopra $\mathbf{m}\mathbf{m}^t$: la lettura corretta è $\hat{\mathbf{m}}\hat{\mathbf{m}}^t$, come nella slide. <SourceRef doc="part1" page={26} />
+
+<Derivation id="der10" />
+
+Un esempio con tre salmoni, dati sintetici: luminosità e larghezza $(2, 1)$, $(4, 3)$, $(6, 2)$.
+
+| Passo | Prima forma | Seconda forma |
+|---|---|---|
+| media | $\hat{\mathbf{m}} = (12/3,\ 6/3) = (4, 2)$ | stessa |
+| addendi | scarti $(-2,-1)$, $(0, 1)$, $(2, 0)$ | campioni $(2,1)$, $(4,3)$, $(6,2)$ |
+| somma dei prodotti esterni | $\begin{bmatrix} 8 & 2 \\ 2 & 2 \end{bmatrix}$ | $\begin{bmatrix} 56 & 26 \\ 26 & 14 \end{bmatrix}$ |
+| divisione per $N = 3$ | $\begin{bmatrix} 2.67 & 0.67 \\ 0.67 & 0.67 \end{bmatrix}$ | $\begin{bmatrix} 18.67 & 8.67 \\ 8.67 & 4.67 \end{bmatrix}$ |
+| correzione | nessuna | meno $\hat{\mathbf{m}}\hat{\mathbf{m}}^t = \begin{bmatrix} 16 & 8 \\ 8 & 4 \end{bmatrix}$ |
+| $\hat{\Sigma}$ | $\begin{bmatrix} 2.67 & 0.67 \\ 0.67 & 0.67 \end{bmatrix}$ | $\begin{bmatrix} 2.67 & 0.67 \\ 0.67 & 0.67 \end{bmatrix}$ |
+
+Con $N = 3 = n + 1$ la stima è invertibile: $\vert\hat{\Sigma}\vert = 16/9 - 4/9 = 4/3$.
+
+<Figure id="fig14" />
+
+<Widget id="m06-stima-ml-campione-per-campione" />
+
+### Le proprietà delle stime
+
+La slide: «Such estimates are asymptotically unbiased and efficient, and consistent», con *asymptotically unbiased*, *efficient* e *consistent* in rosso. Le note, sotto «Properties of the Estimates»: <SourceRef doc="ch2" page={31} /> <SourceRef doc="part1" page={26} />
+
+- **asintoticamente non distorte**: al crescere di $N$ le stime si avvicinano ai veri valori di $\mathbf{m}$ e $\Sigma$;
+- **efficienti**: raggiungono la minima varianza possibile per stimatori non distorti;
+- **consistenti**: per $N \to +\infty$ le stime $\hat{\mathbf{m}}$ e $\hat{\Sigma}$ convergono ai valori veri.
+
+<Formula id="f-c60" />
+
+Sono le proprietà generali della ML, viste all'inizio del foglio, applicate al caso gaussiano. Le note sono imprecise su un punto: nella non distorsione asintotica non sono le stime a tendere al vero, è il loro valore atteso.
+
+<Formula id="f-c60-2" />
+
+I due stimatori non si comportano allo stesso modo. $\hat{\mathbf{m}}$ è non distorta ed efficiente per ogni $N$, non solo al limite. $\hat{\Sigma}$ è distorta per $N$ finito, quindi per lei le proprietà valgono solo asintoticamente. Per la media le condizioni necessarie di consistenza della pagina 19 delle note sono verificate in modo esplicito: il valore atteso è $\mathbf{m}$ per ogni $N$ e la covarianza della media campionaria si annulla.
+
+<Formula id="f-c60-3" />
+
+Con $N$ campioni l'incertezza su ciascuna componente della media scende come $\sigma_i/\sqrt{N}$: per dimezzarla servono quattro volte i campioni. La dimostrazione esplicita (efficienza di $\hat{\mathbf{m}}$ con il bound di Cramér-Rao, consistenza con la disuguaglianza di Chebyshev, comportamento della varianza ML) è qui sotto.
+
+<Derivation id="der19" />
+
+<Widget id="m06-proprieta-asintotiche-stime" />
+
+<Check id="chk-18" />
+
+### La media campionaria è non distorta
+
+La slide aggiunge, «In addition, we have:», i valori attesi delle due stime; le note: «The expected values of the ML estimates are:». Il primo:
+
+<Formula id="f-c61" />
+
+Il valore atteso della media campionaria coincide con la vera media per qualunque $N$: lo stimatore è non distorto (*unbiased*) anche con pochi campioni. La dimostrazione è la linearità del valore atteso. Le ipotesi sono minime: basta che tutti i campioni abbiano media $\mathbf{m}$; non servono né l'indipendenza né la gaussianità.
+
+<Derivation id="der11" />
+
+### La covarianza ML è distorta
+
+Il secondo valore atteso:
+
+<Formula id="f-c62" />
+
+In media la stima ML della covarianza è più piccola di quella vera di un fattore $(N-1)/N$: è uno stimatore distorto (*biased*) che sottostima la variabilità. Il motivo intuitivo: gli scarti sono misurati rispetto a $\hat{\mathbf{m}}$, calcolata sugli stessi dati, che sta loro più vicina della vera $\mathbf{m}$. La media campionaria è il punto che minimizza la somma dei quadrati degli scarti, quindi qualunque altro centro, compreso quello vero, darebbe scarti più grandi. Il fattore tende a 1 per $N \to +\infty$: per questo la stima è asintoticamente non distorta.
+
+Ipotesi: campioni indipendenti, che servono per $Cov\{\hat{\mathbf{m}}\} = \Sigma/N$, e identicamente distribuiti con covarianza finita. Il risultato non richiede la gaussianità. Casi limite: con $N = 1$ il valore atteso è la matrice nulla, perché un solo campione non dice nulla sulla dispersione; con $N \to +\infty$ tende a $\Sigma$.
+
+<Derivation id="der12" />
+
+<Widget id="m06-bias-covarianza-ml" />
+
+### Lo stimatore non distorto elementare
+
+La slide: «An elementary unbiased estimator for Σ is:», con *elementary unbiased estimator* in rosso. È la stessa somma dei prodotti esterni divisa per $N - 1$ invece che per $N$:
+
+<Formula id="f-c63" />
+
+Il suo valore atteso è esattamente $\Sigma$. Non è più la stima ML: rinunci alla massima verosimiglianza per togliere il bias. Nella slide lo stimatore corretto è indicato con lo stesso simbolo $\hat{\Sigma}$ della stima ML, ma sono due stimatori diversi; qui li distingui con i pedici *ML* e *unbiased*. Richiede $N \ge 2$: con $N = 1$ il fattore $1/(N-1)$ non è definito.
+
+Le note spiegano il passaggio: per ottenere uno stimatore non distorto elementare, soprattutto per campioni piccoli (*especially for small sample sizes*), moltiplichi la formula ML per $N/(N-1)$. Questo fattore di correzione garantisce che lo stimatore di $\Sigma$ resti non distorto, in particolare quando $N$ è piccolo. <SourceRef doc="part1" page={26} />
+
+<Formula id="f-c64" />
+
+Gli ordini di grandezza dicono quando conta. Con $N = 2$ la stima ML vale in media metà del vero, con $N = 10$ il 90%, con $N = 100$ il 99%. Per i tre salmoni dell'esempio la stima corretta è $\frac{3}{2}\hat{\Sigma}_{ML} = \begin{bmatrix} 4 & 1 \\ 1 & 1 \end{bmatrix}$. Per un sensore calibrato con $N = 5$ letture e varianza vera 4, la varianza ML vale in media 3.2: soglie di anomalia troppo strette e più falsi allarmi.
+
+<Check id="chk-19" />
+
+## Verso la stima bayesiana
+
+In fondo alla pagina 26 le note aprono una nuova sezione, «Bayesian Estimation». È materiale di confine: lo sviluppo completo è in <ModLink to="m07-stima-bayesiana">stima bayesiana</ModLink>, ma l'idea di partenza sta su questa pagina. <SourceRef doc="part1" page={26} />
+
+### Theta fisso o theta aleatorio
+
+La stima bayesiana, detta anche *Bayesian learning*, differisce concettualmente in modo significativo dalla stima a massima verosimiglianza. La differenza sta in come tratti il vettore dei parametri $\boldsymbol{\theta}$.
+
+<Columns>
+<Col title="Stima ML">
+
+Il vettore dei parametri $\boldsymbol{\theta}$, cioè i veri valori che vuoi stimare, è una quantità **fissa ma incognita** (*fixed but unknown*). L'obiettivo è trovare la singola stima migliore, quella che massimizza la verosimiglianza di osservare i dati disponibili. Il risultato è un punto.
+
+</Col>
+<Col title="Stima bayesiana">
+
+Il parametro $\boldsymbol{\theta}$ è esso stesso una **variabile aleatoria** (*random variable*) con una sua distribuzione. La distribuzione a priori (*prior*) riflette la conoscenza o le ipotesi sul parametro prima di qualunque osservazione. Osservati i dati di training, il teorema di Bayes aggiorna la prior in una densità a posteriori (*posterior probability density*). Il risultato è una distribuzione.
+
+</Col>
+</Columns>
+
+<Formula id="f-c66" />
+
+<Formula id="f-c67" />
+
+Con i salmoni: la luminosità media dei pesci di una nuova partita è incognita. Per la ML è un numero fisso da trovare con la media campionaria. Per l'approccio bayesiano è una quantità incerta, su cui le partite precedenti ti danno una prior; i nuovi campioni la restringono attorno al valore più plausibile. In entrambi i casi la forma di $p(x|\theta)$ è la stessa gaussiana.
+
+<Widget id="m06-theta-fisso-o-aleatorio" />
+
+<Check id="chk-20" />
+
+### La prima ipotesi: forma della densità nota
+
+Le note: la stima bayesiana si può applicare in ogni situazione in cui la densità incognita può essere parametrizzata. La prima delle ipotesi fondamentali è la forma nota della densità (*Known Density Form*): la forma funzionale della verosimiglianza $p(\mathbf{x}|\boldsymbol{\theta})$ è assunta nota, mentre i valori specifici del vettore $\boldsymbol{\theta}$ non sono noti con precisione. L'elenco continua a pagina 27, nel foglio sulla stima bayesiana.
+
+<Formula id="f-c68" />
+
+È la stessa premessa della stima parametrica di questo foglio: scegli la famiglia, per esempio la gaussiana, con i criteri della slide 20, e poi stimi i parametri. ML e Bayes differiscono nel trattamento di $\boldsymbol{\theta}$, non nella scelta del modello.
+
+## Collegamenti
+
+- <ModLink to="m03-stima-intro-parametrica">Introduzione alla stima parametrica</ModLink>: la stima parametrica presuppone la forma di $p(\mathbf{x}|\boldsymbol{\theta})$; questo foglio ti dà il catalogo delle forme e il caso gaussiano.
+- <ModLink to="m04-bonta-stimatori">Bontà degli stimatori</ModLink>: bias, efficienza, bound di Cramér-Rao e proprietà asintotiche sono definiti lì; qui li applichi a $\hat{\mathbf{m}}$ e $\hat{\Sigma}$, con il bias $(N-1)/N$ e lo stimatore corretto.
+- <ModLink to="m05-max-likelihood">Stima a massima verosimiglianza</ModLink>: la pagina 21 delle note è condivisa (proprietà asintotiche della ML e selezione del modello statistico, slide 19-21). Le stime di questo foglio sono la ML applicata al modello gaussiano.
+- <ModLink to="m07-stima-bayesiana">Stima bayesiana</ModLink>: la pagina 26 delle note è condivisa ($\boldsymbol{\theta}$ fisso contro $\boldsymbol{\theta}$ aleatorio). Nel foglio successivo stimi la media di una gaussiana con una prior gaussiana.
+- <ModLink to="m09-parzen-windows">Finestre di Parzen</ModLink>: il kernel più usato è gaussiano; la simmetria sferica corrisponde a $\Sigma = h^2 I$, caso particolare di covarianza diagonale.
+- <ModLink to="m10-em-dati-incompleti">Dati incompleti ed EM</ModLink>: nella mistura di gaussiane il passo M usa versioni pesate delle stime ML di media e covarianza di questo foglio.
+- <ModLink to="m11-hughes-feature-selection">Effetto Hughes e selezione delle feature</ModLink>: i parametri $n + n(n+1)/2$ della gaussiana crescono con il quadrato delle feature; con pochi campioni $\hat{\Sigma}$ è inaffidabile o singolare.
+- <ModLink to="m12-misure-separabilita">Misure di separabilità</ModLink>: divergenza, Bhattacharyya e Jeffries-Matusita hanno forma chiusa per classi gaussiane e usano $\mathbf{m}$, $\Sigma$, il determinante e l'inversa della covarianza.
+- <ModLink to="m14-pca">PCA</ModLink>: è la decomposizione in autovalori e autovettori della matrice di covarianza; asse principale, ordinamento degli autovalori e base ortogonale sono gli stessi concetti delle slide 28-29.
+- <ModLink to="m15-lda">LDA</ModLink>: le matrici di scatter sono covarianze non normalizzate e ne condividono le proprietà: simmetria, semidefinitezza, autovettori.
+- <ModLink to="m16-mdm-box">Classificatori MDM e box</ModLink>: la distanza dalla media del classificatore a minima distanza è il caso euclideo della distanza di Mahalanobis.
+- <ModLink to="m19-funzioni-discriminanti">Funzioni discriminanti</ModLink>: i casi gaussiani 1, 2 e 3 nascono dal logaritmo della pdf multivariata, con la forma quadratica, il determinante di $\Sigma$ e le covarianze diagonali o uguali.
+- <ModLink to="p01-stima-parametri">Stima dei parametri (Passerini)</ModLink>: stima ML e bayesiana dei parametri di una gaussiana, con statistiche sufficienti e prior coniugati.
+- <ModLink to="p12-clustering">Clustering</ModLink>: i *Gaussian Mixture Model* usano la pdf gaussiana multivariata e le stime di media e covarianza per ogni cluster.
+
+## Per l'orale
+
+Dieci domande della banca toccano questo foglio: sette di Melgani, tre di Passerini. Qui trovi il testo originale e lo scheletro della risposta; le risposte complete, con la lista dei punti da toccare, sono nella scheda dell'orale del foglio.
+
+### La formula della gaussiana in più dimensioni
+
+<Callout kind="esame" title="Melgani">
+«How does the Minimum risk criterium work, comparison with MAP and ML classification. Which is the best one (minimum risk). He also asked me the formula of the Gaussian curve in a multi dimensional space (with mean vector and covariance matrix).»
+</Callout>
+
+La parte sul rischio minimo è in un altro foglio. Per la formula: scrivo $p(\mathbf{x}|\mathbf{m}, \Sigma)$ con la costante $1/((2\pi)^{n/2}\vert\Sigma\vert^{1/2})$ e l'esponenziale di $-\frac{1}{2}(\mathbf{x}-\mathbf{m})^t\Sigma^{-1}(\mathbf{x}-\mathbf{m})$. Nomino i simboli con le dimensioni: $\mathbf{x}$ e $\mathbf{m}$ vettori $n \times 1$, $\Sigma$ matrice $n \times n$ simmetrica e definita positiva. Definisco $\mathbf{m} = E\{\mathbf{x}\}$ e $\Sigma = E\{(\mathbf{x}-\mathbf{m})(\mathbf{x}-\mathbf{m})^t\}$, dico che l'esponente è la distanza di Mahalanobis al quadrato e che la costante rende 1 il volume. Chiudo con il controllo $n = 1$, che restituisce la gaussiana univariata, e con il disegno della campana e delle ellissi di livello.
+
+### Matrice di covarianza e autovettori nella PCA
+
+<Callout kind="esame" title="Melgani">
+«Asked me to explain PCA. When I started explaining he asked about covariance matrix, how it is created, what is cov matrix and etc. Then also some detailed questions about characteristic equation, eigenvalues/vectors. Lastly, main differences between sfs and pca.»
+</Callout>
+
+Definisco la covarianza come valore atteso del prodotto esterno degli scarti, con la seconda forma $E\{\mathbf{x}\mathbf{x}^t\} - \mathbf{m}\mathbf{m}^t$; spiego che sulla diagonale ci sono le varianze e fuori le covarianze. Dai dati la costruisco come media dei prodotti esterni $(\mathbf{x}_k - \hat{\mathbf{m}})(\mathbf{x}_k - \hat{\mathbf{m}})^t$, con $1/N$ (ML) o $1/(N-1)$ (non distorta). Elenco le proprietà: simmetrica, semidefinita positiva, diagonale per feature indipendenti. Per gli autovalori scrivo $\det(\Sigma - \lambda I) = 0$, risolvo un caso $2 \times 2$ e trovo gli autovettori con $(\Sigma - \lambda_i I)\mathbf{e}_i = \mathbf{0}$. Dico che sono ortogonali perché $\Sigma$ è simmetrica, che gli autovalori sono varianze lungo gli autovettori e che il primo autovettore è la direzione di massima varianza: la prima componente principale. Il confronto con la SFS è nel foglio sulla PCA.
+
+### La derivata prima per una gaussiana
+
+<Callout kind="esame" title="Melgani">
+«Explain non-parametric estimation, what non-parametric means and why we use it, explain both KNN and Parzen windows, do they tend to the optimal solution? Explain ML estimation, develop the first derivative for a gaussian and explain the meaning of the result. Explain box classifier»
+</Callout>
+
+La parte di questo foglio è la derivata. Scrivo la verosimiglianza dei $N$ campioni iid come prodotto di gaussiane, passo al logaritmo e ottengo $-\frac{N}{2}\ln(2\pi\sigma^2) - \frac{1}{2\sigma^2}\sum_k (x_k - m)^2$. Derivo rispetto a $m$: $\frac{1}{\sigma^2}\sum_k(x_k - m)$. La pongo a zero e trovo $\hat{m} = \frac{1}{N}\sum_k x_k$. Il significato: gli scarti devono bilanciarsi, quindi la stima è il baricentro dei dati, e non dipende da $\sigma^2$. La derivata seconda $-N/\sigma^2$ conferma il massimo. Se c'è tempo derivo anche rispetto a $\sigma^2$, trovo la varianza con $1/N$, dico che è distorta di $(N-1)/N$ e scrivo il caso multivariato della slide 31.
+
+### La stima ML è un buon stimatore
+
+<Callout kind="esame" title="Melgani">
+«What is the formula of Maximum Likelihood, why we can use the separate products of the probabilities and what the Likelihood describe. How we can describe the goodness of an estimation and Is Maximum Likelihood Estimation a good estimator? Is it better or not with respect to the Bayesian Estimation? Why? Then he asked me to apply Maximum Likelihood estimation on an exercise. Last question was: In which case ML and Bayesian are the same?»
+</Callout>
+
+Il prodotto separato viene dall'ipotesi iid. La bontà si misura con bias, varianza e bound di Cramér-Rao. Dico che la ML, anche senza stimatore efficiente, è asintoticamente non distorta, asintoticamente efficiente e consistente, e lo mostro sul caso gaussiano. $\hat{\mathbf{m}}$ ha valore atteso $\mathbf{m}$ e covarianza $\Sigma/N$, pari al bound: è efficiente per ogni $N$. $\hat{\Sigma}$ ha valore atteso $\frac{N-1}{N}\Sigma$: è distorta, ma il bias sparisce per $N \to +\infty$ e si corregge con $N/(N-1)$. Come esercizio posso stimare $\hat{\mathbf{m}}$ e $\hat{\Sigma}$ da pochi campioni 2-D. Sul confronto con Bayes: la ML tratta $\boldsymbol{\theta}$ come fisso e incognito, la stima bayesiana come variabile aleatoria con prior e posterior. Le due coincidono con molti campioni, quando la posterior si concentra sulla stima ML, oppure con una prior piatta (vedi <ModLink to="m03-stima-intro-parametrica#quando-ml-e-bayes-coincidono">quando ML e Bayes coincidono</ModLink>).
+
+### L'EM con le gaussiane
+
+<Callout kind="esame" title="Melgani">
+«What is an EM algorithm and how does it work? Explain formula and both steps. Then Multi Gaussian example for EM algorithm. KNN and KNN example.»
+</Callout>
+
+<Callout kind="esame" title="Passerini">
+«Unsupervised learning Q: what's the formula of the EM-algo, M-step for the Gaussian mixture model (because I wrote the e step formula but not the m step one)»
+</Callout>
+
+<Callout kind="esame" title="Passerini">
+«Unsupervised learning (everything I knew) + gaussian kernel related to gaussian distance (he said something during lessons, nothing in slides about that). During the oral part he asked me to explain better the mechanism of EM used for gaussian mixture and to explain the result then he asked me what are kernels and when we use them»
+</Callout>
+
+Questo foglio ti dà i mattoni del passo M. Ogni componente della mistura è una $N(\mathbf{m}_j, \Sigma_j)$; il passo E calcola per ogni campione la probabilità $\gamma_{kj}$ di appartenere alla componente $j$. Il passo M ripete le stime della slide 31 con i campioni pesati: $\hat{\mathbf{m}}_j = \sum_k \gamma_{kj}\mathbf{x}_k / \sum_k \gamma_{kj}$ e $\hat{\Sigma}_j = \sum_k \gamma_{kj}(\mathbf{x}_k - \hat{\mathbf{m}}_j)(\mathbf{x}_k - \hat{\mathbf{m}}_j)^t / \sum_k \gamma_{kj}$. Con pesi 0 e 1 ritrovi esattamente $\hat{\mathbf{m}}$ e $\hat{\Sigma}$ di ogni gruppo. Sul kernel gaussiano: l'esponente della gaussiana è una distanza al quadrato, e il kernel $\exp(-\Vert\mathbf{x} - \mathbf{x}'\Vert^2/(2\sigma^2))$ è una gaussiana con $\Sigma = \sigma^2 I$ senza costante di normalizzazione.
+
+### Il kernel gaussiano di Parzen
+
+<Callout kind="esame" title="Melgani">
+«Parzen Windows: general context (what we want to do, why they are non parametric estimation), gaussian kernel with spherical symmetry with formula and some drawing to represent it, How the choice of the width impacts our estimate? Is it a good estimate? (Bias, variance and consideration about the characteristics of the width to have a consistent estimate)»
+</Callout>
+
+<Callout kind="esame" title="Melgani">
+«Parzen Window Estimation: context, properties etc. Which is the most common window function (write the formula)? Is Parzen a good estimator (bias/variance)? Graphical representation of how the counting/interpolation works with  a couple of samples.»
+</Callout>
+
+Le domande appartengono al foglio su Parzen; da qui prendi la formula del kernel. Il kernel gaussiano a simmetria sferica centrato sul campione $\mathbf{x}_k$ è la gaussiana multivariata con $\mathbf{m} = \mathbf{x}_k$ e $\Sigma = \sigma^2 I$. Il determinante vale $\sigma^{2n}$, quindi $\vert\Sigma\vert^{1/2} = \sigma^n$, e la forma quadratica diventa $\Vert\mathbf{x} - \mathbf{x}_k\Vert^2/\sigma^2$. Gli isolivelli sono cerchi (sfere in $n$-D) di raggio proporzionale a $\sigma$: è il disegno che accompagna la formula. In una dimensione la finestra più comune è la gaussiana della slide 22 con $\mu = 0$ e $\sigma = 1$.
+
+### Stima dei parametri di una gaussiana con Passerini
+
+<Callout kind="esame" title="Passerini">
+«Perceptron (All) + Parameter estimation Questions: - Problem with analytical solution for perceptron regression - Example of estimation of Gaussian parameters: why do we obtain a Gaussian also as posterior? - How to use parameter estimation in Bayesian Networks - Why ML is fast in Bayesian Network (CDP independence)»
+</Callout>
+
+La stima ML dei parametri di una gaussiana è la media e la covarianza campionarie della slide 31. Perché la posterior della media è ancora gaussiana: la verosimiglianza di $N$ campioni gaussiani, vista come funzione della media, è l'esponenziale di una forma quadratica nella media; moltiplicata per una prior gaussiana, anch'essa esponenziale di una quadratica, dà l'esponenziale di una quadratica, cioè una gaussiana. La prior gaussiana è coniugata. Lo sviluppo è in <ModLink to="m07-stima-bayesiana">stima bayesiana</ModLink> e in <ModLink to="p01-stima-parametri">stima dei parametri</ModLink>.

@@ -1,0 +1,1 @@
+teoria m03: index.mdx (57 titoli, 60 Formula, 8 Derivation, 11 Figure, 31 Widget, 5 Example, 18 Check, 14 ModLink; MDX compila con remark-gfm/remark-math/rehype-katex, nessun codice interno visibile), checks.ts (chk-01..chk-18, tsc ok), theory-map.json (79 concetti, sezione+widget per ciascuno) - 2026-09-24

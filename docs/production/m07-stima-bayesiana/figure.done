@@ -1,0 +1,1 @@
+figure: figures.ts con 10 figure (fig01-fig10, tutte quelle dell'inventario) e 10 WebP in public/figures/m07-stima-bayesiana/, ritagli controllati a vista, caption/alt verificati (KaTeX, niente id interni), tsc pulito sul file

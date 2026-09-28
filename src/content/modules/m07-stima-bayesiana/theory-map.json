@@ -1,0 +1,533 @@
+{
+  "c01": [
+    "#panoramica",
+    "#due-modi-di-vedere-il-parametro",
+    "widget:m07-theta-fisso-o-aleatorio",
+    "figure:fig10",
+    "quiz:chk-02"
+  ],
+  "c02": [
+    "#ml-un-parametro-fisso-ma-ignoto",
+    "#un-punto-contro-una-distribuzione",
+    "#ml-è-un-buon-stimatore-meglio-o-peggio-di-bayes",
+    "#schema-della-risposta-sul-confronto-ml-contro-bayes",
+    "widget:m07-theta-fisso-o-aleatorio",
+    "figure:fig10",
+    "quiz:chk-02"
+  ],
+  "c03": [
+    "#stima-bayesiana-un-parametro-aleatorio",
+    "#schema-della-risposta-sul-confronto-ml-contro-bayes",
+    "widget:m07-theta-fisso-o-aleatorio",
+    "figure:fig10",
+    "quiz:chk-02"
+  ],
+  "c04": [
+    "#dal-prior-alla-posterior",
+    "widget:m07-theta-fisso-o-aleatorio",
+    "figure:fig10",
+    "quiz:chk-02"
+  ],
+  "c05": [
+    "#quando-si-può-usare-la-stima-bayesiana",
+    "widget:m07-tre-ingredienti-bayes",
+    "quiz:chk-03"
+  ],
+  "c06": [
+    "#ipotesi-1-la-forma-della-densità-è-nota",
+    "formula:f-c06",
+    "widget:m07-tre-ingredienti-bayes",
+    "figure:fig08",
+    "quiz:chk-03"
+  ],
+  "c07": [
+    "#ipotesi-2-la-conoscenza-iniziale-sta-nel-prior",
+    "formula:f-c07",
+    "widget:m07-tre-ingredienti-bayes",
+    "figure:fig08",
+    "quiz:chk-03"
+  ],
+  "c08": [
+    "#ipotesi-3-il-resto-della-conoscenza-sta-nei-campioni",
+    "#lipotesi-di-indipendenza",
+    "#la-formula-di-ml-e-il-prodotto-delle-probabilità",
+    "formula:f-c08",
+    "widget:m07-tre-ingredienti-bayes",
+    "figure:fig08",
+    "quiz:chk-03",
+    "quiz:chk-08"
+  ],
+  "c09": [
+    "#la-posterior-e-lobiettivo",
+    "formula:f-c09",
+    "widget:m07-catena-dati-posterior-predittiva",
+    "quiz:chk-04"
+  ],
+  "c10": [
+    "#la-posterior-e-lobiettivo",
+    "formula:f-c10",
+    "widget:m07-catena-dati-posterior-predittiva",
+    "quiz:chk-04"
+  ],
+  "c11": [
+    "#tre-passaggi-verso-la-formula-chiave",
+    "formula:f-c11",
+    "derivation:der01",
+    "widget:m07-marginalizzare-theta",
+    "figure:fig03",
+    "quiz:chk-05"
+  ],
+  "c12": [
+    "#tre-passaggi-verso-la-formula-chiave",
+    "#perché-in-pratica-si-preferisce-ml",
+    "derivation:der01",
+    "widget:m07-marginalizzare-theta",
+    "figure:fig03",
+    "quiz:chk-05"
+  ],
+  "c13": [
+    "#tre-passaggi-verso-la-formula-chiave",
+    "formula:f-c13",
+    "derivation:der01",
+    "widget:m07-marginalizzare-theta",
+    "figure:fig03",
+    "quiz:chk-05"
+  ],
+  "c14": [
+    "#tre-passaggi-verso-la-formula-chiave",
+    "formula:f-c14",
+    "derivation:der01",
+    "widget:m07-marginalizzare-theta",
+    "figure:fig03",
+    "quiz:chk-05"
+  ],
+  "c15": [
+    "#la-formula-chiave",
+    "#la-formula-chiave-come-media-pesata",
+    "formula:f-c15",
+    "derivation:der01",
+    "derivation:der13",
+    "widget:m07-media-pesata-dei-modelli",
+    "figure:fig03",
+    "quiz:chk-05"
+  ],
+  "c16": [
+    "#la-formula-chiave-come-media-pesata",
+    "derivation:der01",
+    "derivation:der13",
+    "widget:m07-media-pesata-dei-modelli",
+    "figure:fig04",
+    "quiz:chk-06"
+  ],
+  "c17": [
+    "#la-formula-chiave-come-media-pesata",
+    "derivation:der01",
+    "widget:m07-catena-dati-posterior-predittiva",
+    "figure:fig04",
+    "quiz:chk-06"
+  ],
+  "c18": [
+    "#la-formula-chiave-come-media-pesata",
+    "#come-si-calcola-la-posterior",
+    "derivation:der02",
+    "widget:m07-catena-dati-posterior-predittiva",
+    "figure:fig04",
+    "quiz:chk-07"
+  ],
+  "c19": [
+    "#la-formula-di-bayes",
+    "formula:f-c19",
+    "formula:f-c19-2",
+    "derivation:der02",
+    "widget:m07-prior-per-verosimiglianza",
+    "figure:fig04",
+    "quiz:chk-07"
+  ],
+  "c20": [
+    "#il-denominatore-normalizza",
+    "formula:f-c20",
+    "derivation:der02",
+    "widget:m07-prior-per-verosimiglianza",
+    "quiz:chk-07"
+  ],
+  "c21": [
+    "#lipotesi-di-indipendenza",
+    "#la-formula-di-ml-e-il-prodotto-delle-probabilità",
+    "formula:f-c21",
+    "derivation:der02",
+    "widget:m07-prior-per-verosimiglianza",
+    "figure:fig04",
+    "quiz:chk-08"
+  ],
+  "c22": [
+    "#le-ipotesi-dellesempio",
+    "#lesempio-della-fonte-per-intero",
+    "formula:f-c22",
+    "example:ex01",
+    "widget:m07-due-spazi-mu-e-x",
+    "quiz:chk-09"
+  ],
+  "c23": [
+    "#le-ipotesi-dellesempio",
+    "formula:f-c23",
+    "example:ex01",
+    "widget:m07-due-spazi-mu-e-x",
+    "quiz:chk-09"
+  ],
+  "c24": [
+    "#le-ipotesi-dellesempio",
+    "formula:f-c24",
+    "example:ex01",
+    "widget:m07-due-spazi-mu-e-x",
+    "quiz:chk-09"
+  ],
+  "c25": [
+    "#la-posterior-come-prodotto-normalizzato",
+    "formula:f-c25",
+    "derivation:der02",
+    "derivation:der03",
+    "example:ex01",
+    "widget:m07-prior-per-verosimiglianza",
+    "figure:fig05",
+    "quiz:chk-07"
+  ],
+  "c26": [
+    "#perché-la-posterior-è-ancora-gaussiana",
+    "#perché-anche-la-posterior-è-gaussiana",
+    "formula:f-c26",
+    "formula:f-c26-2",
+    "derivation:der03",
+    "example:ex01",
+    "widget:m07-somma-di-parabole",
+    "figure:fig06",
+    "quiz:chk-10"
+  ],
+  "c27": [
+    "#perché-la-posterior-è-ancora-gaussiana",
+    "#perché-anche-la-posterior-è-gaussiana",
+    "formula:f-c27",
+    "derivation:der03",
+    "derivation:der04",
+    "example:ex01",
+    "widget:m07-somma-di-parabole",
+    "figure:fig06",
+    "quiz:chk-10"
+  ],
+  "c28": [
+    "#media-e-varianza-a-posteriori",
+    "#un-esempio-con-i-numeri-la-luminosità-dei-salmoni",
+    "formula:f-c28",
+    "formula:f-c28-2",
+    "formula:f-c28-3",
+    "derivation:der04",
+    "derivation:der12",
+    "example:ex01",
+    "example:ex03",
+    "widget:m07-tiro-alla-fune-prior-dati",
+    "figure:fig06",
+    "quiz:chk-11"
+  ],
+  "c29": [
+    "#media-e-varianza-a-posteriori",
+    "#un-esempio-con-i-numeri-la-luminosità-dei-salmoni",
+    "formula:f-c29",
+    "formula:f-c29-2",
+    "derivation:der04",
+    "derivation:der11",
+    "example:ex01",
+    "example:ex03",
+    "widget:m07-precisioni-che-si-sommano",
+    "figure:fig06",
+    "quiz:chk-12"
+  ],
+  "c30": [
+    "#media-e-varianza-a-posteriori",
+    "formula:f-c30",
+    "derivation:der04",
+    "example:ex01",
+    "example:ex03",
+    "widget:m07-tiro-alla-fune-prior-dati",
+    "figure:fig06",
+    "quiz:chk-11"
+  ],
+  "c31": [
+    "#media-e-varianza-a-posteriori",
+    "formula:f-c31",
+    "derivation:der04",
+    "example:ex01",
+    "example:ex03",
+    "widget:m07-tiro-alla-fune-prior-dati",
+    "figure:fig06",
+    "quiz:chk-11"
+  ],
+  "c32": [
+    "#casi-limite-nessun-campione-e-infiniti-campioni",
+    "formula:f-c32",
+    "derivation:der05",
+    "derivation:der11",
+    "example:ex01",
+    "widget:m07-casi-limite-della-posterior",
+    "quiz:chk-13"
+  ],
+  "c33": [
+    "#casi-limite-nessun-campione-e-infiniti-campioni",
+    "#casi-limite-nei-parametri",
+    "formula:f-c33",
+    "derivation:der05",
+    "derivation:der11",
+    "derivation:der12",
+    "example:ex01",
+    "widget:m07-casi-limite-della-posterior",
+    "quiz:chk-13",
+    "quiz:chk-15"
+  ],
+  "c34": [
+    "#casi-limite-nessun-campione-e-infiniti-campioni",
+    "#bayesian-learning",
+    "formula:f-c34",
+    "formula:f-c34-2",
+    "derivation:der05",
+    "example:ex01",
+    "example:ex02",
+    "widget:m07-precisioni-che-si-sommano",
+    "figure:fig01",
+    "quiz:chk-13"
+  ],
+  "c35": [
+    "#bayesian-learning",
+    "#due-modi-di-vedere-il-parametro",
+    "derivation:der05",
+    "example:ex02",
+    "widget:m07-bayesian-learning-live",
+    "figure:fig01",
+    "quiz:chk-14"
+  ],
+  "c36": [
+    "#bayesian-learning",
+    "formula:f-c36",
+    "example:ex02",
+    "widget:m07-bayesian-learning-live",
+    "figure:fig01",
+    "figure:fig02",
+    "quiz:chk-14"
+  ],
+  "c37": [
+    "#casi-limite-nessun-campione-e-infiniti-campioni",
+    "formula:f-c37",
+    "derivation:der05",
+    "derivation:der12",
+    "example:ex02",
+    "widget:m07-casi-limite-della-posterior",
+    "figure:fig01",
+    "quiz:chk-13"
+  ],
+  "c38": [
+    "#la-densità-predittiva",
+    "formula:f-c38",
+    "derivation:der06",
+    "derivation:der13",
+    "example:ex01",
+    "widget:m07-integrale-predittivo",
+    "figure:fig07",
+    "quiz:chk-16"
+  ],
+  "c39": [
+    "#la-densità-predittiva",
+    "formula:f-c39",
+    "derivation:der06",
+    "example:ex01",
+    "widget:m07-integrale-predittivo",
+    "figure:fig07",
+    "quiz:chk-16"
+  ],
+  "c40": [
+    "#la-densità-predittiva",
+    "formula:f-c40",
+    "derivation:der06",
+    "example:ex01",
+    "widget:m07-integrale-predittivo",
+    "figure:fig07",
+    "quiz:chk-16"
+  ],
+  "c41": [
+    "#la-densità-predittiva",
+    "formula:f-c41",
+    "derivation:der06",
+    "widget:m07-integrale-predittivo",
+    "figure:fig07",
+    "quiz:chk-16"
+  ],
+  "c42": [
+    "#la-densità-predittiva",
+    "#un-esempio-con-i-numeri-la-luminosità-dei-salmoni",
+    "formula:f-c42",
+    "derivation:der06",
+    "derivation:der13",
+    "example:ex01",
+    "example:ex03",
+    "widget:m07-due-fonti-di-incertezza",
+    "figure:fig07",
+    "quiz:chk-16"
+  ],
+  "c43": [
+    "#la-densità-predittiva",
+    "formula:f-c43",
+    "derivation:der06",
+    "example:ex01",
+    "widget:m07-due-fonti-di-incertezza",
+    "figure:fig07",
+    "quiz:chk-17"
+  ],
+  "c44": [
+    "#due-fonti-di-incertezza",
+    "formula:f-c44",
+    "derivation:der06",
+    "derivation:der13",
+    "example:ex01",
+    "example:ex03",
+    "widget:m07-due-fonti-di-incertezza",
+    "quiz:chk-17"
+  ],
+  "c45": [
+    "#in-sintesi",
+    "#due-fonti-di-incertezza",
+    "example:ex01",
+    "widget:m07-due-fonti-di-incertezza",
+    "quiz:chk-17"
+  ],
+  "c46": [
+    "#un-punto-contro-una-distribuzione",
+    "#schema-della-risposta-sul-confronto-ml-contro-bayes",
+    "derivation:der07",
+    "example:ex03",
+    "widget:m07-punto-contro-distribuzione",
+    "figure:fig09",
+    "quiz:chk-18"
+  ],
+  "c47": [
+    "#un-punto-contro-una-distribuzione",
+    "#schema-della-risposta-sul-confronto-ml-contro-bayes",
+    "formula:f-c47",
+    "derivation:der07",
+    "example:ex03",
+    "widget:m07-punto-contro-distribuzione",
+    "figure:fig09",
+    "quiz:chk-18"
+  ],
+  "c48": [
+    "#quando-ml-e-bayes-coincidono",
+    "#in-quale-caso-ml-e-bayes-sono-uguali",
+    "derivation:der07",
+    "derivation:der11",
+    "derivation:der12",
+    "widget:m07-quando-ml-e-bayes-coincidono",
+    "figure:fig09",
+    "quiz:chk-18"
+  ],
+  "c49": [
+    "#quando-ml-e-bayes-coincidono",
+    "#in-quale-caso-ml-e-bayes-sono-uguali",
+    "#reti-bayesiane-ml-e-map",
+    "formula:f-c49",
+    "derivation:der07",
+    "derivation:der11",
+    "widget:m07-quando-ml-e-bayes-coincidono",
+    "figure:fig09",
+    "quiz:chk-18"
+  ],
+  "c50": [
+    "#perché-in-pratica-si-preferisce-ml",
+    "#ml-è-un-buon-stimatore-meglio-o-peggio-di-bayes",
+    "widget:m07-costo-e-interpretabilita",
+    "figure:fig09",
+    "quiz:chk-19"
+  ],
+  "c51": [
+    "#perché-in-pratica-si-preferisce-ml",
+    "#ml-è-un-buon-stimatore-meglio-o-peggio-di-bayes",
+    "widget:m07-costo-e-interpretabilita",
+    "figure:fig09",
+    "quiz:chk-19"
+  ],
+  "c52": [
+    "#che-cosa-offre-in-più-la-stima-bayesiana",
+    "#ml-è-un-buon-stimatore-meglio-o-peggio-di-bayes",
+    "#reti-bayesiane-ml-e-map",
+    "derivation:der12",
+    "widget:m07-pochi-dati-prior-e-intervalli",
+    "quiz:chk-19"
+  ],
+  "c53": [
+    "#che-cosa-offre-in-più-la-stima-bayesiana",
+    "#ml-è-un-buon-stimatore-meglio-o-peggio-di-bayes",
+    "derivation:der12",
+    "example:ex03",
+    "widget:m07-pochi-dati-prior-e-intervalli",
+    "quiz:chk-19"
+  ],
+  "c54": [
+    "#vettore-medio-e-matrice-di-covarianza",
+    "#la-derivata-della-verosimiglianza-gaussiana",
+    "formula:f-c54",
+    "derivation:der08",
+    "widget:m07-stime-ml-media-e-covarianza"
+  ],
+  "c55": [
+    "#vettore-medio-e-matrice-di-covarianza",
+    "formula:f-c55",
+    "derivation:der08",
+    "derivation:der10",
+    "widget:m07-stime-ml-media-e-covarianza"
+  ],
+  "c56": [
+    "#proprietà-e-valori-attesi-delle-stime",
+    "formula:f-c56",
+    "derivation:der10",
+    "widget:m07-bias-della-covarianza-ml",
+    "quiz:chk-01"
+  ],
+  "c57": [
+    "#proprietà-e-valori-attesi-delle-stime",
+    "formula:f-c57",
+    "formula:f-c57-2",
+    "derivation:der09",
+    "derivation:der10",
+    "widget:m07-bias-della-covarianza-ml",
+    "quiz:chk-01"
+  ],
+  "c58": [
+    "#lo-stimatore-non-distorto-elementare",
+    "formula:f-c58",
+    "formula:f-c58-2",
+    "derivation:der09",
+    "derivation:der10",
+    "widget:m07-bias-della-covarianza-ml",
+    "quiz:chk-01"
+  ],
+  "c59": [
+    "#verso-la-stima-non-parametrica",
+    "#la-stima-non-parametrica",
+    "widget:m07-quando-serve-la-non-parametrica",
+    "quiz:chk-20"
+  ],
+  "c60": [
+    "#il-prior-vale-come-campioni-virtuali",
+    "formula:f-c60",
+    "formula:f-c60-2",
+    "derivation:der11",
+    "example:ex03",
+    "widget:m07-tiro-alla-fune-prior-dati",
+    "quiz:chk-11"
+  ],
+  "c61": [
+    "#casi-limite-nei-parametri",
+    "formula:f-c61",
+    "formula:f-c61-2",
+    "formula:f-c61-3",
+    "formula:f-c61-4",
+    "formula:f-c61-5",
+    "derivation:der11",
+    "widget:m07-casi-limite-della-posterior",
+    "quiz:chk-15"
+  ]
+}

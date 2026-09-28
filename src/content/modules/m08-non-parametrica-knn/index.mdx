@@ -1,0 +1,1340 @@
+## Panoramica
+
+Questo foglio apre la stima non parametrica (*nonparametric estimation*) della densità di probabilità (*probability density function*, pdf) nel Cap. 2 di Melgani. Nei fogli precedenti stimavi un vettore di parametri $\theta$ dentro una forma già scelta, con la massima verosimiglianza o con Bayes. Qui la forma non c'è: stimi il valore $p(\mathbf{x}^*)$ nel punto che ti interessa usando i soli campioni di addestramento (*training samples*). <SourceRef doc="ch2" page={41} />
+
+Il percorso segue le slide p41-50 e le note p30-36:
+
+1. la pagina di confine con la stima bayesiana (note p30): ML contro Bayes, quando coincidono, perché si sceglie l'uno o l'altro;
+2. perché e quando serve la stima non parametrica (slide p41-42);
+3. i concetti di base (slide p43-44): probabilità di una regione, frequenza relativa, la stima $K/(NV)$ e il dilemma sulla dimensione della regione;
+4. i due metodi che nascono dalla stessa formula (slide p45-46): K-NN con $K$ fisso, Parzen con $V$ fisso;
+5. la stima K-NN (slide p47-50): ipotesi, cella che si espande, formula, consistenza, scelta di $K$, esempi in 1-D, in 2-D e al crescere di $N$;
+6. l'avvio delle finestre di Parzen (note p36), che prosegue nel foglio successivo.
+
+Accanto alla fonte trovi integrazioni dichiarate come tali, perché servono all'orale: la legge binomiale di $K$, bias e varianza di $K/(NV)$, il volume dell'ipersfera, la versione esatta del K-NN (dove è la cella a essere aleatoria), i casi limite, la forma esplicita della curva 1-D e il classificatore K-NN.
+
+<Callout kind="intuizione">
+Un impianto di confezionamento misura la luminosità di ogni salmone sul nastro. Vuoi la densità della luminosità nel valore 3.1, ma non sai se è gaussiana, bimodale o asimmetrica. Il K-NN parte da 3.1, allarga un intervallo finché contiene 3 salmoni e misura quanto è diventato largo: intervallo stretto, densità alta; intervallo largo, densità bassa. Parzen fa il gioco opposto: fissa la larghezza dell'intervallo e conta quanti salmoni ci cadono.
+</Callout>
+
+<KeyIdea>
+Tutto il foglio discende da una formula, $\hat{p}(\mathbf{x}^*) = K/(NV)$: su $N$ campioni, $K$ cadono in una regione di volume $V$ attorno a $\mathbf{x}^*$. Fissi $K$ e misuri $V$ (K-NN), oppure fissi $V$ e conti $K$ (Parzen). Per arrivare alla pdf vera la regione deve stringersi al crescere di $N$ e intanto contenere sempre più campioni.
+</KeyIdea>
+
+<Callout kind="esame">
+Melgani apre spesso con «K-NN estimation, how does it works, we draw a graph for example and asked how is the distribution, what does it mean overfit and oversmooth». Poi chiede come funziona il classificatore K-NN con un esempio, le differenze con Parzen e se i due metodi tendono alla soluzione ottima. Le sette domande della banca che toccano questo foglio sono raccolte nella sezione per l'orale.
+</Callout>
+
+## ML e Bayes: la pagina di confine
+
+Le note p30 chiudono il confronto tra le due stime parametriche prima di passare al non parametrico. La materia appartiene al foglio sulla <ModLink to="m07-stima-bayesiana">stima bayesiana</ModLink>; la ritrovi qui perché cade nelle stesse pagine e perché l'orale la chiede («In which case ML and Bayesian are the same?»). Le note aprono così: ML e stima bayesiana sono due approcci diversi alla stima dei parametri, ma sotto certe condizioni danno risultati simili. <SourceRef doc="part1" page={30} />
+
+### Un punto contro una distribuzione
+
+La stima a massima verosimiglianza (*Maximum Likelihood*, ML) cerca un unico valore «migliore» dei parametri: quello che massimizza la funzione di verosimiglianza (*likelihood function*) dati i campioni. Il risultato è una stima deterministica (*deterministic estimate*), un singolo punto (*single point*) nello spazio dei parametri $\theta$. La slide p40 del foglio bayesiano dice lo stesso: l'approccio ML stima un punto nello spazio di $\theta$.
+
+La stima bayesiana (*Bayesian Estimation*, BE) stima invece un'intera distribuzione, $p(x \mid X)$, da cui si inferisce $\theta$. Il risultato è una distribuzione a posteriori (*posterior distribution*) che riflette sia i dati osservati sia le convinzioni a priori (*prior beliefs*). ML ti consegna un punto; Bayes una curva, e la larghezza della curva misura l'incertezza.
+
+<Formula id="f-c02" />
+
+Qui $X$ è l'insieme dei campioni di training osservati e $p(x \mid X)$ la densità di $x$ alla luce dei dati.
+
+<Callout kind="attenzione">
+La frase «estimates the entire distribution $p(x \mid X)$, from which θ is inferred» viene alla lettera dalla slide p40, quindi l'ambiguità è della fonte. Nel foglio bayesiano la posterior sui parametri è $p(\theta \mid X)$; la densità predittiva $p(x \mid X)$ si ottiene integrando su $\theta$, non il contrario. All'orale usa la notazione del foglio bayesiano.
+</Callout>
+
+<Widget id="m08-ml-punto-vs-bayes-distribuzione" />
+
+### Quando ML e Bayes coincidono
+
+Le note danno due casi.
+
+**Equivalenza asintotica** (*Asymptotic Equivalence*). Nel limite di un numero infinito di campioni di training (*asymptotic limit of infinite training samples*) le due soluzioni diventano equivalenti: entrambi i metodi convergono ai veri valori dei parametri, cioè sono stimatori consistenti (*consistent estimators*). Le note sottintendono una condizione: il prior deve dare densità positiva al valore vero del parametro. Un prior che lo esclude non viene mai corretto dai dati. Nel caso gaussiano con $\sigma_0^2 = 0$, certezza assoluta su $\mu_0$, l'equivalenza cade. Sempre nel caso gaussiano, lo scarto tra le due stime vale $\frac{\sigma^2}{N\sigma_0^2 + \sigma^2}\,\vert \bar{X} - \mu_0 \vert$ e decresce come $1/N$.
+
+**Prior uniforme** (*Uniform Prior*). Se il prior $p(\theta)$ della stima bayesiana è uniforme, cioè non assumi alcuna conoscenza a priori, la soluzione bayesiana si riduce a quella ML. Il motivo delle note: in questo caso il prior non influenza la posterior («the prior doesn't influence the posterior»), che resta proporzionale alla sola verosimiglianza $p(X \mid \theta)$.
+
+<Formula id="f-c04" />
+
+<Formula id="f-c04-2" />
+
+Due precisazioni rendono esatta la frase delle note. Primo: con la stima ML coincide il **punto di massimo** della posterior; la posterior resta una curva con la sua larghezza, e l'informazione sull'incertezza non sparisce. Secondo: il prior deve essere costante su una regione che contiene il massimo della verosimiglianza. Un prior uniforme su tutto l'asse reale non è normalizzabile: va inteso come limite di un prior sempre più largo, che nel caso gaussiano è $\sigma_0^2 \to \infty$ e dà $\mu_N \to \bar{X}$ per ogni $N$.
+
+<Derivation id="der10" />
+
+<Widget id="m08-quando-ml-e-bayes-coincidono" />
+
+<Check id="chk-01" />
+
+<Callout kind="esame">
+Una domanda della banca chiude con «Last question was: In which case ML and Bayesian are the same?». Rispondi con i due casi: prior uniforme (il massimo della posterior coincide con la stima ML, perché la posterior è proporzionale alla verosimiglianza) e $N \to \infty$ (il peso del prior, $\sigma^2/(N\sigma_0^2 + \sigma^2)$ nel caso gaussiano, va a zero). Aggiungi le due condizioni: il prior dà densità positiva al valore vero, e la posterior resta una curva.
+</Callout>
+
+### Perché ML, perché Bayes
+
+Le note elencano due ragioni pratiche per cui spesso si preferisce ML (*Why ML is Often Preferred*).
+
+- **Minore complessità computazionale** (*Lower Computational Complexity*): ML richiede di solito meno calcolo della stima bayesiana, che spesso deve calcolare e integrare distribuzioni intere.
+- **Interpretabilità più semplice** (*Simpler Interpretability*): ML produce una sola stima dei parametri, più facile da capire e da usare in pratica, soprattutto quando l'obiettivo è una predizione diretta (*straightforward prediction*).
+
+Nonostante la semplicità di ML, la stima bayesiana offre due benefici chiave.
+
+- **Incorporare conoscenza a priori** (*Incorporating Prior Knowledge*): integri nella stima conoscenza pregressa o il parere di esperti. Serve soprattutto quando i dati sono scarsi e la conoscenza del dominio può guidare la stima.
+- **Quantificare l'incertezza** (*Uncertainty Quantification*): Bayes non dà solo una stima puntuale ma l'intera posterior, che riflette l'incertezza sui parametri. Puoi misurare la fiducia nelle stime e fare affermazioni probabilistiche, per esempio intervalli di credibilità (*credible intervals*).
+
+<Widget id="m08-ml-o-bayes-bilancia-pratica" />
+
+<Check id="chk-02" />
+
+## Che cos'è la stima non parametrica
+
+<Definition term="Stima non parametrica" en="nonparametric estimation">
+Stima della pdf che non assume una forma funzionale specifica (gaussiana, di Poisson…) e si appoggia direttamente ai campioni di training. Serve quando manca conoscenza a priori sulla distribuzione dei dati oppure quando i modelli parametrici non la approssimano bene.
+</Definition>
+
+I metodi parametrici assumono una forma funzionale specifica (*specific functional form*), per esempio gaussiana o di Poisson, e ne stimano solo i parametri. I metodi non parametrici fanno meno ipotesi sulla distribuzione e si basano direttamente sui dati. <SourceRef doc="part1" page={30} />
+
+Cambia l'incognita. Nei fogli sull'<ModLink to="m03-stima-intro-parametrica">introduzione alla stima</ModLink>, sulla <ModLink to="m05-max-likelihood">massima verosimiglianza</ModLink> e sulla <ModLink to="m07-stima-bayesiana">stima bayesiana</ModLink> cercavi un vettore $\theta$; qui stimi il valore della pdf $p(\mathbf{x}^*)$ in ciascun punto che ti interessa. «Non parametrico» non significa «senza parametri da scegliere», perché $K$ e $V$ vanno scelti. Significa «senza un modello a forma fissa descritto da un vettore $\theta$».
+
+### Quando serve
+
+La slide p41 dà due condizioni, entrambe evidenziate in rosso. <SourceRef doc="ch2" page={41} />
+
+1. **Nessuna conoscenza a priori** sulla forma funzionale (*no prior knowledge about the functional form*) della pdf che caratterizza il fenomeno osservato. Le note aggiungono: hai accesso ai soli campioni di training e devi inferire la distribuzione direttamente dai dati. Senza una famiglia parametrica fissata non puoi nemmeno applicare ML o Bayes, che stimano i parametri di una forma già nota. <SourceRef doc="part1" page={31} />
+2. **Modelli parametrici inadeguati** (*Inadequate Parametric Models*): i modelli parametrici non offrono una buona approssimazione (*do not offer a good approximation*) della pdf considerata. Le note citano la gaussiana, l'esponenziale e la logistica: quando non rappresentano i dati in modo abbastanza accurato, i metodi non parametrici danno più flessibilità, perché non vincolano la stima a una struttura di modello predefinita (*predefined model structure*). Il caso tipico è una densità multimodale approssimata con una sola gaussiana (vedi <ModLink to="m06-modelli-pdf-gaussiana">modelli di pdf e gaussiana</ModLink>).
+
+<Callout kind="intuizione">
+Sul nastro passano salmoni e spigole mescolati, e la luminosità ha due gobbe. Una gaussiana stimata con ML mette la campana in mezzo, dove quasi nessun pesce cade. È la seconda condizione della slide: il modello parametrico esiste, ma sbaglia la forma.
+</Callout>
+
+### Lavorare sui campioni
+
+La slide p41 conclude: gli approcci non parametrici si applicano direttamente (*applied directly*, in rosso) alle osservazioni disponibili, i campioni di training. Le note chiamano questa caratteristica **guidata dai dati** (*Data-Driven*): non assumi alcuna distribuzione specifica e stimi la distribuzione sottostante direttamente dai dati (*estimate the underlying distribution directly from the data*), cosa utile soprattutto quando la distribuzione vera è complessa o sconosciuta.
+
+Conseguenza pratica: i campioni vanno conservati, perché ogni valutazione della stima li usa tutti. Un modello parametrico, una volta stimato $\theta$, può farne a meno.
+
+<Widget id="m08-parametrico-che-fallisce" />
+
+### Flessibilità e suo prezzo
+
+Seconda caratteristica delle note, la **flessibilità** (*Flexibility*): i metodi non parametrici sono più flessibili di quelli parametrici e catturano strutture intricate (*intricate patterns*) nei dati. Il prezzo è doppio: maggiore complessità computazionale (*higher computational complexity*) e bisogno di più dati (*larger amounts of data*) per ottenere stime accurate. <SourceRef doc="part1" page={31} />
+
+<Widget id="m08-flessibilita-e-suo-prezzo" />
+
+<Check id="chk-03" />
+
+## Due metodi popolari: K-NN e Parzen
+
+La slide p42 annuncia i due metodi del corso; le sole parole in rosso sono i loro nomi. <SourceRef doc="ch2" page={42} />
+
+- Il metodo dei K vicini più prossimi (*K-nearest neighbor*, **K-NN**).
+- Il metodo delle finestre di Parzen (*Parzen windows*).
+
+Le note li chiamano «two commonly used nonparametric methods» e ne danno una descrizione intuitiva. <SourceRef doc="part1" page={31} /> Le note del foglio introduttivo nominavano anche una terza famiglia, l'approssimazione con funzioni ortogonali, che il corso non sviluppa. <SourceRef doc="part1" page={16} />
+
+<Columns>
+<Col title="K-NN">
+
+La densità in un punto si stima dalla **prossimità** dei campioni vicini. Per un punto di interrogazione (*query point*) trovi i $K$ campioni di training più vicini e basi la stima su di loro. Se i $K$ vicini sono molto vicini la densità è alta; se devi andare lontano per trovarli, è bassa.
+
+</Col>
+<Col title="Parzen">
+
+Posi una piccola **finestra** predefinita (*window*, spesso un kernel gaussiano) attorno a ogni campione. La densità in un punto qualsiasi è la media dei contributi di tutte le finestre (*kernels*) nelle vicinanze. Il metodo prosegue nel foglio sulle <ModLink to="m09-parzen-windows">finestre di Parzen</ModLink>.
+
+</Col>
+</Columns>
+
+<Widget id="m08-due-strade-anteprima" />
+
+## I concetti di base
+
+La slide p43, «Basic Concepts», costruisce la formula su cui poggiano entrambi i metodi. Le note la riprendono a p31-32. <SourceRef doc="ch2" page={43} />
+
+### Il punto x* e la regione R
+
+Sia $\mathbf{x}^*$ un campione generico (*generic sample*): il punto dello spazio delle feature in cui vuoi conoscere la densità. Sia $R$ una regione predefinita (*predefined region*) dello spazio delle feature che contiene $\mathbf{x}^*$.
+
+<Formula id="f-c15" />
+
+La stima è **locale**: guardi che cosa succede dentro $R$ per dedurre il valore della pdf in $\mathbf{x}^*$. La parola «predefined» pesa: la regione è fissata prima di guardare i campioni e non dipende da essi. Ti servirà quando, nel K-NN, questa ipotesi cadrà.
+
+La slide fa due ipotesi, entrambe in rosso:
+
+1. la pdf vera $p(\mathbf{x})$ è una **funzione continua** (*continuous function*);
+2. $R$ è **sufficientemente piccola** (*sufficiently small*) perché $p(\mathbf{x})$ non vari in modo significativo al suo interno.
+
+Sotto queste ipotesi puoi considerare $p(\mathbf{x})$ costante e uguale a $p(\mathbf{x}^*)$ in tutta $R$. Se $p$ ha un salto dentro $R$, o se $R$ è grande rispetto alla scala su cui $p$ varia, l'approssimazione non vale.
+
+### La probabilità della regione
+
+La probabilità $P_R$ che un campione $\mathbf{x}$ appartenga a $R$ è l'integrale della pdf su $R$. Sotto le due ipotesi l'integrale vale $p(\mathbf{x}^*)$ per il volume $V$ di $R$.
+
+<Formula id="f-c17" />
+
+Legenda delle note: $P_R$ è la probabilità che un campione cada in $R$, $p(\mathbf{x}^*)$ il valore della pdf nel punto $\mathbf{x}^*$, $V$ il volume di $R$. <SourceRef doc="part1" page={31} />
+
+La slide scrive il segno di uguale anche nell'ultimo passaggio, ma si tratta di un'approssimazione, esatta solo per $V \to 0$. La versione rigorosa passa dal teorema della media integrale: se $p$ è continua e $R$ è connessa, esiste un punto $\boldsymbol{\xi}$ dentro $R$ con $P_R = p(\boldsymbol{\xi})\,V$ esattamente. L'ipotesi di regione piccola ti permette di sostituire $\boldsymbol{\xi}$ con $\mathbf{x}^*$.
+
+Nella slide la $V$ è cerchiata in verde, con la didascalia «Volume of R»; la slide p45 la chiama ipervolume (*hypervolume*) $V$ di $R$.
+
+<Formula id="f-c18" />
+
+$V$ è la misura di $R$ nello spazio delle feature: una lunghezza in 1-D, un'area in 2-D, un volume in 3-D, un ipervolume in $n$ dimensioni. Per una ipersfera di raggio $r$ (integrazione) valgono $V = 2r$ in 1-D, $V = \pi r^2$ in 2-D, $V = \frac{4}{3}\pi r^3$ in 3-D. La densità si misura quindi in «1 / unità di volume» e può superare 1: se tutti i salmoni hanno luminosità tra 3.0 e 3.2, la densità media su quell'intervallo vale $1/0.2 = 5$.
+
+<Figure id="fig05" />
+
+<Widget id="m08-regione-r-e-probabilita" />
+
+### Contare i campioni: la frequenza relativa
+
+Sia $K$ il numero di campioni di training che appartengono a $R$, su un totale di $N$ campioni di training. $K$ è una quantità aleatoria: dipende da quali campioni hai estratto.
+
+Una stima consistente (*consistent estimate*, in rosso) di $P_R$ si ottiene calcolando la **frequenza relativa** (*relative frequency*, in rosso): la frazione degli $N$ campioni che cade in $R$.
+
+<Formula id="f-c20" />
+
+«Consistente» significa che la stima converge in probabilità al valore vero quando $N \to \infty$, come nella definizione del foglio sulla <ModLink to="m04-bonta-stimatori">bontà degli stimatori</ModLink>. Nella slide una freccia rossa collega il limite all'etichetta «Law of large numbers». Per la <Term en="law of large numbers">legge dei grandi numeri</Term>, al crescere di $N$ la frequenza relativa converge a $P_R$: per ogni tolleranza $\delta > 0$, la probabilità che lo scarto tra stima e valore vero sia minore di $\delta$ tende a 1.
+
+<Formula id="f-c21" />
+
+Le note concludono: la stima diventa più accurata al crescere della dimensione del campione (*the estimate becomes more accurate as the sample size grows*). <SourceRef doc="part1" page={32} />
+
+Due ipotesi implicite, che né la slide né le note scrivono, rendono vero questo passaggio:
+
+- gli $N$ campioni sono **i.i.d.**, estratti in modo indipendente dalla stessa $p(\mathbf{x})$;
+- la regione $R$ è fissata prima di guardare i campioni, e quindi non dipende da essi.
+
+Solo con entrambe $K$ è una somma di prove di Bernoulli indipendenti e vale la legge dei grandi numeri nella forma scritta. Nel K-NN la seconda ipotesi cade, perché costruisci la cella sui campioni: lì $K$ è un numero e l'aleatorio è la cella. Attenzione anche a che cosa converge: $K/N$ tende a $P_R$, non a $p(\mathbf{x}^*)$. Per arrivare alla densità serve in più che $V$ tenda a zero.
+
+<Widget id="m08-frequenza-relativa-e-grandi-numeri" />
+
+### K è una variabile binomiale
+
+La slide enuncia la consistenza senza passaggi; la giustificazione (integrazione) è breve. Ogni campione, estratto in modo indipendente dalla stessa $p(\mathbf{x})$, cade in $R$ con probabilità $P_R$ oppure fuori con probabilità $1 - P_R$. $K$ è quindi la somma di $N$ prove di Bernoulli indipendenti e segue una legge **binomiale** di parametri $N$ e $P_R$.
+
+<Formula id="f-c65" />
+
+Il valore atteso di $K$ è $N P_R$ e la varianza $N P_R (1 - P_R)$. Dividendo per $N$, la frequenza relativa risulta non distorta e con varianza che scende come $1/N$:
+
+<Formula id="f-c65-2" />
+
+Per la disuguaglianza di Chebyshev questo basta: la probabilità di uno scarto almeno pari a $\delta$ è al più $P_R(1 - P_R)/(N\delta^2)$, che tende a zero. È il limite della slide.
+
+<Derivation id="der06" />
+
+L'errore relativo della stima vale circa $1/\sqrt{K}$:
+
+<Formula id="f-c65-3" />
+
+Con $K = 4$ campioni nella regione l'incertezza è del 50%, con $K = 100$ del 10%. È la versione quantitativa dell'osservazione «R enough large» della slide successiva e della condizione $K_N \to \infty$ del K-NN.
+
+<Widget id="m08-k-binomiale-e-imbuto" />
+
+<Check id="chk-04" />
+
+## La stima della pdf
+
+La slide p44 porta il titolo «PDF Estimation». <SourceRef doc="ch2" page={44} />
+
+### La formula madre
+
+Dalla stima della probabilità $P_R$ che un campione appartenga a $R$ ricavi una stima della pdf in $\mathbf{x}^*$ (*it can be derived an estimate of the pdf at $\mathbf{x}^*$*): uguagli $P_R \simeq p(\mathbf{x}^*)\,V$ con $\hat{P}_R = K/N$ e dividi per il volume.
+
+<Formula id="f-c22" />
+
+È la formula madre della stima non parametrica: K-NN e Parzen ne danno due letture diverse. Vale sotto quattro ipotesi: campioni i.i.d. estratti da $p(\mathbf{x})$; $p$ continua in $\mathbf{x}^*$; $R$ abbastanza piccola perché $p$ sia quasi costante al suo interno; $R$ con abbastanza campioni perché $K/N$ sia vicino a $P_R$.
+
+I due «≈» della catena hanno natura diversa. Il primo, $P_R \simeq p(\mathbf{x}^*)\,V$, è **geometrico**: il suo errore è un bias e cala se stringi $R$. Il secondo, $\hat{P}_R \simeq P_R$, è **statistico**: il suo errore è una varianza e cala se allarghi $R$ o aumenti $N$.
+
+<Derivation id="der01" />
+
+<Widget id="m08-da-pr-a-densita" />
+
+<Example id="ex08" title="Letture di temperatura: stima della pdf e sua incertezza">
+
+Dati sintetici. Su $N = 500$ letture di temperatura di un sensore, $K = 40$ cadono nella fascia $R = [20.0,\ 20.2]$ °C, larga $V = 0.2$ °C.
+
+<Step title="Stima della probabilità della fascia">
+
+$$
+\hat{P}_R = \frac{K}{N} = \frac{40}{500} = 0.08
+$$
+
+</Step>
+
+<Step title="Stima della pdf">
+
+$$
+\hat{p}(x^*) = \frac{\hat{P}_R}{V} = \frac{0.08}{0.2} = 0.4
+$$
+
+in unità di 1/°C.
+
+</Step>
+
+<Step title="Incertezza della frequenza relativa">
+
+Dalla varianza binomiale:
+
+$$
+\sqrt{\mathrm{var}\{\hat{P}_R\}} = \sqrt{\frac{0.08 \cdot 0.92}{500}} \simeq 0.0121
+$$
+
+</Step>
+
+<Step title="Incertezza della pdf">
+
+Dividi per $V$: $0.0121 / 0.2 \simeq 0.061$, circa il 15% del valore 0.4. La regola rapida dà lo stesso ordine: $1/\sqrt{K} = 1/\sqrt{40} \simeq 0.158$.
+
+</Step>
+
+<Step title="Dimezzare la fascia">
+
+Con $V = 0.1$ °C ti aspetti circa 20 letture nella fascia e l'errore relativo sale a circa $1/\sqrt{20} \simeq 0.22$, cioè 22%. Regione più piccola: meno bias, più varianza.
+
+</Step>
+
+</Example>
+
+<Check id="chk-05" />
+
+### Abbastanza grande, abbastanza piccola
+
+La slide p44 aggiunge due osservazioni (*Observations*), con le parole chiave in rosso.
+
+1. $R$ deve essere **abbastanza grande** (*enough large*) da contenere un numero di campioni di training sufficiente per applicare la legge dei grandi numeri. Se in $R$ cadono pochissimi campioni, $K/N$ è una stima molto rumorosa di $P_R$.
+2. Allo stesso tempo $R$ deve essere **abbastanza piccola** (*enough small*) da limitare la variabilità di $p(\mathbf{x})$ al suo interno. Altrimenti non vale $P_R = p(\mathbf{x}^*)\,V$ e la stima diventa una media della densità su una zona larga.
+
+Le due richieste tirano in direzioni opposte: nella slide un omino verde si gratta la testa accanto a un punto interrogativo. Le note lo dicono in chiaro: se $R$ è troppo piccola la stima diventa troppo sensibile al rumore dei dati (*overly sensitive to noise in the data*); se è troppo grande può non riflettere le variazioni locali della pdf (*may not accurately reflect local variations*). È il compromesso tra varianza e bias della stima non parametrica, che K-NN e Parzen risolvono in due modi diversi. <SourceRef doc="part1" page={32} />
+
+<Figure id="fig06" />
+
+<Widget id="m08-dilemma-dimensione-regione" />
+
+### Bias e varianza a regione fissata
+
+Le due osservazioni si traducono in formule (integrazione). Con $R$ fissata ed $E\{K\} = N P_R$, il valore atteso della stima è la media spaziale di $p$ su $R$:
+
+<Formula id="f-c66" />
+
+La stima «vede» una versione lisciata della pdf e coincide con $p(\mathbf{x}^*)$ solo se $p$ è costante in $R$ oppure se $V \to 0$. Questo è il **bias**, ed è il motivo di «R enough small».
+
+La varianza viene dalla binomiale divisa per $(NV)^2$:
+
+<Formula id="f-c66-2" />
+
+Quando $R$ è piccola, $P_R \simeq p(\mathbf{x}^*)\,V$ è molto minore di 1 e la varianza vale circa $p(\mathbf{x}^*)/(NV)$: esplode se $NV$ è piccolo, cioè se in $R$ cadono pochi campioni. Questo è il motivo di «R enough large». L'errore relativo, $\sqrt{(1 - P_R)/(N P_R)}$, dipende solo dal numero atteso di campioni dentro $R$: circa $1/\sqrt{E\{K\}}$.
+
+Le due richieste si conciliano solo se la regione dipende da $N$: $V_N \to 0$ (bias nullo) ma $N V_N \to \infty$ (varianza nulla). È ciò che fanno, in due modi diversi, le due righe della figura di slide p46.
+
+Le formule valgono per $V$ fissato, cioè nella lettura di Parzen; nel K-NN è $V$ a essere aleatorio, ma il ragionamento qualitativo resta. Un controllo incrociato con il foglio su Parzen: la slide p61 dà per la varianza il limite superiore $\sup(\gamma)\,\bar{\hat{p}}(\mathbf{x})/(N h_N^n)$, dove $\bar{\hat{p}}$ è il valore atteso della stima. Con la finestra a ipercubo $\sup(\gamma) = 1$ e $h^n = V$, e la varianza esatta trovata qui rispetta quel limite: ne è il caso particolare.
+
+<Formula id="f-c66-3" />
+
+<Derivation id="der07" />
+
+<Widget id="m08-bias-varianza-a-regione-fissa" />
+
+### Agli estremi: i casi limite della formula
+
+La fonte non dice che cosa succede agli estremi. Guardarli (integrazione) dà un contenuto preciso a «enough large» e «enough small».
+
+**$N$ fisso e $V \to 0$.** Prima o poi la regione non contiene più campioni: $K = 0$ e la stima vale 0. Se invece $\mathbf{x}^*$ coincide con un campione, $K$ resta almeno 1 e $K/(NV)$ diverge. In entrambi i casi la stima è inutilizzabile: a dati fissi non rendi esatta $P_R = p(\mathbf{x}^*)\,V$ stringendo $R$.
+
+<Formula id="f-c71" />
+
+**$V$ fisso e $N \to \infty$.** Per la legge dei grandi numeri $K/N \to P_R$, quindi la stima converge a $P_R/V$, la media spaziale di $p$ su $R$, e non a $p(\mathbf{x}^*)$. La varianza si annulla, il bias resta.
+
+<Formula id="f-c71-2" />
+
+**$R$ uguale a tutto lo spazio.** $K = N$, $P_R = 1$ e la stima vale $1/V$, che tende a zero: una stima piatta.
+
+Conclusione: $V$ deve dipendere da $N$. Gli estremi della stima K-NN, $K = 1$ e $K = N$, li trovi nella sezione sulla scelta di $K$.
+
+<Widget id="m08-casi-limite-formula-madre" />
+
+<Check id="chk-06" />
+
+## Due parametri, due metodi
+
+La slide p45 torna sulla formula $K/(NV)$ e ne ricava i due metodi. <SourceRef doc="ch2" page={45} />
+
+### K fisso oppure V fisso
+
+A seconda del ruolo che dai a ciascuno dei due parametri $K$ e $V$ (*two parameters K e V*: la congiunzione italiana è un refuso della slide), arrivi a due metodi di stima non parametrica diversi. Uno dei due lo fissi tu, da progettista; l'altro lo ricavi dai dati.
+
+<Columns>
+<Col title="K-NN: K fisso">
+
+**$K$ è fissato** (*K is fixed*) e l'ipervolume $V$ di $R$ si calcola sulla base del training set per dedurre la stima della pdf. Le note precisano: regoli $V$ in modo che dentro la regione cadano **esattamente** $K$ campioni di training, così la stima riflette la densità locale dei campioni attorno a $\mathbf{x}^*$.
+
+</Col>
+<Col title="Parzen: V fisso">
+
+**$R$, e quindi $V$, è fissata** (*R (and thus V) is fixed*) e $K$ si calcola dai campioni di training per determinare la stima della pdf. Le note lo chiamano anche *Kernel Density Estimation* e aggiungono: la stima somma i contributi di tutti i campioni dentro la finestra (la regione $R$), pesati da una funzione kernel, tipicamente gaussiana. <SourceRef doc="part1" page={32} />
+
+</Col>
+</Columns>
+
+Nella slide sono in rosso «two parameters», «K is fixed» e «R (and thus V) is fixed»; in blu i nomi dei due metodi. <SourceRef doc="ch2" page={45} />
+
+<Widget id="m08-chi-fissa-cosa" />
+
+<Check id="chk-07" />
+
+### Vantaggi e svantaggi
+
+Pro e contro stanno nelle note p32, non nella slide.
+
+| Metodo | Vantaggi | Svantaggi |
+|---|---|---|
+| K-NN | adattivo alle variazioni locali di densità (*adaptive to local density variations*): la cella è piccola dove i dati sono fitti e grande dove sono radi | la scelta di $K$ è cruciale e le prestazioni degradano se $K$ non è scelto bene |
+| Parzen | stime della pdf lisce (*smooth*), meno sensibili al rumore rispetto al K-NN | la dimensione della finestra (*window size*, *bandwidth*) incide molto sulla stima: troppo piccola porta a *overfitting*, troppo grande liscia troppo (*oversmooth*) e nasconde struttura locale importante |
+
+<Callout kind="intuizione">
+Sul nastro della luminosità, dove i salmoni sono fitti la cella K-NN si stringe e mostra i dettagli; nella coda rada si allarga e la stima resta bassa ma mai nulla. Una finestra di Parzen di larghezza fissa, nella coda rada, può non contenere alcun pesce: lì la stima vale zero.
+</Callout>
+
+<Widget id="m08-pro-e-contro" />
+
+### Entrambi convergono
+
+La slide chiude così: entrambi i metodi di fatto convergono (*Both of these methods do in fact converge*), anche se è difficile dire qualcosa di significativo sul loro comportamento a campione finito (*finite-sample behavior*, in rosso). Le note spiegano: sono consistenti nel senso che, al crescere di $N$, la pdf stimata converge alla pdf vera; prevedere il comportamento con $N$ finito è difficile per i compromessi nella scelta di parametri come $K$ e $V$. <SourceRef doc="part1" page={33} />
+
+È la risposta breve alla domanda d'esame «do they tend to the optimal solution?»: sì, asintoticamente, se la legge di $K_N$ (o di $V_N$) rispetta certe condizioni. Le trovi nella sezione successiva, dopo la figura.
+
+## Parzen contro K-NN al crescere di N
+
+La slide p46 mette i due metodi uno sopra l'altro: «Illustration of Parzen versus K-NN estimation concepts». <SourceRef doc="ch2" page={46} />
+
+<Figure id="fig01" />
+
+Ogni riquadro quadrato contiene $N$ campioni 2-D (punti neri) e la regione $R$ (cerchio rosso) centrata nel centro del riquadro, che è il punto di stima. Le colonne portano queste etichette, con i puntini di sospensione tra $N = 16$ e $N = 100$:
+
+<Formula id="f-c32" />
+
+Le righe hanno un'etichetta per metodo, la legge del volume per Parzen e la legge dei vicini per il K-NN:
+
+<Formula id="f-c32-2" />
+
+<Formula id="f-c32-3" />
+
+I campioni sono gli stessi nelle due righe e si accumulano: il campione di $N = 1$ c'è ancora in $N = 4$, e così via.
+
+### La riga di Parzen
+
+Il volume è una funzione prefissata di $N$ che tende a zero.
+
+<Formula id="f-c33" />
+
+$N = 1$ dà $V = 1$; $N = 4$ dà $V = 0.5$; $N = 9$ dà $V \simeq 0.333$; $N = 16$ dà $V = 0.25$; $N = 100$ dà $V = 0.1$. Il cerchio si restringe in modo deterministico, dovunque cadano i campioni. Il volume non dipende dai dati; il numero $K$ di campioni catturati invece sì, ed è casuale: può anche essere zero, e allora la stima è nulla.
+
+Questa legge rispetta le condizioni di consistenza di Parzen del foglio successivo (slide p61: $h_N \to 0$ e $N h_N^n \to \infty$, con $V = h^n$). Infatti $V_N = 1/\sqrt{N} \to 0$ e $N V_N = \sqrt{N} \to \infty$. È la stessa legge dell'esempio $h_N = 1/N^{1/(2n)}$ della slide p61, perché allora $V_N = h_N^n = 1/\sqrt{N}$.
+
+### La riga del K-NN
+
+Il numero di vicini è una funzione prefissata di $N$ che cresce.
+
+<Formula id="f-c34" />
+
+$N = 1$ dà $K = 1$; $N = 4$ dà $K = 2$; $N = 9$ dà $K = 3$; $N = 16$ dà $K = 4$; $N = 100$ dà $K = 10$. Il cerchio si espande fino a toccare il $K$-esimo campione più vicino al centro: per $N = 1$ passa per l'unico campione. Il volume è quello che serve a racchiudere $K$ campioni: dipende dai dati, è grande dove i campioni sono radi e diminuisce al crescere di $N$ perché i campioni si infittiscono. Con il K-NN la stima non è mai nulla.
+
+Il messaggio della figura: la stessa formula $K/(NV)$ letta in due modi. In entrambe le righe la regione si restringe al crescere di $N$ mentre i campioni al suo interno aumentano, che è il requisito comune per la convergenza. La figura viene dal testo di Duda, Hart e Stork (Fig. 4.2). La sua didascalia spiega che il punto di test è il centro di ogni quadrato, che nella riga alta il volume si riduce secondo una funzione prefissata di $N$ e nella riga bassa in modo dipendente dai dati, e che in entrambi i casi le successioni di stime sono variabili aleatorie che in generale convergono al valore vero della densità nel punto di test.
+
+<Example id="ex01" title="La figura di slide 46 in numeri">
+
+<Step title="Volumi della riga di Parzen">
+
+Con $V = 1/\sqrt{N}$, le colonne $N = 1, 4, 9, 16, 100$ danno $V = 1,\ 0.5,\ 0.333,\ 0.25,\ 0.1$.
+
+</Step>
+
+<Step title="Vicini della riga K-NN">
+
+Con $K = \sqrt{N}$, le stesse colonne danno $K = 1,\ 2,\ 3,\ 4,\ 10$.
+
+</Step>
+
+<Step title="Conteggi letti sulla riga di Parzen">
+
+Sull'immagine i campioni dentro il cerchio sono $K = 1,\ 0,\ 1,\ 1,\ 1$. Con il volume dichiarato la stima vale
+
+$$
+\frac{K}{NV} = \frac{1}{1 \cdot 1} = 1,\quad 0,\quad \frac{1}{9 \cdot 0.333} = 0.333,\quad \frac{1}{16 \cdot 0.25} = 0.25,\quad \frac{1}{100 \cdot 0.1} = 0.1
+$$
+
+Stime molto diverse tra loro e, per $N = 4$, nulla: un esempio concreto della frase della slide p45 sul comportamento a campione finito.
+
+</Step>
+
+<Step title="Raggi letti sulla riga K-NN">
+
+Il $K$-esimo vicino dista dal centro circa 61, 61, 50, 41 e 28 pixel, con il lato del riquadro di circa 155 pixel. Il raggio diminuisce anche se $K$ aumenta, perché i campioni si infittiscono più in fretta di quanto cresca $K$.
+
+</Step>
+
+</Example>
+
+<Callout kind="attenzione">
+Misurati sull'immagine, i raggi dei cerchi della riga di Parzen valgono circa 73, 36, 24, 18 e 6 pixel: nel disegno è il **raggio** a scalare come $1/\sqrt{N}$, e l'area scala come $1/N$. Per questo $K$ resta fermo attorno a 1 invece di crescere in media come $\sqrt{N}$. La figura è schematica: la legge da ricordare è quella scritta, $V = 1/\sqrt{N}$ sul volume, con $N V_N = \sqrt{N} \to \infty$. Nella riga K-NN i raggi (61, 61, 50, 41, 28) coincidono con le distanze del 1°, 2°, 3°, 4° e 10° vicino: quella riga è esatta.
+</Callout>
+
+Le note riportano la stessa figura a p33, subito dopo la frase sulla convergenza e sul comportamento a campione finito. <SourceRef doc="part1" page={33} />
+
+<Figure id="fig08" />
+
+<Widget id="m08-griglia-parzen-vs-knn" />
+
+<Check id="chk-08" />
+
+### Le condizioni generali di convergenza
+
+La frase «Both of these methods do in fact converge» ha una forma precisa (integrazione: teoria classica del testo di Duda, Hart e Stork, da cui vengono la frase e la figura). Costruisci una successione di stime, una per ogni $N$, ciascuna con la sua regione $R_N$ di volume $V_N$ che contiene $K_N$ campioni:
+
+<Formula id="f-c69" />
+
+La stima converge a $p(\mathbf{x})$ nei punti di continuità se valgono insieme tre condizioni.
+
+<Formula id="f-c69-2" />
+
+- $V_N \to 0$: la media spaziale su $R_N$ diventa il valore puntuale. Bias nullo.
+- $K_N \to \infty$: la frequenza relativa converge alla probabilità. Varianza nulla.
+- $K_N/N \to 0$: permette alle prime due di convivere.
+
+La terza non è una richiesta indipendente. La stima è il rapporto $(K_N/N)/V_N$ e deve tendere al valore finito $p(\mathbf{x})$: se il denominatore tende a zero, anche il numeratore deve farlo, altrimenti il rapporto diverge. Letta dal lato del K-NN: se $K_N/N \to 0$, nei punti con $p(\mathbf{x}) > 0$ il volume $V_N \simeq K_N/(N\,p(\mathbf{x}))$ tende a zero da solo. Per questo la slide p47 enuncia due sole condizioni su $K_N$, e la slide p61 due sole condizioni su $h_N$.
+
+Parzen sceglie la legge di $V_N$, per esempio $V_N = 1/\sqrt{N}$: allora $N V_N = \sqrt{N} \to \infty$ garantisce $K_N \to \infty$. Il K-NN sceglie la legge di $K_N$, per esempio $K_N = \sqrt{N}$, e il volume segue. Le ipotesi comuni a questi enunciati: campioni i.i.d., $p$ continua nel punto, convergenza intesa in probabilità (consistenza). Sono risultati asintotici e non dicono nulla sul comportamento a $N$ finito, come avverte la slide p45.
+
+<Check id="chk-09" />
+
+## La stima K-NN
+
+La slide p47, «K-NN Estimation», raccoglie ipotesi, metodologia, formula e condizione di consistenza. Le note la riprendono a p33-34. <SourceRef doc="ch2" page={47} />
+
+<Figure id="fig07" />
+
+### Le due ipotesi
+
+La slide elenca due ipotesi (*Hypotheses*).
+
+1. **Il numero $K$ è fissato a priori** (*The number K is set a priori*). Le note: il numero di vicini più prossimi $K$ è fisso e stabilito a priori (*fixed and set a priori*). In pratica lo scegli prima di guardare il punto $\mathbf{x}^*$, e resta lo stesso in ogni punto.
+2. **La forma della cella è scelta a priori**: si sceglie una forma (*shape*, in rosso) per la cella di volume centrata su $\mathbf{x}^*$, per esempio un'ipersfera (*hypersphere*). Le note: tipicamente un'ipersfera, ma si possono usare altre geometrie. La forma decide come misuri la vicinanza (ipersfera vuol dire distanza euclidea) e quale formula dà il volume. <SourceRef doc="part1" page={33} />
+
+<Widget id="m08-ipotesi-knn" />
+
+### Il volume della cella ipersferica
+
+Per calcolare davvero $V_K(\mathbf{x}^*)$ con la cella ipersferica serve il volume dell'ipersfera (integrazione). Se $r_K(\mathbf{x}^*)$ è la distanza euclidea tra $\mathbf{x}^*$ e il suo $K$-esimo vicino, il volume è una costante che dipende solo da $n$, moltiplicata per $r_K^n$:
+
+<Formula id="f-c67" />
+
+Qui $\Gamma$ è la funzione Gamma di Eulero. Nei casi che userai:
+
+<Formula id="f-c67-2" />
+
+Con una cella a ipercubo di semilato $r$ avresti invece $V = (2r)^n$. Il rapporto tra il volume dell'ipersfera e quello del cubo circoscritto crolla al crescere di $n$: 0.785 in 2-D, 0.524 in 3-D, circa 0.0025 in 10-D. È un modo di vedere la nota sulle dimensioni elevate che trovi più avanti, con l'esempio 2-D.
+
+<Widget id="m08-volume-cella-ipersferica" />
+
+<Check id="chk-10" />
+
+### Espandere la cella fino a K campioni
+
+La metodologia (*Methodology*) sta in una riga rossa: il metodo K-NN consiste nell'espandere la cella fino a farle coprire $K$ campioni di training (*to expand the cell up to spanning K training samples*). Le note: espandi la regione, o «cella», centrata su $\mathbf{x}^*$ finché racchiude **esattamente** $K$ campioni di training.
+
+Sia $V_K(\mathbf{x}^*)$ il volume risultante (*the resulting volume*).
+
+<Formula id="f-c38" />
+
+È il volume della regione che contiene i $K$ campioni più vicini a $\mathbf{x}^*$. Dipende dal punto e dai dati: piccolo nelle zone dense, grande nelle zone rade. Con la cella circolare in 2-D (integrazione; $r_K$ è una notazione aggiunta, non della fonte):
+
+<Formula id="f-c38-2" />
+
+In 1-D $V_K = 2\,r_K$.
+
+I passi operativi:
+
+1. fissi $K$ e la forma della cella;
+2. centri la cella in $\mathbf{x}^*$;
+3. la fai crescere finché contiene $K$ campioni, cioè fino al $K$-esimo campione più vicino;
+4. misuri il volume raggiunto;
+5. applichi $K/(N\,V_K)$.
+
+Al calcolatore gli stessi passi diventano: calcoli le $N$ distanze tra $\mathbf{x}^*$ e i campioni, le ordini, prendi come raggio $r_K$ la $K$-esima, calcoli il volume della cella di raggio $r_K$, applichi la formula. La stima è puntuale: per l'intera curva (o superficie) ripeti la procedura in ogni punto di una griglia, e ogni valutazione costa $N$ distanze.
+
+### La formula della stima K-NN
+
+Il valore della pdf in $\mathbf{x}^*$ (*The pdf value at $\mathbf{x}^*$ is given by*) è:
+
+<Formula id="f-c39" />
+
+Legenda delle note: $K$ è il numero di campioni di training dentro la regione, $N$ il numero totale di campioni di training, $V_K(\mathbf{x}^*)$ il volume della regione che contiene quei $K$ campioni. Il numeratore è costante: l'informazione sulla densità sta tutta nel volume al denominatore. <SourceRef doc="part1" page={33} />
+
+<Widget id="m08-cella-che-si-espande" />
+
+<Example id="ex06" title="Stima K-NN a mano: luminosità dei salmoni in 1-D e in 2-D">
+
+Dati sintetici: la fonte non contiene un esempio numerico, ma all'esame chiedono «KNN and KNN example». $N = 10$ luminosità di salmoni: 2.1, 2.4, 2.5, 3.0, 3.2, 3.3, 3.9, 4.4, 5.0, 5.6.
+
+<Step title="Zona densa, x* = 3.1: le distanze ordinate">
+
+0.1 (3.0), 0.1 (3.2), 0.2 (3.3), 0.6 (2.5), 0.7 (2.4), 0.8 (3.9), 1.0 (2.1), 1.3 (4.4), 1.9 (5.0), 2.5 (5.6).
+
+</Step>
+
+<Step title="Zona densa con K = 3 e con K = 5">
+
+Con $K = 3$: $r_3 = 0.2$, $V_3 = 2 \cdot 0.2 = 0.4$ e
+
+$$
+\hat{p}(3.1) = \frac{3}{10 \cdot 0.4} = 0.75
+$$
+
+Con $K = 5$: $r_5 = 0.7$, $V_5 = 1.4$ e
+
+$$
+\hat{p}(3.1) = \frac{5}{10 \cdot 1.4} \simeq 0.357
+$$
+
+Aumentando $K$ la cella si allarga fino a zone meno dense e il picco si abbassa (*oversmoothing*).
+
+</Step>
+
+<Step title="Zona rada, x* = 5.3">
+
+Distanze ordinate: 0.3 (5.0), 0.3 (5.6), 0.9 (4.4), 1.4 (3.9), 2.0 (3.3), e così via. Con $K = 3$: $r_3 = 0.9$, $V_3 = 1.8$, $\hat{p} = 3/(10 \cdot 1.8) \simeq 0.167$. Con $K = 5$: $r_5 = 2.0$, $V_5 = 4.0$, $\hat{p} = 5/(10 \cdot 4.0) = 0.125$. La stima è più bassa dove devi andare lontano per trovare $K$ vicini, ma non è mai nulla.
+
+</Step>
+
+<Step title="Caso 2-D con cella circolare">
+
+$N = 200$ salmoni nel piano (luminosità, larghezza), $K = 5$, quinto vicino a distanza $r_5 = 0.4$:
+
+$$
+V_5 = \pi \cdot 0.4^2 \simeq 0.503, \qquad \hat{p}(\mathbf{x}^*) = \frac{5}{200 \cdot 0.503} \simeq 0.0497
+$$
+
+In tutti i casi il numeratore $K$ è fissato a priori: l'informazione sulla densità sta nel volume.
+
+</Step>
+
+</Example>
+
+<Check id="chk-11" />
+
+### La condizione di consistenza
+
+La slide: si può dimostrare (*It can be shown*, senza dimostrazione) che, **se scegli $K$ come funzione di $N$** (*if K is chosen as a function of N*, in rosso), una condizione necessaria e sufficiente (*necessary and sufficient condition*) per ottenere una stima consistente in tutti i punti in cui $p(\mathbf{x})$ è continua è:
+
+<Formula id="f-c40" />
+
+Le due condizioni devono valere insieme. Le note le interpretano: al crescere del numero $N$ di campioni anche il numero $K$ di vicini deve crescere, ma molto più lentamente di $N$ (*at a much slower rate than N*). Così, man mano che arrivano dati, la regione usata per la stima si restringe e migliora l'accuratezza locale, pur includendo abbastanza campioni da ridurre la variabilità. <SourceRef doc="part1" page={34} />
+
+In termini della formula madre: $K_N \to \infty$ rende affidabile la frequenza relativa (legge dei grandi numeri, meno varianza); $K_N/N \to 0$ fa tendere a zero il volume e rende esatta l'ipotesi di pdf costante in $R$ (meno bias).
+
+<Derivation id="der02" />
+
+<Callout kind="attenzione">
+La slide scrive $K_N$ nella condizione e $K(N)$ nell'esempio; le note usano anche $K$ semplice quando $N$ è fissato. Indicano la stessa grandezza: il numero di vicini visto come funzione di $N$.
+</Callout>
+
+### L'esempio della radice di N
+
+Una freccia rossa parte dalla condizione $K_N/N \to 0$ e punta a «Example: K(N) = √N».
+
+<Formula id="f-c42" />
+
+La slide scrive solo la legge; la verifica è un'integrazione:
+
+<Formula id="f-c42-2" />
+
+Le note: se $K(N)$ cresce come $\sqrt{N}$, al crescere di $N$ il volume $V_K(\mathbf{x}^*)$ si restringe e dà una migliore risoluzione locale della pdf, mentre l'inclusione di più vicini assicura l'affidabilità statistica della stima. È la stessa legge della riga K-NN della figura di slide p46.
+
+<Example id="ex05" title="La legge K(N) = √N in numeri">
+
+<Step title="N = 100">
+
+$K = \sqrt{100} = 10$ e $K/N = 0.1$.
+
+</Step>
+
+<Step title="N = 10 000">
+
+$K = 100$ e $K/N = 0.01$.
+
+</Step>
+
+<Step title="N = 1 000 000">
+
+$K = 1000$ e $K/N = 0.001$.
+
+</Step>
+
+<Step title="Lettura">
+
+$K$ cresce senza limite (prima condizione) mentre la frazione di campioni nella cella, e con essa il volume, tende a zero (seconda condizione): più risoluzione locale e più affidabilità statistica insieme.
+
+</Step>
+
+</Example>
+
+Le leggi che violano una delle due condizioni mostrano che servono entrambe. Con $K$ costante la varianza non si annulla mai; con $K$ proporzionale a $N$ la cella conserva una frazione fissa dei dati e il bias resta.
+
+<Derivation id="der03" />
+
+<Widget id="m08-condizioni-di-consistenza" />
+
+<Check id="chk-12" />
+
+### La cella K-NN si regola da sola
+
+Con $K = \sqrt{N}$ puoi collegare le due righe della figura di slide p46 (integrazione: è un commento del testo di Duda, Hart e Stork). Nella cella K-NN cadono $K$ campioni su $N$, quindi il suo contenuto di probabilità vale circa $K/N$; con cella piccola vale anche $p(\mathbf{x}^*)\,V$. Uguagliando:
+
+<Formula id="f-c68" />
+
+Con $K_N = \sqrt{N}$:
+
+<Formula id="f-c68-2" />
+
+Il volume ha la stessa forma $V_1/\sqrt{N}$ della riga di Parzen, ma il volume iniziale $V_1 = 1/p(\mathbf{x}^*)$ non lo sceglie il progettista: lo decidono i dati, ed è diverso in ogni punto, piccolo dove la densità è alta e grande dove è bassa. In Parzen $V_1 = 1$ è uguale ovunque. È la spiegazione quantitativa di «adaptive to local density variations» ed è un buon argomento per la domanda sulle differenze con Parzen.
+
+<Derivation id="der08" />
+
+<Widget id="m08-volume-knn-segue-la-densita" />
+
+<Check id="chk-13" />
+
+### Nel K-NN la cella è aleatoria
+
+Il ragionamento delle slide p43-44 vale per una regione «predefined», fissata prima di guardare i campioni: lì $K$ è aleatorio (binomiale) e $V$ è un numero. Nel K-NN i ruoli si scambiano. $K$ è un numero deciso a priori; la cella è costruita sui campioni, quindi sono aleatori il suo volume $V_K(\mathbf{x}^*)$ e il suo contenuto di probabilità $P_K$, e la binomiale non si applica più. Né le slide né le note segnalano questo salto.
+
+Il risultato esatto (integrazione): se i campioni sono i.i.d. con pdf continua, $P_K$ segue una legge **Beta** di parametri $K$ e $N - K + 1$, qualunque siano $p(\mathbf{x})$, il punto $\mathbf{x}^*$, la dimensione $n$ e la forma della cella. $R_K(\mathbf{x}^*)$ indica la cella che arriva fino al $K$-esimo vicino.
+
+<Formula id="f-c70" />
+
+Da qui quattro conseguenze. Primo: il contenuto medio vale $K/(N + 1)$, circa $K/N$, ed è la giustificazione rigorosa per il K-NN di «$K/N$ stima $P_R$». Secondo: la sua dispersione relativa vale circa $1/\sqrt{K}$ e si annulla solo se $K_N \to \infty$, la prima condizione della slide.
+
+<Formula id="f-c70-2" />
+
+Terzo: il contenuto medio tende a zero solo se $K_N/N \to 0$, la seconda condizione; allora, nei punti con $p(\mathbf{x}^*) > 0$, anche il volume tende a zero. Quarto: con cella piccola $P_K \simeq p(\mathbf{x}^*)\,V_K$, e tutta l'aleatorietà della stima sta in $1/P_K$.
+
+<Formula id="f-c70-3" />
+
+Il valore atteso della stima è $p(\mathbf{x}^*)\,K/(K-1)$: la stima K-NN è **distorta verso l'alto** del fattore $K/(K-1)$, con valore atteso infinito per $K = 1$ (gli spilli che divergono sui campioni). La varianza relativa vale $(N - K + 1)/(N(K-2))$, circa $1/K$.
+
+<Formula id="f-c70-4" />
+
+In numeri: $K = 5$ fisso dà +25% di bias e una dispersione relativa che non cala aggiungendo dati: vale circa 45% con $N = 10$, 57% con $N = 100$ e tende a circa 58% per $N$ grande, invece che a zero. È il «Fixed K» delle note p34: la varianza non si annulla mai. $K = \sqrt{N}$ con $N = 10\,000$ dà +1% e circa 10%. Le formule sono state controllate con una simulazione Monte Carlo (densità uniforme, 200 000 ripetizioni): con $N = 200$ e $K = 5$ la media vale 1.248 contro 1.25 atteso e la varianza relativa 0.331 contro 0.327. Alcuni testi usano la variante non distorta $(K-1)/(N\,V_K)$; la formula del docente resta $K/(N\,V_K)$, e il fattore $K/(K-1)$ tende a 1 quando $K_N \to \infty$.
+
+<Derivation id="der09" />
+
+<Example id="ex10" title="Quanto ti puoi fidare di un numero K-NN">
+
+Formule della sezione precedente (cella piccola, campioni i.i.d.): fattore di bias $K/(K-1)$ e deviazione standard relativa $\sqrt{(N - K + 1)/(N(K-2))}$.
+
+<Step title="N molto grande, K fisso">
+
+$K = 2$: +100% di bias e varianza infinita. $K = 3$: +50% e circa 100%. $K = 5$: +25% e circa 58%. $K = 10$: +11% e circa 35%. $K = 100$ con $N = 10\,000$, cioè $K = \sqrt{N}$: +1% e circa 10%.
+
+</Step>
+
+<Step title="La figura di slide 50, costruita con K = √N">
+
+$N = 16$ e $K = 4$: +33% di bias e dispersione $\sqrt{13/32} \simeq 0.64$. $N = 256$ e $K = 16$: +6.7% e $\sqrt{241/3584} \simeq 0.26$. La dispersione è relativa al valore atteso, non al valore vero: nel centro della gaussiana $E\{\hat{p}\} \simeq 1.067 \cdot 0.40 \simeq 0.43$ e $\sigma \simeq 0.26 \cdot 0.43 \simeq 0.11$, quindi una deviazione standard dà una fascia tra circa 0.32 e 0.54, compatibile con l'oscillazione tra 0.25 e 0.55 che si legge sull'immagine.
+
+</Step>
+
+<Step title="L'esempio dei salmoni">
+
+Nella stima a mano con $N = 10$ e $K = 3$ il valore era 0.75. La dispersione relativa è $\sqrt{8/10} \simeq 0.89$ e il fattore di bias 1.5; la variante $(K-1)/(NV)$ darebbe 0.5. Con $K = 3$ il numero 0.75 indica solo l'ordine di grandezza.
+
+</Step>
+
+<Step title="Morale">
+
+«$K$ fisso» significa varianza che non si annulla per nessun $N$. Servono $K_N \to \infty$ per l'affidabilità statistica e $K_N/N \to 0$ per la località.
+
+</Step>
+
+</Example>
+
+<Widget id="m08-cella-aleatoria-beta" />
+
+<Check id="chk-14" />
+
+## La scelta di K
+
+Le note p34 dedicano un blocco a che cosa succede quando $K$ è sbagliato. <SourceRef doc="part1" page={34} />
+
+### K fisso: bias oppure overfitting
+
+Il titolo delle note è «Fixed K may lead to bias or overfitting». Un $K$ troppo piccolo dà stime troppo sensibili alle fluttuazioni casuali dei dati (alta varianza, *high variance*); un $K$ troppo grande liscia troppo i dati e fa perdere dettagli locali importanti (alto bias, *high bias*). Adattare $K$ a $N$ mantiene il metodo consistente e offre un compromesso tra bias e varianza. Scegliendo con cura $K$ **come funzione di $N$**, il K-NN diventa un approccio flessibile e non parametrico, senza ipotesi sulla forma funzionale della pdf.
+
+<Callout kind="attenzione">
+Il titolo mescola due effetti (bias per $K$ grande, varianza per $K$ piccolo) e usa «fixed» nel senso di «non adattato a $N$». Non confonderlo con «K is fixed» della slide p45, dove «fixed» vuol dire «scelto a priori dal progettista».
+</Callout>
+
+### K troppo piccolo: overfitting
+
+Quando $K$ è troppo piccolo la densità stimata diventa molto variabile o frastagliata (*jagged*), perché cattura anche le fluttuazioni minori dei campioni di training. È l'**overfitting**: il modello è troppo sensibile al rumore dei dati. È la risposta a «what does it mean overfit».
+
+### K troppo grande: oversmoothing
+
+Quando $K$ è troppo grande la stima diventa troppo liscia o piatta (*flat*) e va in **underfitting**. Il modello non cattura la struttura locale importante perché media su una regione grande (*averages over a large region*), con perdita di risoluzione (*loss of resolution*). È la risposta a «what does it mean oversmooth».
+
+### K come iperparametro
+
+Le note chiudono: nella stima K-NN la scelta di $K$ è cruciale per bilanciare overfitting e underfitting. $K$ è un **iperparametro** (*hyperparameter*) importante, da scegliere con cura per bilanciare il compromesso tra bias (underfitting) e varianza (overfitting). Non lo stimi dai dati con una formula: lo fissi a priori, con una legge come $K = \sqrt{N}$ oppure con una procedura di validazione (vedi <ModLink to="m21-errore-generalizzazione">errore di generalizzazione e cross-validation</ModLink>).
+
+<Widget id="m08-k-piccolo-k-grande" />
+
+### I due estremi: K uguale a 1 e K uguale a N
+
+A $N$ fissato gli estremi di $K$ rendono concrete le parole «too small» e «too large» (integrazione).
+
+- **$K = 1$**: la cella arriva al campione più vicino. La stima diverge su ogni campione, ha valore atteso infinito e area infinita. È l'overfitting estremo, la prima riga della figura di slide p50.
+- **$K = N$**: la cella deve contenere tutti i campioni, il raggio è la distanza dal campione più lontano e la stima vale $1/V_N(x)$. In 1-D è un'unica cuspide nel punto medio tra il campione minimo e il massimo, alta $1/(x_{(N)} - x_{(1)})$, con code $1/(2\vert x \vert)$. Tutta la struttura interna sparisce: è l'oversmoothing estremo.
+
+<Formula id="f-c71-3" />
+
+Qui $r_1(x)$ è la distanza dal campione più vicino, $x_{(1)}$ e $x_{(N)}$ il campione più piccolo e il più grande (notazione aggiunta). Il $K$ utile sta tra i due estremi e, al crescere di $N$, deve allontanarsi da entrambi: $K_N \to \infty$ lo porta via da $K = 1$, $K_N/N \to 0$ lo tiene lontano da $K = N$.
+
+<Check id="chk-15" />
+
+## Esempio in una dimensione
+
+La slide p48 mostra «Example of K-NN estimation in a 1-D feature space (K=3 and 5)». <SourceRef doc="ch2" page={48} />
+
+<Figure id="fig02" />
+
+Sull'asse $x$ ci sono 8 campioni di training (punti rossi). Le due curve $p(x)$ sono la stima con $K = 3$, in rosso, e con $K = 5$, in nero; la slide scrive $p(x)$ sull'asse verticale senza il cappello. Le sole scritte matematiche sono il titolo con i due valori di $K$, le etichette degli assi e i numeri «3» e «5» accanto alle curve.
+
+<Formula id="f-c47" />
+
+Le note: con $K = 3$ la stima segue i dati più da vicino e ha un aspetto frastagliato con molte discontinuità (*jagged appearance with many discontinuities*); cattura la struttura locale ma è incline all'overfitting. Con $K = 5$ la densità è più liscia perché consideri più vicini; il compromesso è che, riducendo la varianza, la stima diventa più piatta e meno reattiva alla distribuzione locale dei dati (*flatter and less responsive*). <SourceRef doc="part1" page={34} />
+
+Nella figura la curva $K = 3$ ha un picco molto alto sopra la terna di punti più ravvicinati; la curva $K = 5$ ha picchi più bassi e larghi. Entrambe hanno code che scendono lentamente ai lati. Contando i picchi trovi 6 cuspidi per $K = 3$ e 4 per $K = 5$, cioè $N - K + 1$ con $N = 8$: una per ogni gruppo di $K$ campioni consecutivi.
+
+<Widget id="m08-esempio-1d-k3-k5" />
+
+### Le discontinuità di pendenza
+
+La nota ruotata in basso a sinistra della slide dice: le discontinuità delle pendenze delle stime si verificano in generale lontano dalle posizioni dei punti stessi (*The discontinuities in the slopes in the estimates generally occur away from the positions of the points themselves*). Le note la spiegano in modo vago: il K-NN espande la cella attorno a ogni punto per trovare $K$ vicini e le regioni risultanti non sono lisce (*the resulting regions are not smooth*). <SourceRef doc="part1" page={35} />
+
+La spiegazione precisa (integrazione, verificata misurando la figura): la pendenza cambia di colpo quando cambia l'identità del $K$-esimo vicino, e questo accade nei punti medi tra due campioni, non sui campioni. Ordina i campioni, $x_{(1)} \le x_{(2)} \le \dots$ (statistiche d'ordine, notazione aggiunta):
+
+- le **cuspidi** (massimi) cadono nel punto medio tra il primo e l'ultimo di $K$ campioni consecutivi;
+- gli **angoli** (minimi) cadono nel punto medio tra il campione che esce dalla cella e quello che entra.
+
+<Formula id="f-c48" />
+
+L'altezza di ogni cuspide è inversamente proporzionale alla larghezza del gruppo di $K$ campioni: il gruppo più stretto dà il picco più alto.
+
+<Formula id="f-c48-2" />
+
+A essere discontinua è solo la pendenza, non la stima. Il raggio $r_K(x)$ è la $K$-esima più piccola tra le $N$ distanze $\vert x - x_k \vert$, tutte continue, quindi è continuo; per $K \ge 2$ e campioni distinti la stima $K/(2N\,r_K(x))$ è continua ovunque. Nei punti angolosi la derivata cambia segno di colpo: passa da $+K/(2N r_K^2)$ a $-K/(2N r_K^2)$ nelle cuspidi, e viceversa nei minimi. Le «many discontinuities» delle note vanno lette così, come discontinuità della derivata prima.
+
+<Formula id="f-c48-3" />
+
+La pendenza cresce con il quadrato della stima: i picchi alti sono anche i più aguzzi, come nella figura.
+
+### La forma esplicita in una dimensione
+
+In 1-D la cella è un intervallo centrato in $x$ di semi-larghezza $r_K(x)$, la distanza dal $K$-esimo vicino, e il volume è la sua lunghezza (integrazione: la fonte dà solo la figura, ma all'esame ti chiedono di disegnarla).
+
+<Formula id="f-c49" />
+
+<Formula id="f-c49-2" />
+
+$r_K(x)$ è lineare a tratti con pendenza $+1$ oppure $-1$: in 1-D i $K$ vicini di $x$ sono sempre $K$ campioni consecutivi, e $r_K$ è il massimo tra le distanze dai due estremi del blocco. Tra un cambio di vicino e il successivo la stima è quindi un ramo di iperbole. Oltre l'ultima cuspide i vicini restano per sempre gli ultimi $K$ campioni, e la coda destra è un unico ramo $K/(2N(x - x_{(N-K+1)}))$; la coda sinistra, specularmente, usa $x_{(K)}$. Per $K \ge 2$ e campioni distinti la stima è sempre finita; per $K = 1$ diverge sui campioni.
+
+<Derivation id="der04" />
+
+<Example id="ex02" title="La figura di slide 48: dove cadono i picchi e quanto sono alti">
+
+Posizioni degli 8 campioni misurate sull'immagine, in frazioni della lunghezza dell'asse: 0.067, 0.127, 0.223, 0.448, 0.480, 0.550, 0.647, 0.789. $N = 8$.
+
+<Step title="K = 3: posizioni delle cuspidi">
+
+Punti medi tra primo e ultimo campione di ogni terna consecutiva: 0.145, 0.288, 0.352, 0.499, 0.563, 0.670. Sono le sei cuspidi misurate sulla curva rossa, entro un pixel. Nessuna cade su un campione.
+
+</Step>
+
+<Step title="K = 3: altezze delle cuspidi">
+
+Con $K/(N \cdot \text{larghezza della terna})$, in unità di 1/lunghezza dell'asse: 2.40, 1.17, 1.46, 3.68, 2.25, 1.57. Il picco più alto è il quarto, sopra la terna 0.448-0.550 larga 0.102:
+
+$$
+\hat{p}(0.499) = \frac{3}{8 \cdot 0.102} \simeq 3.68
+$$
+
+L'ordine delle altezze coincide con quello dei picchi disegnati.
+
+</Step>
+
+<Step title="K = 5: cuspidi e altezze">
+
+Quattro cuspidi in 0.274, 0.339, 0.435, 0.619, alte 1.51, 1.48, 1.47, 1.83. Il picco più alto è l'ultimo, quello etichettato «5» nella slide, sopra la cinquina più stretta (0.448-0.789, larga 0.341).
+
+</Step>
+
+<Step title="Lettura">
+
+La curva con $K = 5$ ha picchi più bassi e più uniformi: la stima è più liscia. Tutte le discontinuità di pendenza cadono nei punti medi tra campioni. Entrambe le curve hanno code che decrescono lentamente.
+
+</Step>
+
+</Example>
+
+<Check id="chk-16" />
+
+### Code pesanti
+
+Lontano dai dati le curve non scendono a zero in fretta ma decrescono lentamente: lo vedi nelle figure delle slide p48 e p50, anche se la fonte non lo commenta (integrazione). Lontano da tutti i campioni $r_K(x)$ cresce come $\vert x \vert$, quindi la stima decresce come $1/\vert x \vert$ e il suo integrale su tutto l'asse diverge.
+
+<Formula id="f-c50" />
+
+A rigore la stima K-NN **non è una pdf valida**. La divergenza è lenta, logaritmica: ciascuna coda contribuisce all'area su $[-L, +L]$ con $(K/(2N))\ln L$, quindi l'area cresce come $(K/N)\ln L$, dove $L$ è la semiampiezza dell'intervallo di integrazione.
+
+<Formula id="f-c50-2" />
+
+Con $K = 4$ e $N = 16$ l'area aumenta di circa 0.58 a ogni decade di $L$. Se all'orale, dopo il disegno, ti chiedono «how is the distribution», rispondi così: picchi sulle zone dense, angoli nei punti medi, code lente, area che non vale 1.
+
+<Widget id="m08-un-solo-campione-e-code" />
+
+<Check id="chk-17" />
+
+### Disegnare la stima a mano
+
+Con le cuspidi, i minimi angolosi e le code disegni la curva per intero. L'esempio usa pochi campioni per poter scrivere ogni tratto.
+
+<Example id="ex09" title="Tutti i tratti di iperbole per N = 5 e K = 3">
+
+Dati sintetici per la richiesta d'orale «we draw a graph for example and asked how is the distribution». Campioni ordinati: 1.0, 1.2, 1.3, 2.5, 4.0 ($N = 5$), $K = 3$. La formula diventa
+
+$$
+\hat{p}(x) = \frac{K}{2N\,r_K(x)} = \frac{0.3}{r_K(x)}
+$$
+
+con $r_K(x)$ distanza dal terzo vicino.
+
+<Step title="Finestre di 3 campioni consecutivi">
+
+Da 1.0 a 1.3, da 1.2 a 2.5, da 1.3 a 4.0: larghe 0.3, 1.3 e 2.7.
+
+</Step>
+
+<Step title="Cuspidi nei punti medi delle finestre">
+
+$x = 1.15,\ 1.85,\ 2.65$, alte $K/(N \cdot \text{larghezza}) = 2.0,\ 0.4615,\ 0.2222$.
+
+</Step>
+
+<Step title="Minimi angolosi">
+
+Nei punti medi tra il campione che esce e quello che entra: $(1.0 + 2.5)/2 = 1.75$, dove $r = 0.75$ e la stima vale 0.4; $(1.2 + 4.0)/2 = 2.6$, dove $r = 1.4$ e la stima vale 0.2143.
+
+</Step>
+
+<Step title="I sei tratti di iperbole">
+
+$$
+\hat{p}(x) = \begin{cases} 0.3/(1.3 - x) & x \le 1.15 \\ 0.3/(x - 1.0) & 1.15 \le x \le 1.75 \\ 0.3/(2.5 - x) & 1.75 \le x \le 1.85 \\ 0.3/(x - 1.2) & 1.85 \le x \le 2.6 \\ 0.3/(4.0 - x) & 2.6 \le x \le 2.65 \\ 0.3/(x - 1.3) & x \ge 2.65 \end{cases}
+$$
+
+Alcuni valori: 0.2308 in $x = 0$; 1.0 in $x = 1.0$; 1.5 in $x = 1.2$; 1.0 in $x = 1.3$; 0.2308 in $x = 2.5$; 0.1111 in $x = 4.0$; 0.0638 in $x = 6$.
+
+</Step>
+
+<Step title="Controlli">
+
+Nei cinque raccordi i due tratti adiacenti danno lo stesso valore (2.0, 0.4, 0.4615, 0.2143, 0.2222): la curva è continua e cambia solo la pendenza. Nessun punto angoloso cade su un campione, e sui campioni la stima è finita (1.0, 1.5, 1.0, 0.2308, 0.1111).
+
+</Step>
+
+<Step title="Com'è fatta la distribuzione">
+
+Picco alto e stretto sopra la terna fitta 1.0-1.3, altopiano basso sopra i campioni isolati 2.5 e 4.0, code che scendono come $1/\vert x \vert$. L'area non vale 1: già tra 0 e 6 vale circa 1.79, somma di sei logaritmi ($0.648 + 0.483 + 0.043 + 0.230 + 0.011 + 0.374$), e cresce senza limite se allarghi l'intervallo.
+
+</Step>
+
+</Example>
+
+<Widget id="m08-disegna-la-stima-knn" />
+
+## Esempio in due dimensioni
+
+La slide p49 mostra «Example of K-NN estimation in a 2-D feature space (K=5)». <SourceRef doc="ch2" page={49} />
+
+<Figure id="fig03" />
+
+<Formula id="f-c51" />
+
+Il grafico 3-D ha in basso il piano delle feature $(x_1, x_2)$ con una trentina di campioni (punti rossi) e sopra la superficie $p(\mathbf{x})$ stimata con $K = 5$; la $\mathbf{x}$ è in grassetto perché è un vettore a due componenti, e lo 0 segna la base dell'asse verticale. La superficie ha picchi aguzzi sopra le zone in cui i punti sono fitti, creste angolose e un altopiano basso che non scende a zero dove i punti sono radi. È la formula di slide p47 con cella circolare (integrazione; $r_5(\mathbf{x})$ è la distanza euclidea dal quinto vicino):
+
+<Formula id="f-c51-2" />
+
+Le note: in 2-D valgono gli stessi principi; con $K = 5$ la stima considera i 5 punti più vicini dentro un'ipersfera, qui un cerchio; la stima è più liscia, con il rischio di underfitting se $K$ è troppo grande. Le note scrivono che la stima «would average over 5 nearest points»: è impreciso, il K-NN non fa una media, misura il volume che racchiude i 5 vicini. <SourceRef doc="part1" page={35} />
+
+La didascalia originale della figura (Duda, Hart e Stork, Fig. 4.11) aggiunge che una stima a $N$ finito come questa può essere molto frastagliata (*jagged*) e che in 2-D le discontinuità di pendenza si dispongono lungo **linee** lontane dai campioni: i luoghi dei punti in cui cambia l'identità del quinto vicino, l'analogo dei punti medi del caso 1-D.
+
+<Example id="ex03" title="La superficie K-NN di slide 49">
+
+<Step title="Che cosa c'è nel grafico">
+
+Circa trenta campioni nel piano $(x_1, x_2)$ e la superficie $\hat{p}(\mathbf{x})$ con $K = 5$ disegnata in prospettiva.
+
+</Step>
+
+<Step title="Come si calcola ogni punto della superficie">
+
+Per ogni $\mathbf{x}$ della griglia cerchi il quinto campione più vicino, prendi la sua distanza $r_5(\mathbf{x})$ e calcoli $5/(N\,\pi\,r_5^2(\mathbf{x}))$.
+
+</Step>
+
+<Step title="Come leggere la forma">
+
+Picchi aguzzi sopra i gruppi di punti fitti, creste angolose lungo le linee in cui cambia il quinto vicino, altopiano basso che non si annulla dove i punti sono radi.
+
+</Step>
+
+<Step title="Un punto in una zona fitta">
+
+La slide non ha scala sugli assi: usa unità arbitrarie e $N = 30$, come i punti della figura. In un gruppo fitto il quinto vicino dista $r_5 = 0.5$:
+
+$$V = \pi \cdot 0.5^2 \simeq 0.785, \qquad \hat{p}(\mathbf{x}) = \frac{5}{30 \cdot 0.785} \simeq 0.21$$
+
+</Step>
+
+<Step title="Un punto in una zona rada">
+
+Lontano dai gruppi il quinto vicino dista $r_5 = 1.2$:
+
+$$V = \pi \cdot 1.2^2 \simeq 4.52, \qquad \hat{p}(\mathbf{x}) = \frac{5}{30 \cdot 4.52} \simeq 0.037$$
+
+</Step>
+
+<Step title="Il risultato">
+
+Il rapporto tra le due stime vale $(1.2/0.5)^2 = 5.76$, circa 6: con $K$ e $N$ fissi la quota dipende solo da $1/r_5^2$. Un raggio 2.4 volte più corto dà un picco quasi 6 volte più alto; il raggio resta finito anche dove i punti sono radi, e la stima non si annulla. Ecco i picchi e l'altopiano della figura.
+
+</Step>
+
+<Step title="Che cosa aggiungono le note">
+
+Stessi principi del caso 1-D. Con $K$ maggiore la superficie è più liscia, con rischio di underfitting se $K$ è troppo grande; in dimensioni più alte la scelta di $K$ è ancora più critica.
+
+</Step>
+
+</Example>
+
+<Widget id="m08-superficie-knn-2d" />
+
+Le note riportano le due figure, 1-D e 2-D, ciascuna seguita dalla sua nota.
+
+<Figure id="fig09" />
+
+### Nelle dimensioni elevate
+
+La nota delle note p35: in dimensioni più alte il volume dell'intorno cresce esponenzialmente (*the volume of the neighborhood grows exponentially*), quindi la scelta di $K$ è ancora più critica per bilanciare overfitting e underfitting.
+
+Lettura: a parità di $N$, per catturare $K$ campioni in uno spazio a molte dimensioni la cella deve diventare così estesa da non essere più «locale», e cade l'ipotesi di pdf quasi costante in $R$. Il rapporto sfera/cubo di circa 0.0025 in 10-D è un sintomo: quasi tutto il volume del cubo sta negli angoli, lontano dal centro. È la stessa maledizione della dimensionalità che produce l'effetto Hughes del foglio sulla <ModLink to="m11-hughes-feature-selection">riduzione delle feature</ModLink>.
+
+<Widget id="m08-knn-e-dimensionalita" />
+
+<Check id="chk-18" />
+
+## Stime K-NN al crescere di N
+
+La slide p50 mostra «Several K-NN estimates of two 1-D densities: a Gaussian and a bimodal distribution». <SourceRef doc="ch2" page={50} />
+
+<Figure id="fig04" />
+
+È una griglia 4×2 di grafici con asse $x$ da 0 a 4 e ordinata fino a 1. Colonna sinistra: densità gaussiana; colonna destra: densità bimodale. Le righe:
+
+<Formula id="f-c53" />
+
+Le stime a $N$ finito sono a spilli e rumorose; l'ultima riga, $N = \infty$, mostra le densità vere a cui tendono. La slide non dichiara il $K$ usato: la figura è quella classica di Duda, Hart e Stork, costruita con $K = \sqrt{N}$, cioè $K = 1, 4, 16$, coerente con l'esempio della slide p47.
+
+<Widget id="m08-knn-al-crescere-di-n" />
+
+### La colonna gaussiana
+
+Le note descrivono la colonna sinistra riga per riga. <SourceRef doc="part1" page={35} />
+
+- $N = 1$: stima rumorosa e molto variabile, con picchi casuali al posto della forma gaussiana liscia.
+- $N = 16$: la forma gaussiana comincia ad apparire, ma è ancora rumorosa. Nella figura vedi due gruppi di spilli, attorno a $x \simeq 1.3$ e $x \simeq 2.8$, alti circa 0.8-0.9: più del doppio del massimo vero.
+- $N = 256$: per le note la stima è più liscia e mostra una chiara forma a campana. Nella figura però oscilla tra circa 0.25 e 0.55 nella zona centrale, con cinque o sei denti ben visibili: la descrizione «smoother» è generosa.
+- $N = \infty$: curva gaussiana liscia, centrata in $x = 2$. Letta sull'immagine ha massimo circa 0.40 e vale circa 0.05 in 0 e in 4: una normale di media 2 e deviazione standard 1.
+
+### La colonna bimodale
+
+- $N = 1$: stima rumorosa, che non cattura i due picchi.
+- $N = 16$: i due picchi cominciano ad apparire, con rumore ancora presente.
+- $N = 256$: la forma bimodale è più chiara, con un po' di rumore residuo.
+- $N = \infty$: struttura bimodale netta con due picchi distinti, coerente con la distribuzione vera. <SourceRef doc="part1" page={36} />
+
+La densità vera non è una coppia di gaussiane: è un **triangolo** con base da 0.5 a 2.5 e vertice in 1.5 alto circa 0.67, più un **rettangolo** da 3 a 3.5 alto circa 0.67. Le aree valgono 2/3 e 1/3 e sommano a 1: è una miscela con pesi 2/3 e 1/3 (misure sull'immagine, la fonte non le dichiara). I bordi verticali del rettangolo sono il tratto più difficile da riprodurre. A $N = 16$ e $N = 256$ la stima supera il bordo superiore del grafico sopra entrambi i modi, mentre nella valle tra il triangolo e il rettangolo (la densità vera è nulla su $(2.5, 3)$) e ai bordi dell'asse non scende mai a zero: sono le code lente del K-NN. Sull'immagine il minimo della valle cade verso 2.3 con $N = 16$ e verso 2.6-2.8 con $N = 256$.
+
+### Un solo campione
+
+Con $N = 1$ e $K = 1$ la cella centrata in $x$ si espande fino all'unico campione $x_1$: $V = 2\vert x - x_1 \vert$ e la stima (integrazione, la formula non è scritta nella fonte) è
+
+<Formula id="f-c56" />
+
+cioè un asintoto verticale sul campione e due rami che decrescono lentamente. Nella figura il campione sta vicino a $x \simeq 3.4$ a sinistra e a $x \simeq 1.3$ a destra, e la curva esce dal bordo superiore del grafico. I valori letti confermano la formula: a sinistra circa 0.15 in $x = 0$, contro $1/(2 \cdot 3.4) \simeq 0.147$; a destra circa 0.38 in $x = 0$ e 0.19 in $x = 4$, contro $1/(2 \cdot 1.3) \simeq 0.385$ e $1/(2 \cdot 2.7) \simeq 0.185$.
+
+L'area sotto questa curva è infinita, sia attorno al campione sia nelle code, e la curva non assomiglia alla densità vera: con $N$ piccolo il K-NN è inutilizzabile. Le note parlano di una stima «noisy and highly variable, capturing random peaks»: in realtà è un unico spillo iperbolico.
+
+### Verso la densità vera
+
+L'ultima riga è la dimostrazione grafica della consistenza: nel limite $N = \infty$ la stima diventa la gaussiana liscia a sinistra e la struttura bimodale netta a destra. La convergenza vale per qualunque forma della densità, ed è il vantaggio del non parametrico, ma è lenta: a $N = 256$ la stima è ancora rumorosa. Il grafico collega la condizione teorica su $K_N$ al comportamento osservato.
+
+Una precisazione: la slide p47 garantisce la consistenza solo «in all points where $p(\mathbf{x})$ is continuous». La bimodale ha due punti di discontinuità, i bordi verticali del rettangolo, dove la convergenza non è garantita; lì infatti la stima a $N$ finito è peggiore.
+
+<Example id="ex04" title="Gaussiana e bimodale per N = 1, 16, 256 e infinito">
+
+<Step title="N = 1, K = 1">
+
+Un solo spillo iperbolico $1/(2\vert x - x_1 \vert)$. A sinistra il campione sta vicino a 3.4 e la curva vale circa 0.15 in $x = 0$; a destra sta vicino a 1.3 e la curva vale circa 0.38 in $x = 0$ e 0.19 in $x = 4$. Stima inutilizzabile: i due modi non si vedono.
+
+</Step>
+
+<Step title="N = 16, K = 4">
+
+A sinistra due gruppi di spilli attorno a 1.3 e 2.8, alti 0.8-0.9, il doppio del massimo vero 0.40: forma appena accennata e rumorosa. A destra compaiono due picchi rumorosi che escono dal grafico.
+
+</Step>
+
+<Step title="N = 256, K = 16">
+
+A sinistra una campana riconoscibile ma increspata, tra circa 0.25 e 0.55 nella zona centrale. A destra la forma bimodale è più chiara, con rumore residuo; la valle non scende a zero.
+
+</Step>
+
+<Step title="N infinito">
+
+Gaussiana di media 2 e deviazione standard 1, con massimo circa 0.40. Bimodale: triangolo da 0.5 a 2.5 con vertice in 1.5 alto circa 0.67 (area 2/3) più rettangolo da 3 a 3.5 alto circa 0.67 (area 1/3).
+
+</Step>
+
+</Example>
+
+<Check id="chk-19" />
+
+## Dal K-NN stimatore al classificatore K-NN
+
+La banca riporta che, dopo la stima K-NN, Melgani ha chiesto «how the K-NN classifier works and made an example». Il classificatore non compare in queste pagine né nel resto del Cap. 2: la costruzione che segue è standard, parte dalla formula di slide p47 ed è un'integrazione. <SourceRef doc="ch2" page={47} />
+
+Attorno a $\mathbf{x}$ espandi la cella fino a contenere $K$ campioni di qualunque classe; sia $V$ il suo volume. Se $K_i$ di questi appartengono alla classe $\omega_i$, che ha $N_i$ campioni di training, la densità condizionata stimata è
+
+<Formula id="f-c64" />
+
+La probabilità a priori si stima con la frazione dei campioni di training della classe:
+
+<Formula id="f-c64-2" />
+
+Per il teorema di Bayes, con la densità non condizionata $K/(NV)$ al denominatore, volume e numerosità si semplificano e la probabilità a posteriori è la frazione dei vicini della classe:
+
+<Formula id="f-c64-3" />
+
+La regola MAP (vedi <ModLink to="m17-bayes-map-ml">criteri MAP e ML</ModLink>) sceglie la classe con posterior massima: assegni $\mathbf{x}$ alla classe più rappresentata tra i $K$ vicini, il **voto di maggioranza** (*majority vote*).
+
+<Derivation id="der05" />
+
+Il risultato $K_i/K$ vale sotto tre condizioni.
+
+- La **stessa** cella di volume $V$, quella con $K$ campioni di qualunque classe, serve per tutte le classi: solo così $V$ si semplifica.
+- I prior sono stimati con le frequenze $N_i/N$ del training set, cioè il training set rispecchia le proporzioni reali delle classi: solo così $N_i$ si semplifica. Se i prior veri $P(\omega_i)$ sono noti e diversi da $N_i/N$, la posterior è proporzionale a $P(\omega_i)\,K_i/N_i$ e la regola non è più il semplice voto di maggioranza.
+- Coerenza: la somma su $i$ di $\frac{K_i}{N_i V} \cdot \frac{N_i}{N}$ vale $K/(NV)$, la densità non condizionata di slide p47, quindi le posterior sommano a 1.
+
+Con $K$ piccolo il confine di decisione è frastagliato (*overfit*), con $K$ grande è troppo liscio (*oversmooth*). $K = 1$ è la regola del vicino più prossimo (*nearest neighbor rule*), con confine frastagliato; $K = N$ assegna sempre la classe più numerosa del training set, cioè decide con il solo prior. Con due classi conviene $K$ dispari, per evitare i pareggi.
+
+<Example id="ex07" title="Salmone o spigola? Classificare con i 5 vicini">
+
+Dati sintetici. $N = 50$ pesci di training nel piano (luminosità, larghezza): $N_1 = 20$ salmoni ($\omega_1$) e $N_2 = 30$ spigole ($\omega_2$).
+
+<Step title="Espandi il cerchio fino a 5 vicini">
+
+Attorno al pesce incognito $\mathbf{x}$ il cerchio che contiene $K = 5$ campioni ha area $V = 0.8$: dentro ci sono $K_1 = 4$ salmoni e $K_2 = 1$ spigola.
+
+</Step>
+
+<Step title="Densità condizionate">
+
+$$
+\hat{p}(\mathbf{x} \mid \omega_1) = \frac{4}{20 \cdot 0.8} = 0.25, \qquad \hat{p}(\mathbf{x} \mid \omega_2) = \frac{1}{30 \cdot 0.8} \simeq 0.0417
+$$
+
+</Step>
+
+<Step title="Prior e prodotti">
+
+$\hat{P}(\omega_1) = 20/50 = 0.4$ e $\hat{P}(\omega_2) = 30/50 = 0.6$. I prodotti densità per prior valgono $0.25 \cdot 0.4 = 0.1$ e $0.0417 \cdot 0.6 = 0.025$. La loro somma, 0.125, coincide con la densità non condizionata $5/(50 \cdot 0.8) = 0.125$.
+
+</Step>
+
+<Step title="Posterior e decisione">
+
+$$
+\hat{P}(\omega_1 \mid \mathbf{x}) = \frac{0.1}{0.125} = 0.8 = \frac{K_1}{K}, \qquad \hat{P}(\omega_2 \mid \mathbf{x}) = \frac{0.025}{0.125} = 0.2 = \frac{K_2}{K}
+$$
+
+Decisione MAP: salmone, la classe più rappresentata tra i 5 vicini. Le spigole sono più numerose nel training set, ma il prior si semplifica con $N_i$ della densità: conta solo chi sta nel cerchio.
+
+</Step>
+
+</Example>
+
+<Widget id="m08-dal-knn-stimatore-al-classificatore" />
+
+<Check id="chk-20" />
+
+## L'avvio delle finestre di Parzen
+
+Le note p36 aprono le finestre di Parzen (*Parzen Windows Estimation*). Le slide corrispondenti, da p51, stanno nel foglio successivo sulle <ModLink to="m09-parzen-windows">finestre di Parzen</ModLink>. <SourceRef doc="part1" page={36} />
+
+### Una finestra attorno ai dati
+
+L'obiettivo è stimare la pdf senza assumere alcun modello parametrico specifico. L'idea di base delle note: posi una finestra (*window*, o *kernel*) attorno a ogni dato e calcoli la densità in base alla proporzione di punti che cadono dentro quella finestra.
+
+La frase mescola due punti di vista che le slide tengono distinti. Le slide p45 e p51 usano **una** regione $R$ centrata sul punto di stima $\mathbf{x}^*$ e contano i campioni al suo interno. Le note p31 e p36 posano **una finestra su ogni campione** $\mathbf{x}_k$ e in $\mathbf{x}^*$ sommano i contributi delle finestre che lo coprono. Le due letture danno lo stesso numero perché la funzione finestra è pari (integrazione):
+
+<Formula id="f-c58" />
+
+«$\mathbf{x}_k$ sta nel cubo centrato in $\mathbf{x}^*$» equivale a «$\mathbf{x}^*$ sta nel cubo centrato in $\mathbf{x}_k$». L'equivalenza vale per ogni finestra simmetrica (ipercubo, gaussiana) e cadrebbe con una finestra asimmetrica. La notazione del docente è quella con $(\mathbf{x}_k - \mathbf{x}^*)/h$.
+
+### L'ipercubo di lato h
+
+Per semplicità assumi **temporaneamente** che la regione $R$ sia un <Term en="n-dimensional hypercube">ipercubo</Term> $n$-dimensionale. Se $h$ è la lunghezza di uno spigolo (*edge*) dell'ipercubo centrato su $\mathbf{x}^*$, il volume dell'ipercubo è $h$ elevato a $n$, con $n$ numero di feature:
+
+<Formula id="f-c59" />
+
+L'ipotesi è «temporanea» perché nel foglio successivo la finestra rettangolare lascia il posto a kernel lisci.
+
+L'obiettivo primario è **contare** i campioni di training che cadono dentro l'ipercubo di volume $V$ centrato in $\mathbf{x}^*$. La stima della densità dipende poi da quanti punti stanno nella regione rispetto al numero totale di campioni: è ancora $K/(NV)$, con $V$ fissato. Per contare ti serve un'espressione analitica per $K$ (*analytic expression for K*), che ottieni definendo una funzione finestra. La somma che dà $K$ è alla pagina successiva delle note (p37), nel foglio su Parzen.
+
+<Widget id="m08-parzen-ipercubo" />
+
+### La funzione finestra
+
+La <Term en="window function">funzione finestra</Term> $\gamma$ vale 1 se il suo argomento appartiene all'ipercubo e 0 altrimenti:
+
+<Formula id="f-c61" />
+
+Le note commentano: la funzione in sostanza «conta» se un campione di training $\mathbf{x}_k$ cade dentro l'ipercubo oppure no. Le note riportano la definizione come immagine ritagliata dalla slide p51, e la slide stessa la scrive solo a parole, senza condizioni sulle coordinate. Perché l'argomento $(\mathbf{x}_k - \mathbf{x}^*)/h$ abbia senso, «the hypercube» va inteso come l'ipercubo di lato 1 centrato nell'origine (integrazione: è la definizione del testo di Duda, Hart e Stork), con $u_j$ componenti dell'argomento:
+
+<Formula id="f-c61-2" />
+
+Il campione $\mathbf{x}_k$ appartiene alla regione $R$, di centro $\mathbf{x}^*$ e spigolo $h$, se la funzione finestra valutata nello scarto tra $\mathbf{x}_k$ e $\mathbf{x}^*$ diviso per $h$ vale 1:
+
+<Formula id="f-c62" />
+
+Altrimenti il campione è fuori dalla regione:
+
+<Formula id="f-c62-2" />
+
+L'argomento trasla il campione rispetto al centro $\mathbf{x}^*$ e lo scala con $h$, e così riporta il test all'ipercubo di riferimento. La slide p51 scrive le stesse condizioni in linea, con le parentesi quadre e «Otherwise» per il caso zero. Con la convenzione dell'ipercubo unitario la condizione diventa un controllo coordinata per coordinata: ogni coordinata $x_{k,j}$ di $\mathbf{x}_k$ dista da quella di $\mathbf{x}^*$ non più di $h/2$.
+
+<Formula id="f-c62-3" />
+
+La stessa pagina delle note riporta in alto la griglia delle stime K-NN e in basso l'immagine della definizione di $\gamma$.
+
+<Figure id="fig10" />
+
+<Widget id="m08-funzione-finestra-gamma" />
+
+<Check id="chk-21" />
+
+## K-NN e Parzen a confronto
+
+Sintesi per la domanda d'esame «what are the difference with parzen window», costruita unendo le slide p45-46 e le note p32. <SourceRef doc="ch2" page={45} />
+
+| | K-NN | Parzen |
+|---|---|---|
+| formula comune | $K/(NV)$ | $K/(NV)$ |
+| che cosa fissi | $K$ | $V$, tramite $h$ |
+| che cosa ricavi dai dati | $V_K(\mathbf{x}^*)$ | $K$ |
+| regione | si adatta alla densità locale | uguale ovunque |
+| aspetto della stima | spigolosa, code lente, area non finita | liscia con kernel lisci, meno sensibile al rumore, area 1 |
+| dove non ci sono campioni | bassa ma mai nulla | può valere zero con finestre a supporto limitato come l'ipercubo |
+| iperparametro | $K$ | $h$: troppo piccolo *overfitting*, troppo grande *oversmoothing* |
+| consistenza | $K_N \to \infty$ e $K_N/N \to 0$, per esempio $K = \sqrt{N}$ | $V_N \to 0$ e $N V_N \to \infty$, per esempio $V = 1/\sqrt{N}$ |
+
+Con kernel gaussiano la stima di Parzen non è mai esattamente zero, ma decade molto in fretta. Entrambi i metodi convergono alla pdf vera; a campione finito il comportamento è difficile da prevedere, e la scelta di $K$ o di $h$ decide la qualità.
+
+<Widget id="m08-carte-knn-o-parzen" />
+
+<Check id="chk-22" />
+
+## Collegamenti
+
+- <ModLink to="m03-stima-intro-parametrica">Introduzione alla stima</ModLink>: lì nasce la distinzione tra approcci parametrici e non parametrici alla stima della pdf, con l'elenco K-NN, Parzen e funzioni ortogonali. Questo foglio sviluppa il ramo non parametrico.
+- <ModLink to="m04-bonta-stimatori">Bontà degli stimatori</ModLink>: stimatore consistente, bias e varianza. Ti servono per leggere «consistent estimate» di $K/N$, la condizione di consistenza del K-NN e il compromesso tra *overfit* e *oversmooth*.
+- <ModLink to="m05-max-likelihood">Massima verosimiglianza</ModLink>: la stima ML è l'alternativa parametrica. La pagina di confine p30 la confronta con Bayes, e una domanda d'esame sul non parametrico chiede subito dopo la stima ML della gaussiana.
+- <ModLink to="m06-modelli-pdf-gaussiana">Modelli di pdf e gaussiana</ModLink>: il modello gaussiano è il tipico modello parametrico che «non offre una buona approssimazione» quando la densità è multimodale.
+- <ModLink to="m07-stima-bayesiana">Stima bayesiana</ModLink>: la pagina p30 (ML contro Bayes, equivalenze, pro e contro) le appartiene. I passaggi dell'equivalenza con prior uniforme e per $N \to \infty$ usano la stessa notazione ($\mu_N$, $\sigma_N^2$, $\bar{X}$ della slide p37).
+- <ModLink to="m09-parzen-windows">Finestre di Parzen</ModLink>: prosegue dalla stessa formula $K/(NV)$ con $V$ fissato: ipercubo, funzione finestra, somma dei kernel, effetto di $h$. Le condizioni di Parzen ($h_N \to 0$ e $N h_N^n \to \infty$, slide p61) sono il gemello delle condizioni su $K_N$ della slide p47, e la legge $V = 1/\sqrt{N}$ della figura di slide p46 coincide con l'esempio $h_N = 1/N^{1/(2n)}$. La varianza binomiale $P_R(1 - P_R)/(NV^2)$ è il caso particolare, con finestra a ipercubo, del limite superiore della varianza di Parzen.
+- <ModLink to="m11-hughes-feature-selection">Effetto Hughes e selezione delle feature</ModLink>: la nota sulle dimensioni elevate (il volume dell'intorno cresce esponenzialmente) è la stessa maledizione della dimensionalità che produce l'effetto Hughes.
+- <ModLink to="m17-bayes-map-ml">Criteri MAP e ML</ModLink>: le densità stimate con il K-NN entrano nella regola MAP, e sostituendole nel teorema di Bayes ottieni il classificatore K-NN a voto di maggioranza.
+- <ModLink to="m21-errore-generalizzazione">Errore di generalizzazione</ModLink>: *overfitting*, *underfitting*, compromesso bias-varianza e scelta di un iperparametro come $K$ con la cross-validation.
+
+## Per l'orale
+
+Sette domande della banca, tutte di Melgani, toccano questo foglio. Qui trovi il testo originale e lo scheletro della risposta in prima persona; le risposte complete, con la lista dei punti da toccare, sono nella scheda dell'orale.
+
+### Stima K-NN, disegno, classificatore e differenze con Parzen
+
+<Callout kind="esame" title="Melgani">
+«K-NN estimation, how does it works, we draw a graph for example and asked how is the distribution, what does it mean overfit and oversmooth. Then he asked how the K-NN classifier works and made an example. Last question what are the difference with parzen window»
+</Callout>
+
+Parto da $\hat{p}(\mathbf{x}^*) = K/(NV)$ e dico che nel K-NN fisso $K$ e la forma della cella (un'ipersfera), espando la cella fino al $K$-esimo vicino e misuro $V_K(\mathbf{x}^*)$. Disegno la curva 1-D: picchi sopra i gruppi fitti, cuspidi e angoli nei punti medi tra campioni, code che scendono come $1/\vert x \vert$, quindi area non finita. Overfit: $K$ piccolo, stima frastagliata che insegue il rumore (al limite $K = 1$, spilli infiniti); oversmooth: $K$ grande, stima piatta che perde la struttura locale (al limite $K = N$, una sola cuspide). Per il classificatore uso la stessa cella per tutte le classi: $\hat{P}(\omega_i \mid \mathbf{x}) = K_i/K$, voto di maggioranza, con l'esempio dei 5 vicini (4 salmoni e 1 spigola, quindi salmone). Chiudo con le differenze: $K$ fisso contro $V$ fisso, cella adattiva contro finestra uguale ovunque, stima mai nulla contro stima liscia di area 1, iperparametro $K$ contro $h$.
+
+### Stima K-NN con un esempio numerico
+
+<Callout kind="esame" title="Melgani">
+«What is an EM algorithm and how does it work? Explain formula and both steps. Then Multi Gaussian example for EM algorithm. KNN and KNN example.»
+</Callout>
+
+La parte sull'EM appartiene al foglio sui <ModLink to="m10-em-dati-incompleti">dati incompleti</ModLink>. Per il K-NN do ipotesi, metodologia e formula, poi faccio un esempio a mano: 10 luminosità di salmoni, $x^* = 3.1$, $K = 3$, terzo vicino a 0.2, $V = 0.4$, $\hat{p} = 3/(10 \cdot 0.4) = 0.75$. Con $K = 5$ la stima scende a 0.357; in una zona rada resta bassa ma positiva. Se c'è tempo mostro il caso 2-D: $V = \pi r_5^2$.
+
+### Non parametrico: cosa significa, perché, e se converge
+
+<Callout kind="esame" title="Melgani">
+«Explain non-parametric estimation, what non-parametric means and why we use it, explain both KNN and Parzen windows, do they tend to the optimal solution? Explain ML estimation, develop the first derivative for a gaussian and explain the meaning of the result. Explain box classifier»
+</Callout>
+
+Non parametrico vuol dire senza una forma funzionale fissa descritta da $\theta$: stimo $p(\mathbf{x}^*)$ direttamente dai campioni. Lo uso quando non conosco la forma della pdf o quando i modelli parametrici la approssimano male. Ricavo $K/(NV)$ da $P_R \simeq p(\mathbf{x}^*)\,V$ e $\hat{P}_R = K/N$, discuto il dilemma sulla dimensione di $R$ e presento i due metodi. Alla domanda sulla soluzione ottima rispondo sì, asintoticamente: servono $V_N \to 0$, $K_N \to \infty$ e $K_N/N \to 0$; per il K-NN la slide dà $K_N \to \infty$ e $K_N/N \to 0$ come condizione necessaria e sufficiente, con l'esempio $K = \sqrt{N}$; per Parzen, per esempio, $V = 1/\sqrt{N}$. Aggiungo che a campione finito il comportamento è difficile da prevedere. ML e box classifier sono in altri fogli.
+
+### Parzen: contesto e perché è non parametrico
+
+<Callout kind="esame" title="Melgani">
+«Parzen Windows: general context (what we want to do, why they are non parametric estimation), gaussian kernel with spherical symmetry with formula and some drawing to represent it, How the choice of the width impacts our estimate? Is it a good estimate? (Bias, variance and consideration about the characteristics of the width to have a consistent estimate)»
+</Callout>
+
+Da questo foglio prendo il contesto: voglio $p(\mathbf{x})$ senza ipotizzarne la forma, parto da $K/(NV)$ e, a differenza del K-NN, fisso la regione e conto $K$. Dico che la finestra si posa su ogni campione e che la stima somma i contributi, pesati da un kernel tipicamente gaussiano; troppo stretta dà *overfitting*, troppo larga *oversmoothing*. Il kernel sferico, il bias e la varianza sono nel foglio sulle <ModLink to="m09-parzen-windows">finestre di Parzen</ModLink>.
+
+### Parzen: ipercubo, funzione finestra e conteggio
+
+<Callout kind="esame" title="Melgani">
+«Parzen Window Estimation: context, properties etc. Which is the most common window function (write the formula)? Is Parzen a good estimator (bias/variance)? Graphical representation of how the counting/interpolation works with  a couple of samples.»
+</Callout>
+
+Parto da $K/(NV)$ con $V$ fissato. Assumo un ipercubo di lato $h$, quindi $V = h^n$, e scrivo la funzione finestra: $\gamma(\mathbf{u}) = 1$ se $\vert u_j \vert \le 1/2$ per ogni $j$, 0 altrimenti. Il campione $\mathbf{x}_k$ è nella regione se $\gamma((\mathbf{x}_k - \mathbf{x}^*)/h) = 1$, e sommando su $k$ ottengo $K$. Il resto (kernel gaussiano, bias, varianza, disegno con due campioni) è nel foglio su Parzen.
+
+### ML contro Bayes all'orale
+
+<Callout kind="esame" title="Melgani">
+«What is the formula of Maximum Likelihood, why we can use the separate products of the probabilities and what the Likelihood describe. How we can describe the goodness of an estimation and Is Maximum Likelihood Estimation a good estimator? Is it better or not with respect to the Bayesian Estimation? Why? Then he asked me to apply Maximum Likelihood estimation on an exercise. Last question was: In which case ML and Bayesian are the same?»
+</Callout>
+
+Per il confronto: ML dà un punto nello spazio dei parametri, Bayes una distribuzione a posteriori che contiene anche l'incertezza. ML costa meno e si interpreta meglio; Bayes incorpora conoscenza a priori (utile con pochi dati) e quantifica l'incertezza con intervalli di credibilità. Coincidono in due casi: con prior uniforme, perché la posterior è proporzionale alla verosimiglianza e il suo massimo è la stima ML; e per $N \to \infty$, perché il peso del prior $\sigma^2/(N\sigma_0^2 + \sigma^2)$ va a zero, purché il prior dia densità positiva al valore vero. La formula della verosimiglianza e la bontà dello stimatore stanno nei fogli su <ModLink to="m05-max-likelihood">ML</ModLink> e sulla <ModLink to="m04-bonta-stimatori">bontà degli stimatori</ModLink>.
+
+### Dimensionalità e intorni locali
+
+<Callout kind="esame" title="Melgani">
+«Feature reduction, Huges effect and Huges graph. Fast geometrical explanation of the curse of dimensionality.»
+</Callout>
+
+La domanda appartiene al foglio sull'<ModLink to="m11-hughes-feature-selection">effetto Hughes</ModLink>. Da qui porto la spiegazione geometrica veloce: il volume di un'ipersfera diviso quello del cubo circoscritto vale 0.785 in 2-D, 0.524 in 3-D e circa 0.0025 in 10-D, quindi in alta dimensione quasi tutto il volume sta negli angoli. Per catturare $K$ vicini la cella deve allargarsi tanto da non essere più locale: è la nota delle note sul K-NN in dimensioni elevate.

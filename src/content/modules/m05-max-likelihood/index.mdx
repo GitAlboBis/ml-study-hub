@@ -1,0 +1,1352 @@
+## Panoramica
+
+La prima riga di pagina 20 delle note chiude ancora il discorso sulla bontà degli stimatori: «By ensuring these asymptotic properties are met, we can have greater confidence in the reliability and accuracy of our estimators when applied to large datasets». Se uno stimatore è asintoticamente non distorto, asintoticamente efficiente e consistente, puoi fidarti della sua affidabilità (*reliability*) e della sua accuratezza (*accuracy*) quando il numero $N$ di campioni di training è grande. La frase compare solo nelle note, non nelle slide. È la premessa logica di questo foglio: subito dopo, la fonte presenta la stima a massima verosimiglianza, cioè lo stimatore che possiede proprio quelle tre proprietà. <SourceRef doc="part1" page={20} /> Le definizioni di bias, efficienza, bound di Cramér-Rao e consistenza stanno in <ModLink to="m04-bonta-stimatori">bontà di uno stimatore</ModLink>.
+
+La <Term en="Maximum Likelihood estimation, ML">stima a massima verosimiglianza</Term> lavora dentro la stima parametrica di <ModLink to="m03-stima-intro-parametrica">introduzione alla stima parametrica</ModLink>: hai già scelto una famiglia di densità $p(\mathbf{x} \mid \boldsymbol{\theta})$, per esempio le gaussiane, e ti manca il vettore $\boldsymbol{\theta} = (\theta_1, \theta_2, \ldots, \theta_r)$ dei suoi $r$ parametri. Hai in mano $N$ campioni di training $\mathbf{X} = \{\mathbf{x}_1, \mathbf{x}_2, \ldots, \mathbf{x}_N\}$. La stima ML sceglie il $\boldsymbol{\theta}$ sotto cui quei campioni risultano più verosimili.
+
+<KeyIdea>
+Il foglio segue le slide 17-21 del Cap. 2 e le pagine 20-24 delle note. Definisci la stima ML come arg max della likelihood, passi al logaritmo, guardi l'esempio della media gaussiana con una sola osservazione, elenchi le proprietà che rendono ML così usata. Poi arretri di un passo: prima di stimare i parametri devi scegliere il modello di $p(\mathbf{x})$. Chiudono la galleria dei sei modelli più diffusi e il modello gaussiano (limite centrale, gaussiana multivariata, matrice di covarianza, forma delle isolinee).
+</KeyIdea>
+
+Le slide del modulo non contengono alcuna derivata: niente equazioni di verosimiglianza, niente sviluppo per la gaussiana. All'orale però Melgani chiede proprio di sviluppare la derivata prima per una gaussiana e di applicare ML a un esercizio. Per questo il foglio aggiunge, dichiarandoli, i passaggi analitici che mancano: la condizione di gradiente nullo, il controllo del massimo, lo sviluppo per media e varianza gaussiane, gli esercizi su Rayleigh e Bernoulli.
+
+<Callout kind="nota">
+Le pagine 22-24 delle note corrispondono alle slide 22-28 del Cap. 2: galleria dei modelli, limite centrale, gaussiana multivariata, covarianza e forma della campana. La pagina 21 delle note riprende invece le slide 19-21: proprietà asintotiche, tre aspetti della scelta del modello, elenco dei modelli. Le slide 22-28 le trovi anche in <ModLink to="m06-modelli-pdf-gaussiana">modelli di pdf e modello gaussiano</ModLink>, dove compaiono anche le stime ML di media e covarianza gaussiane. Qui le studi nell'ordine delle note, dentro il discorso sulla scelta del modello.
+</Callout>
+
+<Callout kind="esame">
+Melgani torna su ML quasi a ogni sessione. Le domande reali della banca: la formula della stima ML, perché puoi usare il prodotto delle probabilità dei singoli campioni, che cosa descrive la likelihood; come si giudica la bontà di una stima, se ML è un buon stimatore e se è migliore della stima bayesiana; in quale caso ML e bayesiana coincidono; sviluppare la derivata prima per una gaussiana e spiegare il significato del risultato; applicare ML a un esercizio; la formula della gaussiana multivariata con vettore medio e matrice di covarianza; come si costruisce la matrice di covarianza, con autovalori e autovettori (*eigenvalues*, *eigenvectors*). Passerini chiede ML con dati completi nell'apprendimento delle reti bayesiane. Le trovi tutte nella sezione per l'orale in fondo.
+</Callout>
+
+## La definizione di stima ML
+
+La slide 17 si apre con il titolo «Definition» e una sola riga: «The maximum likelihood (ML) estimate of θ is», con *maximum likelihood* in rosso. Le note parlano di «the vector parameter θ». <SourceRef doc="ch2" page={17} /> <SourceRef doc="part1" page={20} />
+
+<Definition term="Stima a massima verosimiglianza" en="maximum likelihood (ML) estimate">
+La stima ML del vettore dei parametri $\boldsymbol{\theta}$ è il valore di $\boldsymbol{\theta}$ che massimizza la funzione di likelihood $p(\mathbf{X} \mid \boldsymbol{\theta})$ calcolata sui campioni di training osservati $\mathbf{X} = \{\mathbf{x}_1, \ldots, \mathbf{x}_N\}$.
+</Definition>
+
+<Formula id="f-c02" />
+
+Leggi la formula pezzo per pezzo.
+
+- **La variabile è $\boldsymbol{\theta}$.** Sta scritta sotto l'operatore $\arg\max$: è lei che fai variare nella ricerca. I dati $\mathbf{X}$ restano fermi, sono quelli che hai osservato.
+- **$\arg\max$ restituisce il punto, non il valore.** Ti interessa *dove* la likelihood è massima, cioè quale $\boldsymbol{\theta}$; quanto vale il massimo è secondario.
+- **Il cappello su $\hat{\boldsymbol{\theta}}$ dice che è una stima.** Dipende dai dati: con un altro campione di training otterresti un altro $\hat{\boldsymbol{\theta}}$. Quindi $\hat{\boldsymbol{\theta}}$ è un vettore aleatorio, di cui puoi calcolare bias e varianza con gli strumenti del foglio precedente.
+
+### La likelihood dei dati osservati
+
+Le note precisano: «where p(X|θ) is the likelihood function based on the observed data X». È la funzione che il Cap. 2 definisce a pagina 9. Tratti i campioni $\mathbf{X} = \{\mathbf{x}_1, \ldots, \mathbf{x}_N\}$ come variabili aleatorie <Term en="independent and identically distributed, iid">indipendenti e identicamente distribuite</Term> (iid). Allora la densità congiunta si fattorizza nel prodotto delle densità dei singoli campioni. <SourceRef doc="part1" page={20} /> <SourceRef doc="ch2" page={9} />
+
+<Formula id="f-c03" />
+
+Le due ipotesi fanno due lavori diversi:
+
+- l'**indipendenza** ti permette di moltiplicare: la densità congiunta di variabili indipendenti è il prodotto delle marginali;
+- l'**identica distribuzione** ti permette di usare in ogni fattore la stessa funzione $p(\cdot \mid \boldsymbol{\theta})$, con lo stesso $\boldsymbol{\theta}$.
+
+Letta come funzione di $\boldsymbol{\theta}$ con $\mathbf{X}$ fissato, la likelihood misura la compatibilità, o accordo (*measure of compatibility/agreement*, pagina 9), tra un valore dei parametri e i campioni osservati. Questa frase risponde alla domanda d'esame «why we can use the separate products of the probabilities and what the Likelihood describe». Le note di pagina 20 richiamano il prodotto quando parlano di «products of probabilities».
+
+<Callout kind="intuizione">
+Nell'impianto di confezionamento del pesce misuri la luminosità di 30 salmoni presi a caso dal nastro. Un salmone non influenza la luminosità del successivo (indipendenza) e tutti vengono dalla stessa popolazione (identica distribuzione). La probabilità di vedere proprio quei 30 valori è il prodotto delle 30 densità. Se un solo salmone cade dove la gaussiana candidata vale quasi zero, l'intero prodotto crolla: la likelihood premia i parametri che spiegano *tutti* i campioni insieme.
+</Callout>
+
+### Variare i parametri e confrontare le pdf
+
+Sotto il titolo «Observations» la slide elenca quattro osservazioni. La prima: «By varying θ, one obtains different pdfs, each yielding a likelihood value». Le note: «one can generate different probability density functions (pdfs), each corresponding to a specific likelihood value». <SourceRef doc="ch2" page={17} />
+
+Ogni valore di $\boldsymbol{\theta}$ individua una pdf diversa della stessa famiglia parametrica $p(\mathbf{x} \mid \boldsymbol{\theta})$: con la famiglia gaussiana, una campana con una certa media e una certa varianza. Valuti quella pdf sui campioni osservati e ottieni un numero, il valore di likelihood di quel $\boldsymbol{\theta}$. La stima ML diventa una ricerca nello spazio dei parametri: confronti le pdf candidate attraverso il loro valore di likelihood e tieni la migliore.
+
+La seconda osservazione dà l'intuizione: «Intuitively, the ML estimate corresponds to the value of θ that in some sense best agrees with the actually observed training samples», con *best agrees* in rosso. Le note scrivono in grassetto che la stima ML è il $\boldsymbol{\theta}$ che «most closely aligns with the observed training samples». <SourceRef doc="part1" page={20} />
+
+L'accordo si misura con la likelihood stessa. La pdf che spiega meglio i campioni è quella che assegna densità alta proprio nei punti in cui i campioni sono caduti. L'inciso «in some sense» ricorda che l'accordo ha questo significato preciso: non è, per esempio, la distanza tra un istogramma e la pdf.
+
+### Massimizzare la probabilità dei dati osservati
+
+Le note aggiungono che scegliere $\hat{\boldsymbol{\theta}}$ significa «effectively maximizing the probability of observing the given data under the model». È l'idea del riquadro di pagina 11 del Cap. 2: in ML $\boldsymbol{\theta}$ è un vettore di quantità fisse ma ignote (*fixed but unknown*), e la stima migliore è quella che massimizza la probabilità di ottenere i campioni effettivamente osservati. <SourceRef doc="part1" page={20} /> <SourceRef doc="ch2" page={11} />
+
+Due precisazioni evitano errori all'orale.
+
+- **Densità, non probabilità.** Con feature continue $p(\mathbf{X} \mid \boldsymbol{\theta})$ è una densità e può superare 1: una gaussiana con $\sigma = 0.1$ vale circa $3.99$ nella sua media. Con dati discreti, come la presenza di una parola in un'email, la likelihood è davvero la probabilità del dataset.
+- **Non è la probabilità di $\boldsymbol{\theta}$.** La likelihood è $p(\mathbf{X} \mid \boldsymbol{\theta})$, non $p(\boldsymbol{\theta} \mid \mathbf{X})$. In ML $\boldsymbol{\theta}$ non è una variabile aleatoria e non ha una distribuzione a priori (*prior*). La prior compare nella <ModLink to="m07-stima-bayesiana">stima bayesiana</ModLink>.
+
+<Widget id="m05-argmax-likelihood-salmoni" />
+
+<Check id="chk-01" />
+
+<Check id="chk-02" />
+
+## La log-likelihood
+
+La terza osservazione della slide: «For analytical purposes, it is usually easier to work with the logarithm of the likelihood than with the likelihood itself», con *analytical purposes* in rosso. Le note: «For analytical purposes, it is often more convenient to work with the log-likelihood». <SourceRef doc="ch2" page={17} /> <SourceRef doc="part1" page={20} />
+
+La funzione $\ln p(\mathbf{X} \mid \boldsymbol{\theta})$ si chiama <Term en="log-likelihood">log-likelihood</Term>. Nell'esempio di pagina 10 del Cap. 2 è indicata con $l(\boldsymbol{\theta})$. <SourceRef doc="ch2" page={10} />
+
+<Formula id="f-c07" />
+
+Perché conviene? La likelihood di $N$ campioni iid è un prodotto di $N$ fattori. Due problemi pratici:
+
+- **è scomoda da derivare**: la derivata di un prodotto di $N$ fattori genera $N$ termini, ognuno con $N-1$ fattori non derivati;
+- **è minuscola**: nella figura di pagina 10, con una dozzina di campioni, il massimo di $p(\mathbf{X} \mid \theta)$ vale circa $1.7 \cdot 10^{-7}$, sopra l'ultima tacca etichettata del grafico ($1.2 \cdot 10^{-7}$). Il massimo di $l(\theta)$ sta invece poco sopra $-20$ (circa $-16$), e la curva scende sotto $-100$ verso $\theta = 7$.
+
+Molti modelli, a partire dal gaussiano, contengono poi un esponenziale. Il logaritmo lo elimina e lascia un polinomio nei parametri.
+
+### Il logaritmo non sposta il massimo
+
+La quarta osservazione: «Since the logarithm is monotonically increasing, the θ that maximizes the log-likelihood also maximizes the likelihood», con *log-likelihood* in rosso. Subito sotto, la slide riscrive la definizione con il logaritmo naturale. <SourceRef doc="ch2" page={17} />
+
+<Formula id="f-c08" />
+
+Una funzione strettamente crescente conserva l'ordine. Se $p(\mathbf{X} \mid \boldsymbol{\theta}_1) > p(\mathbf{X} \mid \boldsymbol{\theta}_2)$, allora $\ln p(\mathbf{X} \mid \boldsymbol{\theta}_1) > \ln p(\mathbf{X} \mid \boldsymbol{\theta}_2)$: la classifica dei candidati non cambia, quindi il punto di massimo resta lo stesso. Cambia il valore del massimo: il logaritmo di un numero minore di 1 è negativo. Serve $p(\mathbf{X} \mid \boldsymbol{\theta}) > 0$; dove la likelihood è nulla la log-likelihood vale $-\infty$, e quel $\boldsymbol{\theta}$ resta escluso comunque.
+
+Le note scrivono la stessa formula con una coppia di parentesi in più:
+
+<Formula id="f-c08-2" />
+
+<Derivation id="der01" />
+
+### Dai prodotti alle somme
+
+Le note spiegano il vantaggio: «This transformation simplifies calculations, particularly when dealing with products of probabilities, as it converts them into sums, making the optimization process more manageable». <SourceRef doc="part1" page={20} />
+
+Poiché $\ln(ab) = \ln a + \ln b$, la log-likelihood di $N$ campioni iid è la somma dei contributi dei singoli campioni:
+
+<Formula id="f-c09" />
+
+Tre guadagni concreti:
+
+1. una somma si deriva termine a termine;
+2. ogni campione contribuisce in modo additivo al gradiente, e puoi leggere quanto «tira» ciascuno;
+3. numericamente non vai in *underflow*: la somma di qualche migliaio di logaritmi è un numero normale, il prodotto di qualche migliaio di densità sparisce sotto la precisione della macchina.
+
+La formula non è scritta in queste pagine. È la conseguenza diretta del prodotto di pagina 9 e del passaggio al logaritmo; il grafico di $l(\theta)$ a pagina 10 ne è la versione disegnata. Vale solo perché la likelihood è un prodotto, cioè per l'ipotesi iid.
+
+Nel caso discreto la likelihood è una probabilità vera e il vantaggio del logaritmo si vede sui numeri. Il filtro antispam è l'esempio classico.
+
+<Example id="ex04" title="ML per una Bernoulli: la parola gratis nello spam">
+
+<Step title="Dati e modello">
+
+Dati sintetici: su $N = 40$ email di spam, $K = 12$ contengono la parola «gratis». Ogni email è un campione $x_k \in \{0, 1\}$ (1 se la parola c'è). Il modello è una Bernoulli con parametro $\theta = P(\text{gratis} \mid \text{spam})$.
+
+</Step>
+
+<Step title="Likelihood e log-likelihood">
+
+Con campioni iid la probabilità del dataset dipende solo dal conteggio:
+
+$$
+P(\mathbf{X} \mid \theta) = \theta^{12} (1 - \theta)^{28}, \qquad \ln P(\mathbf{X} \mid \theta) = 12 \ln \theta + 28 \ln(1 - \theta)
+$$
+
+</Step>
+
+<Step title="Derivata nulla">
+
+$$
+\frac{12}{\theta} - \frac{28}{1 - \theta} = 0 \;\Rightarrow\; 12(1 - \theta) = 28\,\theta \;\Rightarrow\; \hat{\theta} = \frac{12}{40} = 0.30
+$$
+
+La stima ML di una probabilità è la frequenza relativa.
+
+</Step>
+
+<Step title="Perché il logaritmo">
+
+Nel massimo la likelihood vale $0.3^{12} \cdot 0.7^{28} \approx 2.4 \cdot 10^{-11}$, la log-likelihood $-24.43$. Con 5000 email il prodotto varrebbe circa $10^{-1326}$, molto sotto il più piccolo numero positivo della doppia precisione (circa $5 \cdot 10^{-324}$; i numeri normalizzati arrivano a circa $2 \cdot 10^{-308}$). La somma dei logaritmi resta un numero comodo, circa $-3054$.
+
+</Step>
+
+</Example>
+
+<Derivation id="der14" />
+
+<Widget id="m05-log-likelihood-prodotti-somme" />
+
+<Check id="chk-03" />
+
+<Check id="chk-04" />
+
+## Trovare il massimo
+
+<Callout kind="nota">
+Questa sezione è un'integrazione: le pagine del modulo definiscono la stima come arg max ma non dicono come calcolarlo. Serve per le domande «develop the first derivative for a gaussian» e «apply Maximum Likelihood estimation on an exercise».
+</Callout>
+
+### Le equazioni di verosimiglianza
+
+Se la log-likelihood è derivabile e il massimo cade all'interno dello spazio dei parametri, la stima ML soddisfa la condizione necessaria di stazionarietà (*stationary point condition*): il gradiente rispetto a $\boldsymbol{\theta}$ si annulla. Grazie alla forma a somma, il gradiente totale è la somma dei gradienti dei singoli campioni.
+
+<Formula id="f-c10" />
+
+Scritta componente per componente, la condizione dà $r$ equazioni, una per parametro, dette <Term en="likelihood equations">equazioni di verosimiglianza</Term>:
+
+<Formula id="f-c10-2" />
+
+L'operatore $\nabla_{\boldsymbol{\theta}}$ è lo stesso che la fonte usa nella matrice di informazione di Fisher (*Fisher information matrix*, pagina 14 del Cap. 2). <SourceRef doc="ch2" page={14} />
+
+<Derivation id="der02" />
+
+La ricetta per gli esercizi, in cinque passi:
+
+1. scrivi il modello $p(\mathbf{x} \mid \boldsymbol{\theta})$;
+2. scrivi la likelihood come prodotto sui campioni iid;
+3. passa al logaritmo, che trasforma il prodotto in somma;
+4. deriva rispetto a ogni parametro e poni ogni derivata uguale a zero;
+5. risolvi e controlla che il punto trovato sia un massimo.
+
+### Massimo, minimo o bordo
+
+Il gradiente nullo è una condizione necessaria, non sufficiente. Il punto stazionario può essere un minimo, un punto di sella (*saddle point*) o un massimo soltanto locale (*local maximum*). Con un solo parametro controlli che la derivata seconda della log-likelihood in $\hat{\theta}$ sia negativa:
+
+<Formula id="f-c11" />
+
+Con $r$ parametri controlli che la matrice hessiana (*Hessian matrix*), la matrice $r \times r$ di tutte le derivate seconde, sia definita negativa (*negative definite*).
+
+Tre situazioni tipiche:
+
+- **Media gaussiana.** La log-likelihood è una parabola rivolta verso il basso, con derivata seconda $-N/\sigma^2$: il massimo è unico e globale.
+- **Misture di gaussiane.** Le equazioni non hanno soluzione in forma chiusa (*closed form*) e la likelihood ha più massimi locali. Servono metodi iterativi, in particolare l'algoritmo EM di <ModLink to="m10-em-dati-incompleti">dati incompleti ed EM</ModLink>, dove le note osservano che risolvere il problema ML può andare «from being straightforward to extremely challenging».
+- **Massimo sul bordo.** Il massimo può cadere sul bordo dello spazio dei parametri, dove la derivata non si annulla affatto.
+
+L'esempio classico del terzo caso è la distribuzione uniforme su $[0, \theta]$. Ogni campione ha densità $1/\theta$ se $x_k \le \theta$ e 0 altrimenti. La likelihood vale $\theta^{-N}$ se $\theta$ supera tutti i campioni e 0 se anche un solo campione cade fuori. Per $\theta \geq \max_k x_k$ la funzione $\theta^{-N}$ decresce, quindi il massimo sta sul bordo sinistro dell'intervallo ammesso: $\hat{\theta} = \max_k x_k$, trovato senza derivate.
+
+<Formula id="f-c11-2" />
+
+Questa stima è distorta con $N$ finito: $E\{\hat{\theta}\} = N\theta/(N+1)$, sempre più piccolo di $\theta$, perché il campione più grande non raggiunge mai il vero estremo. Il fattore $N/(N+1)$ tende a 1, quindi la stima è asintoticamente non distorta. Ritroverai l'uniforme più avanti, come controesempio alle ipotesi di regolarità delle proprietà di ML.
+
+<Widget id="m05-massimo-o-trappola" />
+
+<Check id="chk-05" />
+
+<Check id="chk-06" />
+
+### Invarianza rispetto alla parametrizzazione
+
+Un'altra integrazione, usata di continuo negli esercizi: la <Term en="invariance property of ML">proprietà di invarianza</Term> rispetto a un cambio di parametro (*reparametrization*). La stima ML è definita come arg max. Se cambi parametro con una funzione invertibile $g$, la stima del nuovo parametro è $g$ applicata alla vecchia stima: il punto di massimo della likelihood resta lo stesso, cambia solo l'etichetta con cui lo chiami.
+
+<Formula id="f-c67" />
+
+Due usi pratici:
+
+- per la gaussiana puoi derivare la log-likelihood rispetto a $\sigma^2$ invece che rispetto a $\sigma$, e poi prendere $\hat{\sigma} = \sqrt{\hat{\sigma}^2}$;
+- per l'esponenziale la stima del tasso è l'inverso della stima della media.
+
+L'invarianza riguarda il valore della stima, non le sue proprietà. Se $\hat{\theta}$ è non distorta, $g(\hat{\theta})$ in generale non lo è: l'inverso della media campionaria, come stima del tasso di un'esponenziale, è distorto.
+
+<Widget id="m05-officina-esercizi-ml" />
+
+## L'esempio della fonte: una sola osservazione
+
+La slide 18, «ML Estimation: Example», scrive: «ML estimation of the mean of a mono-dimensional Gaussian pdf (m̂) with known variance basing on a single observation x0», con *mono-dimensional Gaussian pdf* in rosso. Le note riportano la stessa figura con la stessa frase. <SourceRef doc="ch2" page={18} /> <SourceRef doc="part1" page={20} />
+
+È il caso più semplice possibile:
+
+- un solo parametro incognito, $r = 1$ e $\theta = m$;
+- un solo campione, $N = 1$ e $\mathbf{X} = \{x_0\}$;
+- la likelihood coincide con la pdf valutata in $x_0$: $p(\mathbf{X} \mid \boldsymbol{\theta}) = p(x_0 \mid m)$.
+
+<Formula id="f-c12" />
+
+La slide non scrive la formula della gaussiana, mostra solo la figura; la formula è quella del modello gaussiano della galleria più avanti. La varianza nota fissa larghezza e altezza della campana: l'unica libertà è la posizione.
+
+Perché la slide insiste su «with known variance»? Con un solo campione e $\sigma$ incognita, la likelihood nel punto $m = x_0$ vale $1/(\sigma\sqrt{2\pi})$ e cresce senza limite per $\sigma \to 0$: stringendo la campana sull'unica osservazione la fai diventare alta quanto vuoi. Il massimo non esiste e la stima sarebbe degenere. Fissare $\sigma$ rende il problema ben posto e lascia un solo grado di libertà.
+
+<Figure id="fig01" />
+
+<Reveal label="La stessa figura nelle note">
+
+<Figure id="fig02" />
+
+</Reveal>
+
+### La ricerca ML
+
+L'asse orizzontale va da $-6$ a $6$. Sopra ci sono cinque campane di uguale larghezza e uguale altezza (la varianza è nota, quindi la forma non cambia), centrate circa in $-2$ (viola), $-1.5$ (rossa), $0$ (blu scuro), $1$ (verde) e $1.5$ (magenta). Sono cinque valori candidati della media $m$. Dalla larghezza delle curve si legge $\sigma \approx 1$; la slide non dà numeri.
+
+A sinistra la scritta in grassetto «ML search», con una doppia freccia orizzontale, dice che la <Term en="ML search">ricerca ML</Term> consiste nel far scorrere la campana lungo l'asse, cioè nel variare $m$. È l'illustrazione concreta della prima osservazione della slide 17: variando $\theta$ ottieni pdf diverse.
+
+### La likelihood letta sulla verticale di x0
+
+L'osservazione $x_0$ è marcata sull'asse, circa in $x = 1$, da una freccia curva con l'etichetta «x0». Da quel punto sale una linea verticale tratteggiata. Su questa linea dei trattini orizzontali segnano le quote a cui ciascuna campana la interseca: ogni trattino è il valore di likelihood $p(x_0 \mid m)$ di una candidata. L'asse verticale pieno, che passa per lo zero, è etichettato «Likelihood».
+
+A occhio i trattini visibili sono quattro. Il quinto, quello della campana viola, ha quota quasi nulla e si confonde con l'asse orizzontale: lo distingui solo ingrandendo la figura. Le quote sono quasi zero per la viola e la rossa, lontane da $x_0$, intermedia per la blu, alta per la magenta e massima per la verde, il cui picco cade proprio su $x_0$.
+
+<Example id="ex01" title="ML search della media gaussiana con una sola osservazione">
+
+<Step title="Le candidate">
+
+La fonte non dà numeri. Leggi dalla figura $\sigma = 1$, $x_0 = 1$ e le medie candidate $m = -2,\ -1.5,\ 0,\ 1,\ 1.5$. La likelihood di ciascuna è la gaussiana valutata in $x_0$:
+
+$$
+p(x_0 \mid m) = \frac{1}{\sqrt{2\pi}} \exp\left[ -\frac{(x_0 - m)^2}{2} \right]
+$$
+
+</Step>
+
+<Step title="Le cinque quote sulla verticale">
+
+| $m$ | scarto $x_0 - m$ | $p(x_0 \mid m)$ |
+|---|---|---|
+| $-2$ (viola) | $3$ | $0.0044$ |
+| $-1.5$ (rossa) | $2.5$ | $0.0175$ |
+| $0$ (blu) | $1$ | $0.2420$ |
+| $1$ (verde) | $0$ | $0.3989$ |
+| $1.5$ (magenta) | $-0.5$ | $0.3521$ |
+
+Le quote misurate sull'immagine ingrandita, circa $0.86$, $0.61$ e $0.06$ volte il picco per magenta, blu e rossa, sono coerenti con questi valori.
+
+</Step>
+
+<Step title="Il vincitore">
+
+Il massimo, $1/\sqrt{2\pi} = 0.3989$, lo raggiunge la campana centrata sull'osservazione. È il risultato della slide: $\hat{m} = x_0$.
+
+</Step>
+
+</Example>
+
+### Il risultato: la media stimata è l'osservazione
+
+A destra della figura la slide scrive la conclusione:
+
+<Formula id="f-c15" />
+
+Tra tutte le gaussiane candidate, quella che dà la likelihood più alta all'osservazione è la campana centrata esattamente su $x_0$, perché il picco della gaussiana sta nella media. Se sposti $m$ a destra o a sinistra di $x_0$, la quota letta sulla verticale scende. Con un solo campione, la stima ML della media è il campione stesso.
+
+La stima è non distorta, perché $E\{x_0\} = m$, ma ha varianza $\sigma^2$: la varianza di una singola misura. Per ridurla servono più campioni.
+
+La derivata conferma la figura. Con $N = 1$ la log-likelihood è una costante meno $(x_0 - m)^2/(2\sigma^2)$, la derivata rispetto a $m$ vale $(x_0 - m)/\sigma^2$ e si annulla solo in $m = x_0$; la derivata seconda $-1/\sigma^2$ è negativa, quindi è un massimo.
+
+<Derivation id="der03" />
+
+<Widget id="m05-ml-search-una-osservazione" />
+
+<Check id="chk-07" />
+
+### La likelihood come funzione della media
+
+I trattini sulla verticale sono campioni di una funzione di $m$, la likelihood $L(m) = p(x_0 \mid m)$. Nella gaussiana $x$ e $m$ compaiono solo nel quadrato $(x_0 - m)^2$, quindi scambiare i loro ruoli non cambia la forma. Come funzione di $m$, con $x_0$ fissato, la likelihood è a sua volta una campana di larghezza $\sigma$ centrata in $x_0$:
+
+<Formula id="f-c16" />
+
+Prova a ricostruirla dalla figura: riporta le quote dei cinque trattini sopra le rispettive medie candidate ($-2$, $-1.5$, $0$, $1$, $1.5$). Ottieni, punto per punto, una campana con il massimo in $m = x_0$. Questa simmetria è speciale della gaussiana con varianza nota; per un modello qualunque la likelihood in $\theta$ ha una forma diversa dalla pdf in $x$.
+
+Con $N$ campioni la likelihood in $m$ resta una campana, centrata nella media campionaria e larga $\sigma/\sqrt{N}$. Per $N = 1$ ritrovi la campana della figura; al crescere di $N$ la campana si stringe, come la curva $p(\mathbf{X} \mid \theta)$ di pagina 10, molto più stretta delle singole pdf. Il conto passa per il completamento del quadrato. <SourceRef doc="ch2" page={10} />
+
+<Derivation id="der15" />
+
+### Pdf e likelihood: stessa formula, due letture
+
+La stessa espressione $p(x \mid \theta)$ si legge in due modi.
+
+<Columns>
+<Col title="Pdf">
+
+**$\theta$ fissato, variabile $x$.** L'area sotto la curva vale 1. Nella figura sono le cinque campane colorate: ognuna è una funzione di $x$ con la sua media.
+
+</Col>
+<Col title="Likelihood">
+
+**Dati fissati, variabile $\theta$.** L'integrale rispetto a $\theta$ in generale non vale 1: la likelihood non è una densità di probabilità su $\theta$. Nella figura sono le quote lette sulla verticale di $x_0$ al variare di $m$.
+
+</Col>
+</Columns>
+
+<Formula id="f-c17" />
+
+Per questo l'asse verticale della figura è etichettato «Likelihood»: le quote che interessano sono quelle lette sulla verticale di $x_0$ mentre la campana scorre. La likelihood descrive la compatibilità (*compatibility/agreement*) tra un valore dei parametri e i campioni osservati. Nella gaussiana a varianza nota con un solo campione l'integrale in $m$ vale 1 per caso (è di nuovo una gaussiana); per la Bernoulli dell'esempio sullo spam, $\int_0^1 \theta^{12}(1-\theta)^{28}\, d\theta$ è un numero minuscolo.
+
+<Widget id="m05-pdf-contro-likelihood" />
+
+<Check id="chk-08" />
+
+<Callout kind="esame">
+Domanda reale: «What is the formula of Maximum Likelihood, why we can use the separate products of the probabilities and what the Likelihood describe». Scrivi $\hat{\boldsymbol{\theta}} = \arg\max_{\boldsymbol{\theta}} p(\mathbf{X} \mid \boldsymbol{\theta})$ e la versione con il logaritmo. Il prodotto si usa perché i campioni sono iid: indipendenti (moltiplichi) e identicamente distribuiti (stessa $p(\cdot \mid \boldsymbol{\theta})$ in ogni fattore). La likelihood descrive quanto un valore dei parametri è compatibile con i dati osservati: è la stessa formula della pdf, letta come funzione di $\boldsymbol{\theta}$ con i dati fermi, e non integra a 1 in $\boldsymbol{\theta}$.
+</Callout>
+
+## Da una osservazione a N campioni
+
+L'esempio della slide usa un solo campione. Con $N$ campioni iid da una gaussiana a varianza nota ottieni il risultato generale. La fonte lo enuncia più avanti, a pagina 31 del Cap. 2, con un «It can be shown that» e senza passaggi; qui li sviluppi, perché all'orale te li chiedono. <SourceRef doc="ch2" page={31} />
+
+La log-likelihood è $\ln p(\mathbf{X} \mid m) = -N \ln(\sigma\sqrt{2\pi}) - \frac{1}{2\sigma^2}\sum_{k=1}^{N} (x_k - m)^2$. Derivi rispetto a $m$: la costante sparisce e ogni addendo dà $(x_k - m)/\sigma^2$. Poni la somma uguale a zero e moltiplichi per $\sigma^2 > 0$:
+
+$$
+\frac{\partial}{\partial m} \ln p(\mathbf{X} \mid m) = \frac{1}{\sigma^2} \sum_{k=1}^{N} (x_k - m) = 0 \;\Rightarrow\; \sum_{k=1}^{N} x_k - N\hat{m} = 0
+$$
+
+La stima ML della media è la <Term en="sample mean">media campionaria</Term>:
+
+<Formula id="f-c18" />
+
+Nella forma vettoriale di pagina 31, per una gaussiana multivariata:
+
+<Formula id="f-c18-2" />
+
+Tre osservazioni sul risultato:
+
+- per $N = 1$ ritrovi $\hat{m} = x_0$ dell'esempio;
+- la varianza nota $\sigma^2$ si semplifica e non compare: la stima della media non dipende da $\sigma$;
+- la derivata seconda vale $-N/\sigma^2 < 0$, quindi il punto è un massimo, unico e globale.
+
+<Derivation id="der04" />
+
+### Il significato del risultato
+
+La condizione di stazionarietà, scritta con la stima al posto di $m$, dice che la somma degli scarti è nulla:
+
+<Formula id="f-c19" />
+
+La stima ML della media è il **baricentro** (*centroid*) dei campioni: il punto rispetto al quale scarti positivi e negativi si compensano. Puoi immaginare ogni campione come una molla attaccata alla stima, che tira con forza proporzionale a $(x_k - m)/\sigma^2$. La media si ferma dove le forze si annullano.
+
+Massimizzare la likelihood gaussiana equivale a minimizzare la somma dei quadrati degli scarti, perché la log-likelihood è una costante meno quella somma divisa per $2\sigma^2$. ML con rumore gaussiano coincide con i <Term en="least squares">minimi quadrati</Term>:
+
+<Formula id="f-c19-2" />
+
+Infine la stima è buona anche con $N$ finito: è non distorta e la sua varianza coincide con il bound di Cramér-Rao, $\sigma^2/N$. La media campionaria è una stima efficiente: è l'esempio concreto del teorema sulle proprietà di ML che trovi nella prossima sezione.
+
+<Formula id="f-c19-3" />
+
+<Widget id="m05-derivata-nulla-molle" />
+
+<Check id="chk-09" />
+
+<Callout kind="esame">
+Domanda reale: «Explain ML estimation, develop the first derivative for a gaussian and explain the meaning of the result». Parti dalla definizione, passa al logaritmo, scrivi la log-likelihood gaussiana, deriva rispetto a $m$ e poni a zero. Il significato: $\hat{m}$ è la media campionaria, cioè il baricentro dei campioni (somma degli scarti nulla); con rumore gaussiano ML coincide con i minimi quadrati; la stima è non distorta ed efficiente, con varianza $\sigma^2/N$ uguale al bound. Controlla il massimo con la derivata seconda $-N/\sigma^2$.
+</Callout>
+
+## Le proprietà della stima ML
+
+La slide 19, «ML Estimation: Properties», ha quattro punti. Le note li riprendono tra la fine di pagina 20 e l'inizio di pagina 21. Per leggerli ti serve un richiamo dal foglio precedente. <SourceRef doc="ch2" page={19} /> <SourceRef doc="part1" page={20} /> <SourceRef doc="part1" page={21} />
+
+### Richiamo: la stima efficiente
+
+Il primo punto della slide usa il termine *efficient estimate*, definito a pagina 14 del Cap. 2. Una stima è <Term en="efficient estimate">efficiente</Term> se è non distorta e la varianza del suo errore raggiunge il bound di Cramér-Rao, cioè se nella disuguaglianza qui sotto vale l'uguaglianza per ogni $i$: <SourceRef doc="ch2" page={14} />
+
+<Formula id="f-c20" />
+
+Qui $\varepsilon_i$ è la componente $i$-esima dell'errore di stima $\boldsymbol{\varepsilon} = \hat{\boldsymbol{\theta}} - \boldsymbol{\theta}$ e $\mathrm{I}(\boldsymbol{\theta})$ è la matrice di informazione di Fisher. La stima efficiente è la stima non distorta con la varianza più piccola possibile.
+
+Una stima efficiente non esiste per ogni problema: il bound è un limite inferiore, e con $N$ finito può non essere raggiungibile da nessuno stimatore. La slide distingue proprio i due casi, esiste oppure non esiste.
+
+### Se esiste una stima efficiente, è quella ML
+
+Primo punto della slide: «In certain hypotheses regarding p(x|θ), it can be shown that, if it exists an efficient estimate and if the ML estimate is unbiased, then the efficient estimate is that provided by ML estimation». Le note: «if an efficient estimator exists and the maximum likelihood (ML) estimate is unbiased, then the ML estimate is, in fact, the **efficient estimate**».
+
+Le ipotesi sono due:
+
+1. esiste una stima efficiente;
+2. la stima ML è non distorta.
+
+La conclusione: non ti serve cercare altrove lo stimatore ottimo, perché è proprio ML. La fonte non dà la dimostrazione («it can be shown»). L'esempio che hai appena visto la illustra: la media campionaria gaussiana è la stima ML, è non distorta e ha varianza $\sigma^2/N$, uguale al bound.
+
+<Derivation id="der06" />
+
+L'idea della dimostrazione, nel caso di un parametro scalare. Il bound di Cramér-Rao nasce da una disuguaglianza di Cauchy-Schwarz; l'uguaglianza (stima efficiente) vale solo se la derivata della log-likelihood è proporzionale all'errore di stima, con l'informazione di Fisher come costante. La stima ML annulla quella derivata; valutando la proporzionalità in $\hat{\theta}_{ML}$ ottieni che la stima efficiente e la stima ML coincidono.
+
+<Derivation id="der07" />
+
+### Le ipotesi sottintese
+
+La slide premette «In certain hypotheses regarding p(x|θ)», le note «Under certain assumptions regarding the probability distribution p(x|θ)». Il teorema non vale per qualunque modello, ma la fonte non elenca le ipotesi.
+
+Sono le <Term en="regularity conditions">condizioni di regolarità</Term> sotto cui vale anche il bound di Cramér-Rao (integrazione):
+
+- la log-likelihood è derivabile rispetto a $\boldsymbol{\theta}$;
+- il supporto (*support*) di $p(\mathbf{x} \mid \boldsymbol{\theta})$, cioè la zona dove la densità è positiva, non dipende da $\boldsymbol{\theta}$;
+- puoi scambiare derivata e integrale;
+- l'informazione di Fisher è finita e non nulla.
+
+Il controesempio classico è l'uniforme su $[0, \theta]$ della sezione sul massimo: il suo supporto dipende dal parametro, e infatti la stima ML cade sul bordo senza che la derivata si annulli. All'esame basta dire «sotto opportune ipotesi di regolarità su $p(\mathbf{x} \mid \boldsymbol{\theta})$».
+
+<Widget id="m05-teorema-efficienza-ml" />
+
+### Tre proprietà asintotiche
+
+Secondo punto della slide: «Even if it does not exist an efficient estimate, the ML estimate exhibits good asymptotic properties since it is: asymptotically unbiased, asymptotically efficient, consistent», con le tre voci in rosso. Le note: «Even in cases where an efficient estimator does not exist, the ML estimate still demonstrates good asymptotic properties, including». <SourceRef doc="ch2" page={19} />
+
+È la risposta alla domanda d'esame «Is Maximum Likelihood Estimation a good estimator?». Nel foglio precedente hai visto il criterio: uno stimatore reale è buono se ha buone proprietà asintotiche. ML le ha tutte e tre. Valgono sotto le ipotesi di regolarità, indipendentemente dall'esistenza di uno stimatore efficiente con $N$ finito.
+
+**Asintoticamente non distorta** (*asymptotically unbiased*). Le note: «As the sample size approaches infinity, the ML estimate converges in expectation to the true parameter value». Con la definizione di pagina 15: il valore atteso dell'errore tende a zero, quindi il valore atteso della stima tende al parametro vero. <SourceRef doc="ch2" page={15} /> <SourceRef doc="part1" page={21} />
+
+<Formula id="f-c24" />
+
+Con $N$ finito la stima ML può essere distorta: il bias svanisce solo al crescere di $N$. L'esempio della varianza gaussiana, poco sotto, lo mostra.
+
+**Asintoticamente efficiente** (*asymptotically efficient*). Le note: «The ML estimate achieves the lowest possible variance among all unbiased estimators as the sample size increases». La definizione di pagina 15 è più precisa: il rapporto tra la varianza dell'errore e il corrispondente elemento diagonale dell'inversa della matrice di Fisher tende a 1, per ogni parametro.
+
+<Formula id="f-c25" />
+
+Varianza e bound tendono entrambi a zero come $1/N$. La proprietà riguarda il loro **rapporto**, non la loro differenza: che la differenza vada a zero è ovvio e non dice nulla.
+
+**Consistente** (*consistent*). Le note: «As the number of observations grows, the ML estimate converges to the true parameter value». Con la definizione di pagina 16: per ogni tolleranza $\delta > 0$, la probabilità che la norma dell'errore sia minore di $\delta$ tende a 1. È una convergenza in probabilità (*convergence in probability*). <SourceRef doc="ch2" page={16} />
+
+<Formula id="f-c26" />
+
+La pagina 16 richiama una condizione: stima asintoticamente non distorta e con varianza che tende a zero. ML le soddisfa entrambe: il bias svanisce e la varianza si comporta come il bound, che scende come $1/N$.
+
+<Callout kind="attenzione">
+La slide di pagina 16 chiama quella coppia di condizioni «necessary condition». A rigore è una condizione **sufficiente**: se bias e varianza vanno a zero, va a zero l'errore quadratico medio, e la disuguaglianza di Chebyshev (*Chebyshev's inequality*) dà la convergenza in probabilità. Non è necessaria: esistono stime consistenti il cui bias non si annulla. Il ragionamento su ML usa il verso sufficiente, che è quello corretto.
+</Callout>
+
+<Derivation id="der16" />
+
+Perché ML abbia proprio queste tre proprietà la slide non lo dice. La traccia passa per la normalità asintotica (*asymptotic normality*): sviluppi la derivata della log-likelihood attorno al parametro vero, usi la legge dei grandi numeri (*law of large numbers*) per la derivata seconda e il teorema del limite centrale (*Central Limit Theorem*) per la derivata prima. L'errore risulta circa gaussiano, con media zero e varianza uguale al bound.
+
+<Derivation id="der17" />
+
+<Widget id="m05-cruscotto-asintotico-ml" />
+
+<Check id="chk-10" />
+
+### Perché ML è ovunque
+
+Ultimo punto della slide: «Such properties are behind the common use of ML estimation in numerous real problems». Le note: «These desirable properties contribute to the widespread application of maximum likelihood estimation in various real-world problems, making it a preferred method in statistical analysis and machine learning». <SourceRef doc="ch2" page={19} /> <SourceRef doc="part1" page={21} />
+
+Si chiude così il cerchio aperto dalla prima riga di pagina 20: le proprietà asintotiche danno fiducia sui grandi dataset, e ML le possiede. Nel resto del corso incontri ML molte volte:
+
+- i parametri delle gaussiane di classe nel <ModLink to="m06-modelli-pdf-gaussiana">modello gaussiano</ModLink>;
+- l'algoritmo EM per le misture, in <ModLink to="m10-em-dati-incompleti">dati incompleti ed EM</ModLink>;
+- l'apprendimento dei parametri delle reti bayesiane con dati completi, nella parte di Passerini (<ModLink to="p05-apprendimento-reti">apprendimento nei modelli grafici</ModLink>);
+- i minimi quadrati e la *cross-entropy* delle reti neurali, che sono casi di ML.
+
+<Widget id="m05-ml-nei-problemi-reali" />
+
+### Con pochi campioni ML può essere distorta
+
+Le proprietà della slide sono asintotiche. Con $N$ finito la stima ML può essere distorta, e l'esempio sta nella fonte stessa, a pagina 31 del Cap. 2. La stima ML della covarianza gaussiana divide per $N$: <SourceRef doc="ch2" page={31} />
+
+<Formula id="f-c28" />
+
+La seconda forma, con $\frac{1}{N}\sum_k \mathbf{x}_k \mathbf{x}_k^t - \hat{\mathbf{m}}\hat{\mathbf{m}}^t$, è la versione campionaria di $E\{\mathbf{x}\mathbf{x}^t\} - \mathbf{m}\mathbf{m}^t$ che trovi più avanti tra le formule della covarianza. La slide dà anche i valori attesi:
+
+<Formula id="f-c28-2" />
+
+La media ML è non distorta per ogni $N$. La covarianza ML invece sottostima in modo sistematico, di un fattore $(N-1)/N$. La fonte indica come stimatore non distorto elementare (*elementary unbiased estimator*) la versione con $1/(N-1)$:
+
+<Formula id="f-c28-3" />
+
+Il fattore $(N-1)/N$ tende a 1 per $N \to +\infty$: la stima ML è asintoticamente non distorta, come promesso. La stessa slide ribadisce in rosso che queste stime gaussiane «are asymptotically unbiased and efficient, and consistent»: è la conferma, su un modello specifico, delle tre proprietà generali della slide 19.
+
+Da dove viene il fattore? Nel caso scalare, la somma dei quadrati degli scarti dalla stima $\hat{m}$ non supera mai quella degli scarti dalla media vera, perché $\hat{m}$ è il punto che la minimizza: $\sum_k (x_k - \hat{m})^2 = \sum_k (x_k - m)^2 - N(\hat{m} - m)^2$. In media il termine sottratto vale $N \cdot \sigma^2/N = \sigma^2$, quindi $E\{\sum_k (x_k - \hat{m})^2\} = (N-1)\sigma^2$.
+
+<Derivation id="der05" />
+
+<Example id="ex02" title="Media e varianza ML da cinque salmoni">
+
+<Step title="I dati">
+
+Dati sintetici: luminosità di $N = 5$ salmoni, $x = \{4.2,\ 5.1,\ 3.8,\ 4.9,\ 4.5\}$. Modello gaussiano 1-D con media e varianza incognite.
+
+</Step>
+
+<Step title="Media ML">
+
+$$
+\hat{m} = \frac{4.2 + 5.1 + 3.8 + 4.9 + 4.5}{5} = \frac{22.5}{5} = 4.5
+$$
+
+</Step>
+
+<Step title="Scarti dalla stima">
+
+Gli scarti $x_k - \hat{m}$ valgono $-0.3,\ 0.6,\ -0.7,\ 0.4,\ 0.0$. La loro somma è zero, come impone la condizione di stazionarietà.
+
+</Step>
+
+<Step title="Varianza ML e varianza non distorta">
+
+Quadrati degli scarti: $0.09,\ 0.36,\ 0.49,\ 0.16,\ 0.00$, somma $1.10$.
+
+$$
+\hat{\sigma}^2_{ML} = \frac{1.10}{5} = 0.22, \qquad \hat{\sigma}^2_{N-1} = \frac{1.10}{4} = 0.275
+$$
+
+</Step>
+
+<Step title="Il fattore di distorsione">
+
+Il rapporto $0.22 / 0.275 = 0.8$ è proprio $(N-1)/N = 4/5$. Con cinque campioni ML sottostima la varianza, in media, del 20%; con 100 campioni dell'1%.
+
+</Step>
+
+</Example>
+
+<Widget id="m05-varianza-ml-distorta" />
+
+<Check id="chk-11" />
+
+<Check id="chk-12" />
+
+<Callout kind="esame">
+Domanda reale: «How we can describe the goodness of an estimation and Is Maximum Likelihood Estimation a good estimator? Is it better or not with respect to the Bayesian Estimation? Why?». La bontà si descrive con bias, varianza dell'errore confrontata con il bound di Cramér-Rao e proprietà asintotiche. ML è un buon stimatore: se esiste una stima efficiente ed ML è non distorta, ML è quella stima; in ogni caso è asintoticamente non distorta, asintoticamente efficiente e consistente. Con pochi campioni può essere distorta (covarianza con $1/N$). Per il confronto con la stima bayesiana prosegui con la sezione successiva.
+</Callout>
+
+## ML a confronto
+
+### ML e stima bayesiana
+
+Due domande della banca agganciate a questo modulo chiedono il confronto con la stima bayesiana: «Is it better or not with respect to the Bayesian Estimation? Why?» e «In which case ML and Bayesian are the same?». La risposta sta nella slide «ML versus Bayesian Estimation», a pagina 40 del Cap. 2, che studierai in <ModLink to="m07-stima-bayesiana">stima bayesiana</ModLink>; qui la anticipi. <SourceRef doc="ch2" page={40} />
+
+<Columns>
+<Col title="ML">
+
+$\boldsymbol{\theta}$ è un vettore di quantità **fisse ma ignote**. Stimi un **punto** nello spazio dei parametri, $\hat{\boldsymbol{\theta}} = \arg\max_{\boldsymbol{\theta}} p(\mathbf{X} \mid \boldsymbol{\theta})$, e usi la pdf $p(\mathbf{x} \mid \hat{\boldsymbol{\theta}})$.
+
+</Col>
+<Col title="Bayesiana">
+
+$\boldsymbol{\theta}$ è una **variabile aleatoria** con una prior $p(\boldsymbol{\theta})$. Stimi una **distribuzione** (*distribution*), $p(\mathbf{x} \mid \mathbf{X})$, «from which θ is inferred»; la calcoli tramite la posterior $p(\boldsymbol{\theta} \mid \mathbf{X})$.
+
+</Col>
+</Columns>
+
+La posterior viene dalla regola di Bayes:
+
+<Formula id="f-c68" />
+
+e la pdf bayesiana è la media delle pdf del modello pesata dalla posterior:
+
+<Formula id="f-c68-3" />
+
+La slide dice che le due soluzioni sono equivalenti in due casi: «in the asymptotic limit of infinite training samples» oppure «if the prior p(θ) is uniform».
+
+- **Prior uniforme.** La posterior è proporzionale alla sola likelihood, quindi il suo punto di massimo è $\hat{\boldsymbol{\theta}}_{ML}$.
+- **Infiniti campioni.** La posterior si stringe fino a una delta di Dirac attorno al valore ML («approaching a Dirac delta function», pagina 38 del Cap. 2) e la prior perde peso rispetto a una likelihood che somma migliaia di contributi. <SourceRef doc="ch2" page={38} />
+
+<Formula id="f-c68-2" />
+
+<Callout kind="attenzione">
+Con prior uniforme coincidono esattamente i **punti di massimo**: la stima MAP bayesiana è $\hat{\boldsymbol{\theta}}_{ML}$. La soluzione bayesiana completa $p(\mathbf{x} \mid \mathbf{X})$ resta però una media di pdf, e coincide con $p(\mathbf{x} \mid \hat{\boldsymbol{\theta}}_{ML})$ solo se la posterior è molto concentrata, cioè con $N$ grande. La prior uniforme elimina la differenza dovuta alla prior; il limite $N \to \infty$ elimina quella dovuta alla larghezza della posterior. Una prior uniforme su tutta la retta non si può normalizzare: la intendi uniforme su un intervallo che contiene la zona di interesse.
+</Callout>
+
+In pratica, dice la slide, ML è spesso preferita per due motivi: «Lower computational complexity», perché risolvi un problema di massimo invece di calcolare integrali su tutto lo spazio dei parametri, ed «Easier interpretability». La stima bayesiana conviene quando hai pochi campioni e una prior affidabile: la prior compensa i dati che mancano.
+
+<Widget id="m05-ml-contro-bayesiana" />
+
+<Check id="chk-13" />
+
+<Callout kind="esame">
+Domanda reale: «Last question was: In which case ML and Bayesian are the same?». Rispondi con i due casi della slide, infiniti campioni di training oppure prior uniforme, e spiega perché: con prior uniforme la posterior è proporzionale alla likelihood, con $N \to \infty$ la posterior collassa su $\hat{\boldsymbol{\theta}}_{ML}$. Aggiungi la precisazione sulla soluzione completa $p(\mathbf{x} \mid \mathbf{X})$ e i due motivi per cui in pratica si preferisce ML.
+</Callout>
+
+### Stima ML e criterio ML di classificazione
+
+Nel corso compare due volte l'espressione «maximum likelihood», e all'orale Melgani chiede il confronto tra MAP e ML nella classificazione. Non confondere le due cose.
+
+- **Stima ML dei parametri** (questo foglio). Tieni fissi i campioni di training $\mathbf{X}$ e fai variare il parametro $\boldsymbol{\theta}$. Ottieni una pdf.
+
+<Formula id="f-c69" />
+
+- **Criterio ML di classificazione** (Cap. 4, pagina 13). Tieni fisso il campione nuovo $\mathbf{x}$ e fai variare la classe: assegni $\mathbf{x}$ alla classe $\omega_j$ con la densità condizionata più alta. La fonte nota che con prior uguali il criterio ML equivale al criterio MAP ottimo. <SourceRef doc="ch4" page={13} />
+
+<Formula id="f-c69-2" />
+
+Le due cose si incastrano in sequenza. Prima stimi con ML i parametri delle pdf di classe $p(\mathbf{x} \mid \omega_i)$, usando i campioni etichettati di ciascuna classe (i salmoni per la pdf dei salmoni, le spigole per quella delle spigole). Poi quelle pdf stimate alimentano il criterio di decisione, ML o MAP. Stessa funzione $p(\mathbf{x} \mid \cdot)$, due massimizzazioni rispetto a variabili diverse. Il criterio di classificazione è in <ModLink to="m17-bayes-map-ml">criteri MAP e ML</ModLink>.
+
+<Widget id="m05-due-ml-stima-e-decisione" />
+
+<Check id="chk-14" />
+
+<Callout kind="esame">
+Domande reali: «MAP criterion: comparison and main differences between ML» e «How does the Minimum risk criterium work, comparison with MAP and ML classification. Which is the best one (minimum risk)». Qui ti basta non confondere il criterio ML (massimizza $p(\mathbf{x} \mid \omega_i)$ sulle classi) con la stima ML (massimizza $p(\mathbf{X} \mid \boldsymbol{\theta})$ sui parametri), e ricordare che le pdf di classe usate dai criteri si stimano spesso proprio con ML.
+</Callout>
+
+## La scelta del modello statistico
+
+Dopo le proprietà di ML la slide 20, «Statistical Model Selection», fa un passo indietro: «In the selection of a statistical model for p(x), three main aspects should be considered». Le note: «When selecting a statistical model for p(x), it is crucial to consider three main aspects». <SourceRef doc="ch2" page={20} /> <SourceRef doc="part1" page={21} />
+
+La stima parametrica presuppone di aver già scelto la forma funzionale di $p(\mathbf{x} \mid \boldsymbol{\theta})$. Questa scelta è un passo di progetto che viene **prima** di ML. I tre aspetti seguono il percorso del dato: il fenomeno fisico che genera il segnale, il rumore che si aggiunge lungo la trasmissione e l'acquisizione, le elaborazioni fatte prima di alimentare il sistema di riconoscimento. È la stessa catena dello schema a blocchi di <ModLink to="m02-sistema-ml-design">sistema di ML e fasi di design</ModLink>.
+
+### Il fenomeno, il rumore, le elaborazioni
+
+**1. La natura statistica intrinseca del fenomeno.** La slide: «The intrinsic statistical nature of the physical phenomenon under analysis», con *intrinsic statistical nature* in rosso. Le note: «Understanding the fundamental characteristics of the physical phenomenon being analyzed is essential for choosing an appropriate model». Il fenomeno stesso suggerisce la famiglia. Alcuni esempi:
+
+- una grandezza non negativa, come un'ampiezza o un tempo di attesa, non può essere esattamente gaussiana, perché la gaussiana dà probabilità anche ai valori negativi;
+- l'ampiezza del segnale radar retrodiffuso da molti diffusori elementari segue una Rayleigh;
+- una grandezza che nasce dalla somma di molte cause indipendenti è gaussiana per il teorema del limite centrale.
+
+**2. Il rumore di trasmissione e di acquisizione.** La slide: «The noise introduced during the (passive/active) signal transmission and acquisition phases by the propagation medium and the sensor, respectively», con *noise*, *propagation medium* e *sensor* in rosso. Il «respectively» accoppia fasi e sorgenti:
+
+- nella **trasmissione** il rumore viene dal <Term en="propagation medium">mezzo di propagazione</Term>: atmosfera, acqua, terreno;
+- nell'**acquisizione** viene dal <Term en="sensor">sensore</Term>.
+
+Nella slide «(passive/active)» qualifica il segnale, cioè il sistema di acquisizione. È passivo se misura energia già presente, come un sensore ottico che raccoglie la luce del sole riflessa; è attivo se emette il proprio segnale, come un radar, un georadar (GPR) o un sonar. Le note leggono l'inciso in un altro modo: «This noise can originate from the propagation medium (passive) or the sensors (active), and it significantly influences the model's performance». Riporta entrambe le letture; quella della slide è la più aderente alla grammatica della frase. In ogni caso il rumore modifica la pdf osservata rispetto a quella del fenomeno puro.
+
+**3. Il pre-processing e l'estrazione delle feature.** La slide: «The pre-processing and feature extraction steps adopted before feeding the recognition system», con *pre-processing* e *feature extraction* in rosso. Le note: «The methods used for pre-processing and feature extraction prior to inputting data into the recognition system can affect model selection». Ogni trasformazione cambia la distribuzione:
+
+- il quadrato di una gaussiana standard (media 0, varianza 1) è una chi-quadro con 1 grado di libertà; con varianza $\sigma^2$ lo diventa solo dopo aver diviso per $\sigma^2$;
+- il modulo di due gaussiane indipendenti a media nulla e con la stessa varianza è una Rayleigh;
+- il logaritmo di una log-normale è una gaussiana;
+- la media di molti valori tende alla gaussiana.
+
+Il modello va quindi scelto per la feature che entra davvero nel classificatore, non per il segnale grezzo.
+
+Le note chiudono con una frase che nelle slide non c'è: «Properly selecting and applying these steps can enhance the effectiveness of the chosen statistical model». Il legame tra elaborazioni e modello funziona nei due sensi. Le elaborazioni condizionano il modello da scegliere, e puoi anche progettarle apposta per avvicinare i dati a un modello semplice: applicare il logaritmo a importi o intensità positive e asimmetriche spesso produce feature quasi gaussiane.
+
+<Callout kind="intuizione">
+Un radar ad apertura sintetica (SAR) illumina un campo coltivato. Il campo contiene migliaia di diffusori elementari: le loro eco si sommano con fasi casuali (fenomeno). Il segnale attraversa l'atmosfera e arriva a un'antenna rumorosa (mezzo e sensore). Il sistema calcola il modulo del segnale complesso e ne media alcuni pixel (pre-processing). A ogni passo la pdf cambia: parti da componenti gaussiane (indipendenti, a media nulla e con la stessa varianza), il modulo ti porta a una Rayleigh, la media di più pixel ti avvicina di nuovo a una forma a campana.
+</Callout>
+
+<Widget id="m05-catena-di-acquisizione-sar" />
+
+<Callout kind="esame">
+Domanda reale: «Block scheme/Design phases of an ML system, describe all the blocks and phases with examples (in particular at the beginning of data acquisition and feature extraction, which is the best feature in terms of discrimination, cit. of LDA)». Quando parli di acquisizione e di estrazione delle feature, collega i tre aspetti della slide: il fenomeno, il rumore di mezzo e sensore, le elaborazioni. Sono le ragioni per cui la pdf delle feature ha la forma che ha.
+</Callout>
+
+### ML sceglie i parametri, non la famiglia
+
+Perché la fonte passa da ML alla scelta del modello? La definizione $\hat{\boldsymbol{\theta}} = \arg\max_{\boldsymbol{\theta}} p(\mathbf{X} \mid \boldsymbol{\theta})$ cerca il massimo solo tra le pdf della famiglia $p(\mathbf{x} \mid \boldsymbol{\theta})$ fissata in partenza. Risponde alla domanda «quali parametri?», non alla domanda «quale famiglia?».
+
+Attenzione a non confondere due tipi di ipotesi. La slide premette «in certain hypotheses regarding p(x|θ)» solo al primo punto, il teorema sulla stima efficiente, e quelle ipotesi sono le condizioni di regolarità (*regularity conditions*) viste sopra: log-likelihood derivabile, supporto che non dipende da $\boldsymbol{\theta}$, derivata e integrale scambiabili, informazione di Fisher finita e non nulla. Il secondo punto, sulle proprietà asintotiche (non distorsione ed efficienza asintotiche, consistenza), non ripete la frase.
+
+C'è però un presupposto che la slide non scrive e che vale per tutte le proprietà di ML (è un'integrazione del foglio, non una citazione): i dati devono provenire davvero da un membro della famiglia scelta, cioè il modello deve essere quello giusto (*correctly specified model*). Se il modello è sbagliato (*misspecified*), ML converge ai parametri migliori di quel modello sbagliato: con infiniti campioni ottieni la gaussiana più vicina a dati che gaussiani non sono. Per questo valuti i tre aspetti **prima** di stimare.
+
+<Check id="chk-15" />
+
+## I modelli statistici più diffusi
+
+La seconda slide «Statistical Model Selection» elenca: «Among the popular statistical models, one can find», seguito da sei voci con il nome in rosso. Le note aggiungono per ciascuna un campo d'uso tipico. <SourceRef doc="ch2" page={21} /> <SourceRef doc="part1" page={21} />
+
+| Modello | Parametri | Supporto | Uso tipico secondo le note |
+|---|---|---|---|
+| Gaussiano (*Gaussian*) | $\mu$, $\sigma$ | tutta la retta | «Ideal for data that follows a normal distribution» |
+| Gaussiano generalizzato (*Generalized Gaussian*) | $m$, $b$, $\beta$ | tutta la retta | «A flexible alternative that can represent various data distributions» |
+| Gamma | $k$, $\theta$ | $x > 0$ | dati continui non negativi, teoria delle code (*queuing theory*) |
+| Rayleigh | $\sigma$ | $x \geq 0$ | radar e comunicazioni, segnali diffusi (*scattered signals*) |
+| Chi-quadro (*Chi-square*) | $k$ | $x \geq 0$ | test di ipotesi e bontà di adattamento (*goodness-of-fit*) |
+| Log-normale (*Log-Normal*) | $\mu$, $\sigma$ | $x > 0$ | variabili con asimmetria positiva, come i dati finanziari |
+
+Due modelli hanno supporto su tutta la retta reale e sono simmetrici; gli altri quattro vivono su $x \geq 0$ e sono asimmetrici a destra.
+
+Le note chiudono la pagina 21 con due frasi. La prima: «Choosing the right model is vital for accurately capturing the underlying processes and achieving effective analysis in statistical applications». La seconda introduce la galleria: «Examples of these models are the following:». A pagina 22 compare una griglia 3 x 2 di grafici, ognuno con il nome del modello, una legenda dei valori dei parametri e la formula sotto. In alto la gaussiana e la gaussiana generalizzata, al centro Gamma e Rayleigh, in basso chi-quadro e log-normale. Sono gli stessi grafici delle slide «PDF Examples» (pagine 22-24 del Cap. 2). <SourceRef doc="part1" page={22} />
+
+Il messaggio visivo: la prima riga contiene modelli simmetrici definiti su tutta la retta, le altre due modelli per grandezze non negative e asimmetriche. In ogni pannello vedi come i parametri cambiano posizione, larghezza e forma.
+
+### Il modello gaussiano della galleria
+
+<Figure id="fig03" />
+
+<Formula id="f-c35" />
+
+Il pannello mostra quattro curve su un asse da $-5$ a $5$: $\mu = 0$ con $\sigma^2 = 0.2$ (rossa, picco circa $0.89$), $\mu = 0$ con $\sigma^2 = 1.0$ (verde, picco circa $0.40$), $\mu = 0$ con $\sigma^2 = 5.0$ (blu, picco circa $0.18$) e $\mu = -2$ con $\sigma^2 = 0.5$ (magenta, picco circa $0.56$). La legenda riporta la varianza $\sigma^2$, la formula usa la deviazione standard $\sigma$.
+
+- $\mu$ sposta la campana lungo l'asse;
+- $\sigma^2$ la allarga; poiché l'area resta 1, una campana più larga è più bassa: il picco vale $1/(\sigma\sqrt{2\pi})$.
+
+Supporto su tutta la retta, curva simmetrica, due parametri.
+
+### Il modello gaussiano generalizzato
+
+<Figure id="fig04" />
+
+<Formula id="f-c36" />
+
+Il pannello mostra quattro curve centrate in zero su un asse da $-3$ a $3$:
+
+- $\beta = 0.8$: cuspide appuntita, picco vicino a 1;
+- $\beta = 1$: picco circa $0.7$;
+- $\beta = 2$: la campana, picco circa $0.4$;
+- $\beta = 10$: forma quasi rettangolare, altezza circa $0.3$.
+
+$m$ è la posizione, $b$ un parametro di scala (inverso della larghezza), $\beta$ il <Term en="shape parameter">parametro di forma</Term>, e $\Gamma(\cdot)$ la funzione Gamma di Eulero nella costante di normalizzazione. Con $\beta = 2$ ritrovi la gaussiana, con $\beta = 1$ la laplaciana, con $\beta \to \infty$ la curva tende all'uniforme. Le quattro curve hanno tutte varianza unitaria: con varianza 1 i picchi teorici valgono $0.975$, $0.707$, $0.399$ e $0.295$, in accordo con il grafico.
+
+<Widget id="m05-gaussiana-e-gaussiana-generalizzata" />
+
+### Il modello Gamma
+
+<Figure id="fig05" />
+
+<Formula id="f-c37" />
+
+La formula vale «for x > 0». Il pannello mostra cinque curve su un asse da 0 a 20:
+
+- $k = 1$, $\theta = 2.0$ (rossa): esponenziale decrescente che parte da $0.5$;
+- $k = 2$, $\theta = 2.0$ (verde): picco circa $0.18$ in $x = 2$;
+- $k = 3$, $\theta = 2.0$ (blu): picco circa $0.135$ in $x = 4$;
+- $k = 5$, $\theta = 1.0$ (magenta): picco circa $0.195$ in $x = 4$;
+- $k = 9$, $\theta = 0.5$ (nera): picco circa $0.28$ in $x = 4$.
+
+$k$ è il parametro di forma (*shape*), $\theta$ il parametro di scala (*scale*).
+
+<Callout kind="attenzione">
+Nel pannello Gamma $\theta$ è un parametro di scala, non il vettore dei parametri della stima ML. La figura usa lo stesso simbolo; per una Gamma il vettore da stimare sarebbe $\boldsymbol{\theta} = (k, \theta)$.
+</Callout>
+
+La media vale $k\theta$, la varianza $k\theta^2$, la moda $(k-1)\theta$ per $k \geq 1$. Al crescere di $k$ la curva diventa più simmetrica: le tre curve con moda in $x = 4$ (blu, magenta, nera) si stringono e si raddrizzano man mano che $k$ sale da 3 a 9.
+
+### Il modello di Rayleigh
+
+<Figure id="fig06" />
+
+<Formula id="f-c38" />
+
+Il pannello mostra cinque curve su un asse da 0 a 10: $\sigma = 0.5$ (blu, picco circa $1.2$ in $x = 0.5$), $\sigma = 1.0$ (nera, picco circa $0.6$ in $x = 1$), $\sigma = 2.0$ (verde, picco circa $0.3$), $\sigma = 3.0$ (rossa, picco circa $0.2$), $\sigma = 4.0$ (magenta, picco circa $0.15$). Un solo parametro, supporto $x \geq 0$; ogni curva parte da zero ed è asimmetrica a destra.
+
+La moda sta in $x = \sigma$, con picco $1/(\sigma\sqrt{e})$: per $\sigma = 1$ vale $0.607$. La Rayleigh è la pdf del modulo di un vettore con due componenti gaussiane indipendenti, a media nulla e con la stessa $\sigma$. Per questo descrive l'ampiezza dei segnali diffusi: l'eco radar è la somma di molte piccole eco con fase casuale, le sue due componenti sono gaussiane, il modulo è Rayleigh.
+
+Applicare ML alla Rayleigh è un esercizio tipico: segui la ricetta, derivi rispetto a $\sigma^2$ e trovi $\hat{\sigma}^2 = \frac{1}{2N}\sum_k x_k^2$, metà del valore quadratico medio dei campioni.
+
+<Derivation id="der13" />
+
+<Example id="ex03" title="ML per la Rayleigh: ampiezze radar">
+
+<Step title="I dati">
+
+Dati sintetici: $N = 5$ ampiezze di eco radar dal solo terreno, $x = \{1.2,\ 2.0,\ 0.8,\ 1.6,\ 2.4\}$. Modello Rayleigh $f(x \mid \sigma) = x \exp(-x^2/(2\sigma^2))/\sigma^2$.
+
+</Step>
+
+<Step title="La stima ML">
+
+Quadrati: $1.44,\ 4.00,\ 0.64,\ 2.56,\ 5.76$, somma $14.40$.
+
+$$
+\hat{\sigma}^2 = \frac{1}{2N} \sum_{k=1}^{N} x_k^2 = \frac{14.40}{10} = 1.44, \qquad \hat{\sigma} = 1.2
+$$
+
+Per l'invarianza di ML, $\hat{\sigma}$ è la radice di $\hat{\sigma}^2$.
+
+</Step>
+
+<Step title="Moda e picco della Rayleigh stimata">
+
+La moda è in $x = \hat{\sigma} = 1.2$, con picco $1/(\hat{\sigma}\sqrt{e}) = 1/(1.2 \cdot 1.6487) = 0.505$.
+
+</Step>
+
+<Step title="Una soglia di rivelazione">
+
+Per la Rayleigh $P\{x > T\} = \exp(-T^2/(2\sigma^2))$. Una soglia con probabilità di falso allarme dell'1% sulle eco del solo terreno:
+
+$$
+T = \hat{\sigma} \sqrt{2 \ln 100} = 1.2 \cdot 3.035 = 3.64
+$$
+
+</Step>
+
+</Example>
+
+<Widget id="m05-rayleigh-ampiezza-radar" />
+
+### Il modello chi-quadro
+
+<Figure id="fig07" />
+
+<Formula id="f-c39" />
+
+Il pannello mostra cinque curve su un asse da 0 a 8: $k = 1$ (nera, diverge in zero), $k = 2$ (blu, esponenziale che parte da $0.5$), $k = 3$ (verde, picco circa $0.24$ in $x = 1$), $k = 4$ (rossa, picco circa $0.18$ in $x = 2$), $k = 5$ (magenta, picco circa $0.15$ in $x = 3$). Un solo parametro $k$, i <Term en="degrees of freedom">gradi di libertà</Term>; supporto $x \geq 0$.
+
+La chi-quadro con $k$ gradi di libertà è la pdf della somma dei quadrati di $k$ gaussiane standard indipendenti. Ha media $k$, varianza $2k$ e moda $\max(k-2, 0)$: per questo il picco si sposta di un'unità a ogni curva. Coincide con una Gamma di forma $k/2$ e scala 2.
+
+<Widget id="m05-gamma-e-chi-quadro" />
+
+### Il modello log-normale
+
+<Figure id="fig08" />
+
+<Formula id="f-c40" />
+
+Il pannello mostra sei curve, tutte con $\mu = 0$ (scritto accanto alla legenda), su un asse da 0 a 3:
+
+- $\sigma = 10$ (nera): schiacciata sull'asse verticale;
+- $\sigma = 3/2$ (blu): picco circa $0.8$ vicino a $x = 0.1$;
+- $\sigma = 1$ (verde): picco circa $0.65$ in $x \approx 0.37$;
+- $\sigma = 1/2$ (gialla): picco circa $0.9$ in $x \approx 0.78$;
+- $\sigma = 1/4$ (rossa): picco circa $1.65$ in $x \approx 0.94$;
+- $\sigma = 1/8$ (magenta): esce dal riquadro sopra $2.0$ (il picco teorico è circa $3.2$).
+
+$\mu$ e $\sigma$ sono media e deviazione standard di $\ln x$, non di $x$: $x$ è log-normale se $\ln x$ è gaussiana. La moda vale $e^{\mu - \sigma^2}$, la mediana $e^{\mu}$, la media $e^{\mu + \sigma^2/2}$. Con $\sigma$ piccola la curva è quasi simmetrica attorno a $e^{\mu} = 1$; con $\sigma$ grande è fortemente asimmetrica.
+
+<Widget id="m05-lognormale-importi" />
+
+### Le parentele tra i modelli
+
+I sei modelli non sono indipendenti tra loro. Conoscere le parentele ti aiuta a ricordare la galleria e la collega al terzo aspetto della scelta del modello: un'elaborazione trasforma un modello in un altro.
+
+- La gaussiana è la gaussiana generalizzata con $\beta = 2$ e $b = 1/(\sigma\sqrt{2})$.
+- La chi-quadro con $k$ gradi di libertà è una Gamma con forma $k/2$ e scala 2; la Gamma con $k = 1$ è l'esponenziale.
+
+<Formula id="f-c42" />
+
+Lo vedi nella galleria: la curva rossa del pannello Gamma ($k = 1$, $\theta = 2$) e la curva $k = 2$ del pannello chi-quadro sono la stessa funzione $\frac{1}{2}e^{-x/2}$, ed entrambe partono da $0.5$.
+
+- La Rayleigh è il modulo di due gaussiane indipendenti a media nulla e con la stessa $\sigma$; il suo quadrato diviso per $\sigma^2$ è una chi-quadro con 2 gradi di libertà.
+
+<Formula id="f-c42-2" />
+
+- La log-normale è l'esponenziale di una gaussiana.
+
+<Formula id="f-c42-3" />
+
+Quasi tutti i modelli della galleria nascono dalla gaussiana attraverso una trasformazione: un quadrato, un modulo, un esponenziale.
+
+<Widget id="m05-parentele-tra-modelli" />
+
+<Check id="chk-16" />
+
+### Scegliere il modello non è banale
+
+Due frasi delle note incorniciano la galleria. Prima: «Choosing the right model is vital for accurately capturing the underlying processes and achieving effective analysis in statistical applications». Dopo: «Model selection is not a trivial task». <SourceRef doc="part1" page={21} /> <SourceRef doc="part1" page={22} />
+
+Con pochi campioni, famiglie diverse come Gamma e log-normale si adattano quasi ugualmente bene allo stesso istogramma. E un modello sbagliato si propaga a tutto ciò che viene dopo: le stime dei parametri, il classificatore bayesiano, la probabilità d'errore. Quando nessun modello parametrico è credibile abbandoni $p(\mathbf{x} \mid \boldsymbol{\theta})$ e stimi la densità direttamente dai campioni, con il <ModLink to="m08-non-parametrica-knn">K-NN</ModLink> o con le <ModLink to="m09-parzen-windows">finestre di Parzen</ModLink>.
+
+<Widget id="m05-indovina-il-modello" />
+
+## Il modello gaussiano
+
+In fondo a pagina 22 le note introducono il modello su cui il corso si concentra: «The **Gaussian model** is a **widely used** parametric model in numerous applications. Its popularity is largely due to the **Central Limit Theorem** (CLT), which states:». La slide corrispondente è la pagina 25 del Cap. 2: «The motivation behind this success can be found in the central limit theorem». <SourceRef doc="part1" page={22} />
+
+«Parametrico» significa che la pdf è descritta completamente da un numero finito di parametri, media e (co)varianza. Sono proprio le quantità che ML stima.
+
+### Il teorema del limite centrale
+
+L'enunciato apre la pagina 23 delle note, in grassetto corsivo: «If the sum of many independent and identically distributed (iid) random variables has finite variance, then the sum will be approximately normally distributed». La slide 25 usa quasi le stesse parole: «if the sum of many iid variables has a finite variance, then it will be approximately normally distributed». <SourceRef doc="part1" page={23} />
+
+Tre ipotesi e una tesi:
+
+- **molte** variabili;
+- **iid**, indipendenti e identicamente distribuite;
+- con **varianza finita**;
+- allora la somma è approssimativamente **gaussiana**, qualunque sia la distribuzione dei singoli addendi.
+
+La fonte non dà la versione formale. Con $n$ addendi di media $\mu$ e varianza $\sigma^2$, la somma standardizzata tende in distribuzione alla gaussiana standard:
+
+<Formula id="f-c46" />
+
+Qui $n$ conta gli addendi della somma; nel resto del foglio $n$ è la dimensione dello spazio delle feature.
+
+<Callout kind="attenzione">
+L'enunciato delle note attribuisce la varianza finita «alla somma». Per addendi iid questo equivale a chiedere che ciascun addendo abbia varianza $\sigma^2$ finita, perché la somma di $n$ addendi ha varianza $n\sigma^2$. Media e varianza della somma crescono con $n$, quindi «approximately normally distributed» va letto così: la somma è vicina a una gaussiana di media $n\mu$ e varianza $n\sigma^2$, cioè la somma standardizzata tende a $N(0, 1)$.
+</Callout>
+
+Il teorema torna nella traccia di dimostrazione delle proprietà asintotiche di ML: la derivata della log-likelihood è una somma di $N$ contributi iid, quindi è circa gaussiana.
+
+### Perché la gaussiana è ovunque
+
+Le note: «This theorem explains why the Gaussian (or normal) distribution is ubiquitous in real-world processes. Many phenomena in nature and industry result from the combination of numerous independent factors, each contributing a small effect. When these factors combine, they often produce distributions that are well-approximated by a Gaussian model, particularly when the total variance is finite». La slide 25 lo dice in una riga: «Since many real processes take origin from many independent causes and yield distributions with finite variance, this explains the ubiquity of the Gaussian pdf».
+
+È il primo aspetto della scelta del modello, la natura intrinseca del fenomeno, applicato al caso più comune: molte cause indipendenti, ognuna con un piccolo effetto.
+
+Le note proseguono: «Because of this, the Gaussian probability density function (pdf) is widely adopted in various fields, from signal processing and machine learning to economics and engineering, for modeling and analyzing data». Nel corso la gaussiana è:
+
+- il modello di classe dei classificatori bayesiani, nelle <ModLink to="m19-funzioni-discriminanti">funzioni discriminanti</ModLink>;
+- il componente delle misture stimate con EM;
+- la prior e la likelihood della stima bayesiana;
+- il kernel più usato nelle finestre di Parzen.
+
+<Callout kind="intuizione">
+Il consumo elettrico di una casa in un'ora ha una distribuzione strana: quasi zero di notte, picchi quando parte il forno. Il consumo di un quartiere di mille case è la somma di mille consumi quasi indipendenti, ognuno con varianza finita. Il suo istogramma è una campana.
+</Callout>
+
+<Widget id="m05-limite-centrale-consumi" />
+
+<Check id="chk-17" />
+
+## La gaussiana multivariata
+
+Le note: «The **multivariate Gaussian pdf** is represented by the following analytical expression». La slide corrispondente è la pagina 26 del Cap. 2, dove la formula è etichettata $N(\mathbf{m}, \Sigma)$ con due frecce, «Covariance matrix» e «Mean vector». <SourceRef doc="part1" page={23} /> <SourceRef doc="ch2" page={26} />
+
+<Formula id="f-c49" />
+
+La scrittura $p(\mathbf{x} \mid \theta) = p(\mathbf{x} \mid \mathbf{m}, \Sigma)$ ti dice che il vettore dei parametri $\boldsymbol{\theta}$ della stima parametrica qui è la coppia $(\mathbf{m}, \Sigma)$. La formula ha due parti:
+
+- una **costante di normalizzazione** $1/((2\pi)^{n/2}\vert\Sigma\vert^{1/2})$, che garantisce integrale unitario;
+- un **esponenziale** con argomento $-\frac{1}{2}$ per una forma quadratica in $(\mathbf{x} - \mathbf{m})$.
+
+Serve $\Sigma$ invertibile, cioè $\vert\Sigma\vert > 0$.
+
+### I simboli della formula
+
+L'elenco «Where:» delle note:
+
+- «x is the n-dimensional feature vector»: $\mathbf{x}$ è il vettore di feature $n$-dimensionale;
+- «m is the mean vector»: $\mathbf{m}$ è il vettore medio;
+- «Σ is the covariance matrix»: $\Sigma$ è la matrice di covarianza;
+- «|Σ| is the determinant of the covariance matrix»: $\vert\Sigma\vert$ è il suo determinante.
+
+<Formula id="f-c50" />
+
+$\mathbf{x}$ e $\mathbf{m}$ sono vettori colonna di $n$ componenti, $\Sigma$ è una matrice $n \times n$. Il prodotto $(\mathbf{x} - \mathbf{m})^t \Sigma^{-1} (\mathbf{x} - \mathbf{m})$ è quindi riga per matrice per colonna, cioè uno scalare. L'apice $t$ indica il trasposto, come nella notazione del docente.
+
+Il determinante $\vert\Sigma\vert$ misura il volume della nuvola dei dati; si chiama anche varianza generalizzata (*generalized variance*). Più è grande, più la campana è larga e, per conservare il volume unitario, bassa.
+
+Con $n = 1$ la formula si riduce alla gaussiana della galleria: $\Sigma = \sigma^2$, $\vert\Sigma\vert^{1/2} = \sigma$, e la forma quadratica diventa lo scarto standardizzato al quadrato.
+
+<Derivation id="der12" />
+
+### La distanza di Mahalanobis
+
+Ultima voce dell'elenco delle note: «(x − m)ᵗ Σ⁻¹ (x − m) is the Mahalanobis distance between x and the mean vector». Il nome «distanza di Mahalanobis» compare solo nelle note, non nella slide 26.
+
+<Formula id="f-c51" />
+
+A rigore (è una precisazione del foglio, le note non la fanno) la forma quadratica è il **quadrato** della <Term en="Mahalanobis distance">distanza di Mahalanobis</Term>; la distanza è la sua radice. È una distanza dalla media misurata in unità di deviazione standard lungo ogni direzione, che tiene conto delle correlazioni. Con $\Sigma = I$ (matrice identità) si riduce alla distanza euclidea al quadrato.
+
+La densità dipende da $\mathbf{x}$ solo attraverso questa quantità. Quindi i punti alla stessa distanza di Mahalanobis da $\mathbf{m}$ hanno la stessa densità: da qui nascono le isolinee ellittiche che vedrai tra poco.
+
+<Callout kind="intuizione">
+Nel classificatore salmone contro spigola la larghezza varia molto più della luminosità. Un salmone largo 2 cm più della media è normale; uno luminoso 2 unità più della media è un'anomalia. La distanza euclidea li tratta allo stesso modo; quella di Mahalanobis divide ogni scarto per la variabilità della sua feature.
+</Callout>
+
+### Il ruolo dei due parametri
+
+L'elenco «In this expression:» delle note:
+
+- «The mean vector m represents the central tendency of the data»;
+- «The covariance matrix Σ captures the variability and correlation between the different dimensions of the data».
+
+Nella formula $\mathbf{m}$ compare solo nello scarto $(\mathbf{x} - \mathbf{m})$: sposta la campana senza deformarla. $\Sigma$ compare due volte. Nell'esponente, tramite $\Sigma^{-1}$, decide forma e orientamento; nella costante, tramite $\vert\Sigma\vert$, decide l'altezza.
+
+Le note lo ribadiscono: «The multivariate Gaussian probability density function (pdf) is fully defined by two key parameters», il vettore medio e la matrice di covarianza. La slide 27 del Cap. 2: «The parameters defining completely the multivariate Gaussian pdf are the mean vector and the covariance matrix». Nel linguaggio della stima parametrica, stimare la pdf equivale a stimare questi due oggetti. <SourceRef doc="part1" page={23} />
+
+<Formula id="f-c54" />
+
+I parametri scalari liberi sono $n$ per la media più $n(n+1)/2$ per la covarianza, che è simmetrica. Con $n = 2$ sono 5; con un'immagine iperspettrale a 200 bande sono 20300. Stimarli tutti con ML richiede moltissimi campioni: è l'origine dell'<ModLink to="m11-hughes-feature-selection">effetto Hughes</ModLink>.
+
+<Widget id="m05-formula-gaussiana-multivariata" />
+
+<Check id="chk-18" />
+
+<Callout kind="esame">
+Domanda reale: «He also asked me the formula of the Gaussian curve in a multi dimensional space (with mean vector and covariance matrix)». Scrivi la formula completa, spiega ogni simbolo ($\mathbf{x}$, $n$, $\mathbf{m}$, $\Sigma$, $\vert\Sigma\vert$, $\Sigma^{-1}$), chiama per nome la distanza di Mahalanobis e di' che la pdf è definita completamente da $\mathbf{m}$ e $\Sigma$. Il controllo con $n = 1$ ti mostra che la formula è giusta.
+</Callout>
+
+### La gaussiana bivariata
+
+Le note: «A common example is the **bivariate Gaussian distribution**, where we have two variables. In this case, the probability density function forms a 3D bell-shaped surface representing the joint distribution of two correlated variables». <SourceRef doc="part1" page={23} />
+
+<Figure id="fig09" />
+
+<Formula id="f-c53" />
+
+La figura, la stessa della slide 26 («Example of a bivariate Gaussian pdf»), mostra una superficie a rete con gli assi $x_1$ e $x_2$ sul piano e l'asse verticale etichettato $p(\mathbf{x}) = p(x_1, x_2)$. L'altezza in ogni punto è la densità congiunta. La campana è allungata in diagonale: le due variabili sono correlate. Il segno della covarianza, cioè se al crescere di una l'altra tende a crescere o a calare, dalla rete in prospettiva non si ricava, e le note non lo dicono. <SourceRef doc="ch2" page={26} />
+
+<Widget id="m05-campana-bivariata-3d" />
+
+### Il vettore medio
+
+Le note, alla voce «Mean vector (m)», scrivono la formula qui sotto e aggiungono: «Represents the expected value or central tendency of the data». <SourceRef doc="part1" page={23} />
+
+<Formula id="f-c55" />
+
+È il valore atteso del vettore di feature, calcolato componente per componente: $m_i = E\{x_i\}$. Geometricamente è il centro della campana e di tutte le ellissi di isolivello; per la gaussiana coincide con il punto di massima densità.
+
+## La matrice di covarianza
+
+### Definizione e due forme equivalenti
+
+La pagina 24 delle note si apre con la voce «Covariance matrix (Σ)» e due uguaglianze scritte di seguito. <SourceRef doc="part1" page={24} />
+
+<Formula id="f-c56" />
+
+La <Term en="covariance matrix">matrice di covarianza</Term> è il valore atteso del prodotto esterno (*outer product*) dello scarto dalla media per sé stesso. $(\mathbf{x} - \mathbf{m})$ è un vettore colonna $n \times 1$ e $(\mathbf{x} - \mathbf{m})^t$ una riga $1 \times n$: il prodotto colonna per riga è una matrice $n \times n$. La seconda uguaglianza è la versione matriciale di $\mathrm{var} = E\{x^2\} - (E\{x\})^2$: sviluppi il prodotto, porti $\mathbf{m}$ fuori dal valore atteso, usi $E\{\mathbf{x}\} = \mathbf{m}$ e due dei tre termini $\mathbf{m}\mathbf{m}^t$ si elidono.
+
+<Derivation id="der08" />
+
+Le note spiegano il contenuto: «Describes the variability and relationships between the features of the data. It captures both the variance of each feature and the covariance between different features». L'elemento di posto $(i, j)$:
+
+<Formula id="f-c57" />
+
+- per $i = j$ è la **varianza** $\sigma_i^2$ della feature $i$-esima;
+- per $i \neq j$ è la **covarianza** tra le feature $i$ e $j$: positiva se crescono insieme, negativa se una cresce quando l'altra cala, nulla se sono incorrelate.
+
+<Example id="ex07" title="Le due formule della covarianza sugli stessi dati">
+
+<Step title="Dati e vettore medio">
+
+Dati sintetici: quattro salmoni con (luminosità, larghezza) $= (4, 9),\ (5, 11),\ (4, 10),\ (5, 12)$, trattati come una popolazione con pesi uguali. Vettore medio: $\mathbf{m} = (4.5,\ 10.5)$.
+
+</Step>
+
+<Step title="Prima formula: media dei prodotti esterni degli scarti">
+
+Scarti: $(-0.5, -1.5)$, $(0.5, 0.5)$, $(-0.5, -0.5)$, $(0.5, 1.5)$.
+
+- $\Sigma_{11}$ = media di $0.25,\ 0.25,\ 0.25,\ 0.25$ = $0.25$;
+- $\Sigma_{22}$ = media di $2.25,\ 0.25,\ 0.25,\ 2.25$ = $1.25$;
+- $\Sigma_{12} = \Sigma_{21}$ = media di $0.75,\ 0.25,\ 0.25,\ 0.75$ = $0.5$.
+
+</Step>
+
+<Step title="Seconda formula: momento secondo meno mmt">
+
+$E\{x_1^2\} = (16+25+16+25)/4 = 20.5$, $E\{x_2^2\} = (81+121+100+144)/4 = 111.5$, $E\{x_1 x_2\} = (36+55+40+60)/4 = 47.75$. Gli elementi di $\mathbf{m}\mathbf{m}^t$ valgono $20.25$, $110.25$ e $47.25$. Le differenze danno di nuovo $0.25$, $1.25$ e $0.5$.
+
+</Step>
+
+<Step title="Lettura">
+
+$$
+\Sigma = \begin{bmatrix} 0.25 & 0.5 \\ 0.5 & 1.25 \end{bmatrix}
+$$
+
+Le due formule coincidono. La matrice è simmetrica e la covarianza è positiva: i salmoni più luminosi sono anche più larghi.
+
+</Step>
+
+</Example>
+
+<Widget id="m05-costruisci-la-covarianza" />
+
+### Simmetria
+
+Prima delle «Properties of the Covariance Matrix»: «Symmetry: The covariance matrix is symmetric, i.e., Σ = Σᵗ». La slide 27: «Σ is symmetric». <SourceRef doc="part1" page={24} />
+
+<Formula id="f-c58" />
+
+La covarianza tra $x_i$ e $x_j$ è uguale a quella tra $x_j$ e $x_i$, perché il prodotto di due scalari commuta. Tre conseguenze:
+
+- gli elementi distinti sono $n(n+1)/2$, non $n^2$;
+- gli <Term en="eigenvalues">autovalori</Term> sono reali;
+- gli autovettori si possono scegliere ortogonali.
+
+### Semidefinita positiva
+
+Seconda proprietà: «Positive Semi-Definiteness: The covariance matrix is positive semi-definite, meaning all its eigenvalues are non-negative. This ensures that the variance is always non-negative». La slide 27: «Σ is positive semidefinite».
+
+<Formula id="f-c59" />
+
+$\mathbf{a}^t \Sigma \mathbf{a}$ è la varianza della combinazione lineare $\mathbf{a}^t\mathbf{x}$, cioè dei dati proiettati sulla direzione $\mathbf{a}$. Una varianza non può essere negativa, quindi $\mathbf{a}^t \Sigma \mathbf{a} \geq 0$ per ogni $\mathbf{a}$: questa è la definizione di matrice <Term en="positive semi-definite">semidefinita positiva</Term>. Se scegli come direzione un autovettore normalizzato, ottieni che ogni autovalore è la varianza lungo quell'autovettore, quindi è non negativo. L'equivalenza «semidefinita positiva se e solo se tutti gli autovalori sono non negativi» vale perché $\Sigma$ è simmetrica.
+
+Perché la formula della gaussiana abbia senso serve qualcosa in più: $\Sigma$ **definita** positiva (*positive definite*), senza autovalori nulli. Altrimenti $\vert\Sigma\vert = 0$ e $\Sigma^{-1}$ non esiste: i dati stanno tutti su un sottospazio, per esempio due feature identiche.
+
+<Callout kind="attenzione">
+Le note scrivono che la semidefinitezza positiva «ensures that the variance is always non-negative». Il verso logico è l'opposto: ogni varianza $\mathbf{a}^t \Sigma \mathbf{a} = \mathrm{var}\{\mathbf{a}^t\mathbf{x}\}$ è non negativa per costruzione, e per questo $\Sigma$ risulta semidefinita positiva.
+</Callout>
+
+<Derivation id="der09" />
+
+<Widget id="m05-semidefinita-positiva-proiezioni" />
+
+### Feature indipendenti
+
+Terza voce: «For **Independent** Features: When the features are independent, the covariance matrix is **diagonal**, and the off-diagonal elements (which represent covariances) are zero». Segue la matrice disegnata per esteso, con la nota «Where σᵢ² represents the variance of the i-th feature». <SourceRef doc="part1" page={24} />
+
+<Figure id="fig10" />
+
+<Formula id="f-c60" />
+
+L'indipendenza implica covarianza nulla: con feature indipendenti la densità congiunta si fattorizza, l'integrale che definisce la covarianza si separa nel prodotto di due valori attesi degli scarti, ognuno nullo. Il viceversa in generale non vale. Il controesempio classico: $x$ gaussiana standard e $y = x^2$ hanno covarianza nulla, eppure $y$ dipende completamente da $x$. Per variabili congiuntamente gaussiane, invece, covarianza nulla equivale a indipendenza.
+
+<Derivation id="der19" />
+
+Le note continuano: «For independent features, the multivariate Gaussian pdf simplifies to the product of the individual univariate Gaussian distributions», e aggiungono «This means that each feature is distributed independently of the others». La slide 27 riporta la stessa formula.
+
+<Formula id="f-c61" />
+
+Con $\Sigma$ diagonale il determinante è il prodotto delle varianze e la forma quadratica è la somma degli scarti standardizzati al quadrato. L'esponenziale di una somma diventa un prodotto di esponenziali, e ogni fattore è la gaussiana 1-D di una feature.
+
+<Derivation id="der10" />
+
+Conseguenza pratica: stimi $n$ medie e $n$ varianze invece di $n + n(n+1)/2$ parametri. È l'ipotesi alla base del classificatore *naive Bayes* gaussiano.
+
+<Example id="ex05" title="Feature indipendenti: formula multivariata e prodotto delle gaussiane 1-D">
+
+<Step title="Il modello">
+
+Dati sintetici: classe «salmone» con due feature indipendenti, luminosità $x_1$ (media $4.5$, $\sigma_1 = 0.5$) e larghezza $x_2$ (media $10$, $\sigma_2 = 2$). Quindi $\Sigma = \mathrm{diag}(0.25,\ 4)$ e $\vert\Sigma\vert = 1$. Valuti la densità nel punto $\mathbf{x} = (5,\ 12)$.
+
+</Step>
+
+<Step title="Prodotto delle marginali">
+
+$$
+p(x_1) = \frac{1}{0.5 \cdot 2.5066} e^{-0.5} = 0.7979 \cdot 0.6065 = 0.4839
+$$
+
+$$
+p(x_2) = \frac{1}{2 \cdot 2.5066} e^{-0.5} = 0.1995 \cdot 0.6065 = 0.1210
+$$
+
+Prodotto: $0.4839 \cdot 0.1210 = 0.05855$.
+
+</Step>
+
+<Step title="Formula multivariata">
+
+Costante: $1/(2\pi \cdot \vert\Sigma\vert^{1/2}) = 1/6.2832 = 0.15915$. Distanza di Mahalanobis al quadrato: $(0.5/0.5)^2 + (2/2)^2 = 2$, quindi l'esponenziale vale $e^{-1} = 0.36788$.
+
+$$
+p(\mathbf{x}) = 0.15915 \cdot 0.36788 = 0.05855
+$$
+
+</Step>
+
+<Step title="Confronto">
+
+I due risultati coincidono, come afferma $p(\mathbf{x}) = p(x_1)\, p(x_2)$.
+
+</Step>
+
+</Example>
+
+<Widget id="m05-indipendenza-e-fattorizzazione" />
+
+<Check id="chk-19" />
+
+<Check id="chk-20" />
+
+## La forma della gaussiana 2-D
+
+Il paragrafo «Shape of a 2-D Gaussian PDF» delle note: «The probability density function p(x) of a 2-D Gaussian distribution forms a **bell-shaped surface with unit volume**. The structure of this bell-like shape can be interpreted as follows:». La slide 28 del Cap. 2: «p(x) can be seen as a bell of unitary volume». <SourceRef doc="part1" page={24} /> <SourceRef doc="ch2" page={28} />
+
+<Formula id="f-c62" />
+
+Il volume sotto la superficie è l'integrale doppio della pdf e vale 1, come l'area sotto una pdf monodimensionale. Se la campana si allarga ($\vert\Sigma\vert$ cresce) deve abbassarsi: il picco vale $1/(2\pi\vert\Sigma\vert^{1/2})$. Che la costante della formula dia esattamente volume 1 si dimostra ruotando gli assi sugli autovettori: l'integrale si spezza in $n$ integrali gaussiani 1-D, e il prodotto degli autovalori è $\vert\Sigma\vert$.
+
+<Derivation id="der18" />
+
+### Gli isolivelli sono ellissi
+
+Primo punto dell'elenco: «The horizontal slices (corresponding to **isolevels**) of this bell are ellipses. These ellipses represent regions of constant probability density».
+
+Tagliare la campana con un piano orizzontale a quota $z$ significa cercare i punti con $p(\mathbf{x}) = z$. Poiché la densità dipende da $\mathbf{x}$ solo attraverso la distanza di Mahalanobis, sono i punti a distanza di Mahalanobis costante da $\mathbf{m}$: nel piano, l'equazione di un'ellisse centrata in $\mathbf{m}$.
+
+<Formula id="f-c63" />
+
+Nella slide 28 il punto centrale, etichettato $z = 3$, è il picco della campana sopra il vettore medio: lì la sezione si riduce al solo punto $\mathbf{m}$. Le ellissi disegnate sono tre, gli isolivelli a quota $z = 2$, $z = 0.5$ e $z = 0.01$: quote più basse danno ellissi più grandi, tutte concentriche e con gli stessi assi. Questa figura sta solo nella slide, non nelle note. <SourceRef doc="ch2" page={28} />
+
+### Gli assi seguono gli autovettori
+
+Secondo punto: «The axes of the ellipses are aligned along the eigenvectors of the covariance matrix Σ». La slide 28 parla di «ellipses whose axes are directed by the eigenvectors» e disegna $\mathbf{e}_1$ ed $\mathbf{e}_2$ sugli assi dell'ellisse. <SourceRef doc="ch2" page={28} /> <SourceRef doc="part1" page={24} />
+
+<Formula id="f-c64" />
+
+Gli <Term en="eigenvectors">autovettori</Term> soddisfano $\Sigma\mathbf{e}_i = \lambda_i\mathbf{e}_i$. Poiché $\Sigma$ è simmetrica sono ortogonali, come gli assi di un'ellisse. Se $\Sigma$ è diagonale gli autovettori coincidono con gli assi delle feature e le ellissi non sono inclinate; la covarianza fuori diagonale le ruota.
+
+### L'asse maggiore e la massima varianza
+
+Terzo punto: «The eigenvector corresponding to the largest eigenvalue defines the major axis of the ellipse, indicating the direction along which the data has the greatest variance». La slide 28: «defines the main axis of the ellipse». <SourceRef doc="ch2" page={28} />
+
+<Formula id="f-c65" />
+
+L'autovalore $\lambda_i$ è la varianza dei dati proiettati lungo $\mathbf{e}_i$. L'asse maggiore è quindi la direzione in cui la nuvola è più dispersa, e $\lambda_1$ è la varianza massima che ottieni proiettando su una direzione di lunghezza 1. È lo stesso fatto su cui si basa la <ModLink to="m14-pca">PCA</ModLink>, che conserva le direzioni con autovalore più grande.
+
+### Le lunghezze degli assi
+
+Quarto punto, solo nelle note: «The eigenvalue magnitudes determine the lengths of the ellipse axes, with larger eigenvalues corresponding to longer axes».
+
+Nelle coordinate $y_i$ lungo gli autovettori, l'isolivello a distanza di Mahalanobis $d$ ha equazione:
+
+<Formula id="f-c66" />
+
+Il semiasse lungo $\mathbf{e}_i$ vale $d\sqrt{\lambda_i}$, quindi il rapporto tra asse maggiore e asse minore è $\sqrt{\lambda_1/\lambda_2}$. Due casi limite: con $\lambda_1 = \lambda_2$ le ellissi diventano cerchi; se $\lambda_2$ tende a zero l'ellisse degenera in un segmento e $\Sigma$ diventa singolare.
+
+<Derivation id="der11" />
+
+<Example id="ex06" title="Autovalori e autovettori di una covarianza 2 x 2">
+
+<Step title="La matrice">
+
+Due bande spettrali con la stessa varianza e correlazione $0.5$:
+
+$$
+\Sigma = \begin{bmatrix} 2 & 1 \\ 1 & 2 \end{bmatrix}
+$$
+
+</Step>
+
+<Step title="Equazione caratteristica (characteristic equation)">
+
+Qui $I$ è la matrice identità:
+
+$$
+\vert \Sigma - \lambda I \vert = (2 - \lambda)^2 - 1 = 0 \;\Rightarrow\; \lambda_1 = 3, \quad \lambda_2 = 1
+$$
+
+Entrambi positivi: $\Sigma$ è definita positiva.
+
+</Step>
+
+<Step title="Autovettori">
+
+$\mathbf{e}_1 = (1, 1)/\sqrt{2}$ ed $\mathbf{e}_2 = (1, -1)/\sqrt{2}$, ortogonali. L'asse maggiore delle ellissi sta sulla bisettrice a 45 gradi, la direzione di massima varianza ($\lambda_1 = 3$); l'asse minore sulla perpendicolare.
+
+</Step>
+
+<Step title="Forma e altezza">
+
+Il rapporto tra gli assi è $\sqrt{3/1} = 1.73$. Sull'isolivello a distanza di Mahalanobis $d = 2$ i semiassi valgono $2\sqrt{3} = 3.46$ e $2$. Il determinante è $\vert\Sigma\vert = 3 = \lambda_1\lambda_2$ e il picco della campana vale $1/(2\pi\sqrt{3}) = 0.0919$.
+
+</Step>
+
+</Example>
+
+<Widget id="m05-ellissi-e-autovettori" />
+
+<Check id="chk-21" />
+
+<Callout kind="esame">
+Domanda reale: «Asked me to explain PCA. When I started explaining he asked about covariance matrix, how it is created, what is cov matrix and etc. Then also some detailed questions about characteristic equation, eigenvalues/vectors». Parti dalla definizione $\Sigma = E\{(\mathbf{x} - \mathbf{m})(\mathbf{x} - \mathbf{m})^t\}$ e dalla forma equivalente, spiega diagonale e fuori diagonale, le proprietà (simmetrica, semidefinita positiva, diagonale con feature indipendenti). Poi l'equazione caratteristica $\vert\Sigma - \lambda I\vert = 0$, gli autovettori come assi delle ellissi, l'autovalore come varianza lungo l'asse.
+</Callout>
+
+## Collegamenti
+
+- <ModLink to="m02-sistema-ml-design">Sistema di ML e fasi di design</ModLink>: lo schema a blocchi (acquisizione, pre-processing, estrazione delle feature, classificatore) è la stessa catena che la slide sulla scelta del modello usa per i tre aspetti: fenomeno, rumore di mezzo e sensore, elaborazioni.
+- <ModLink to="m03-stima-intro-parametrica">Introduzione alla stima parametrica</ModLink>: definisce la likelihood come prodotto sui campioni iid (pagina 9), mostra l'esempio con $p(\mathbf{X} \mid \theta)$ e $l(\theta)$ (pagina 10) e presenta ML con $\boldsymbol{\theta}$ fisso ma ignoto (pagina 11). Sono i prerequisiti della definizione.
+- <ModLink to="m04-bonta-stimatori">Bontà di uno stimatore</ModLink>: bias, stima efficiente, bound di Cramér-Rao, matrice di Fisher, non distorsione ed efficienza asintotiche, consistenza. Sono le definizioni usate nella slide sulle proprietà di ML.
+- <ModLink to="m06-modelli-pdf-gaussiana">Modelli di pdf e modello gaussiano</ModLink>: le pagine 21-24 delle note sono in comune (galleria, limite centrale, gaussiana multivariata, covarianza, forma della campana); lì trovi anche le stime ML di media e covarianza gaussiane con il bias $(N-1)/N$.
+- <ModLink to="m07-stima-bayesiana">Stima bayesiana</ModLink>: l'alternativa a ML con $\boldsymbol{\theta}$ variabile aleatoria dotata di prior, e il confronto «ML versus Bayesian Estimation».
+- <ModLink to="m08-non-parametrica-knn">Stima non parametrica e K-NN</ModLink>: quando nessun modello parametrico è credibile abbandoni $p(\mathbf{x} \mid \boldsymbol{\theta})$ e stimi la densità dai campioni.
+- <ModLink to="m09-parzen-windows">Finestre di Parzen</ModLink>: stima con kernel, spesso gaussiano; le stesse nozioni di bias, varianza e consistenza servono a giudicarla.
+- <ModLink to="m10-em-dati-incompleti">Dati incompleti ed EM</ModLink>: quando le equazioni di verosimiglianza non hanno soluzione in forma chiusa (misture, dati mancanti) cerchi il massimo con EM, che aumenta la log-likelihood a ogni iterazione e può fermarsi in un massimo locale.
+- <ModLink to="m11-hughes-feature-selection">Effetto Hughes e selezione delle feature</ModLink>: i parametri della gaussiana, $n + n(n+1)/2$, crescono con il quadrato delle feature; con pochi campioni le stime ML diventano inaffidabili.
+- <ModLink to="m14-pca">PCA</ModLink>: usa autovalori e autovettori della matrice di covarianza; il primo autovettore è l'asse maggiore delle ellissi, la direzione di massima varianza.
+- <ModLink to="m17-bayes-map-ml">Criteri MAP e ML</ModLink>: il criterio ML di classificazione assegna $\mathbf{x}$ alla classe con $p(\mathbf{x} \mid \omega_i)$ massima; qui ML stima i parametri di quelle stesse densità.
+- <ModLink to="m19-funzioni-discriminanti">Funzioni discriminanti</ModLink>: i casi gaussiani nascono dal logaritmo della gaussiana multivariata; ricompaiono la distanza di Mahalanobis, $\vert\Sigma\vert$ e i casi con $\Sigma$ diagonale.
+- <ModLink to="p01-stima-parametri">Stima ML e bayesiana dei parametri</ModLink> (Passerini): stessa definizione di arg max della log-likelihood, con statistiche sufficienti (*sufficient statistics*) e prior coniugate (*conjugate priors*).
+- <ModLink to="p02-bernoulli-multinomiale">Bernoulli e multinomiale</ModLink> (Passerini): esempi ML discreti, con $\hat{\theta} = K/N$ come nell'esempio sullo spam.
+- <ModLink to="p05-apprendimento-reti">Apprendimento nei modelli grafici</ModLink> (Passerini): con dati completi la log-likelihood di una rete bayesiana si decompone in somme indipendenti, una per ogni tabella di probabilità condizionata; è la stessa logica del prodotto che diventa somma.
+
+## Per l'orale
+
+Le domande della banca su questo modulo formano una catena: Melgani parte quasi sempre dalla definizione e scende verso la derivata, le proprietà e il confronto con Bayes. Prova la catena completa nel simulatore.
+
+<Widget id="m05-simulatore-orale-ml" />
+
+### Formula, prodotto e likelihood
+
+«What is the formula of Maximum Likelihood, why we can use the separate products of the probabilities and what the Likelihood describe.»
+
+- $\hat{\boldsymbol{\theta}} = \arg\max_{\boldsymbol{\theta}} p(\mathbf{X} \mid \boldsymbol{\theta})$, e la stessa con $\ln$ perché il logaritmo è monotono crescente;
+- il prodotto $\prod_k p(\mathbf{x}_k \mid \boldsymbol{\theta})$ vale perché i campioni sono iid: indipendenza per moltiplicare, identica distribuzione per usare la stessa pdf;
+- il logaritmo trasforma il prodotto in somma: derivate più semplici, niente underflow;
+- la likelihood è la pdf letta come funzione di $\boldsymbol{\theta}$ con i dati fermi: misura la compatibilità tra parametri e campioni, e non è una densità su $\boldsymbol{\theta}$.
+
+### Bontà della stima e confronto con Bayes
+
+«How we can describe the goodness of an estimation and Is Maximum Likelihood Estimation a good estimator? Is it better or not with respect to the Bayesian Estimation? Why?» e «Last question was: In which case ML and Bayesian are the same?»
+
+- bontà: bias, varianza dell'errore confrontata con il bound di Cramér-Rao, proprietà asintotiche;
+- se esiste una stima efficiente ed ML è non distorta, la stima efficiente è ML (sotto ipotesi di regolarità su $p(\mathbf{x} \mid \boldsymbol{\theta})$);
+- in ogni caso ML è asintoticamente non distorta, asintoticamente efficiente, consistente; con $N$ finito può essere distorta (covarianza con $1/N$);
+- ML e Bayes coincidono con infiniti campioni o con prior uniforme; ML si preferisce per costo computazionale e interpretabilità, Bayes conviene con pochi dati e una prior affidabile.
+
+### Sviluppare la derivata e applicare ML
+
+«Explain ML estimation, develop the first derivative for a gaussian and explain the meaning of the result.» e «Then he asked me to apply Maximum Likelihood estimation on an exercise.»
+
+- segui la ricetta: modello, prodotto, logaritmo, derivata nulla, controllo del massimo;
+- per la media gaussiana: $\frac{1}{\sigma^2}\sum_k (x_k - m) = 0$ dà la media campionaria, con $N = 1$ ritrovi $\hat{m} = x_0$ della slide;
+- il significato: baricentro dei campioni, minimi quadrati, stima non distorta ed efficiente;
+- se l'esercizio chiede la varianza: $\hat{\sigma}^2$ con $1/N$, distorta di un fattore $(N-1)/N$; per Rayleigh e Bernoulli la stessa ricetta dà $\frac{1}{2N}\sum_k x_k^2$ e $K/N$.
+
+### Gaussiana multivariata e covarianza
+
+«He also asked me the formula of the Gaussian curve in a multi dimensional space (with mean vector and covariance matrix).» e la domanda sulla PCA con la matrice di covarianza, l'equazione caratteristica, autovalori e autovettori.
+
+- formula completa con costante $1/((2\pi)^{n/2}\vert\Sigma\vert^{1/2})$ e distanza di Mahalanobis all'esponente;
+- $\mathbf{m} = E\{\mathbf{x}\}$ e $\Sigma = E\{(\mathbf{x} - \mathbf{m})(\mathbf{x} - \mathbf{m})^t\} = E\{\mathbf{x}\mathbf{x}^t\} - \mathbf{m}\mathbf{m}^t$;
+- $\Sigma$ simmetrica, semidefinita positiva, diagonale con feature indipendenti (e allora la pdf è il prodotto delle marginali);
+- isolivelli ellittici, assi sugli autovettori, semiassi proporzionali a $\sqrt{\lambda_i}$.
+
+### Le domande nella parte di Passerini
+
+Quattro domande di Passerini toccano la stima ML dei parametri: «Bayesian networks: formalization (DAG, local independencies, various case of d-separation criterion, general d-separation criterion and global independencies) and learning of the parameters (ML with complete data, MAP with prior knowledge, EM with incomplete data)», «Learning Parameters  (ML with complete data, MAP), SVM (Hard Margin, Lagrangian, Soft Margin), NonLinear,  Kernel Machine, Perceptron)», «How to use parameter estimation in Bayesian Networks», «Why ML is fast in Bayesian Network (CDP independence)». Una quinta, «Example of estimation of Gaussian parameters: why do we obtain a Gaussian also as posterior?», riguarda la stima bayesiana dei parametri gaussiani.
+
+- con dati completi la likelihood della rete è un prodotto sui campioni e, dentro ogni campione, sui nodi; il logaritmo la trasforma in una somma di termini, uno per tabella di probabilità condizionata;
+- ogni termine si massimizza da solo, e la stima ML di ogni probabilità è una frequenza relativa, come $K/N$ nell'esempio sullo spam: per questo ML è veloce;
+- con dati incompleti la somma non si separa più e serve EM; con conoscenza a priori si passa a MAP;
+- sulla posterior gaussiana: con varianza nota la likelihood in $m$ è una campana centrata nella media campionaria e larga $\sigma/\sqrt{N}$ (lo hai visto completando il quadrato); moltiplicata per una prior gaussiana su $m$ dà di nuovo l'esponenziale di un polinomio di secondo grado in $m$, cioè una campana. La gaussiana è la prior coniugata (*conjugate prior*) della media gaussiana.
+

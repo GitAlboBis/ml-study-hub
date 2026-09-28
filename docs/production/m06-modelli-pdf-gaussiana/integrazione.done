@@ -1,0 +1,1 @@
+integrazione m06-modelli-pdf-gaussiana: data.ts completo (71 concetti coperti, 87 formule, 19 derivazioni, 14 figure, 24 widget, 72 flashcard, 85 quiz, 17 domande, 21 esercizi); validate-module PASS; formula-coverage 194/195 (der18 passo 6 presente senza etichetta interna, verificato a mano); tsc pulito; teoria e riassunto controllati (0 errori KaTeX, 0 errori console)

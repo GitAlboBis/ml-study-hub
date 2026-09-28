@@ -1,0 +1,614 @@
+{
+  "c01": [
+    "#dal-capitolo-1-il-confine-che-insegue-ogni-pesce",
+    "#overfitting",
+    "#schema-a-blocchi-e-fasi-di-progetto",
+    "#fasi-di-progetto-e-bassa-accuratezza",
+    "example:ex04",
+    "widget:m03-overfitting-confine-pesce",
+    "figure:fig01",
+    "quiz:chk-01"
+  ],
+  "c02": [
+    "#overfitting",
+    "#schema-a-blocchi-e-fasi-di-progetto",
+    "#fasi-di-progetto-e-bassa-accuratezza",
+    "example:ex04",
+    "widget:m03-overfitting-confine-pesce",
+    "figure:fig01",
+    "quiz:chk-01"
+  ],
+  "c03": [
+    "#complessità-contro-generalizzazione",
+    "#schema-a-blocchi-e-fasi-di-progetto",
+    "#fasi-di-progetto-e-bassa-accuratezza",
+    "example:ex04",
+    "widget:m03-overfitting-confine-pesce",
+    "figure:fig01",
+    "quiz:chk-01"
+  ],
+  "c04": [
+    "#dal-capitolo-1-il-confine-che-insegue-ogni-pesce"
+  ],
+  "c05": [
+    "#il-canale-pam-perché-servono-le-densità",
+    "#il-sistema-ideale",
+    "example:ex01",
+    "widget:m03-pam-canale-ideale"
+  ],
+  "c06": [
+    "#il-sistema-ideale",
+    "formula:f-c06",
+    "example:ex01",
+    "widget:m03-pam-canale-ideale"
+  ],
+  "c07": [
+    "#il-sistema-ideale",
+    "formula:f-c07",
+    "formula:f-c07-2",
+    "example:ex01",
+    "widget:m03-pam-canale-ideale"
+  ],
+  "c08": [
+    "#il-sistema-ideale",
+    "#decidere-con-le-soglie",
+    "#map-contro-ml-come-i-prior-spostano-la-soglia",
+    "formula:f-c08",
+    "formula:f-c08-2",
+    "formula:f-c08-3",
+    "derivation:der08",
+    "example:ex01",
+    "widget:m03-pam-canale-ideale",
+    "quiz:chk-02"
+  ],
+  "c09": [
+    "#arriva-il-rumore",
+    "formula:f-c09",
+    "formula:f-c09-2",
+    "derivation:der02",
+    "example:ex02",
+    "widget:m03-pam-rumore-gaussiano"
+  ],
+  "c10": [
+    "#arriva-il-rumore",
+    "formula:f-c10",
+    "example:ex02",
+    "widget:m03-pam-rumore-gaussiano"
+  ],
+  "c11": [
+    "#arriva-il-rumore",
+    "derivation:der02",
+    "example:ex02",
+    "widget:m03-pam-rumore-gaussiano",
+    "quiz:chk-03"
+  ],
+  "c12": [
+    "#la-densità-del-segnale-ricevuto-è-una-convoluzione",
+    "formula:f-c12",
+    "formula:f-c12-2",
+    "derivation:der02",
+    "example:ex02",
+    "widget:m03-pam-convoluzione-soglie",
+    "quiz:chk-03"
+  ],
+  "c13": [
+    "#la-densità-del-segnale-ricevuto-è-una-convoluzione",
+    "#decidere-con-le-soglie",
+    "#map-contro-ml-come-i-prior-spostano-la-soglia",
+    "formula:f-c13",
+    "derivation:der02",
+    "derivation:der08",
+    "example:ex02",
+    "widget:m03-pam-convoluzione-soglie",
+    "quiz:chk-03"
+  ],
+  "c14": [
+    "#decidere-con-le-soglie",
+    "#map-contro-ml-come-i-prior-spostano-la-soglia",
+    "formula:f-c14",
+    "formula:f-c14-2",
+    "derivation:der02",
+    "derivation:der08",
+    "example:ex02",
+    "widget:m03-pam-convoluzione-soglie",
+    "quiz:chk-04"
+  ],
+  "c15": [
+    "#perché-la-stima-statistica-conta",
+    "#dove-serve-la-stima-nel-sistema-di-machine-learning",
+    "widget:m03-mappa-capitolo-2",
+    "widget:m03-dove-serve-la-stima"
+  ],
+  "c16": [
+    "#perché-la-stima-statistica-conta",
+    "formula:f-c16",
+    "widget:m03-superfici-densita-2d",
+    "figure:fig02"
+  ],
+  "c17": [
+    "#perché-la-stima-statistica-conta",
+    "formula:f-c17",
+    "widget:m03-superfici-densita-2d",
+    "figure:fig02",
+    "figure:fig08"
+  ],
+  "c18": [
+    "#la-mappa-del-capitolo-2",
+    "widget:m03-mappa-capitolo-2"
+  ],
+  "c19": [
+    "#dove-serve-la-stima-nel-sistema-di-machine-learning",
+    "#schema-a-blocchi-e-fasi-di-progetto",
+    "widget:m03-dove-serve-la-stima",
+    "figure:fig03",
+    "figure:fig09",
+    "quiz:chk-05"
+  ],
+  "c20": [
+    "#dove-serve-la-stima-nel-sistema-di-machine-learning",
+    "widget:m03-dove-serve-la-stima",
+    "figure:fig03",
+    "quiz:chk-05"
+  ],
+  "c21": [
+    "#dove-serve-la-stima-nel-sistema-di-machine-learning",
+    "widget:m03-dove-serve-la-stima",
+    "figure:fig03",
+    "quiz:chk-05"
+  ],
+  "c22": [
+    "#dove-serve-la-stima-nel-sistema-di-machine-learning",
+    "widget:m03-dove-serve-la-stima",
+    "figure:fig03",
+    "figure:fig09",
+    "quiz:chk-05"
+  ],
+  "c23": [
+    "#dalla-sorgente-alluscita",
+    "widget:m03-pipeline-sorgente-uscita",
+    "figure:fig04",
+    "figure:fig11"
+  ],
+  "c24": [
+    "#dalla-sorgente-alluscita",
+    "widget:m03-pipeline-sorgente-uscita",
+    "figure:fig04",
+    "figure:fig11"
+  ],
+  "c25": [
+    "#dalla-sorgente-alluscita",
+    "widget:m03-pipeline-sorgente-uscita",
+    "figure:fig04",
+    "figure:fig11"
+  ],
+  "c26": [
+    "#dalla-sorgente-alluscita",
+    "widget:m03-pipeline-sorgente-uscita",
+    "widget:m03-quanto-sai-cosa-stimi",
+    "figure:fig04",
+    "figure:fig11"
+  ],
+  "c27": [
+    "#dalla-sorgente-alluscita",
+    "widget:m03-tre-uscite",
+    "figure:fig04"
+  ],
+  "c28": [
+    "#tre-categorie-di-segnali-stocastici",
+    "example:ex05",
+    "widget:m03-tre-categorie-di-segnali",
+    "quiz:chk-06"
+  ],
+  "c29": [
+    "#tre-categorie-di-segnali-stocastici",
+    "example:ex05",
+    "widget:m03-tre-categorie-di-segnali",
+    "quiz:chk-06"
+  ],
+  "c30": [
+    "#tre-categorie-di-segnali-stocastici",
+    "example:ex05",
+    "widget:m03-tre-categorie-di-segnali",
+    "quiz:chk-06"
+  ],
+  "c31": [
+    "#tre-categorie-di-segnali-stocastici",
+    "example:ex05",
+    "widget:m03-tre-categorie-di-segnali",
+    "quiz:chk-06"
+  ],
+  "c32": [
+    "#la-stima-della-pdf-al-centro-del-corso",
+    "example:ex05",
+    "widget:m03-tre-categorie-di-segnali",
+    "widget:m03-statistico-vs-non-statistico",
+    "widget:m03-quanto-sai-cosa-stimi"
+  ],
+  "c33": [
+    "#la-stima-della-pdf-al-centro-del-corso",
+    "widget:m03-statistico-vs-non-statistico",
+    "quiz:chk-07"
+  ],
+  "c34": [
+    "#il-problema-della-stima-di-pdf",
+    "#feature-campioni-di-training-e-pdf-incognita",
+    "formula:f-c34",
+    "formula:f-c34-2",
+    "widget:m03-campioni-che-rivelano-la-pdf",
+    "quiz:chk-08"
+  ],
+  "c35": [
+    "#il-problema-della-stima-di-pdf",
+    "#feature-campioni-di-training-e-pdf-incognita",
+    "#la-funzione-di-verosimiglianza",
+    "formula:f-c35",
+    "formula:f-c35-2",
+    "derivation:der01",
+    "widget:m03-campioni-che-rivelano-la-pdf",
+    "quiz:chk-08"
+  ],
+  "c36": [
+    "#lipotesi-iid",
+    "#la-funzione-di-verosimiglianza",
+    "derivation:der01",
+    "widget:m03-ipotesi-iid-alla-prova",
+    "quiz:chk-10"
+  ],
+  "c37": [
+    "#il-problema-della-stima-di-pdf",
+    "#lobiettivo-una-stima-vicina-alla-pdf-vera",
+    "#parzen-contesto-e-bontà-dello-stimatore",
+    "#parzen-larghezza-e-consistenza",
+    "formula:f-c37",
+    "formula:f-c37-2",
+    "formula:f-c37-3",
+    "widget:m03-campioni-che-rivelano-la-pdf",
+    "quiz:chk-08"
+  ],
+  "c38": [
+    "#non-sprecare-informazione",
+    "#apprendimento-dei-parametri-nelle-reti-bayesiane",
+    "widget:m03-non-sprecare-informazione"
+  ],
+  "c39": [
+    "#gli-approcci-alla-stima-di-pdf",
+    "#che-cosa-vuol-dire-non-parametrico",
+    "widget:m03-albero-degli-approcci",
+    "figure:fig05"
+  ],
+  "c40": [
+    "#approcci-parametrici",
+    "#quale-approccio-scegliere",
+    "#che-cosa-vuol-dire-non-parametrico",
+    "widget:m03-albero-degli-approcci",
+    "figure:fig05",
+    "quiz:chk-09"
+  ],
+  "c41": [
+    "#approcci-parametrici",
+    "formula:f-c41",
+    "widget:m03-famiglie-parametriche",
+    "figure:fig05"
+  ],
+  "c42": [
+    "#approcci-parametrici",
+    "widget:m03-famiglie-parametriche",
+    "figure:fig05"
+  ],
+  "c43": [
+    "#approcci-parametrici",
+    "widget:m03-famiglie-parametriche",
+    "figure:fig05"
+  ],
+  "c44": [
+    "#approcci-non-parametrici",
+    "#quale-approccio-scegliere",
+    "#che-cosa-vuol-dire-non-parametrico",
+    "#parzen-contesto-e-bontà-dello-stimatore",
+    "#parzen-larghezza-e-consistenza",
+    "#k-nn-e-differenze-con-parzen",
+    "widget:m03-albero-degli-approcci",
+    "figure:fig05",
+    "quiz:chk-09"
+  ],
+  "c45": [
+    "#approcci-non-parametrici",
+    "#che-cosa-vuol-dire-non-parametrico",
+    "#k-nn-e-differenze-con-parzen",
+    "widget:m03-anteprima-non-parametrici",
+    "figure:fig05"
+  ],
+  "c46": [
+    "#approcci-non-parametrici",
+    "#che-cosa-vuol-dire-non-parametrico",
+    "#parzen-contesto-e-bontà-dello-stimatore",
+    "#parzen-larghezza-e-consistenza",
+    "#k-nn-e-differenze-con-parzen",
+    "widget:m03-anteprima-non-parametrici",
+    "figure:fig05"
+  ],
+  "c47": [
+    "#approcci-non-parametrici",
+    "widget:m03-anteprima-non-parametrici",
+    "figure:fig05"
+  ],
+  "c48": [
+    "#quale-approccio-scegliere",
+    "#che-cosa-vuol-dire-non-parametrico",
+    "widget:m03-albero-degli-approcci",
+    "quiz:chk-09"
+  ],
+  "c49": [
+    "#la-stima-parametrica",
+    "#il-vettore-dei-parametri",
+    "formula:f-c49",
+    "widget:m03-modello-e-parametri"
+  ],
+  "c50": [
+    "#il-vettore-dei-parametri",
+    "formula:f-c50",
+    "widget:m03-modello-e-parametri"
+  ],
+  "c51": [
+    "#la-funzione-di-verosimiglianza",
+    "#verosimiglianza-bontà-della-stima-e-confronto-con-bayes",
+    "formula:f-c51",
+    "derivation:der01",
+    "widget:m03-verosimiglianza-come-prodotto",
+    "quiz:chk-11"
+  ],
+  "c52": [
+    "#la-funzione-di-verosimiglianza",
+    "#verosimiglianza-bontà-della-stima-e-confronto-con-bayes",
+    "formula:f-c52",
+    "derivation:der01",
+    "widget:m03-verosimiglianza-come-prodotto",
+    "quiz:chk-10",
+    "quiz:chk-11"
+  ],
+  "c53": [
+    "#che-cosa-misura-la-verosimiglianza",
+    "#verosimiglianza-bontà-della-stima-e-confronto-con-bayes",
+    "derivation:der01",
+    "widget:m03-accordo-tra-theta-e-dati",
+    "quiz:chk-12"
+  ],
+  "c54": [
+    "#che-cosa-misura-la-verosimiglianza",
+    "#verosimiglianza-bontà-della-stima-e-confronto-con-bayes",
+    "widget:m03-accordo-tra-theta-e-dati"
+  ],
+  "c55": [
+    "#un-esempio-di-verosimiglianza",
+    "#i-campioni-e-le-pdf-candidate",
+    "formula:f-c55",
+    "derivation:der03",
+    "example:ex03",
+    "widget:m03-tre-pannelli-della-verosimiglianza",
+    "figure:fig06",
+    "figure:fig10"
+  ],
+  "c56": [
+    "#un-esempio-di-verosimiglianza",
+    "#la-verosimiglianza-in-funzione-di-theta",
+    "formula:f-c56",
+    "formula:f-c56-2",
+    "derivation:der03",
+    "derivation:der05",
+    "example:ex03",
+    "widget:m03-tre-pannelli-della-verosimiglianza",
+    "figure:fig06",
+    "figure:fig10",
+    "quiz:chk-13"
+  ],
+  "c57": [
+    "#un-esempio-di-verosimiglianza",
+    "#la-log-verosimiglianza",
+    "#che-cosa-vuol-dire-non-parametrico",
+    "formula:f-c57",
+    "formula:f-c57-2",
+    "derivation:der01",
+    "derivation:der03",
+    "derivation:der05",
+    "example:ex03",
+    "widget:m03-tre-pannelli-della-verosimiglianza",
+    "figure:fig06",
+    "figure:fig10",
+    "quiz:chk-13"
+  ],
+  "c58": [
+    "#funzione-di-x-o-funzione-di-theta",
+    "formula:f-c58",
+    "formula:f-c58-2",
+    "formula:f-c58-3",
+    "derivation:der03",
+    "example:ex03",
+    "widget:m03-funzione-di-x-o-di-theta",
+    "figure:fig06",
+    "quiz:chk-12"
+  ],
+  "c59": [
+    "#ordini-di-grandezza",
+    "formula:f-c59",
+    "formula:f-c59-2",
+    "derivation:der03",
+    "example:ex03",
+    "widget:m03-funzione-di-x-o-di-theta",
+    "figure:fig06",
+    "quiz:chk-13"
+  ],
+  "c60": [
+    "#le-procedure-di-stima-massima-verosimiglianza-e-stima-bayesiana",
+    "widget:m03-ml-contro-bayes-anteprima",
+    "figure:fig07"
+  ],
+  "c61": [
+    "#stima-a-massima-verosimiglianza",
+    "#verosimiglianza-bontà-della-stima-e-confronto-con-bayes",
+    "#che-cosa-vuol-dire-non-parametrico",
+    "#perché-il-posterior-gaussiano",
+    "#apprendimento-dei-parametri-nelle-reti-bayesiane",
+    "formula:f-c61",
+    "derivation:der07",
+    "widget:m03-ml-contro-bayes-anteprima",
+    "figure:fig07",
+    "quiz:chk-14"
+  ],
+  "c62": [
+    "#stima-bayesiana",
+    "#verosimiglianza-bontà-della-stima-e-confronto-con-bayes",
+    "#perché-il-posterior-gaussiano",
+    "#apprendimento-dei-parametri-nelle-reti-bayesiane",
+    "formula:f-c62",
+    "derivation:der07",
+    "widget:m03-ml-contro-bayes-anteprima",
+    "figure:fig07",
+    "quiz:chk-14"
+  ],
+  "c63": [
+    "#le-due-differenze-chiave",
+    "#verosimiglianza-bontà-della-stima-e-confronto-con-bayes",
+    "derivation:der07",
+    "widget:m03-costante-o-variabile-aleatoria",
+    "quiz:chk-14"
+  ],
+  "c64": [
+    "#le-due-differenze-chiave",
+    "#verosimiglianza-bontà-della-stima-e-confronto-con-bayes",
+    "derivation:der07",
+    "widget:m03-costante-o-variabile-aleatoria",
+    "quiz:chk-14"
+  ],
+  "c65": [
+    "#la-bontà-di-una-stima",
+    "#la-stima-è-un-vettore-aleatorio",
+    "#verosimiglianza-bontà-della-stima-e-confronto-con-bayes",
+    "formula:f-c65",
+    "derivation:der04",
+    "widget:m03-stima-che-cambia-col-training-set",
+    "quiz:chk-16"
+  ],
+  "c66": [
+    "#la-stima-è-un-vettore-aleatorio",
+    "#verosimiglianza-bontà-della-stima-e-confronto-con-bayes",
+    "formula:f-c66",
+    "derivation:der04",
+    "widget:m03-stima-che-cambia-col-training-set",
+    "quiz:chk-16"
+  ],
+  "c67": [
+    "#la-stima-ideale-niente-bias-niente-varianza",
+    "#verosimiglianza-bontà-della-stima-e-confronto-con-bayes",
+    "#parzen-contesto-e-bontà-dello-stimatore",
+    "formula:f-c67",
+    "derivation:der04",
+    "widget:m03-bersaglio-bias-varianza",
+    "quiz:chk-16"
+  ],
+  "c68": [
+    "#la-stima-ideale-niente-bias-niente-varianza",
+    "#verosimiglianza-bontà-della-stima-e-confronto-con-bayes",
+    "#parzen-contesto-e-bontà-dello-stimatore",
+    "#parzen-larghezza-e-consistenza",
+    "formula:f-c68",
+    "formula:f-c68-2",
+    "derivation:der04",
+    "widget:m03-bersaglio-bias-varianza",
+    "quiz:chk-16"
+  ],
+  "c69": [
+    "#la-stima-ideale-niente-bias-niente-varianza",
+    "#verosimiglianza-bontà-della-stima-e-confronto-con-bayes",
+    "#parzen-contesto-e-bontà-dello-stimatore",
+    "#parzen-larghezza-e-consistenza",
+    "formula:f-c69",
+    "derivation:der04",
+    "widget:m03-bersaglio-bias-varianza"
+  ],
+  "c70": [
+    "#il-bound-di-cramér-rao",
+    "#verosimiglianza-bontà-della-stima-e-confronto-con-bayes",
+    "formula:f-c70",
+    "derivation:der05",
+    "widget:m03-cramer-rao-e-fisher",
+    "quiz:chk-17"
+  ],
+  "c71": [
+    "#il-bound-di-cramér-rao",
+    "formula:f-c71",
+    "formula:f-c71-2",
+    "derivation:der05",
+    "widget:m03-cramer-rao-e-fisher",
+    "quiz:chk-17"
+  ],
+  "c72": [
+    "#il-bound-di-cramér-rao",
+    "#verosimiglianza-bontà-della-stima-e-confronto-con-bayes",
+    "formula:f-c72",
+    "derivation:der05",
+    "widget:m03-cramer-rao-e-fisher",
+    "quiz:chk-17"
+  ],
+  "c73": [
+    "#stimatori-reali-e-proprietà-asintotiche",
+    "formula:f-c73",
+    "widget:m03-proprieta-asintotiche",
+    "quiz:chk-18"
+  ],
+  "c74": [
+    "#stimatori-reali-e-proprietà-asintotiche",
+    "#verosimiglianza-bontà-della-stima-e-confronto-con-bayes",
+    "formula:f-c74",
+    "derivation:der06",
+    "widget:m03-proprieta-asintotiche",
+    "quiz:chk-16"
+  ],
+  "c75": [
+    "#stimatori-reali-e-proprietà-asintotiche",
+    "#verosimiglianza-bontà-della-stima-e-confronto-con-bayes",
+    "formula:f-c75",
+    "derivation:der05",
+    "widget:m03-proprieta-asintotiche"
+  ],
+  "c76": [
+    "#consistenza",
+    "#verosimiglianza-bontà-della-stima-e-confronto-con-bayes",
+    "#parzen-larghezza-e-consistenza",
+    "formula:f-c76",
+    "derivation:der06",
+    "widget:m03-consistenza-imbuto",
+    "quiz:chk-18"
+  ],
+  "c77": [
+    "#consistenza",
+    "#parzen-larghezza-e-consistenza",
+    "formula:f-c77",
+    "formula:f-c77-2",
+    "derivation:der06",
+    "widget:m03-consistenza-imbuto",
+    "quiz:chk-18"
+  ],
+  "c78": [
+    "#tre-categorie-di-segnali-stocastici",
+    "#quale-approccio-scegliere",
+    "#che-cosa-vuol-dire-non-parametrico",
+    "#parzen-larghezza-e-consistenza",
+    "formula:f-c78",
+    "widget:m03-tre-categorie-di-segnali",
+    "widget:m03-albero-degli-approcci",
+    "widget:m03-quanto-sai-cosa-stimi",
+    "figure:fig05",
+    "quiz:chk-09"
+  ],
+  "c79": [
+    "#quando-ml-e-bayes-coincidono",
+    "#verosimiglianza-bontà-della-stima-e-confronto-con-bayes",
+    "#apprendimento-dei-parametri-nelle-reti-bayesiane",
+    "formula:f-c79",
+    "formula:f-c79-2",
+    "formula:f-c79-3",
+    "derivation:der07",
+    "widget:m03-quando-ml-e-bayes-coincidono",
+    "quiz:chk-15"
+  ]
+}

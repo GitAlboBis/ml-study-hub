@@ -1,0 +1,1789 @@
+{
+  "moduleId": "p07-regressione-multiclasse",
+  "title": "Regressione, classificazione multiclasse e classificatori lineari generativi",
+  "stages": {"inventario": "done", "completezza": "done", "formule": "done"},
+  "pagesReviewed": [
+    {"doc": "part2", "from": 40, "to": 46},
+    {"doc": "part2", "from": 39, "to": 39}
+  ],
+  "overview": "Il modulo chiude il capitolo sulle funzioni discriminanti lineari (Linear Discriminant Functions) delle note di Passerini. Parte dall'illustrazione grafica della discesa stocastica del perceptron con bias nullo (in cima a pagina 40), poi usa lo stesso modello lineare per la regressione (Perceptron Regression): formulazione matriciale Xw = y, perché X^{-1} non funziona (non invertibilità, sistema sovradeterminato), errore quadratico (MSE), derivazione della soluzione in forma chiusa w = (X^TX)^{-1}X^Ty con il left-inverse (la pseudoinversa della banca d'esame) e alternativa con la discesa del gradiente. Passa quindi alla classificazione multiclasse per riduzione a problemi binari (One-vs-All e All-Pairs, con confini (w_i - w_j)^T x = 0 e conteggio di classificatori e dati), e ai classificatori lineari generativi: gaussiane con covarianza condivisa e Naive Bayes, che con il logaritmo diventa un modello log-lineare w^T x' + w_0. Pagina 46 apre le Support Vector Machines (margine massimo, vettori di supporto, garanzie di generalizzazione, kernel), che continuano nel modulo p08. All'orale Passerini chiede spesso di 'formalizzare tutto' sulla regressione con il perceptron, il problema della soluzione analitica (inversione) e la pseudoinversa.",
+  "concepts": [
+    {
+      "id": "c01",
+      "name": "Illustrazione della discesa stocastica del perceptron con bias nullo",
+      "nameEn": "An illustration of how stochastic gradient descent works, assuming the bias is set to b = 0",
+      "kind": "figura",
+      "sourcePages": [{"doc": "part2", "page": 39}, {"doc": "part2", "page": 40}],
+      "detail": "L'ultima frase di pagina 39 (modulo adiacente p06) annuncia la figura a quattro pannelli che occupa la metà superiore di pagina 40: un'illustrazione di come funziona la discesa stocastica del gradiente (stochastic gradient descent) del perceptron, con il bias fissato a b = 0 così che il confine di decisione passi per l'origine (so the decision boundary passes through the origin). Nel piano (x_1, x_2) ci sono cerchi rossi a sinistra (classe positiva, y = +1: il vettore w punta verso di loro) e quadrati blu a destra (classe negativa, y = -1). Pannello 1: w iniziale (freccia nera) che punta in alto a sinistra e confine tratteggiato poco inclinato; due cerchi rossi in basso a sinistra stanno dal lato sbagliato. Pannello 2: un cerchio rosso sbagliato (in basso a sinistra, freccia rossa dall'origine) viene usato per l'aggiornamento: il vecchio w e il vecchio confine diventano grigi, il nuovo w nero ruota verso il punto (freccia curva tratteggiata) e il confine diventa più ripido. Pannello 3: un secondo cerchio rosso sbagliato (in basso, vicino all'asse x_2) produce un'altra rotazione. Pannello 4: ora un quadrato blu in alto è dal lato sbagliato; poiché y = -1 si somma -x (freccia blu punteggiata che punta in direzione opposta al punto), w ruota di poco nell'altro verso e il confine quasi verticale separa tutti gli esempi. I pannelli sono quattro ma gli aggiornamenti tre: il pannello 1 è lo stato iniziale, i pannelli 2-4 mostrano un aggiornamento ciascuno. Ogni aggiornamento usa un solo esempio: è la natura 'stocastica' descritta a pagina 39. Nel piano ci sono 7 cerchi rossi e 8 quadrati blu (conteggio verificato sull'immagine), tutti i rossi con x_1 < 0 e tutti i blu con x_1 > 0.",
+      "latex": ["\\mathbf{w} = \\mathbf{w} + \\eta y \\mathbf{x}", "f(\\mathbf{x}) = \\mathbf{w}^T\\mathbf{x} + b, \\quad b = 0"],
+      "symbols": [
+        {"s": "\\mathbf{w}", "meaning": "vettore dei pesi del perceptron (normale al confine)"},
+        {"s": "\\eta", "meaning": "learning rate (passo di aggiornamento)"},
+        {"s": "y \\in \\{-1, +1\\}", "meaning": "etichetta dell'esempio usato nell'aggiornamento"},
+        {"s": "b", "meaning": "bias, qui fissato a 0"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c02",
+      "name": "Effetto geometrico dell'aggiornamento: w ruota verso i positivi sbagliati e si allontana dai negativi sbagliati",
+      "nameEn": "For each incorrectly classified training example (x, y), update weight vector: w = w + ηyx",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 39}, {"doc": "part2", "page": 40}],
+      "detail": "La regola di aggiornamento ripresa in cima a pagina 39 (w = w + ηyx per ogni esempio classificato male) si legge nei pannelli di pagina 40 come una somma vettoriale testa-coda: per un esempio positivo sbagliato (cerchio rosso, y = +1) si somma ηx e w si avvicina al punto (pannelli 2 e 3, freccia rossa); per un negativo sbagliato (quadrato blu, y = -1) si somma -ηx, disegnato come freccia blu punteggiata opposta al punto (pannello 4), e w se ne allontana. Poiché il confine è ortogonale a w, ruota insieme a w. Esplicitato qui (la fonte lo mostra solo graficamente): dopo l'aggiornamento il prodotto y w^T x dell'esempio usato cresce di η||x||^2, cioè l'esempio si sposta verso il lato giusto (non è garantito che basti un solo passo, né che gli altri esempi non peggiorino). Le singole correzioni possono far oscillare w (Less Stability, pagina 39), ma nella figura bastano tre aggiornamenti (pannelli 2-4; il pannello 1 è lo stato iniziale) a separare i dati.",
+      "latex": ["\\mathbf{w} \\leftarrow \\mathbf{w} + \\eta y \\mathbf{x}", "y\\,(\\mathbf{w} + \\eta y \\mathbf{x})^T\\mathbf{x} = y\\,\\mathbf{w}^T\\mathbf{x} + \\eta\\|\\mathbf{x}\\|^2"],
+      "symbols": [
+        {"s": "y\\,\\mathbf{w}^T\\mathbf{x}", "meaning": "margine funzionale dell'esempio: negativo se l'esempio è classificato male"},
+        {"s": "\\|\\mathbf{x}\\|^2", "meaning": "norma al quadrato dell'esempio, sempre positiva (y^2 = 1)"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c03",
+      "name": "Con b = 0 il confine passa per l'origine ed è ortogonale a w",
+      "nameEn": "decision boundary passes through the origin (bias b = 0)",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 39}, {"doc": "part2", "page": 40}],
+      "detail": "La figura di pagina 40 assume b = 0: il confine di decisione è l'insieme dei punti con w^T x = 0, una retta (iperpiano) che passa sempre per l'origine e perpendicolare a w. In tutti e quattro i pannelli sia i confini (neri e grigi tratteggiati) sia le frecce di w partono dall'origine: ogni aggiornamento può solo far ruotare il confine attorno all'origine, non traslarlo. Con b diverso da zero il confine si sposterebbe parallelamente a sé stesso (in forma aumentata il bias diventa un peso in più, convenzione del modulo p06).",
+      "latex": ["\\{\\mathbf{x} : \\mathbf{w}^T\\mathbf{x} = 0\\}", "\\mathbf{w} \\perp \\{\\mathbf{x} : \\mathbf{w}^T\\mathbf{x} = 0\\}"],
+      "symbols": [{"s": "\\{\\mathbf{x} : \\mathbf{w}^T\\mathbf{x} = 0\\}", "meaning": "confine di decisione con bias nullo"}],
+      "examRelevance": 1
+    },
+    {
+      "id": "c04",
+      "name": "Regressione con il perceptron",
+      "nameEn": "Perceptron Regression",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 40}],
+      "detail": "Usando il framework del perceptron per la regressione (regression) il compito è predire un valore reale (real-valued output) per ogni punto. Significa adattare ai dati una retta (o un iperpiano in dimensione più alta) minimizzando la differenza tra i valori predetti dal modello (predicted values, from the model) e i valori reali (actual values, from the data). Il modello resta la funzione lineare del perceptron f(x) = w^T x, ma senza la funzione segno: l'uscita è il numero stesso. Nella formula il bias non compare perché è assorbito nel vettore aumentato (convenzione introdotta nel modulo p06). La fonte non usa i nomi 'linear regression' o 'least squares': la banca d'esame la chiama 'linear regression for perceptron' / 'regression for perceptron'.",
+      "latex": ["f(\\mathbf{x}) = \\mathbf{w}^T\\mathbf{x}, \\quad y \\in \\mathbb{R}"],
+      "symbols": [
+        {"s": "f(\\mathbf{x})", "meaning": "valore predetto dal modello lineare"},
+        {"s": "y", "meaning": "valore reale osservato (target)"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c05",
+      "name": "La rappresentazione matriciale riduce la regressione a un sistema lineare",
+      "nameEn": "A convenient way to formalize regression is using a matrix representation of the data. This reduces the problem to solving a system of linear equations",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 40}],
+      "detail": "Un modo comodo di formalizzare la regressione è rappresentare i dati in forma matriciale: tutti gli esempi di training impilati in una matrice e tutte le etichette in un vettore. Così il problema diventa la soluzione di un sistema di equazioni lineari (system of linear equations), una per esempio, nelle incognite w (i pesi). Le pagine seguenti mostrano che questo sistema in generale non ha soluzione esatta e che serve un criterio di approssimazione (MSE).",
+      "latex": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c06",
+      "name": "Matrice di input di training X",
+      "nameEn": "input training matrix",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 40}],
+      "detail": "X è la matrice di input di training (input training matrix) con n = |D| righe (numero di esempi del dataset D) e d = |x| colonne (numero di feature, cioè dimensione di x): le righe rappresentano gli esempi, le colonne le feature (rows represent examples, columns represent features). La fonte scrive X ∈ R^n × R^d (da leggere come R^{n×d}) e X = [x^1 ··· x^n], con l'indice dell'esempio in apice. Attenzione alla notazione: scritto così x^1 ... x^n sembrano colonne, ma la frase chiarisce che ogni esempio è una riga, cioè la riga i-esima è (x^i)^T (vedi gaps).",
+      "latex": ["X \\in \\mathbb{R}^{n} \\times \\mathbb{R}^{d}", "n = |D|, \\quad d = |\\mathbf{x}|", "X = \\left[\\mathbf{x}^{1} \\cdots \\mathbf{x}^{n}\\right]"],
+      "symbols": [
+        {"s": "X", "meaning": "matrice n×d degli input: una riga per esempio"},
+        {"s": "n = |D|", "meaning": "numero di esempi di training"},
+        {"s": "d = |\\mathbf{x}|", "meaning": "numero di feature (dimensione dell'input)"},
+        {"s": "\\mathbf{x}^{i}", "meaning": "i-esimo esempio (indice in apice)"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c07",
+      "name": "Vettore di output y",
+      "nameEn": "output vector",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 40}],
+      "detail": "y ∈ R^n è il vettore di output (output vector): la sua componente y_i è l'etichetta (label) reale dell'input corrispondente x^i. Ha una componente per ogni esempio, allineata alle righe di X.",
+      "latex": ["\\mathbf{y} \\in \\mathbb{R}^{n}", "y_i \\leftrightarrow \\mathbf{x}^{i}"],
+      "symbols": [{"s": "y_i", "meaning": "valore target dell'esempio i"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c08",
+      "name": "Scenario ideale: ogni esempio predetto esattamente",
+      "nameEn": "In an ideal scenario, we want w^T x^i = y_i for all i",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 41}],
+      "detail": "Nel caso ideale vorremmo che il modello riproducesse esattamente ogni etichetta: w^T x^i = y_i per tutti gli i. Sono n equazioni lineari (una per esempio) nelle d incognite w_1, ..., w_d.",
+      "latex": ["\\mathbf{w}^T\\mathbf{x}^{i} = y_i \\quad \\text{for all } i"],
+      "symbols": [{"s": "\\mathbf{w}^T\\mathbf{x}^{i}", "meaning": "predizione del modello sull'esempio i"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c09",
+      "name": "Forma compatta Xw = y",
+      "nameEn": "which can be compactly written as Xw = y",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 41}],
+      "detail": "Le n equazioni w^T x^i = y_i si scrivono in modo compatto come Xw = y: il prodotto matrice-vettore Xw ha come i-esima componente la riga i di X per w, cioè la predizione sull'esempio i.",
+      "latex": ["X\\mathbf{w} = \\mathbf{y}"],
+      "symbols": [{"s": "X\\mathbf{w}", "meaning": "vettore n-dimensionale delle predizioni"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c10",
+      "name": "Soluzione ingenua per inversione: w = X^{-1}y",
+      "nameEn": "The solution can be expressed as w = X^{-1}y",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 41}],
+      "detail": "Formalmente la soluzione del sistema si scriverebbe w = X^{-1}y. In pratica questa soluzione funziona raramente (In practice, this solution rarely works), per due motivi: la non invertibilità di X e il fatto che il sistema è sovradeterminato. È il 'matrix inversion problem' citato nella banca d'esame e la domanda 'Problem with analytical solution for perceptron regression'.",
+      "latex": ["\\mathbf{w} = X^{-1}\\mathbf{y}"],
+      "symbols": [{"s": "X^{-1}", "meaning": "inversa di X (esiste solo se X è quadrata e non singolare)"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c11",
+      "name": "Primo ostacolo: X in genere non è invertibile",
+      "nameEn": "Non-Invertibility",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 41}],
+      "detail": "X in genere non è invertibile perché spesso è rettangolare (n > d): ha più righe (esempi) che colonne (feature), e l'inversa è definita solo per matrici quadrate. Anche quando è quadrata (n = d) può comunque essere non invertibile (singolare, determinante nullo), per esempio se due esempi o due feature sono proporzionali.",
+      "latex": ["X \\in \\mathbb{R}^{n \\times d}, \\; n > d \\;\\Rightarrow\\; X^{-1} \\text{ does not exist}", "n = d, \\; \\det X = 0 \\;\\Rightarrow\\; X \\text{ singular}"],
+      "symbols": [{"s": "\\det X", "meaning": "determinante di X (nullo = matrice singolare)"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c12",
+      "name": "Secondo ostacolo: sistema sovradeterminato",
+      "nameEn": "Overdetermined System",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 41}],
+      "detail": "Quando n >> d il sistema contiene molte più equazioni che incognite: ci sono più vincoli che variabili per soddisfarli, quindi il sistema è sovradeterminato (overdetermined). Nella maggior parte dei casi questo porta a incoerenze tra le equazioni (inconsistencies): nessuna singola soluzione le soddisfa tutte contemporaneamente, e una soluzione esatta di norma non esiste. È come cercare di far passare una retta esattamente per tutti i punti dei dati, cosa in generale impossibile a meno che i dati non siano perfettamente allineati (unless the data perfectly align).",
+      "latex": ["n \\gg d"],
+      "symbols": [{"s": "n \\gg d", "meaning": "molti più esempi (equazioni) che feature (incognite)"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c13",
+      "name": "Errore quadratico (MSE) come loss della regressione",
+      "nameEn": "mean squared error (MSE)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 41}],
+      "detail": "Per gestire l'assenza di soluzione esatta si minimizza invece l'errore quadratico medio (mean squared error, MSE), la loss standard per la regressione, definita come la differenza al quadrato media tra valori predetti e valori reali (average squared difference). La formula della fonte è la somma su tutti gli esempi di (y - f(x))^2, scritta anche in forma matriciale come (y - Xw)^T(y - Xw). Nota: la formula non contiene il fattore 1/n della 'media' (è la somma dei quadrati, SSE); il fattore costante non cambia il minimo (vedi gaps). È la 'loss function for regression' della banca d'esame.",
+      "latex": ["E(\\mathbf{w}; D) = \\sum_{(\\mathbf{x}, y) \\in D} \\left(y - f(\\mathbf{x})\\right)^2 = (\\mathbf{y} - X\\mathbf{w})^T(\\mathbf{y} - X\\mathbf{w})"],
+      "symbols": [
+        {"s": "E(\\mathbf{w}; D)", "meaning": "errore sul dataset D in funzione dei pesi w"},
+        {"s": "D", "meaning": "insieme di training di coppie (x, y)"},
+        {"s": "f(\\mathbf{x}) = \\mathbf{w}^T\\mathbf{x}", "meaning": "predizione del modello"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c14",
+      "name": "Vettore dei residui y - Xw",
+      "nameEn": "The vector y - Xw represents the residual error between the predicted values and the actual values for each example",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 41}],
+      "detail": "Il vettore y - Xw rappresenta l'errore residuo (residual error) tra valori predetti e valori reali per ciascun esempio: la sua i-esima componente è y_i - w^T x^i. Il simbolo r è introdotto qui per comodità, la fonte scrive sempre y - Xw.",
+      "latex": ["\\mathbf{r} = \\mathbf{y} - X\\mathbf{w}, \\quad r_i = y_i - \\mathbf{w}^T\\mathbf{x}^{i}"],
+      "symbols": [{"s": "r_i", "meaning": "residuo dell'esempio i (positivo se il modello sottostima)"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c15",
+      "name": "Il residuo moltiplicato per sé stesso dà uno scalare",
+      "nameEn": "the residual vector y - Xw is multiplied by itself, resulting in a scalar that quantifies the error across all examples",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 41}],
+      "detail": "Per calcolare le differenze al quadrato il vettore dei residui viene moltiplicato per sé stesso (trasposto per non trasposto): il risultato è uno scalare che quantifica l'errore su tutti gli esempi. Esplicitato: (y - Xw)^T(y - Xw) è la somma dei quadrati delle componenti del residuo, cioè la norma euclidea al quadrato ||y - Xw||^2; coincide con la somma della forma per esempi.",
+      "latex": ["(\\mathbf{y} - X\\mathbf{w})^T(\\mathbf{y} - X\\mathbf{w}) = \\sum_{i=1}^{n}\\left(y_i - \\mathbf{w}^T\\mathbf{x}^{i}\\right)^2 = \\|\\mathbf{y} - X\\mathbf{w}\\|^2"],
+      "symbols": [{"s": "\\|\\cdot\\|^2", "meaning": "norma euclidea al quadrato"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c16",
+      "name": "Obiettivo: minimizzare E(w; D) rispetto a w",
+      "nameEn": "The goal is to minimize E(w; D) with respect to w",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 41}],
+      "detail": "L'obiettivo è minimizzare E(w; D) rispetto a w. La loss ha un doppio ruolo: non solo valuta la qualità della regressione (quanto bene la retta approssima i dati) ma fornisce anche un bersaglio per l'ottimizzazione (a target for optimization).",
+      "latex": ["\\mathbf{w}^{*} = \\arg\\min_{\\mathbf{w}} E(\\mathbf{w}; D)"],
+      "symbols": [{"s": "\\mathbf{w}^{*}", "meaning": "pesi ottimi (minimo dell'errore)"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c17",
+      "name": "MSE per la classificazione: possibile ma meno efficace della cross-entropy",
+      "nameEn": "While primarily used for regression, the MSE can also be employed as a loss function for certain classification tasks",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "part2", "page": 41}],
+      "detail": "Pur essendo usata soprattutto per la regressione, la MSE si può impiegare come loss anche in certi compiti di classificazione. In generale però è meno efficace per la classificazione di loss specializzate come la cross-entropy, perché non ottimizza bene per le probabilità (it does not optimize well for probabilities). La fonte non dà la formula della cross-entropy (trattata nella parte di Deep Learning, modulo d01).",
+      "latex": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c18",
+      "name": "Soluzione in forma chiusa: si annulla il gradiente",
+      "nameEn": "The MSE can be minimized using a closed-form solution by setting the gradient of the error to zero",
+      "kind": "procedura",
+      "sourcePages": [{"doc": "part2", "page": 41}],
+      "detail": "La MSE si può minimizzare con una soluzione in forma chiusa (closed-form solution) ponendo a zero il gradiente dell'errore rispetto a w. La procedura ha tre passi: calcolare il gradiente (Compute the gradient), porlo a zero (Set the gradient to zero), risolvere per w (Solve for w). Funziona perché E è una funzione quadratica convessa di w (una ciotola), quindi il punto a gradiente nullo è il minimo (convessità esplicitata qui, vedi der02).",
+      "latex": ["\\nabla E(\\mathbf{w}; D) = 0"],
+      "symbols": [{"s": "\\nabla E", "meaning": "gradiente dell'errore rispetto a w"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c19",
+      "name": "Gradiente dell'errore quadratico",
+      "nameEn": "Compute the gradient",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 41}],
+      "detail": "Il gradiente di E(w; D) = (y - Xw)^T(y - Xw) si calcola con la regola della catena: la derivata di u^T u è 2u^T per la derivata di u, e la derivata di u = y - Xw rispetto a w è -X. Si ottiene 2(y - Xw)^T(-X) = -2y^T X + 2w^T X^T X. La fonte scrive il gradiente come vettore riga (1×d); trasposto diventa il vettore colonna -2X^T y + 2X^T X w (stessa informazione, vedi der01).",
+      "latex": ["\\nabla E(\\mathbf{w}; D) = \\nabla(\\mathbf{y} - X\\mathbf{w})^T(\\mathbf{y} - X\\mathbf{w}) = 2(\\mathbf{y} - X\\mathbf{w})^T(-X) = -2\\mathbf{y}^TX + 2\\mathbf{w}^TX^TX"],
+      "symbols": [{"s": "X^TX", "meaning": "matrice d×d simmetrica (Gram / scatter dei dati)"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c20",
+      "name": "Gradiente posto a zero",
+      "nameEn": "Set the gradient to zero",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 42}],
+      "detail": "Si impone che il gradiente sia il vettore nullo: -2y^T X + 2w^T X^T X = 0. È la condizione di stazionarietà del minimo della ciotola quadratica.",
+      "latex": ["-2\\mathbf{y}^TX + 2\\mathbf{w}^TX^TX = 0"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c21",
+      "name": "Risolvere per w: equazioni normali X^TXw = X^Ty",
+      "nameEn": "Solve for w",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 42}],
+      "detail": "Dalla condizione di gradiente nullo: si porta y^T X a destra (2w^T X^T X = 2y^T X), si divide per 2 (w^T X^T X = y^T X), si traspone entrambi i membri usando la simmetria di X^T X ((w^T X^T X)^T = X^T X w e (y^T X)^T = X^T y) e si ottiene il sistema X^T X w = X^T y. È un sistema quadrato d×d: il nome 'equazioni normali' (normal equations) è quello standard in letteratura, la fonte non lo usa.",
+      "latex": ["2\\mathbf{w}^TX^TX = 2\\mathbf{y}^TX", "\\mathbf{w}^TX^TX = \\mathbf{y}^TX", "X^TX\\mathbf{w} = X^T\\mathbf{y}"],
+      "symbols": [{"s": "X^T\\mathbf{y}", "meaning": "vettore d-dimensionale di correlazioni feature-target"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c22",
+      "name": "Soluzione in forma chiusa w = (X^TX)^{-1}X^Ty",
+      "nameEn": "closed-form solution",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 42}],
+      "detail": "Moltiplicando a sinistra le equazioni X^T X w = X^T y per (X^T X)^{-1} si ottiene la soluzione in forma chiusa della regressione lineare ai minimi quadrati: w = (X^T X)^{-1} X^T y. Richiede di invertire una sola matrice d×d (non X, che è n×d). È la formula centrale del modulo e la più richiesta all'orale (Regression, pseudoinverse).",
+      "latex": ["\\mathbf{w} = \\left(X^TX\\right)^{-1}X^T\\mathbf{y}"],
+      "symbols": [{"s": "\\left(X^TX\\right)^{-1}", "meaning": "inversa della matrice d×d X^T X"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c23",
+      "name": "Left-inverse (pseudoinversa) di X",
+      "nameEn": "left-inverse of X",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 42}],
+      "detail": "La matrice (X^T X)^{-1} X^T si chiama left-inverse (inversa sinistra) di X. Il nome viene dal fatto che, moltiplicata a sinistra di X, dà l'identità d×d: (X^T X)^{-1} X^T X = I; moltiplicata a destra invece non dà l'identità n×n quando n > d (esplicitato in der03). Nella banca d'esame è la 'pseudoinverse' (per X a rango colonna pieno coincide con la pseudoinversa di Moore-Penrose, indicata qui con X^+: simbolo non della fonte). Con essa la soluzione si scrive w = X^+ y, la generalizzazione di w = X^{-1} y.",
+      "latex": ["X^{+} = \\left(X^TX\\right)^{-1}X^T", "\\left(X^TX\\right)^{-1}X^T X = I_d", "\\mathbf{w} = X^{+}\\mathbf{y}"],
+      "symbols": [
+        {"s": "X^{+}", "meaning": "left-inverse / pseudoinversa di X (matrice d×n)"},
+        {"s": "I_d", "meaning": "matrice identità d×d"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c24",
+      "name": "Condizione di esistenza: X^TX invertibile, a rango pieno",
+      "nameEn": "The closed-form solution is valid (the left-inverse exists) if X^TX is invertible, which requires that X^TX (the covariance matrix) has full rank",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 42}],
+      "detail": "La soluzione in forma chiusa è valida (il left-inverse esiste) se X^T X è invertibile, il che richiede che X^T X abbia rango pieno (full rank, rango d). La fonte chiama X^T X 'the covariance matrix': più precisamente è la matrice di scatter (o di Gram) non centrata; è proporzionale alla matrice di covarianza (n volte) solo se i dati sono centrati (vedi gaps). Esplicitato: rank(X^T X) = rank(X), quindi serve n ≥ d e colonne di X linearmente indipendenti.",
+      "latex": ["\\exists\\left(X^TX\\right)^{-1} \\iff \\operatorname{rank}\\left(X^TX\\right) = d", "\\operatorname{rank}\\left(X^TX\\right) = \\operatorname{rank}(X)"],
+      "symbols": [{"s": "\\operatorname{rank}", "meaning": "rango (numero di colonne linearmente indipendenti)"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c25",
+      "name": "Feature linearmente dipendenti: rimuoverle nel preprocessing",
+      "nameEn": "If X^TX is not invertible (due to linearly dependent features), redundant features should be removed through preprocessing",
+      "kind": "procedura",
+      "sourcePages": [{"doc": "part2", "page": 42}],
+      "detail": "Se X^T X non è invertibile a causa di feature linearmente dipendenti (una colonna di X è combinazione lineare delle altre, per esempio la stessa grandezza misurata in due unità), le feature ridondanti vanno rimosse con il preprocessing. Le note lo ripetono: per feature linearmente dipendenti si garantisce il rango pieno rimuovendo le dipendenze (For linearly dependent features, ensure full rank by removing dependencies). La feature rimossa non porta informazione nuova, quindi non si perde nulla nella predizione.",
+      "latex": ["X_{:,a} = \\alpha X_{:,b} \\;\\Rightarrow\\; \\det\\left(X^TX\\right) = 0"],
+      "symbols": [{"s": "X_{:,a}", "meaning": "colonna a di X (valori della feature a su tutti gli esempi)"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c26",
+      "name": "X quadrata non singolare: il left-inverse coincide con X^{-1}",
+      "nameEn": "When X is square and nonsingular (determinant different from zero), the left-inverse coincides with the standard inverse X^{-1}, and the MSE solution becomes exact",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 42}],
+      "detail": "Quando X è quadrata e non singolare (determinante diverso da zero), il left-inverse coincide con l'inversa ordinaria X^{-1} e la soluzione MSE diventa esatta (errore nullo). Il passaggio algebrico (esplicitato in der03): (X^T X)^{-1} = X^{-1}(X^T)^{-1}, quindi (X^T X)^{-1} X^T = X^{-1}.",
+      "latex": ["\\det X \\neq 0 \\;\\Rightarrow\\; \\left(X^TX\\right)^{-1}X^T = X^{-1}\\left(X^T\\right)^{-1}X^T = X^{-1}"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c27",
+      "name": "La MSE trova la soluzione esatta se esiste, altrimenti la migliore approssimazione",
+      "nameEn": "So if there is an exact solution, MSE finds it, otherwise it will provide an approximation which minimizes the squared error",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 42}],
+      "detail": "Conclusione della fonte: se esiste una soluzione esatta del sistema Xw = y, la minimizzazione della MSE la trova (perché ha errore zero, il minimo possibile di una somma di quadrati); altrimenti fornisce un'approssimazione che minimizza l'errore quadratico. Quindi la MSE non è un ripiego peggiore dell'inversione: la generalizza.",
+      "latex": ["X\\mathbf{w}_0 = \\mathbf{y} \\;\\Rightarrow\\; E(\\mathbf{w}_0; D) = 0 = \\min_{\\mathbf{w}} E(\\mathbf{w}; D)"],
+      "symbols": [{"s": "\\mathbf{w}_0", "meaning": "eventuale soluzione esatta del sistema"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c28",
+      "name": "Discesa del gradiente quando l'inversione è costosa",
+      "nameEn": "When X^TX is large or inversion is computationally expensive, we can use gradient descent",
+      "kind": "procedura",
+      "sourcePages": [{"doc": "part2", "page": 42}],
+      "detail": "Quando X^T X è grande (molte feature d) o l'inversione è computazionalmente costosa, si può usare la discesa del gradiente (gradient descent) per minimizzare E(w; D), lavorando sulla derivata rispetto a un singolo peso w_i mentre gli altri pesi restano costanti (cioè la derivata parziale). Il costo dell'inversione di una matrice d×d cresce come d^3 (dato standard non citato dalla fonte), mentre un passo di gradiente costa circa n·d operazioni.",
+      "latex": ["X^TX \\in \\mathbb{R}^{d \\times d}"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c29",
+      "name": "Derivata parziale dell'errore rispetto a un singolo peso",
+      "nameEn": "The gradient of the error is computed as (for a single weight w_i)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 42}],
+      "detail": "Con l'errore scritto con il fattore 1/2, E = 1/2 Σ (y - f(x))^2, la derivata rispetto a w_i si porta dentro la somma (linearità), si applica la regola della catena alla potenza (esce 2(y - f(x)), che cancella l'1/2) e si deriva l'argomento y - w^T x rispetto a w_i, che vale -x_i. Risultato: ∂E/∂w_i = Σ (y - f(x))(-x_i). Qui x_i indica la i-esima componente (feature) dell'esempio x, non l'i-esimo esempio (che nelle pagine 40-41 è x^i in apice).",
+      "latex": ["\\frac{\\partial E}{\\partial w_i} = \\frac{\\partial}{\\partial w_i}\\frac{1}{2}\\sum_{(\\mathbf{x}, y)\\in D}\\left(y - f(\\mathbf{x})\\right)^2 = \\frac{1}{2}\\sum_{(\\mathbf{x}, y)\\in D}\\frac{\\partial}{\\partial w_i}\\left(y - f(\\mathbf{x})\\right)^2", "= \\frac{1}{2}\\sum_{(\\mathbf{x}, y)\\in D}2\\left(y - f(\\mathbf{x})\\right)\\frac{\\partial}{\\partial w_i}\\left(y - \\mathbf{w}^T\\mathbf{x}\\right) = \\sum_{(\\mathbf{x}, y)\\in D}\\left(y - f(\\mathbf{x})\\right)\\left(-x_i\\right)"],
+      "symbols": [
+        {"s": "w_i", "meaning": "i-esimo peso"},
+        {"s": "x_i", "meaning": "i-esima feature dell'esempio x"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c30",
+      "name": "Passo di discesa del gradiente per la regressione (regola esplicitata)",
+      "nameEn": "gradient descent update for regression (implied by the gradient)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 42}],
+      "detail": "La fonte si ferma al gradiente; il passo di discesa segue dalla regola generale della discesa del gradiente del modulo p06 (w ← w - η∇E): w_i ← w_i - η ∂E/∂w_i = w_i + η Σ (y - f(x)) x_i. Ogni esempio sposta il peso in proporzione al proprio errore (y - f(x)) e al valore della feature x_i. È la stessa forma dell'aggiornamento del perceptron w = w + ηyx, con l'errore continuo y - f(x) al posto dell'etichetta y (regola nota come delta rule o LMS: nome non usato dalla fonte). Il learning rate η controlla la lunghezza del passo (collegato alla domanda d'esame 'meaning of adapting learning rate').",
+      "latex": ["w_i \\leftarrow w_i - \\eta\\frac{\\partial E}{\\partial w_i} = w_i + \\eta\\sum_{(\\mathbf{x}, y)\\in D}\\left(y - f(\\mathbf{x})\\right)x_i"],
+      "symbols": [{"s": "\\eta", "meaning": "learning rate"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c31",
+      "name": "Il fattore 1/2 nell'errore non cambia il minimo",
+      "nameEn": "1/2 Σ (y - f(x))^2",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 41}, {"doc": "part2", "page": 42}],
+      "detail": "A pagina 41 l'errore è Σ (y - f(x))^2, a pagina 42 compare 1/2 Σ (y - f(x))^2. Moltiplicare la loss per una costante positiva non sposta il punto di minimo; il fattore 1/2 serve solo a cancellare il 2 che esce dalla derivata del quadrato, così il gradiente ha la forma pulita Σ (y - f(x))(-x_i). Allo stesso modo il fattore 1/n della 'media' della MSE non cambia il minimo.",
+      "latex": ["\\arg\\min_{\\mathbf{w}} \\frac{1}{2}E(\\mathbf{w}; D) = \\arg\\min_{\\mathbf{w}} E(\\mathbf{w}; D) = \\arg\\min_{\\mathbf{w}} \\frac{1}{n}E(\\mathbf{w}; D)"],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c32",
+      "name": "Classificazione multiclasse per riduzione a problemi binari",
+      "nameEn": "Multiclass Classification",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 42}],
+      "detail": "Con più di due classi (more than two classes) un solo classificatore lineare non basta a separarle tutte. La classificazione multiclasse si ottiene riducendo il problema a più compiti di classificazione binaria (multiple binary classification tasks). Le strategie comuni sono One-vs-All e All-Pairs.",
+      "latex": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c33",
+      "name": "One-vs-All: addestramento",
+      "nameEn": "One-vs-All: Training",
+      "kind": "algoritmo",
+      "sourcePages": [{"doc": "part2", "page": 43}],
+      "detail": "Nell'approccio One-vs-All (uno contro tutti) si addestra un classificatore binario separato per ogni classe, che distingue quella classe da tutte le altre. Addestramento: per ogni classe si etichettano le sue istanze come positive e tutte le altre come negative. Si ottengono c classificatori, dove c è il numero di classi; ognuno usa l'intero dataset. La fonte lo dice a parole: la scrittura a casi dell'etichetta binaria y^{(i)} è esplicitata qui (simbolo non della fonte).",
+      "latex": ["y^{(i)} = \\begin{cases} +1 & \\text{if } \\mathbf{x} \\in \\text{class } i \\\\ -1 & \\text{otherwise} \\end{cases}", "\\#\\text{classifiers} = c"],
+      "symbols": [
+        {"s": "c", "meaning": "numero di classi"},
+        {"s": "y^{(i)}", "meaning": "etichetta binaria usata per addestrare il classificatore della classe i"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c34",
+      "name": "One-vs-All: predizione con il classificatore più sicuro",
+      "nameEn": "One-vs-All: Prediction (the classifier with the highest confidence, e.g., maximum functional margin)",
+      "kind": "algoritmo",
+      "sourcePages": [{"doc": "part2", "page": 43}],
+      "detail": "Per un nuovo campione si valutano tutti i classificatori e la classe predetta è quella del classificatore con la confidenza più alta, per esempio il margine funzionale massimo (maximum functional margin), cioè il valore più alto di f_i(x) = w_i^T x. La fonte lo dice a parole; la scrittura come argmax è esplicitata qui.",
+      "latex": ["\\hat{y}(\\mathbf{x}) = \\arg\\max_{i \\in \\{1, \\dots, c\\}} f_i(\\mathbf{x}) = \\arg\\max_{i} \\mathbf{w}_i^T\\mathbf{x}"],
+      "symbols": [
+        {"s": "f_i(\\mathbf{x})", "meaning": "score del classificatore della classe i"},
+        {"s": "\\hat{y}(\\mathbf{x})", "meaning": "classe predetta"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c35",
+      "name": "One-vs-All: confine di decisione tra due classi",
+      "nameEn": "Decision Boundaries",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 43}],
+      "detail": "Il confine di decisione tra due classi i e j sta dove i margini funzionali dei due classificatori sono uguali: f_i(x) = f_j(x), cioè w_i^T x = w_j^T x, cioè (w_i - w_j)^T x = 0. Qui w_i e w_j sono i vettori dei pesi dell'i-esimo e del j-esimo classificatore.",
+      "latex": ["f_i(\\mathbf{x}) = f_j(\\mathbf{x})", "\\mathbf{w}_i^T\\mathbf{x} = \\mathbf{w}_j^T\\mathbf{x}", "\\left(\\mathbf{w}_i - \\mathbf{w}_j\\right)^T\\mathbf{x} = 0"],
+      "symbols": [{"s": "\\mathbf{w}_i, \\mathbf{w}_j", "meaning": "vettori dei pesi dei classificatori i e j"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c36",
+      "name": "Il confine è un iperpiano ortogonale alla differenza dei pesi",
+      "nameEn": "The boundary is a linear hyperplane orthogonal to the difference of the two weight vectors",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 43}],
+      "detail": "Il confine (w_i - w_j)^T x = 0 è un iperpiano lineare ortogonale al vettore differenza w_i - w_j: per due punti qualsiasi del confine, la loro differenza ha prodotto scalare nullo con w_i - w_j (der05). Il confine dipende quindi solo dalla differenza dei due vettori, non dai vettori singoli.",
+      "latex": ["\\left(\\mathbf{w}_i - \\mathbf{w}_j\\right) \\perp \\left\\{\\mathbf{x} : \\left(\\mathbf{w}_i - \\mathbf{w}_j\\right)^T\\mathbf{x} = 0\\right\\}"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c37",
+      "name": "Esempio di mappa di decisione a tre classi",
+      "nameEn": "An example of decision boundaries for three classes",
+      "kind": "figura",
+      "sourcePages": [{"doc": "part2", "page": 43}],
+      "detail": "La figura al centro di pagina 43 mostra tre classi (quadrati blu in alto, cerchi rossi a sinistra, cerchi verdi in basso a destra) e tre semirette nere che partono da un punto comune al centro e dividono il piano in tre regioni, una per classe. Una freccia tratteggiata indica una delle semirette con l'etichetta (w_i - w_j)^T x = 0 (il confine rosso-verde). Le regioni sono convesse e i confini sono pezzi di iperpiani della forma (w_i - w_j)^T x = 0.",
+      "latex": ["\\left(\\mathbf{w}_i - \\mathbf{w}_j\\right)^T\\mathbf{x} = 0"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c38",
+      "name": "Nella regione di una terza classe il confine tra le altre due è irrilevante",
+      "nameEn": "In the blue region of a decision map, the boundary between the red and green classes may still exist but is irrelevant as it lies in the area assigned to the blue class",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 43}],
+      "detail": "Nella regione blu della mappa di decisione il confine tra le classi rossa e verde (l'iperpiano (w_rosso - w_verde)^T x = 0 prolungato) esiste ancora matematicamente, ma è irrilevante perché cade nell'area assegnata alla classe blu: lì vince il blu comunque, quindi il confronto rosso-verde non decide nulla. Per questo nella figura i confini sono semirette e non rette intere.",
+      "latex": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c39",
+      "name": "All-Pairs: addestramento",
+      "nameEn": "All-Pairs: Training",
+      "kind": "algoritmo",
+      "sourcePages": [{"doc": "part2", "page": 43}, {"doc": "part2", "page": 44}],
+      "detail": "Nell'approccio All-Pairs (tutte le coppie) si addestra un classificatore binario separato per ogni coppia possibile di classi. Addestramento: per ogni coppia (i, j) si allena un classificatore binario usando solo gli esempi di quelle due classi. Si ottengono c(c-1)/2 classificatori (il numero di coppie non ordinate tra c classi).",
+      "latex": ["\\#\\text{classifiers} = \\binom{c}{2} = \\frac{c(c-1)}{2}"],
+      "symbols": [{"s": "(i, j)", "meaning": "coppia di classi del classificatore binario"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c40",
+      "name": "All-Pairs: predizione a maggioranza di voti",
+      "nameEn": "All-Pairs: Prediction (the one that wins the majority of pairwise votes)",
+      "kind": "algoritmo",
+      "sourcePages": [{"doc": "part2", "page": 44}],
+      "detail": "Un nuovo campione viene valutato con tutti i classificatori a coppie. Ogni classificatore vota per una delle due classi che è stato addestrato a distinguere. La classe predetta è quella che vince la maggioranza dei voti a coppie. La formula con l'indicatore e il simbolo h_ij sono esplicitati qui; la fonte non dice come si risolvono i pareggi (vedi gaps). Ogni classe può ricevere al più c - 1 voti.",
+      "latex": ["\\hat{y}(\\mathbf{x}) = \\arg\\max_{i} \\sum_{j \\neq i} \\mathbb{1}\\left[h_{ij}(\\mathbf{x}) = i\\right]"],
+      "symbols": [
+        {"s": "h_{ij}(\\mathbf{x})", "meaning": "classe votata dal classificatore della coppia (i, j)"},
+        {"s": "\\mathbb{1}[\\cdot]", "meaning": "indicatore: 1 se la condizione è vera"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c41",
+      "name": "Numero di classificatori e dati per classificatore: OvA vs All-Pairs",
+      "nameEn": "OvA trains c classifiers using all N samples. All-Pairs trains c(c-1)/2 classifiers, but each is trained on approximately 2N/c samples",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "part2", "page": 44}],
+      "detail": "Anche se All-Pairs usa più classificatori, ognuno è addestrato su un sottoinsieme più piccolo dei dati. OvA addestra c classificatori usando tutti gli N campioni. All-Pairs addestra c(c-1)/2 classificatori, ma ciascuno su circa 2N/c campioni. Il valore 2N/c presuppone classi bilanciate (circa N/c esempi per classe, due classi per coppia): ipotesi implicita nella parola 'approximately'.",
+      "latex": ["\\text{OvA: } c \\text{ classifiers} \\times N \\text{ samples}", "\\text{All-Pairs: } \\frac{c(c-1)}{2} \\text{ classifiers} \\times \\approx \\frac{2N}{c} \\text{ samples}"],
+      "symbols": [{"s": "N", "meaning": "numero totale di campioni di training"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c42",
+      "name": "Sintesi: OvA più semplice, All-Pairs meno dati per classificatore",
+      "nameEn": "One-vs-All: Simpler to implement ... All-Pairs: Involves more classifiers but requires less data per classifier",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "part2", "page": 44}],
+      "detail": "Riassunto della fonte ('So:'): One-vs-All è più semplice da implementare, richiede meno classificatori ma usa l'intero dataset per addestrare ciascuno. All-Pairs coinvolge più classificatori ma richiede meno dati per classificatore, il che in alcuni casi può migliorare le prestazioni (can improve performance in some cases).",
+      "latex": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c43",
+      "name": "Più classificatori su meno dati possono dare risultati migliori, ma OvA resta popolare",
+      "nameEn": "In general, training more classifiers on smaller subsets of data (as in All-Pairs) can lead to better results when computational resources allow. However, One-vs-All remains a popular approach for its simplicity and efficiency in practice",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 44}],
+      "detail": "In generale, addestrare più classificatori su sottoinsiemi più piccoli dei dati (come in All-Pairs) può portare a risultati migliori quando le risorse di calcolo lo permettono. One-vs-All resta comunque un approccio popolare per la sua semplicità ed efficienza in pratica.",
+      "latex": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c44",
+      "name": "Classificatori generativi: modellano la congiunta e classificano con Bayes",
+      "nameEn": "Generative classifiers",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 44}],
+      "detail": "I classificatori generativi (generative classifiers) sono una classe di modelli che apprendono la distribuzione di probabilità congiunta P(x, y) delle feature x e delle etichette y. Classificano nuove istanze usando il teorema di Bayes per calcolare P(y_i|x). La scrittura esplicita del teorema di Bayes è aggiunta qui per completezza (la fonte lo cita per nome); si confronti con i classificatori discriminativi del resto del capitolo (perceptron), che modellano direttamente il confine.",
+      "latex": ["P(\\mathbf{x}, y)", "P(y_i|\\mathbf{x}) = \\frac{P(\\mathbf{x}|y_i)P(y_i)}{P(\\mathbf{x})}"],
+      "symbols": [
+        {"s": "P(\\mathbf{x}, y)", "meaning": "distribuzione congiunta di feature ed etichette"},
+        {"s": "P(y_i|\\mathbf{x})", "meaning": "posterior della classe y_i dato x"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c45",
+      "name": "Classificatori generativi gaussiani",
+      "nameEn": "Gaussian generative classifiers",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 44}],
+      "detail": "Un esempio notevole di classificatori generativi sono i classificatori generativi gaussiani (Gaussian generative classifiers), che modellano ogni classe con una gaussiana multivariata e, sotto certe condizioni, producono confini di decisione lineari. La densità gaussiana non è scritta a pagina 44: è riportata qui dal Cap. 2 di Melgani (modulo m06) per rendere esplicito il modello.",
+      "latex": ["p(\\mathbf{x}|y_i) = \\frac{1}{(2\\pi)^{d/2}|\\Sigma_i|^{1/2}}\\exp\\left(-\\frac{1}{2}(\\mathbf{x} - \\boldsymbol{\\mu}_i)^T\\Sigma_i^{-1}(\\mathbf{x} - \\boldsymbol{\\mu}_i)\\right)"],
+      "symbols": [
+        {"s": "\\boldsymbol{\\mu}_i", "meaning": "vettore medio della classe i"},
+        {"s": "\\Sigma_i", "meaning": "matrice di covarianza della classe i"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c46",
+      "name": "Condizione per confini lineari: covarianza condivisa da tutte le classi",
+      "nameEn": "Linear decision boundaries arise when the covariance matrix Σ is shared among all classes",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 44}],
+      "detail": "Confini di decisione lineari si ottengono quando la matrice di covarianza Σ è condivisa da tutte le classi (shared among all classes), cioè Σ_i = Σ per ogni classe i. Le medie possono essere diverse. Con covarianze diverse il confine sarebbe quadratico (der07, caso trattato anche da Melgani nel modulo m19).",
+      "latex": ["\\Sigma_i = \\Sigma \\quad \\text{for all classes } i"],
+      "symbols": [{"s": "\\Sigma", "meaning": "matrice di covarianza comune a tutte le classi"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c47",
+      "name": "Gaussiana con la stessa covarianza = classificatore generativo lineare",
+      "nameEn": "A Gaussian classifier with the same covariance for each class becomes a linear generative classifier because its decision rule is linear in x",
+      "kind": "teorema",
+      "sourcePages": [{"doc": "part2", "page": 44}],
+      "detail": "Un classificatore gaussiano con la stessa covarianza per ogni classe diventa un classificatore generativo lineare (linear generative classifier), perché la sua regola di decisione è lineare in x. La fonte lo afferma senza dimostrarlo; la dimostrazione (der07, ricostruita) mostra che nel logaritmo di p(x|y_i)P(y_i) il termine quadratico x^T Σ^{-1} x è uguale per tutte le classi e si cancella nel confronto, lasciando w_i = Σ^{-1} μ_i e w_i0 = -1/2 μ_i^T Σ^{-1} μ_i + log P(y_i).",
+      "latex": ["\\log\\left(p(\\mathbf{x}|y_i)P(y_i)\\right) = \\mathbf{w}_i^T\\mathbf{x} + w_{i0} + \\text{const}", "\\mathbf{w}_i = \\Sigma^{-1}\\boldsymbol{\\mu}_i, \\quad w_{i0} = -\\frac{1}{2}\\boldsymbol{\\mu}_i^T\\Sigma^{-1}\\boldsymbol{\\mu}_i + \\log P(y_i)"],
+      "symbols": [
+        {"s": "\\mathbf{w}_i", "meaning": "pesi lineari della classe i"},
+        {"s": "w_{i0}", "meaning": "bias della classe i (contiene il prior)"},
+        {"s": "\\text{const}", "meaning": "termini uguali per tutte le classi (-1/2 x^T Σ^{-1} x e normalizzazione)"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c48",
+      "name": "Classificatore Naive Bayes: indipendenza condizionale delle feature data la classe",
+      "nameEn": "Naive Bayes classifier",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 44}],
+      "detail": "Il classificatore Naive Bayes è un altro modello generativo, basato sull'ipotesi che le feature x = [x[1], ..., x[K]] siano condizionatamente indipendenti data la classe y (conditionally independent given the class). Esplicitato: l'ipotesi permette di scrivere la likelihood come prodotto delle probabilità delle singole feature, P(x|y) = Π_k P(x[k]|y). A pagina 45 la notazione cambia: x[j] indica la j-esima posizione (per esempio la j-esima parola di un testo) e K diventa il numero di feature possibili del vocabolario (vedi gaps).",
+      "latex": ["\\mathbf{x} = \\left[x[1], \\dots, x[K]\\right]", "P(\\mathbf{x}|y) = \\prod_{k=1}^{K} P\\left(x[k]\\,|\\,y\\right)"],
+      "symbols": [{"s": "x[k]", "meaning": "k-esima feature (o posizione) dell'input"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c49",
+      "name": "Naive Bayes funziona sorprendentemente bene su dati ad alta dimensionalità come i testi",
+      "nameEn": "Despite its simplicity, it often performs surprisingly well in practice, particularly for high-dimensional data like text classification",
+      "kind": "applicazione",
+      "sourcePages": [{"doc": "part2", "page": 44}],
+      "detail": "Nonostante la semplicità (l'ipotesi di indipendenza raramente è vera), Naive Bayes spesso funziona sorprendentemente bene in pratica, in particolare con dati ad alta dimensionalità come la classificazione di testi (text classification), dove ogni parola del vocabolario è una feature e le feature sono migliaia.",
+      "latex": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c50",
+      "name": "Naive Bayes stima la posterior f_i(x) = P(y_i|x) con il teorema di Bayes",
+      "nameEn": "The Naive Bayes Classifier estimates the posterior probability f_i(x) = P(y_i|x) for a given class y_i and input x, based on the Bayes theorem",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 44}],
+      "detail": "Il classificatore Naive Bayes stima la probabilità a posteriori f_i(x) = P(y_i|x) di una classe y_i dato l'input x, basandosi sul teorema di Bayes. f_i(x) è la funzione discriminante della classe i: la classe predetta è quella con f_i(x) massimo (come nella strategia argmax dei classificatori lineari).",
+      "latex": ["f_i(\\mathbf{x}) = P(y_i|\\mathbf{x})"],
+      "symbols": [{"s": "f_i(\\mathbf{x})", "meaning": "funzione discriminante (posterior) della classe i"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c51",
+      "name": "Formulazione di partenza: f_i(x) = P(x|y_i)P(y_i)",
+      "nameEn": "The formulation starts with",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 44}, {"doc": "part2", "page": 45}],
+      "detail": "La formulazione (annunciata in fondo a pagina 44, scritta in cima a pagina 45) parte da f_i(x) = P(x|y_i)P(y_i): likelihood della classe per prior della classe. Rispetto al teorema di Bayes manca il denominatore P(x): è lo stesso per tutte le classi, quindi non cambia quale classe ha il valore massimo; f_i(x) è dunque la posterior a meno di una costante (vedi gaps).",
+      "latex": ["f_i(\\mathbf{x}) = P(\\mathbf{x}|y_i)P(y_i)", "P(y_i|\\mathbf{x}) \\propto P(\\mathbf{x}|y_i)P(y_i)"],
+      "symbols": [
+        {"s": "P(\\mathbf{x}|y_i)", "meaning": "likelihood dell'input nella classe y_i"},
+        {"s": "P(y_i)", "meaning": "prior della classe y_i"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c52",
+      "name": "Fattorizzazione della likelihood di Naive Bayes",
+      "nameEn": "This independence allows the likelihood P(x|y_i) to factorize as",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 45}],
+      "detail": "Naive Bayes assume che ogni feature di x sia condizionatamente indipendente data la classe y_i. Questa indipendenza permette di fattorizzare la likelihood come doppio prodotto: su j = 1, ..., |X| (le posizioni dell'input, per esempio le parole di un documento lungo |X|) e su k = 1, ..., K (le feature possibili, per esempio le parole del vocabolario), di θ_{k y_i} elevato all'indicatore z_k(x[j]). Poiché l'indicatore vale 1 solo per la feature presente nella posizione j, per ogni j sopravvive un solo fattore: la probabilità della parola che si trova in quella posizione. È il modello multinomiale del modulo p02.",
+      "latex": ["P(\\mathbf{x}|y_i) = \\prod_{j=1}^{|\\mathbf{X}|}\\prod_{k=1}^{K}\\theta_{ky_i}^{z_k(x[j])}"],
+      "symbols": [
+        {"s": "|\\mathbf{X}|", "meaning": "lunghezza dell'input (numero di posizioni/parole)"},
+        {"s": "K", "meaning": "numero di feature possibili (dimensione del vocabolario)"},
+        {"s": "\\theta_{ky_i}", "meaning": "probabilità della feature k nella classe y_i"},
+        {"s": "z_k(x[j])", "meaning": "indicatore della feature k nella posizione j"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c53",
+      "name": "Indicatore z_k(x[j]) della presenza di una feature",
+      "nameEn": "z_k(x[j]) indicates the presence of feature k in input x[j]",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 45}],
+      "detail": "z_k(x[j]) indica la presenza della feature k nell'input x[j]: vale 1 se nella posizione j c'è la feature k (per esempio la parola k del vocabolario), 0 altrimenti. La scrittura a casi è esplicitata qui. Esponente 0 dà fattore 1, esponente 1 dà θ: così l'indicatore 'seleziona' il parametro giusto nel prodotto.",
+      "latex": ["z_k(x[j]) = \\begin{cases} 1 & \\text{if } x[j] = k \\\\ 0 & \\text{otherwise} \\end{cases}"],
+      "symbols": [{"s": "z_k", "meaning": "funzione indicatrice della feature k"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c54",
+      "name": "Parametro θ_{ky_i}: probabilità della feature k data la classe",
+      "nameEn": "θ_{ky_i} is the probability of feature k given the class y_i",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 45}],
+      "detail": "θ_{k y_i} è la probabilità della feature k data la classe y_i (per esempio la probabilità che una parola estratta da un'email spam sia 'gratis'). Esplicitato: per ogni classe i parametri formano una distribuzione sulle K feature, quindi sommano a 1; la loro stima ML da conteggi (frequenze relative) è trattata nel modulo p02 (multinomiale e Dirichlet), non in queste pagine.",
+      "latex": ["\\theta_{ky_i} = P(\\text{feature } k \\,|\\, y_i)", "\\sum_{k=1}^{K}\\theta_{ky_i} = 1"],
+      "symbols": [{"s": "\\theta_{ky_i}", "meaning": "parametro della multinomiale della classe y_i"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c55",
+      "name": "Posterior di Naive Bayes espressa con i conteggi",
+      "nameEn": "Plugging P(x|y_i) into the Bayes formula, we get",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 45}],
+      "detail": "Sostituendo la likelihood fattorizzata nella formula di Bayes (con il prior stimato come frazione di esempi) si ottiene f_i(x) = (Π_k θ_{k y_i}^{N_{kX}}) · |D_i|/|D|. Il doppio prodotto su posizioni e feature si è compattato in un solo prodotto sulle feature, con esponente il numero di volte N_{kX} che la feature k compare (der08). Nella fonte l'esponente è scritto N_{kX} con X maiuscolo in grassetto, come nella definizione che segue (è lo stesso conteggio N_{kx} della formula logaritmica). Refuso tipografico della fonte: la frazione |D_i|/|D| è impaginata all'altezza dell'esponente, come se fosse θ^{N_{kX}|D_i|/|D|}, e senza parentesi sembrerebbe dentro il prodotto su k. Il prior è invece un unico fattore che moltiplica l'intero prodotto, come conferma la versione logaritmica dove log(|D_i|/|D|) è un addendo separato: qui è trascritta corretta, con le parentesi (vedi gaps).",
+      "latex": ["f_i(\\mathbf{x}) = \\left(\\prod_{k=1}^{K}\\theta_{ky_i}^{N_{k\\mathbf{X}}}\\right)\\frac{|D_i|}{|D|}"],
+      "symbols": [
+        {"s": "N_{k\\mathbf{X}}", "meaning": "notazione della fonte per il numero di occorrenze della feature k nell'input (uguale a N_{kx})"},
+        {"s": "N_{k\\mathbf{x}}", "meaning": "numero di occorrenze della feature k in x"},
+        {"s": "|D_i|/|D|", "meaning": "prior stimato della classe y_i"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c56",
+      "name": "Conteggio N_{kx} delle occorrenze di una feature",
+      "nameEn": "N_kX is the number of times feature k (e.g., a word) appears in X",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 45}],
+      "detail": "N_{kx} è il numero di volte che la feature k (per esempio una parola) compare nell'input: N_{kx} = Σ_j z_k(x[j]), somma degli indicatori su tutte le posizioni. Il passaggio dal prodotto su j al conteggio usa la proprietà delle potenze: il prodotto di θ elevato a ciascun indicatore è θ elevato alla somma degli indicatori. Conseguenza: l'ordine delle parole non conta (modello bag of words, termine non usato dalla fonte). La fonte scrive a volte N_{kX} con X maiuscolo e a volte N_{kx}.",
+      "latex": ["N_{k\\mathbf{x}} = \\sum_{j=1}^{|\\mathbf{X}|} z_k(x[j])", "\\prod_{j=1}^{|\\mathbf{X}|}\\theta_{ky_i}^{z_k(x[j])} = \\theta_{ky_i}^{\\sum_{j} z_k(x[j])} = \\theta_{ky_i}^{N_{k\\mathbf{x}}}"],
+      "symbols": [
+        {"s": "N_{k\\mathbf{x}}", "meaning": "conteggio della feature k nell'input x"},
+        {"s": "N_{k\\mathbf{X}}", "meaning": "stesso conteggio, con la X maiuscola usata dalla fonte nella frase di definizione e nella formula di f_i(x)"},
+        {"s": "|\\mathbf{X}|", "meaning": "numero di posizioni (parole) dell'input"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c57",
+      "name": "Stima del prior P(y_i) = |D_i|/|D|",
+      "nameEn": "P(y_i) can be estimated as |D_i|/|D|",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 45}],
+      "detail": "Il prior P(y_i) si stima come frazione degli esempi di training che appartengono alla classe: |D_i|/|D|, dove |D_i| è il numero totale di campioni della classe y_i e |D| il numero totale di campioni di tutte le classi. È la stima ML di una distribuzione categoriale (modulo p02).",
+      "latex": ["P(y_i) = \\frac{|D_i|}{|D|}"],
+      "symbols": [
+        {"s": "|D_i|", "meaning": "numero di campioni della classe y_i"},
+        {"s": "|D|", "meaning": "numero totale di campioni"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c58",
+      "name": "Logaritmo contro l'underflow numerico",
+      "nameEn": "To make computations more stable (avoiding numerical underflow due to multiplying small probabilities), we take the logarithm",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 45}],
+      "detail": "Per rendere i calcoli più stabili, evitando l'underflow numerico dovuto alla moltiplicazione di tante piccole probabilità (il prodotto di centinaia di numeri minori di 1 diventa più piccolo del minimo rappresentabile in virgola mobile e viene arrotondato a 0), si prende il logaritmo: log(f_i(x)) = Σ_k N_{kx} log(θ_{k y_i}) + log(|D_i|/|D|). Il logaritmo è monotono crescente, quindi non cambia quale classe ha il punteggio massimo (esplicitato qui).",
+      "latex": ["\\log\\left(f_i(\\mathbf{x})\\right) = \\sum_{k=1}^{K} N_{k\\mathbf{x}}\\log\\left(\\theta_{ky_i}\\right) + \\log\\left(\\frac{|D_i|}{|D|}\\right)"],
+      "symbols": [{"s": "\\log", "meaning": "logaritmo (naturale nella pratica; la base non cambia l'argmax)"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c59",
+      "name": "Il logaritmo della posterior è lineare nei conteggi",
+      "nameEn": "This simplifies the posterior into a linear function of the features N_kx",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 45}],
+      "detail": "Dopo il logaritmo la posterior diventa una funzione lineare delle feature N_{kx}: ogni occorrenza in più della parola k aggiunge la costante log θ_{k y_i} al punteggio della classe. I coefficienti sono i logaritmi dei parametri, il termine costante è il log-prior.",
+      "latex": ["\\frac{\\partial \\log f_i(\\mathbf{x})}{\\partial N_{k\\mathbf{x}}} = \\log\\theta_{ky_i}"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c60",
+      "name": "Naive Bayes in forma di modello lineare: log f_i(x) = w^T x' + w_0",
+      "nameEn": "Rewriting the equation, we can express the classifier in a form resembling a linear model",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 45}],
+      "detail": "Riscrivendo l'equazione il classificatore assume una forma simile a un modello lineare: log(f_i(x)) = w^T x' + w_0, con x' vettore dei conteggi, w vettore dei log-parametri e w_0 bias dei prior. La fonte non mette l'indice di classe su w e w_0, ma dipendono dalla classe i (sarebbero w_i e w_i0).",
+      "latex": ["\\log\\left(f_i(\\mathbf{x})\\right) = \\mathbf{w}^T\\mathbf{x}' + w_0"],
+      "symbols": [
+        {"s": "\\mathbf{x}'", "meaning": "vettore dei conteggi delle feature"},
+        {"s": "\\mathbf{w}", "meaning": "pesi = log-probabilità delle feature nella classe"},
+        {"s": "w_0", "meaning": "bias = log-prior della classe"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c61",
+      "name": "Vettore dei conteggi x'",
+      "nameEn": "x' = [N_1x ··· N_Kx]^T, the feature vector representing feature counts in x",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 45}],
+      "detail": "x' = [N_{1x} ··· N_{Kx}]^T è il vettore delle feature che rappresenta i conteggi delle feature in x: una componente per ogni feature del vocabolario, con il numero di occorrenze. È la nuova rappresentazione dell'input nello spazio in cui il classificatore è lineare.",
+      "latex": ["\\mathbf{x}' = \\left[N_{1\\mathbf{x}} \\cdots N_{K\\mathbf{x}}\\right]^T"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c62",
+      "name": "Pesi derivati dalla log-likelihood delle feature",
+      "nameEn": "w = [log(θ_1y_i) ··· log(θ_Ky_i)]^T, the weights derived from the log-likelihood of features",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 45}],
+      "detail": "w = [log(θ_{1y_i}) ··· log(θ_{Ky_i})]^T: i pesi sono i logaritmi delle probabilità delle feature nella classe (weights derived from the log-likelihood of features). Esplicitato: poiché θ ≤ 1 tutti i pesi sono ≤ 0; conta la differenza tra i pesi delle classi (una parola molto più probabile nello spam che nell'ham spinge verso spam). Se un θ vale 0 il peso è -∞: problema risolto con lo smoothing/prior di Dirichlet del modulo p02 (non citato qui).",
+      "latex": ["\\mathbf{w} = \\left[\\log\\left(\\theta_{1y_i}\\right) \\cdots \\log\\left(\\theta_{Ky_i}\\right)\\right]^T"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c63",
+      "name": "Bias dai prior di classe",
+      "nameEn": "w_0 = log(|D_i|) - log(|D|), the bias term accounting for class priors",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 45}],
+      "detail": "w_0 = log(|D_i|) - log(|D|) = log(|D_i|/|D|) è il termine di bias che tiene conto dei prior di classe: una classe più frequente nel training parte con un punteggio più alto.",
+      "latex": ["w_0 = \\log\\left(|D_i|\\right) - \\log\\left(|D|\\right)"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c64",
+      "name": "Naive Bayes è un modello log-lineare, come le gaussiane con Σ condivisa",
+      "nameEn": "Thus, the Naive Bayes Classifier operates as a log-linear model (as Gaussian distributions with shared Σ), even though it is a generative model",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 45}],
+      "detail": "Il classificatore Naive Bayes opera quindi come un modello log-lineare (log-linear model), esattamente come le distribuzioni gaussiane con Σ condivisa, anche se è un modello generativo. Conseguenza esplicitata qui: il confine tra due classi i e j, dove log f_i = log f_j, è un iperpiano nello spazio dei conteggi, con la stessa forma del confine One-vs-All (w_i - w_j)^T x' + (w_i0 - w_j0) = 0. I due mondi (generativo e discriminativo) producono la stessa famiglia di confini; cambia il modo in cui si stimano i pesi.",
+      "latex": ["\\log f_i(\\mathbf{x}) - \\log f_j(\\mathbf{x}) = \\left(\\mathbf{w}_i - \\mathbf{w}_j\\right)^T\\mathbf{x}' + \\left(w_{i0} - w_{j0}\\right) = 0"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c65",
+      "name": "Support Vector Machines: classificatori lineari a margine massimo",
+      "nameEn": "Support Vector Machines are linear classifiers that select the hyperplane maximizing the separation margin between classes. They belong to the class of large margin classifiers",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 46}],
+      "detail": "Pagina 46 apre la sezione Support Vector Machines (contenuto condiviso con il modulo adiacente p08): le SVM sono classificatori lineari che scelgono l'iperpiano che massimizza il margine di separazione (separation margin) tra le classi. Appartengono alla classe dei classificatori a largo margine (large margin classifiers). Seguono quattro caratteristiche chiave (Key Characteristics).",
+      "latex": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c66",
+      "name": "Caratteristica: massimizzare il margine rende il classificatore più robusto",
+      "nameEn": "Maximizing the Margin",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 46}],
+      "detail": "Le SVM cercano l'iperpiano che ottiene la massima separazione (largest separation margin) tra le due classi, fornendo un classificatore più robusto (a more robust classifier).",
+      "latex": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c67",
+      "name": "Caratteristica: i vettori di supporto determinano la soluzione",
+      "nameEn": "Support Vectors",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 46}],
+      "detail": "La soluzione è determinata da un piccolo sottoinsieme degli esempi di training (small subset of training examples), chiamati vettori di supporto (support vectors), che stanno più vicini all'iperpiano. Questi punti sono critici nel definire il margine: spostare gli altri esempi (senza farli entrare nel margine) non cambia la soluzione.",
+      "latex": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c68",
+      "name": "Caratteristica: garanzie di generalizzazione",
+      "nameEn": "Generalization Guarantees",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 46}],
+      "detail": "Le SVM, fondate sulla teoria della generalizzazione (generalization theory), forniscono limiti sull'errore (error bounds) che offrono garanzie formali di affidabilità; bound più piccoli indicano migliori prestazioni su dati non visti (generalizzazione) rispetto ad altri metodi di classificazione. La fonte non riporta qui la forma dei bound.",
+      "latex": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c69",
+      "name": "Caratteristica: estensione ai classificatori non lineari con i kernel",
+      "nameEn": "Extension to Nonlinear Classifiers",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 46}],
+      "detail": "Usando funzioni kernel (kernel functions) le SVM si estendono alla classificazione nei casi in cui i dati non sono linearmente separabili. Ne risultano le kernel machines, che mappano implicitamente i dati in spazi a dimensione più alta (higher-dimensional spaces) per trovarvi una separazione lineare. Trattato in dettaglio nei moduli p10 e p11.",
+      "latex": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c70",
+      "name": "Molti iperpiani classificano correttamente: quello in grassetto è a margine massimo",
+      "nameEn": "In the context of linear classifiers, multiple hyperplanes may correctly classify all examples",
+      "kind": "figura",
+      "sourcePages": [{"doc": "part2", "page": 46}],
+      "detail": "Nel contesto dei classificatori lineari più iperpiani possono classificare correttamente tutti gli esempi. La figura al centro di pagina 46 mostra cerchi rossi (in basso a sinistra) e quadrati blu (in alto a destra) nel piano (x_1, x_2), un fascio di rette grigie sottili che passano tutte vicino a uno stesso punto e separano correttamente i dati, e una retta nera in grassetto. Sulla retta in grassetto una doppia freccia perpendicolare collega un cerchio rosso e un quadrato blu vicini al confine, con due segmentini paralleli che marcano i due lati del margine. La retta in grassetto è il classificatore a margine massimo (maximum margin classifier), la scelta ottima.",
+      "latex": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c71",
+      "name": "Margine: distanza dell'iperpiano dagli esempi più vicini di ogni classe",
+      "nameEn": "The margin is the distance between the hyperplane and the nearest examples from each class (both positive and negative)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 46}],
+      "detail": "Il margine (margin) è la distanza tra l'iperpiano e gli esempi più vicini di ciascuna classe, sia positivi sia negativi. La formula della distanza di un punto da un iperpiano (margine geometrico) è del modulo p06 ed è ripresa nel modulo p08; qui la fonte dà solo la definizione a parole.",
+      "latex": ["d(\\mathbf{x}, H) = \\frac{|\\mathbf{w}^T\\mathbf{x} + b|}{\\|\\mathbf{w}\\|}"],
+      "symbols": [
+        {"s": "H", "meaning": "iperpiano w^T x + b = 0"},
+        {"s": "d(\\mathbf{x}, H)", "meaning": "distanza euclidea del punto x dall'iperpiano (formula del modulo p06)"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c72",
+      "name": "Il classificatore a margine massimo massimizza la somma dei margini verso gli esempi più vicini",
+      "nameEn": "The maximum margin classifier maximizes the sum of the margins to these closest examples, ensuring the greatest possible separation between the two classes",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 46}],
+      "detail": "Il classificatore a margine massimo massimizza la somma dei margini verso questi esempi più vicini (il più vicino positivo e il più vicino negativo), garantendo la massima separazione possibile tra le due classi. All'ottimo le due distanze sono uguali e l'iperpiano sta a metà della 'strada' libera tra le classi (osservazione esplicitata qui: con distanze diverse si potrebbe spostare l'iperpiano verso il lato più lontano senza cambiare la somma, e la formulazione del modulo p08 impone il margine uguale sui due lati).",
+      "latex": ["\\max_{H}\\; \\left(d_{+}(H) + d_{-}(H)\\right)"],
+      "symbols": [
+        {"s": "d_{+}(H)", "meaning": "distanza dell'iperpiano dall'esempio positivo più vicino"},
+        {"s": "d_{-}(H)", "meaning": "distanza dell'iperpiano dall'esempio negativo più vicino"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c73",
+      "name": "Robustezza del margine massimo a perturbazioni e rumore",
+      "nameEn": "This approach provides greater robustness to variations in the data, as the classifier is less sensitive to minor perturbations or noise",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 46}],
+      "detail": "Questo approccio dà maggiore robustezza alle variazioni nei dati: il classificatore è meno sensibile a piccole perturbazioni o rumore, perché un esempio deve spostarsi almeno quanto il margine per passare dal lato sbagliato.",
+      "latex": [],
+      "examRelevance": 2
+    }
+  ],
+  "derivations": [
+    {
+      "id": "der01",
+      "title": "Gradiente dell'errore quadratico in forma matriciale",
+      "sourcePages": [{"doc": "part2", "page": 41}],
+      "goal": "Calcolare il gradiente di E(w; D) = (y - Xw)^T(y - Xw) rispetto a w, nella forma riga della fonte e nella forma colonna equivalente.",
+      "steps": [
+        "E(\\mathbf{w}; D) = (\\mathbf{y} - X\\mathbf{w})^T(\\mathbf{y} - X\\mathbf{w})",
+        "= \\mathbf{y}^T\\mathbf{y} - \\mathbf{y}^TX\\mathbf{w} - \\mathbf{w}^TX^T\\mathbf{y} + \\mathbf{w}^TX^TX\\mathbf{w}",
+        "= \\mathbf{y}^T\\mathbf{y} - 2\\mathbf{y}^TX\\mathbf{w} + \\mathbf{w}^TX^TX\\mathbf{w}",
+        "\\nabla E(\\mathbf{w}; D) = \\nabla(\\mathbf{y} - X\\mathbf{w})^T(\\mathbf{y} - X\\mathbf{w}) = 2(\\mathbf{y} - X\\mathbf{w})^T(-X)",
+        "= -2\\mathbf{y}^TX + 2\\mathbf{w}^TX^TX",
+        "\\left(\\nabla E(\\mathbf{w}; D)\\right)^T = -2X^T\\mathbf{y} + 2X^TX\\mathbf{w}"
+      ],
+      "stepWhy": [
+        "Definizione della MSE in forma matriciale (pagina 41): il residuo moltiplicato per sé stesso.",
+        "Sviluppo del prodotto (esplicitato qui): (y - Xw)^T = y^T - w^T X^T per la regola (AB)^T = B^T A^T, poi si moltiplicano i quattro termini.",
+        "w^T X^T y è uno scalare, quindi è uguale al suo trasposto y^T X w: i due termini centrali si sommano. E risulta quadratica in w: costante, termine lineare, forma quadratica con matrice X^T X.",
+        "Passaggio della fonte: regola della catena. Con u = y - Xw, la derivata di u^T u rispetto a u è 2u^T e la derivata di u rispetto a w è -X (la matrice jacobiana di -Xw).",
+        "Si distribuisce (y - Xw)^T = y^T - w^T X^T sul fattore -X: y^T(-X) = -y^T X e -w^T X^T(-X) = w^T X^T X. È il risultato scritto dalla fonte, un vettore riga 1×d.",
+        "Forma colonna (esplicitata qui): trasponendo si ottiene lo stesso risultato che si avrebbe derivando lo sviluppo del passo 3 con le regole ∂(a^T w)/∂w = a e ∂(w^T A w)/∂w = 2Aw per A = X^T X simmetrica."
+      ],
+      "concepts": ["c13", "c15", "c19"]
+    },
+    {
+      "id": "der02",
+      "title": "Soluzione in forma chiusa della regressione ai minimi quadrati",
+      "sourcePages": [{"doc": "part2", "page": 41}, {"doc": "part2", "page": 42}],
+      "goal": "Ricavare w = (X^TX)^{-1}X^Ty annullando il gradiente e verificare che il punto trovato è un minimo.",
+      "steps": [
+        "-2\\mathbf{y}^TX + 2\\mathbf{w}^TX^TX = 0",
+        "2\\mathbf{w}^TX^TX = 2\\mathbf{y}^TX",
+        "\\mathbf{w}^TX^TX = \\mathbf{y}^TX",
+        "X^TX\\mathbf{w} = X^T\\mathbf{y}",
+        "\\mathbf{w} = \\left(X^TX\\right)^{-1}X^T\\mathbf{y}",
+        "\\nabla^2 E = 2X^TX, \\quad \\mathbf{v}^TX^TX\\mathbf{v} = \\|X\\mathbf{v}\\|^2 \\geq 0"
+      ],
+      "stepWhy": [
+        "Condizione di stazionarietà: il gradiente calcolato a pagina 41 (der01) si pone uguale a zero (pagina 42, 'Set the gradient to zero').",
+        "Si porta il termine -2y^T X a destra dell'uguale cambiando segno.",
+        "Si dividono entrambi i membri per 2.",
+        "Si traspongono entrambi i membri: (w^T X^T X)^T = (X^T X)^T w = X^T X w perché X^T X è simmetrica, e (y^T X)^T = X^T y. Si ottiene un sistema quadrato d×d.",
+        "Se X^T X è invertibile (rango pieno, c24) si moltiplicano a sinistra entrambi i membri per (X^T X)^{-1}: è la soluzione in forma chiusa della fonte.",
+        "Verifica del minimo (esplicitata qui, la fonte non la fa): la matrice hessiana 2X^T X è semidefinita positiva perché la forma quadratica associata è una norma al quadrato; E è quindi convessa e il punto a gradiente nullo è un minimo globale (unico se X^T X è definita positiva, cioè a rango pieno)."
+      ],
+      "concepts": ["c18", "c20", "c21", "c22", "c24"]
+    },
+    {
+      "id": "der03",
+      "title": "Left-inverse: perché 'sinistra' e perché coincide con X^{-1} per X quadrata",
+      "sourcePages": [{"doc": "part2", "page": 42}],
+      "goal": "Mostrare che (X^TX)^{-1}X^T è un'inversa sinistra di X e che, se X è quadrata e non singolare, coincide con X^{-1} e dà la soluzione esatta.",
+      "steps": [
+        "\\left(X^TX\\right)^{-1}X^T \\cdot X = \\left(X^TX\\right)^{-1}\\left(X^TX\\right) = I_d",
+        "X \\cdot \\left(X^TX\\right)^{-1}X^T \\neq I_n \\quad \\text{if } n > d",
+        "n = d, \\; \\det X \\neq 0: \\quad \\left(X^TX\\right)^{-1} = X^{-1}\\left(X^T\\right)^{-1}",
+        "\\left(X^TX\\right)^{-1}X^T = X^{-1}\\left(X^T\\right)^{-1}X^T = X^{-1}",
+        "\\mathbf{w} = X^{-1}\\mathbf{y} \\;\\Rightarrow\\; X\\mathbf{w} = \\mathbf{y}, \\quad E(\\mathbf{w}; D) = 0"
+      ],
+      "stepWhy": [
+        "Moltiplicando a sinistra di X si raggruppa X^T X e si semplifica con la sua inversa: il prodotto è l'identità d×d. Da qui il nome left-inverse (pagina 42).",
+        "Esplicitato qui: il prodotto a destra è una matrice n×n di rango al più d < n (è la proiezione sullo spazio delle colonne di X), quindi non può essere l'identità n×n. Per questo si parla solo di inversa sinistra.",
+        "Se X è quadrata e invertibile anche X^T lo è, e l'inversa di un prodotto è il prodotto delle inverse in ordine inverso: (AB)^{-1} = B^{-1}A^{-1} con A = X^T, B = X.",
+        "Si sostituisce nel left-inverse: (X^T)^{-1} X^T = I si cancella e resta X^{-1} (nota di pagina 42: 'the left-inverse coincides with the standard inverse').",
+        "Con la vera inversa il sistema Xw = y è risolto esattamente, i residui sono tutti nulli e l'errore quadratico vale 0: 'the MSE solution becomes exact' (pagina 42)."
+      ],
+      "concepts": ["c23", "c26", "c27"]
+    },
+    {
+      "id": "der04",
+      "title": "Derivata parziale rispetto a un peso e passo di discesa del gradiente",
+      "sourcePages": [{"doc": "part2", "page": 42}],
+      "goal": "Calcolare ∂E/∂w_i per E = 1/2 Σ (y - f(x))^2 con f(x) = w^T x e ricavarne il passo di discesa del gradiente.",
+      "steps": [
+        "\\frac{\\partial E}{\\partial w_i} = \\frac{\\partial}{\\partial w_i}\\frac{1}{2}\\sum_{(\\mathbf{x}, y)\\in D}\\left(y - f(\\mathbf{x})\\right)^2",
+        "= \\frac{1}{2}\\sum_{(\\mathbf{x}, y)\\in D}\\frac{\\partial}{\\partial w_i}\\left(y - f(\\mathbf{x})\\right)^2",
+        "= \\frac{1}{2}\\sum_{(\\mathbf{x}, y)\\in D}2\\left(y - f(\\mathbf{x})\\right)\\frac{\\partial}{\\partial w_i}\\left(y - \\mathbf{w}^T\\mathbf{x}\\right)",
+        "\\frac{\\partial}{\\partial w_i}\\left(y - \\sum_{l=1}^{d} w_l x_l\\right) = -x_i",
+        "= \\sum_{(\\mathbf{x}, y)\\in D}\\left(y - f(\\mathbf{x})\\right)\\left(-x_i\\right)",
+        "w_i \\leftarrow w_i - \\eta\\frac{\\partial E}{\\partial w_i} = w_i + \\eta\\sum_{(\\mathbf{x}, y)\\in D}\\left(y - f(\\mathbf{x})\\right)x_i"
+      ],
+      "stepWhy": [
+        "Definizione dell'errore con il fattore 1/2 usata a pagina 42; si deriva rispetto al solo w_i tenendo fermi gli altri pesi.",
+        "La derivata è lineare: passa dentro la somma e oltre la costante 1/2.",
+        "Regola della catena sulla potenza: la derivata di u^2 è 2u per la derivata di u, con u = y - f(x) = y - w^T x.",
+        "Esplicitato qui: scrivendo w^T x = Σ_l w_l x_l, l'unico addendo che contiene w_i è w_i x_i; y non dipende da w. La derivata vale -x_i.",
+        "Il 2 si cancella con 1/2 e si sostituisce -x_i: è il risultato finale della fonte.",
+        "Passo esplicitato qui (la fonte si ferma al gradiente): la discesa del gradiente del modulo p06 si muove nella direzione opposta al gradiente con passo η; il doppio segno meno dà + η Σ (y - f(x)) x_i."
+      ],
+      "concepts": ["c28", "c29", "c30", "c31"]
+    },
+    {
+      "id": "der05",
+      "title": "Confine One-vs-All tra due classi e ortogonalità alla differenza dei pesi",
+      "sourcePages": [{"doc": "part2", "page": 43}],
+      "goal": "Ricavare l'equazione del confine tra le classi i e j nella strategia One-vs-All e mostrare che è ortogonale a w_i - w_j e che le regioni sono convesse.",
+      "steps": [
+        "f_i(\\mathbf{x}) = f_j(\\mathbf{x})",
+        "\\mathbf{w}_i^T\\mathbf{x} = \\mathbf{w}_j^T\\mathbf{x}",
+        "\\left(\\mathbf{w}_i - \\mathbf{w}_j\\right)^T\\mathbf{x} = 0",
+        "\\mathbf{x}_a, \\mathbf{x}_b \\text{ on the boundary}: \\; \\left(\\mathbf{w}_i - \\mathbf{w}_j\\right)^T\\left(\\mathbf{x}_a - \\mathbf{x}_b\\right) = 0 - 0 = 0",
+        "\\hat{y}(\\mathbf{x}) = i \\iff \\left(\\mathbf{w}_i - \\mathbf{w}_j\\right)^T\\mathbf{x} > 0 \\;\\; \\forall j \\neq i"
+      ],
+      "stepWhy": [
+        "Con la predizione per argmax, il confine tra i e j è dove i due classificatori danno lo stesso score (pagina 43: 'where the functional margins of the two classifiers are equal').",
+        "Si sostituisce f(x) = w^T x per entrambi i classificatori (bias assorbito nel vettore aumentato).",
+        "Si porta tutto a sinistra e si raccoglie x: il confine è un iperpiano con vettore normale w_i - w_j.",
+        "Esplicitato qui: per due punti qualsiasi dell'iperpiano la differenza x_a - x_b è una direzione interna all'iperpiano e ha prodotto scalare nullo con w_i - w_j; quindi w_i - w_j è ortogonale al confine (pagina 43).",
+        "Esplicitato qui: la regione della classe i è l'intersezione di c - 1 semispazi, quindi è convessa; i tratti dell'iperpiano (w_i - w_j)^T x = 0 che cadono dove vince una terza classe non fanno parte del confine effettivo (osservazione della figura di pagina 43)."
+      ],
+      "concepts": ["c35", "c36", "c37", "c38"]
+    },
+    {
+      "id": "der06",
+      "title": "Conteggio di classificatori e di campioni: One-vs-All contro All-Pairs",
+      "sourcePages": [{"doc": "part2", "page": 43}, {"doc": "part2", "page": 44}],
+      "goal": "Ricavare c(c-1)/2 e 2N/c e confrontare il numero totale di campioni elaborati dalle due strategie.",
+      "steps": [
+        "\\text{OvA: } c \\text{ classifiers} \\times N \\text{ samples} = cN",
+        "\\text{All-Pairs: } \\binom{c}{2} = \\frac{c!}{2!\\,(c-2)!} = \\frac{c(c-1)}{2}",
+        "|D_i| \\approx \\frac{N}{c} \\;\\Rightarrow\\; |D_i| + |D_j| \\approx \\frac{2N}{c}",
+        "\\frac{c(c-1)}{2} \\cdot \\frac{2N}{c} = (c-1)N",
+        "(c-1)N < cN"
+      ],
+      "stepWhy": [
+        "OvA: un classificatore per classe, ciascuno addestrato su tutto il dataset (pagina 44).",
+        "All-Pairs: un classificatore per ogni coppia non ordinata di classi distinte, cioè il coefficiente binomiale 'c su 2' (pagina 44).",
+        "Con classi bilanciate ogni classe ha circa N/c esempi e ogni classificatore a coppie usa solo le sue due classi: è l'approssimazione 2N/c della fonte.",
+        "Esplicitato qui: moltiplicando numero di classificatori per campioni per classificatore si ottiene il totale dei campioni elaborati da All-Pairs.",
+        "Esplicitato qui: in totale All-Pairs elabora perfino meno campioni di OvA; se il costo di addestramento cresce più che linearmente con il numero di campioni, i tanti problemi piccoli costano meno di pochi problemi grandi. È una possibile lettura di 'requires less data per classifier'."
+      ],
+      "concepts": ["c33", "c39", "c41", "c42"]
+    },
+    {
+      "id": "der07",
+      "title": "Gaussiane con covarianza condivisa: la regola di decisione diventa lineare",
+      "sourcePages": [{"doc": "part2", "page": 44}],
+      "goal": "Dimostrare l'affermazione di pagina 44: se Σ_i = Σ per tutte le classi, il classificatore gaussiano ha funzioni discriminanti lineari in x e confini iperpiani (derivazione ricostruita, la fonte dà solo l'enunciato).",
+      "steps": [
+        "g_i(\\mathbf{x}) = \\log p(\\mathbf{x}|y_i) + \\log P(y_i)",
+        "= -\\frac{1}{2}(\\mathbf{x} - \\boldsymbol{\\mu}_i)^T\\Sigma^{-1}(\\mathbf{x} - \\boldsymbol{\\mu}_i) - \\frac{d}{2}\\log 2\\pi - \\frac{1}{2}\\log|\\Sigma| + \\log P(y_i)",
+        "= -\\frac{1}{2}\\mathbf{x}^T\\Sigma^{-1}\\mathbf{x} + \\boldsymbol{\\mu}_i^T\\Sigma^{-1}\\mathbf{x} - \\frac{1}{2}\\boldsymbol{\\mu}_i^T\\Sigma^{-1}\\boldsymbol{\\mu}_i + \\log P(y_i) + \\text{const}",
+        "g_i(\\mathbf{x}) = \\mathbf{w}_i^T\\mathbf{x} + w_{i0}, \\quad \\mathbf{w}_i = \\Sigma^{-1}\\boldsymbol{\\mu}_i, \\quad w_{i0} = -\\frac{1}{2}\\boldsymbol{\\mu}_i^T\\Sigma^{-1}\\boldsymbol{\\mu}_i + \\log P(y_i)",
+        "g_i(\\mathbf{x}) = g_j(\\mathbf{x}) \\iff \\left(\\mathbf{w}_i - \\mathbf{w}_j\\right)^T\\mathbf{x} + \\left(w_{i0} - w_{j0}\\right) = 0",
+        "\\Sigma_i \\neq \\Sigma_j: \\; -\\frac{1}{2}\\mathbf{x}^T\\left(\\Sigma_i^{-1} - \\Sigma_j^{-1}\\right)\\mathbf{x} \\neq 0 \\;\\Rightarrow\\; \\text{quadratic boundary}"
+      ],
+      "stepWhy": [
+        "Il classificatore generativo sceglie la classe con posterior massima; il denominatore P(x) è comune e il logaritmo è monotono, quindi basta confrontare log-likelihood più log-prior.",
+        "Si sostituisce il logaritmo della densità gaussiana multivariata con covarianza comune Σ (formula del modulo m06).",
+        "Si sviluppa la forma quadratica: (x - μ)^T Σ^{-1}(x - μ) = x^T Σ^{-1} x - 2μ^T Σ^{-1} x + μ^T Σ^{-1} μ (Σ^{-1} simmetrica). I termini -d/2 log 2π e -1/2 log|Σ| non dipendono dalla classe.",
+        "Il termine -1/2 x^T Σ^{-1} x è identico per tutte le classi perché Σ è condivisa: si può eliminare senza cambiare l'argmax. Resta una funzione lineare in x: è il 'linear generative classifier' di pagina 44.",
+        "Il confine tra due classi è quindi un iperpiano, con la stessa forma dei confini One-vs-All (pagina 43) più un termine di bias; il prior sposta l'iperpiano parallelamente.",
+        "Controprova: con covarianze diverse il termine quadratico non si cancella e il confine è una quadrica (caso trattato da Melgani nel modulo m19). Per questo la condizione Σ_i = Σ è necessaria per la linearità."
+      ],
+      "concepts": ["c44", "c45", "c46", "c47", "c64"]
+    },
+    {
+      "id": "der08",
+      "title": "Naive Bayes: dalla regola di Bayes al modello log-lineare",
+      "sourcePages": [{"doc": "part2", "page": 44}, {"doc": "part2", "page": 45}],
+      "goal": "Ricavare log f_i(x) = w^T x' + w_0 per il classificatore Naive Bayes, seguendo la catena di pagine 44-45.",
+      "steps": [
+        "f_i(\\mathbf{x}) = P(y_i|\\mathbf{x}) = \\frac{P(\\mathbf{x}|y_i)P(y_i)}{P(\\mathbf{x})} \\propto P(\\mathbf{x}|y_i)P(y_i)",
+        "P(\\mathbf{x}|y_i) = \\prod_{j=1}^{|\\mathbf{X}|}\\prod_{k=1}^{K}\\theta_{ky_i}^{z_k(x[j])}",
+        "= \\prod_{k=1}^{K}\\theta_{ky_i}^{\\sum_{j=1}^{|\\mathbf{X}|} z_k(x[j])} = \\prod_{k=1}^{K}\\theta_{ky_i}^{N_{k\\mathbf{x}}}",
+        "f_i(\\mathbf{x}) = \\left(\\prod_{k=1}^{K}\\theta_{ky_i}^{N_{k\\mathbf{x}}}\\right)\\frac{|D_i|}{|D|}",
+        "\\log\\left(f_i(\\mathbf{x})\\right) = \\sum_{k=1}^{K} N_{k\\mathbf{x}}\\log\\left(\\theta_{ky_i}\\right) + \\log\\left(\\frac{|D_i|}{|D|}\\right)",
+        "= \\mathbf{w}^T\\mathbf{x}' + w_0, \\quad \\mathbf{x}' = \\left[N_{1\\mathbf{x}} \\cdots N_{K\\mathbf{x}}\\right]^T, \\; \\mathbf{w} = \\left[\\log\\theta_{1y_i} \\cdots \\log\\theta_{Ky_i}\\right]^T, \\; w_0 = \\log|D_i| - \\log|D|"
+      ],
+      "stepWhy": [
+        "Teorema di Bayes (pagina 44); la fonte parte direttamente da f_i(x) = P(x|y_i)P(y_i) (pagina 45) perché P(x) non dipende dalla classe e non cambia la decisione.",
+        "Ipotesi naive di indipendenza condizionale (pagina 45): la likelihood è il prodotto sulle posizioni j dei fattori delle singole feature; l'indicatore z_k seleziona il θ della feature presente in ogni posizione.",
+        "Si scambiano i due prodotti finiti e si usa θ^a θ^b = θ^{a+b}: per ogni feature k gli esponenti si sommano sulle posizioni e danno il conteggio N_{kx} (definizione di pagina 45).",
+        "Si sostituisce il prior stimato P(y_i) = |D_i|/|D| (pagina 45). Le parentesi attorno al prodotto sono aggiunte qui: nella fonte la frazione è impaginata all'altezza dell'esponente (refuso tipografico, vedi c55 e gaps), ma il prior moltiplica una sola volta l'intero prodotto, come conferma il passo successivo.",
+        "Si prende il logaritmo per evitare l'underflow (pagina 45): il log di un prodotto è la somma dei log e log θ^N = N log θ.",
+        "Si riconosce un prodotto scalare tra il vettore dei conteggi e il vettore dei log-parametri, più una costante: la forma lineare di pagina 45. Il logaritmo del prior diventa il bias; w e w_0 dipendono dalla classe i."
+      ],
+      "concepts": ["c50", "c51", "c52", "c55", "c56", "c57", "c58", "c60", "c61", "c62", "c63"]
+    },
+    {
+      "id": "der09",
+      "title": "Dal gradiente matriciale di pagina 41 alla derivata per singolo peso di pagina 42",
+      "sourcePages": [{"doc": "part2", "page": 41}, {"doc": "part2", "page": 42}],
+      "goal": "Mostrare che le due formule del gradiente della fonte (vettoriale a pagina 41, per componente a pagina 42) sono la stessa cosa a meno del fattore 2 dovuto all'1/2, scrivere il passo di discesa in forma vettoriale e leggere il gradiente nullo come 'residuo ortogonale a ogni colonna di X'.",
+      "steps": [
+        "\\left(\\nabla E(\\mathbf{w}; D)\\right)^T = -2X^T\\mathbf{y} + 2X^TX\\mathbf{w} = -2X^T\\left(\\mathbf{y} - X\\mathbf{w}\\right)",
+        "\\left[X^T\\left(\\mathbf{y} - X\\mathbf{w}\\right)\\right]_i = \\sum_{n=1}^{|D|} x^{n}_{i}\\left(y_n - \\mathbf{w}^T\\mathbf{x}^{n}\\right)",
+        "E = \\sum_{(\\mathbf{x}, y)\\in D}\\left(y - f(\\mathbf{x})\\right)^2 \\;\\Rightarrow\\; \\frac{\\partial E}{\\partial w_i} = 2\\sum_{(\\mathbf{x}, y)\\in D}\\left(y - f(\\mathbf{x})\\right)\\left(-x_i\\right)",
+        "\\frac{\\partial}{\\partial w_i}\\left[\\frac{1}{2}\\sum_{(\\mathbf{x}, y)\\in D}\\left(y - f(\\mathbf{x})\\right)^2\\right] = \\sum_{(\\mathbf{x}, y)\\in D}\\left(y - f(\\mathbf{x})\\right)\\left(-x_i\\right)",
+        "\\mathbf{w} \\leftarrow \\mathbf{w} + \\eta X^T\\left(\\mathbf{y} - X\\mathbf{w}\\right)",
+        "\\nabla E(\\mathbf{w}; D) = 0 \\iff X^T\\left(\\mathbf{y} - X\\mathbf{w}\\right) = \\mathbf{0} \\iff X^TX\\mathbf{w} = X^T\\mathbf{y}"
+      ],
+      "stepWhy": [
+        "Si parte dal gradiente di pagina 41 in forma colonna (der01) e si raccoglie -2X^T (esplicitato qui): il gradiente è -2 volte X^T per il vettore dei residui.",
+        "La componente i di X^T r è il prodotto scalare tra la colonna i di X (la feature i su tutti gli esempi) e il residuo r = y - Xw: somma su tutti gli esempi di 'valore della feature i per residuo'. Notazione: x^n_i è la feature i dell'esempio n (apice = esempio come a pagina 40, pedice = feature come a pagina 42).",
+        "Quindi la componente i del gradiente di pagina 41 (errore senza 1/2) vale 2 Σ (y - f(x))(-x_i).",
+        "Con l'errore di pagina 42, che ha il fattore 1/2, il 2 si cancella e si ritrova esattamente la formula finale di pagina 42: i due calcoli della fonte sono coerenti e differiscono solo per la costante (c31).",
+        "Esplicitato qui: aggiornando tutti i pesi insieme con passo η (discesa del gradiente del modulo p06 applicata a 1/2 E), la regola per componenti w_i ← w_i + η Σ (y - f(x)) x_i (c30) si scrive in forma vettoriale. Un passo costa circa n·d operazioni e non richiede di invertire X^T X.",
+        "Esplicitato qui: porre il gradiente a zero equivale a chiedere che il residuo sia ortogonale a ogni colonna di X (nessuna feature 'spiega' ancora una parte del residuo). È la stessa equazione X^T X w = X^T y di pagina 42 e la base della lettura del left-inverse come proiezione sullo spazio delle colonne di X (der03)."
+      ],
+      "concepts": ["c19", "c21", "c28", "c29", "c30", "c31"],
+      "addedBy": "revisore"
+    }
+  ],
+  "workedExamples": [
+    {
+      "id": "ex01",
+      "title": "Quattro pannelli (stato iniziale e tre aggiornamenti) di discesa stocastica del perceptron con b = 0",
+      "sourcePages": [{"doc": "part2", "page": 39}, {"doc": "part2", "page": 40}],
+      "description": "Esempio grafico della fonte (nessun dato numerico, né w iniziale né η indicati): 7 cerchi rossi (classe positiva) nel semipiano sinistro e 8 quadrati blu (classe negativa) nel semipiano destro del piano (x_1, x_2); bias b = 0, quindi il confine w^T x = 0 passa per l'origine. Passo 1: w iniziale che punta in alto a sinistra, confine poco inclinato; due cerchi rossi in basso a sinistra sono dal lato negativo. Passo 2: il cerchio rosso più in basso a sinistra (freccia rossa) aggiorna w = w + ηx: w ruota verso di esso, il confine diventa più ripido (vecchio w e vecchio confine in grigio). Passo 3: il secondo cerchio rosso sbagliato, in basso vicino all'asse x_2, ruota ancora w e il confine. Passo 4: un quadrato blu in alto è ora dal lato positivo; con y = -1 si somma -ηx (freccia blu punteggiata opposta), w ruota leggermente in senso inverso e il confine quasi verticale separa tutti i 15 esempi. Il 'Passo 1' è lo stato iniziale: gli aggiornamenti sono tre (passi 2-4). Nei widget i punti sono pesci sintetici (salmone rosso, spigola blu) con feature centrate.",
+      "concepts": ["c01", "c02", "c03"]
+    },
+    {
+      "id": "ex02",
+      "title": "Mappa di decisione One-vs-All con tre classi",
+      "sourcePages": [{"doc": "part2", "page": 43}],
+      "description": "Esempio grafico della fonte: tre nuvole di punti, quadrati blu in alto, cerchi rossi a sinistra, cerchi verdi in basso a destra. Tre semirette nere partono da un punto comune al centro dell'immagine e delimitano tre regioni convesse, una per classe; una delle semirette (quella tra rossi e verdi, in basso a sinistra) è indicata da una freccia tratteggiata con l'etichetta (w_i - w_j)^T x = 0. Messaggio: i confini One-vs-All sono pezzi degli iperpiani (w_i - w_j)^T x = 0 e il prolungamento del confine rosso-verde dentro la regione blu esiste ma è irrilevante.",
+      "concepts": ["c35", "c36", "c37", "c38"]
+    },
+    {
+      "id": "ex03",
+      "title": "Fascio di iperpiani separatori e iperpiano a margine massimo",
+      "sourcePages": [{"doc": "part2", "page": 46}],
+      "description": "Esempio grafico della fonte: cerchi rossi in basso a sinistra e quadrati blu in alto a destra del piano (x_1, x_2), linearmente separabili. Una dozzina di rette grigie sottili, tutte passanti vicino allo stesso punto sopra l'origine, separano correttamente tutti gli esempi; una retta nera in grassetto, diagonale, è il classificatore a margine massimo. Una doppia freccia perpendicolare alla retta in grassetto collega un cerchio rosso e un quadrato blu vicini al confine, con due segmentini paralleli alla retta che marcano i bordi del margine. Messaggio: tra i tanti iperpiani con errore di training nullo, quello ottimo massimizza la distanza dagli esempi più vicini di entrambe le classi.",
+      "concepts": ["c65", "c70", "c71", "c72"]
+    }
+  ],
+  "figures": [
+    {
+      "id": "fig01",
+      "doc": "part2",
+      "page": 40,
+      "description": "Quattro pannelli 2×2 della discesa stocastica del perceptron con b = 0 (pannello 1 stato iniziale, pannelli 2-4 un aggiornamento ciascuno): 7 cerchi rossi (positivi) e 8 quadrati blu (negativi), vettore w come freccia nera dall'origine, confine tratteggiato per l'origine; in ogni pannello un esempio sbagliato (freccia rossa per i positivi, freccia blu con freccia punteggiata opposta -x per il negativo) fa ruotare w (freccia curva tratteggiata) e il confine; vecchio w e vecchio confine in grigio. Nell'ultimo pannello il confine quasi verticale separa tutti gli esempi.",
+      "region": "metà superiore della pagina, griglia 2×2 di grafici sopra il titolo 'Perceptron Regression'",
+      "concepts": ["c01", "c02", "c03"],
+      "importance": 3
+    },
+    {
+      "id": "fig02",
+      "doc": "part2",
+      "page": 43,
+      "description": "Mappa di decisione One-vs-All con tre classi (quadrati blu, cerchi rossi, cerchi verdi): tre semirette nere da un punto comune dividono il piano in tre regioni convesse; etichetta (w_i - w_j)^T x = 0 con freccia tratteggiata su uno dei confini.",
+      "region": "centro della pagina, sotto la frase 'An example of decision boundaries for three classes is the following'",
+      "concepts": ["c35", "c36", "c37", "c38"],
+      "importance": 3
+    },
+    {
+      "id": "fig03",
+      "doc": "part2",
+      "page": 46,
+      "description": "Cerchi rossi e quadrati blu separabili nel piano (x_1, x_2); fascio di rette grigie che separano tutti gli esempi e retta nera in grassetto a margine massimo, con doppia freccia perpendicolare verso gli esempi più vicini delle due classi e segmenti che marcano il margine.",
+      "region": "centro della pagina, sotto la frase 'multiple hyperplanes may correctly classify all examples'",
+      "concepts": ["c65", "c70", "c71", "c72", "c73"],
+      "importance": 3
+    }
+  ],
+  "widgets": [
+    {
+      "id": "p07-perceptron-quattro-aggiornamenti",
+      "title": "Tre aggiornamenti in quattro pannelli: il confine ruota",
+      "concepts": ["c01", "c02", "c03"],
+      "scenario": "pesce",
+      "realExample": "Sul nastro trasportatore dell'impianto di confezionamento ogni pesce è descritto da luminosità e larghezza centrate (sottratta la media, così un confine per l'origine con b = 0 ha senso). Salmone = +1 (cerchi rossi), spigola = -1 (quadrati blu); 7 + 8 pesci sintetici disposti come nella figura di pagina 40. Il perceptron corregge il confine un pesce sbagliato alla volta: è la discesa stocastica.",
+      "storyboard": [
+        "Stato iniziale: piano (luminosità centrata x_1, larghezza centrata x_2) con 7 cerchi rossi a sinistra e 8 quadrati blu a destra; freccia nera w dall'origine verso l'alto a sinistra; confine tratteggiato per l'origine con pendenza 0,37; semipiani tinti leggermente di rosa (lato salmone) e lilla (lato spigola). I due salmoni in basso a sinistra, dal lato sbagliato, pulsano con un alone arancio; contatore 'errori: 2'.",
+        "Premendo 'Passo' il perceptron sceglie a caso un esempio sbagliato (il salmone in basso a sinistra): una freccia rossa cresce dall'origine fino al punto in 300 ms; una copia scalata ηyx trasla sulla punta di w (somma testa-coda) e appare il nuovo w nero, mentre il vecchio w e il vecchio confine sbiadiscono in grigio; una freccia curva tratteggiata indica il verso della rotazione.",
+        "Il confine ruota in 500 ms attorno all'origine e diventa più ripido; nel pannello a destra il valore y·w^T x del pesce usato passa da -0,85 a -0,85 + η||x||^2 (numeri live) e il contatore scende; la regola w ← w + ηyx è evidenziata con i valori sostituiti.",
+        "Secondo passo: il salmone in basso vicino all'asse x_2 produce un'altra rotazione; terzo passo: la spigola in alto finisce dal lato salmone, quindi compaiono una freccia blu verso il punto e una freccia blu punteggiata opposta (-x, perché y = -1): w ruota di poco nell'altro verso.",
+        "Con il confine quasi verticale gli errori arrivano a 0: banner 'separati in 3 passi' e, sopra il grafico, una filmstrip dei quattro fotogrammi come nei pannelli della fonte, cliccabile per tornare a ciascuno.",
+        "Modalità libera: l'utente trascina i pesci o ne aggiunge uno cliccando; toggle 'b ≠ 0' mostra per contrasto che con un bias il confine non passa più per l'origine e può anche traslare."
+      ],
+      "interactions": ["pulsanti Passo, Play/Pausa e Riavvolgi", "slider η da 0,1 a 2", "clic su un esempio sbagliato per scegliere tu quale usare nell'aggiornamento", "trascinare i pesci o aggiungerne con un clic", "toggle 'b ≠ 0'"],
+      "visual": "SVG quadrato con assi x_1, x_2 e griglia leggera; cerchi rossi e quadrati blu; w come freccia nera spessa, vecchio w grigio; confine tratteggiato nero, vecchi confini grigi che svaniscono; freccia rossa (positivo) o blu più blu punteggiata (negativo) per l'esempio usato; pannello laterale con w numerico, η, y·w^T x prima e dopo, contatore errori; filmstrip di 4 miniature.",
+      "aha": "Ogni aggiornamento usa un solo esempio: w si avvicina ai positivi sbagliati e si allontana dai negativi sbagliati, e il confine, ortogonale a w e ancorato all'origine perché b = 0, ruota come una lancetta finché tutti stanno dal lato giusto.",
+      "formulasShown": ["\\mathbf{w} \\leftarrow \\mathbf{w} + \\eta y\\mathbf{x}", "y\\,\\mathbf{w}^T\\mathbf{x} \\;\\to\\; y\\,\\mathbf{w}^T\\mathbf{x} + \\eta\\|\\mathbf{x}\\|^2", "\\{\\mathbf{x} : \\mathbf{w}^T\\mathbf{x} = 0\\}"],
+      "challenge": "Prevedi la rotazione: prima di ogni passo clicca sul bordo del grafico dove pensi finirà il nuovo confine; punto se sei entro 10 gradi. Livello 2: scegli l'ordine degli esempi sbagliati per arrivare a zero errori nel minor numero di passi.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p07-dalle-case-alla-matrice",
+      "title": "Dalle case alla matrice X e al vettore y",
+      "concepts": ["c04", "c05", "c06", "c07"],
+      "scenario": "case",
+      "realExample": "Un'agenzia immobiliare vuole prevedere il prezzo di vendita (y, migliaia di euro) di un appartamento da superficie (m²), numero di stanze e distanza dal centro (km). Ogni appartamento venduto è un esempio; il dataset diventa la matrice X e il vettore y della regressione con il perceptron (dati sintetici).",
+      "storyboard": [
+        "A sinistra una mappa stilizzata con 6 icone-casa, ognuna con una schedina (superficie, stanze, distanza, prezzo); a destra una tabella vuota con le intestazioni delle d = 3 colonne e, separato, un vettore colonna y vuoto.",
+        "Clic su una casa: la scheda vola nella tabella (400 ms) e diventa una riga (x^i)^T; il prezzo scende nel vettore y alla stessa altezza; i badge n = |D| (cresce) e d = |x| (resta 3) si aggiornano.",
+        "Con 6 righe compare (fade 300 ms) l'etichetta X ∈ R^{6×3}; un evidenziatore scorre su una riga in 600 ms ('un esempio: (x^i)^T') e poi su una colonna ('una feature per tutte le case'); hover su una colonna illumina quella grandezza su tutte le case della mappa.",
+        "Toggle '1D': in 500 ms le colonne stanze e distanza si comprimono e resta solo la superficie; sotto la tabella appare lo scatter prezzo vs superficie con la retta f(x) = w^T x e segmenti verticali tra ogni punto e la retta, con il valore y_i - f(x^i) scritto accanto: la differenza tra predetto e reale che la regressione vuole ridurre. Muovendo gli slider la retta e i segmenti si aggiornano a ogni frame e la formula mostra la casa selezionata con i numeri (per esempio f(85) = 2,5·85 = 212,5 k€ contro y = 230 k€).",
+        "Toggle 'colonna di 1': in 400 ms si inserisce una colonna di uni a sinistra (bias assorbito come nel perceptron aumentato), d passa a 4 e la retta dello scatter può ora non passare per l'origine (compare lo slider dell'intercetta)."
+      ],
+      "interactions": ["clic sulle case per aggiungerle al dataset (da 1 a 12 case)", "pulsante 'Aggiungi feature' (piano, anno di costruzione): d da 3 a 5", "toggle 1D", "toggle colonna di 1", "nella vista 1D slider di pendenza w_1 da 0 a 6 k€/m² (passo 0,1) e, con la colonna di 1, di intercetta w_0 da -100 a 200 k€ (passo 5)"],
+      "visual": "Tabella HTML con righe colorate come le icone delle case, vettore y in verde a lato, badge con n, d e dimensione n×d; nella vista 1D scatter SVG con retta e segmenti dei residui; formula f(x) = w^T x con i valori della casa selezionata.",
+      "aha": "Il dataset intero è una sola matrice: ogni esempio è una riga, ogni feature una colonna, le etichette formano il vettore y; la regressione con il perceptron diventa algebra lineare.",
+      "formulasShown": ["X \\in \\mathbb{R}^{n \\times d}, \\; n = |D|, \\; d = |\\mathbf{x}|", "\\mathbf{y} \\in \\mathbb{R}^{n}", "f(\\mathbf{x}) = \\mathbf{w}^T\\mathbf{x}"],
+      "challenge": "Data una tabella già piena, indica n e d e trova la riga che corrisponde a una casa descritta a parole ('trilocale di 85 m² a 2 km dal centro').",
+      "size": "S",
+      "tech": "html+motion"
+    },
+    {
+      "id": "p07-sistema-impossibile",
+      "title": "Una retta per tutti i punti? Il sistema sovradeterminato",
+      "concepts": ["c08", "c09", "c10", "c11", "c12"],
+      "scenario": "case",
+      "realExample": "Prezzo in funzione della superficie con intercetta: due incognite (w_0, w_1). Con due appartamenti il sistema Xw = y è quadrato e X^{-1} lo risolve; con 10 o 30 appartamenti venduti il sistema è sovradeterminato e nessuna retta passa per tutti (dati sintetici).",
+      "storyboard": [
+        "Stato iniziale: due case sul piano (superficie, prezzo), (60 m², 180 k€) e (100 m², 260 k€). Con la colonna di 1 per l'intercetta X = [[1, 60], [1, 100]] è 2×2 e il badge mostra det X = 40 ≠ 0. Pulsante 'Risolvi con X^{-1}': sotto compare w = X^{-1}y = (60; 2) con i numeri, la retta 60 + 2·superficie si disegna da sinistra a destra in 500 ms e passa esattamente per entrambi i punti; le due equazioni si accendono di verde in 200 ms con i valori sostituiti (60 + 2·60 = 180, 60 + 2·100 = 260).",
+        "Clic sul piano per aggiungere una terza casa, per esempio (80 m², 250 k€): X diventa 3×2 e il badge passa a 'n = 3 > d = 2'; il pulsante X^{-1} si colora di rosso con uno scossone di 200 ms e il messaggio 'X non è quadrata (n > d): X^{-1} non esiste'. Per convincere, il widget disegna in sequenza (300 ms ciascuna) le tre rette che passano per due punti alla volta: ognuna manca il terzo, con il residuo scritto accanto (per esempio la retta per le prime due case predice 220 k€ a 80 m²: residuo 30 k€).",
+        "Slider n da 2 a 30: le nuove case compaiono con uno stagger di 50 ms; a destra la colonna delle equazioni w^T x^i = y_i, una per casa, con i numeri sostituiti. Per la retta trascinabile ogni equazione soddisfatta (|residuo| < 1 k€) è verde, le altre rosse, aggiornate a ogni movimento; contatore 'equazioni soddisfatte: al massimo 2 su 30'.",
+        "Toggle 'punti allineati': in 600 ms i punti scivolano esattamente sulla retta 60 + 2·superficie e tutte le equazioni diventano verdi una dopo l'altra: l'unico caso in cui la soluzione esatta esiste ('unless the data perfectly align').",
+        "Toggle 'quadrata ma singolare': due case con la stessa superficie (70 m²) e prezzi diversi (190 e 230 k€): X = [[1, 70], [1, 70]] con det = 0 (il badge diventa rosso); il pulsante X^{-1} è disattivato e nessuna retta non verticale le attraversa entrambe; messaggio 'anche quadrata può non essere invertibile'."
+      ],
+      "interactions": ["clic sul piano per aggiungere case", "slider n da 2 a 30", "trascinare la retta (due maniglie)", "pulsante 'Risolvi con X^{-1}'", "toggle 'punti allineati'", "toggle 'quadrata ma singolare'"],
+      "visual": "Scatter SVG con case come punti, retta blu trascinabile, segmenti dei residui; colonna laterale di equazioni con semaforo verde/rosso; badge dimensione di X e det(X) quando è quadrata; messaggi di errore in rosso.",
+      "aha": "Con più equazioni che incognite (n ≫ d) i vincoli si contraddicono e nessuna retta li soddisfa tutti; X^{-1} non esiste o non serve, bisogna cambiare domanda: non 'risolvi' ma 'approssima al meglio'.",
+      "formulasShown": ["\\mathbf{w}^T\\mathbf{x}^{i} = y_i \\;\\; \\forall i", "X\\mathbf{w} = \\mathbf{y}", "\\mathbf{w} = X^{-1}\\mathbf{y}", "\\begin{bmatrix} 1 & 60 \\\\ 1 & 100 \\end{bmatrix}\\begin{bmatrix} w_0 \\\\ w_1 \\end{bmatrix} = \\begin{bmatrix} 180 \\\\ 260 \\end{bmatrix} \\;\\Rightarrow\\; \\mathbf{w} = \\begin{bmatrix} 60 \\\\ 2 \\end{bmatrix}", "n \\gg d"],
+      "challenge": "Caccia alla retta perfetta: con 5 case trascina la retta per soddisfare più equazioni possibile; il widget svela che il massimo è 2 (salvo allineamento) e introduce il bisogno della MSE.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p07-quadrati-dei-residui",
+      "title": "I quadrati dei residui: costruire l'errore quadratico",
+      "concepts": ["c13", "c14", "c15", "c16"],
+      "scenario": "case",
+      "realExample": "12 appartamenti venduti (superficie, prezzo). La qualità di una retta di prezzo si misura sommando i quadrati degli errori di previsione: è la loss che l'agenzia minimizza per fissare i prezzi suggeriti (dati sintetici).",
+      "storyboard": [
+        "Scatter dei 12 appartamenti e retta trascinabile; per ogni casa un segmento verticale tra punto e retta, rosso se la retta sottostima (r_i > 0), blu se sovrastima: il vettore dei residui y - Xw.",
+        "Toggle 'quadrati': ogni segmento si apre in un quadrato di lato |r_i| (animazione a ventaglio 400 ms); l'area del quadrato è r_i^2.",
+        "I quadrati volano uno a uno (stagger 100 ms, 12 quadrati in circa 1,2 s) in una barra impilata a destra: la sua altezza è E(w; D) = Σ r_i^2, con il totale numerico live; sotto, la forma matriciale mostra il vettore r come colonna e r^T r come prodotto riga per colonna, con i 12 numeri che si moltiplicano e si sommano in uno scalare.",
+        "Trascinando la retta la barra cresce o scende in tempo reale; una mini-mappa del contorno di E(w_0, w_1) mostra il punto corrente e la sua traccia; avvicinandosi al minimo compare una stella.",
+        "Pulsante 'Soluzione ottima': la retta scatta a w* = argmin E con un'animazione a molla (circa 600 ms); i quadrati si riducono al minimo possibile ma non spariscono: resta l'errore irriducibile dei dati (valore minimo di E scritto accanto alla stella).",
+        "Toggle 'dividi per n': in 400 ms la barra si accorcia (MSE media, E/12) ma la stella del minimo non si sposta."
+      ],
+      "interactions": ["trascinare la retta con due maniglie", "toggle quadrati", "pulsante Soluzione ottima", "toggle 'dividi per n'", "hover su un quadrato per vedere r_i e r_i^2"],
+      "visual": "Scatter SVG con quadrati semitrasparenti colorati per segno del residuo; barra impilata con i contributi; contour plot di E nel piano dei pesi con traccia; formula E con i numeri live e prodotto r^T r esploso.",
+      "aha": "E(w; D) = (y - Xw)^T(y - Xw) è letteralmente la somma delle aree dei quadrati dei residui: uno scalare che misura la qualità della retta e dà un bersaglio da minimizzare.",
+      "formulasShown": ["\\mathbf{r} = \\mathbf{y} - X\\mathbf{w}", "E(\\mathbf{w}; D) = \\sum_{(\\mathbf{x}, y) \\in D}\\left(y - f(\\mathbf{x})\\right)^2 = (\\mathbf{y} - X\\mathbf{w})^T(\\mathbf{y} - X\\mathbf{w})", "\\mathbf{w}^{*} = \\arg\\min_{\\mathbf{w}} E(\\mathbf{w}; D)"],
+      "challenge": "Trova a mano una retta con E entro il 5% del minimo in meno di 20 secondi; poi indovina se spostare un solo punto lontano (outlier) sposta molto la retta ottima.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p07-mse-contro-cross-entropy",
+      "title": "Classificare con la MSE o con la cross-entropy?",
+      "concepts": ["c17"],
+      "scenario": "medicina",
+      "realExample": "Un classificatore di COVID-19 da radiografia del torace produce una probabilità di positività p = σ(w^T x). Addestrarlo con la MSE (y - p)^2 o con la cross-entropy dà comportamenti diversi quando il modello è sicuro e sbagliato (dati sintetici; la cross-entropy è del modulo d01 e serve qui da termine di confronto).",
+      "storyboard": [
+        "Stato iniziale: grafico della loss per un paziente positivo (y = 1) in funzione della probabilità predetta p tra 0 e 1; le due curve si disegnano da destra a sinistra in 600 ms: la curva MSE (1 - p)^2 resta sotto 1, la curva cross-entropy -log p sale all'infinito verso p = 0.",
+        "Slider p: due puntini scorrono sulle curve con i valori numerici (per p = 0,01: MSE 0,980, cross-entropy 4,605); un secondo pannello a barre mostra il gradiente rispetto allo score z = w^T x con i numeri sostituiti: per la MSE -2(1 - p)p(1 - p) = -0,0196, che tende a 0 quando p → 0 (saturazione), per la cross-entropy -(1 - p) = -0,99, che resta grande. Le barre si aggiornano a ogni movimento dello slider.",
+        "Play 'addestramento' (40 epoche in circa 8 s, un fotogramma ogni 200 ms): 40 pazienti sintetici, due modelli logistici addestrati in parallelo con lo stesso η (MSE a sinistra, cross-entropy a destra) da un'inizializzazione pessima (tutti i positivi con p ≈ 0,01); i punti dei pazienti cambiano colore quando passano dal lato giusto e le curve di loss e accuratezza mostrano la MSE bloccata a lungo, la cross-entropy che recupera in poche epoche.",
+        "A fine corsa (fade 300 ms) il riepilogo testuale: 'la MSE si può usare per classificare, ma non ottimizza bene per le probabilità' (pagina 41), con il rapporto tra i due gradienti iniziali (circa 50 volte)."
+      ],
+      "interactions": ["slider p da 0,001 a 0,999", "toggle etichetta y = 1 / y = 0", "Play/Pausa dell'addestramento", "selettore inizializzazione (buona / pessima)"],
+      "visual": "Due curve di loss colorate (MSE arancio, cross-entropy viola) con puntini mobili; pannello dei gradienti a barre; due mini-grafici di training affiancati; valori numerici live.",
+      "aha": "La MSE punisce poco un errore sicuro e sbagliato (loss al massimo 1, gradiente che si annulla): per stimare probabilità serve una loss pensata per le probabilità.",
+      "formulasShown": ["\\ell_{MSE} = (y - p)^2", "\\ell_{CE} = -\\left[y\\log p + (1 - y)\\log(1 - p)\\right]", "p = \\sigma(\\mathbf{w}^T\\mathbf{x})", "\\frac{\\partial \\ell_{MSE}}{\\partial z} = -2(y - p)\\,p(1 - p)", "\\frac{\\partial \\ell_{CE}}{\\partial z} = p - y"],
+      "challenge": "Due curve di training anonime: indovina quale è stata ottenuta con la MSE guardando solo la forma.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p07-gradiente-a-zero",
+      "title": "Dal gradiente alle equazioni normali, passo per passo",
+      "concepts": ["c18", "c19", "c20", "c21", "c22"],
+      "scenario": "case",
+      "realExample": "Otto appartamenti (superficie, prezzo) con colonna di 1 per l'intercetta: la soluzione in forma chiusa dà il listino ottimo in un colpo solo, senza iterazioni (dati sintetici).",
+      "storyboard": [
+        "A sinistra il contour plot di E(w_0, w_1): ellissi concentriche (una ciotola vista dall'alto); un punto w trascinabile con la freccia -∇E = 2X^T(y - Xw) che punta verso il fondo; nel riquadro piccolo la retta corrispondente sullo scatter delle case.",
+        "Trascinando w verso il centro la freccia si accorcia; al fondo si annulla e compare il badge '∇E = 0'.",
+        "A destra uno stepper della derivazione: ogni clic su 'Avanti' rivela un passaggio (gradiente; gradiente = 0; porta a destra; dividi per 2; trasponi; moltiplica per (X^T X)^{-1}) con una transizione di 350 ms: i termini che si spostano da un membro all'altro volano nella nuova posizione, il 2 che si semplifica sbiadisce, la T della trasposta ruota sui fattori. Il passaggio corrente è evidenziato e sotto le lettere compaiono i numeri: X^T X (2×2), X^T y (2×1), il determinante.",
+        "All'ultimo passaggio si calcola w* con i numeri sostituiti e il punto sul contour salta al fondo con un'animazione a molla (circa 700 ms); in parallelo la retta dello scatter ruota e trasla fino alla posizione ottima.",
+        "Pulsante 'Aggiungi casa': X^T X e X^T y si aggiornano come somme di prodotti (la nuova riga contribuisce x x^T e x y), w* e la ciotola si spostano live.",
+        "Toggle 'per componenti' (der09): la freccia del gradiente si scompone nelle due componenti; accanto a ciascuna una fila di barrette, una per casa, alte residuo × feature (x_i(y - f(x))), che si sommano nella componente. Un interruttore '1/2' dimezza le frecce e mostra che la formula coincide con quella per singolo peso di pagina 42; al fondo della ciotola entrambe le file sommano a zero: il residuo è ortogonale a ogni colonna di X."
+      ],
+      "interactions": ["trascinare w sul contour (w_0 da -100 a 200 k€, w_1 da 0 a 6 k€/m²)", "stepper Avanti/Indietro della derivazione (6 passaggi)", "aggiungere o togliere case (da 3 a 15)", "toggle 'gradiente riga / colonna'", "toggle 'per componenti' con interruttore del fattore 1/2"],
+      "visual": "Contour plot SVG con freccia del gradiente; stepper di formule KaTeX con il passaggio attivo evidenziato e le matrici numeriche sotto; scatter piccolo con retta; badge ∇E = 0.",
+      "aha": "La soluzione ottima è il punto dove il gradiente si annulla; imporlo trasforma la minimizzazione in un sistema lineare d×d, X^T X w = X^T y, risolvibile una volta per tutte.",
+      "formulasShown": ["\\nabla E(\\mathbf{w}; D) = -2\\mathbf{y}^TX + 2\\mathbf{w}^TX^TX", "-2\\mathbf{y}^TX + 2\\mathbf{w}^TX^TX = 0", "X^TX\\mathbf{w} = X^T\\mathbf{y}", "\\mathbf{w} = \\left(X^TX\\right)^{-1}X^T\\mathbf{y}", "\\left(\\nabla E\\right)^T = -2X^T\\left(\\mathbf{y} - X\\mathbf{w}\\right)"],
+      "challenge": "Calcola a mano X^T X e X^T y per 3 case date e confronta con i numeri del widget; poi prevedi da che parte si sposterà w* aggiungendo una casa molto cara.",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p07-left-inverse-rango",
+      "title": "Left-inverse e rango pieno: la feature ridondante",
+      "concepts": ["c23", "c24", "c25"],
+      "scenario": "case",
+      "realExample": "Nel foglio delle vendite qualcuno ha inserito la superficie due volte, in m² e in piedi quadrati (1 m² = 10,764 ft²): le due colonne sono linearmente dipendenti e la formula chiusa si rompe (dati sintetici).",
+      "storyboard": [
+        "Stato iniziale: matrice X 6×2 (superficie, stanze), X^T X 2×2 con determinante live e il left-inverse (X^T X)^{-1} X^T 2×6 come mappa di calore; pulsante 'Verifica': le celle del prodotto left-inverse · X si calcolano una alla volta (stagger 120 ms) e si illuminano come identità I_2, mentre il prodotto X · left-inverse (6×6) resta pieno di valori fuori diagonale: non è l'identità (è una proiezione).",
+        "'Aggiungi superficie in ft²': in 400 ms una nuova colonna proporzionale alla prima (valori ×10,764) entra in X; X^T X diventa 3×3 e il determinante scende a 0 con un contatore animato di 800 ms; badge 'rango 2 su 3' in rosso; messaggio 'X^T X non invertibile: il left-inverse non esiste' e w* sostituito da '?'.",
+        "Vista geometrica: le colonne di X (sui primi 3 esempi) come frecce in 3D; le due frecce superficie si sovrappongono sulla stessa direzione (rotazione di 600 ms) e il parallelepipedo che formano con la terza si schiaccia a volume zero: il volume è |det| e scende a 0.",
+        "'Preprocessing: rimuovi feature ridondanti': la colonna ft² scivola fuori in 400 ms, il determinante torna diverso da zero, il badge torna 'rango 2 su 2' in verde e w* ricompare con i numeri.",
+        "Slider 'quasi dipendente' (rumore dallo 0 al 5% sulla colonna ft²): il determinante diventa minuscolo e i pesi di m² e ft² esplodono in valori enormi e opposti che si compensano: instabilità numerica."
+      ],
+      "interactions": ["pulsanti Aggiungi/Rimuovi feature", "pulsante Verifica", "slider rumore 0-5%", "hover sulle celle del left-inverse", "rotazione della vista 3D"],
+      "visual": "Matrici come griglie HTML con heatmap; badge di rango e determinante; vista 3D delle colonne (canvas) con parallelepipedo semitrasparente; tabella dei pesi w con barre che crescono.",
+      "aha": "La formula chiusa esiste solo se le colonne di X sono indipendenti (X^T X a rango pieno); una feature combinazione delle altre non aggiunge informazione e rompe l'inversione: va tolta prima.",
+      "formulasShown": ["X^{+} = \\left(X^TX\\right)^{-1}X^T", "\\left(X^TX\\right)^{-1}X^TX = I_d", "\\operatorname{rank}\\left(X^TX\\right) = d \\iff \\det\\left(X^TX\\right) \\neq 0"],
+      "challenge": "Fra 5 feature candidate (m², ft², stanze, bagni, stanze + bagni) scegli il sottoinsieme più grande che lascia X^T X invertibile.",
+      "size": "M",
+      "tech": "html+motion"
+    },
+    {
+      "id": "p07-quando-mse-e-esatto",
+      "title": "Quando la MSE trova la soluzione esatta",
+      "concepts": ["c26", "c27"],
+      "scenario": "case",
+      "realExample": "Listino di un costruttore in cui il prezzo è esattamente 1,2 k€ al m² più 30 k€ fissi: i dati sono perfettamente allineati e la regressione deve ritrovare la regola esatta; con prezzi reali (rumorosi) trova la migliore approssimazione (dati sintetici).",
+      "storyboard": [
+        "Stato iniziale, selettore n = d = 2: due case (50 m², 90 k€) e (100 m², 150 k€), X = [[1, 50], [1, 100]] quadrata con det = 50 ≠ 0; due colonne di calcolo affiancate, X^{-1} y e (X^T X)^{-1} X^T y, si riempiono cifra per cifra in 1 s e coincidono: w = (30; 1,2), cioè 30 k€ fissi più 1,2 k€ al m²; errore E = 0.",
+        "Pannello algebra: la catena (X^T X)^{-1} X^T = X^{-1}(X^T)^{-1} X^T = X^{-1} si scrive un passaggio alla volta (400 ms ciascuno) e i fattori (X^T)^{-1} X^T si evidenziano e si cancellano in 500 ms.",
+        "Selettore n = 5: tre case in più compaiono (stagger 150 ms) esattamente sulla regola del costruttore 30 + 1,2·superficie; la retta MSE si disegna in 500 ms e passa per tutti, E = 0, badge 'soluzione esatta trovata'.",
+        "Slider rumore: i punti si staccano dalla retta in tempo reale; la retta MSE si ricalcola a ogni movimento e E cresce da 0 (valore live); due rette alternative tratteggiate (una più ripida, una più piatta) mostrano un E sempre maggiore di quello della retta MSE, con le tre barre dell'errore affiancate."
+      ],
+      "interactions": ["selettore n (2 o 5)", "slider rumore 0-30 k€", "toggle rette alternative"],
+      "visual": "Scatter con retta MSE e rette alternative, barre dell'errore per ciascuna; pannello di calcolo matriciale con i numeri; animazione di cancellazione dei fattori.",
+      "aha": "La pseudoinversa generalizza l'inversa: coincide con X^{-1} quando esiste, trova la soluzione esatta se c'è, e altrimenti dà la migliore approssimazione ai minimi quadrati.",
+      "formulasShown": ["\\left(X^TX\\right)^{-1}X^T = X^{-1}\\left(X^T\\right)^{-1}X^T = X^{-1}", "E(\\mathbf{w}_0; D) = 0 = \\min_{\\mathbf{w}} E(\\mathbf{w}; D)"],
+      "challenge": "Con rumore attivo, prova a trovare una retta con E minore di quella MSE: il widget tiene il record e mostra che non ci riesci.",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p07-discesa-gradiente-energia",
+      "title": "Discesa del gradiente per prevedere l'energia solare",
+      "concepts": ["c28", "c29", "c30", "c31"],
+      "scenario": "energia",
+      "realExample": "Previsione della produzione oraria (kWh) di un impianto fotovoltaico da irradianza e temperatura. Con milioni di letture e molte feature invertire X^T X è costoso: si scende lungo il gradiente dell'errore (dati sintetici).",
+      "storyboard": [
+        "A sinistra il contour di E(w_1, w_2) con ellissi allungate e il punto di partenza w = 0; a destra lo scatter produzione vs irradianza colorato per temperatura, con il piano/retta di previsione corrente.",
+        "Passo 'singolo peso': per ∂E/∂w_1 compare una fila di piccole barre, una per lettura (40 letture di un giorno), alte (y - f(x))(-x_1); si impilano in un totale in 500 ms (stagger 10 ms) e il punto si muove in 300 ms solo lungo l'asse w_1 mentre w_2 resta fermo; la formula mostra la somma con i numeri (per esempio ∂E/∂w_1 = -312,4 e w_1: 0 → 0,0312 con η = 0,0001).",
+        "Passo su w_2, poi toggle 'tutti i pesi insieme': con Play (un passo ogni 250 ms) la traccia sul contour passa da zig-zag a scale a una discesa diagonale, e lo scatter aggiorna la retta di previsione a ogni passo.",
+        "Slider η: con η piccolo la traccia avanza lentissima; con η troppo grande rimbalza tra le pareti della valle e diverge fuori dal grafico con un avviso rosso.",
+        "Stella del minimo calcolata con la forma chiusa; contatore del costo: inversione di X^T X ~ d^3 contro un passo ~ n·d; slider d da 10 a 10.000 mostra quando il gradiente conviene.",
+        "Toggle 'fattore 1/2': le frecce del gradiente raddoppiano di lunghezza ma la stella del minimo resta nello stesso punto."
+      ],
+      "interactions": ["pulsanti Passo e Play", "slider η da 0,0001 a 0,1 in scala logaritmica", "toggle 'un peso alla volta / tutti i pesi'", "slider d (numero di feature) per il confronto dei costi", "toggle fattore 1/2"],
+      "visual": "Canvas con contour a colori e traccia della discesa; barre dei contributi per esempio; scatter con retta; formula del gradiente con i valori sostituiti; contatore delle operazioni.",
+      "aha": "La derivata rispetto a w_i è la somma degli errori pesati dalla feature x_i: ogni lettura tira il peso in proporzione a quanto sbaglia, e a piccoli passi si arriva al minimo senza invertire matrici.",
+      "formulasShown": ["\\frac{\\partial E}{\\partial w_i} = \\sum_{(\\mathbf{x}, y)\\in D}\\left(y - f(\\mathbf{x})\\right)\\left(-x_i\\right)", "w_i \\leftarrow w_i + \\eta\\sum_{(\\mathbf{x}, y)\\in D}\\left(y - f(\\mathbf{x})\\right)x_i", "\\mathbf{w} = \\left(X^TX\\right)^{-1}X^T\\mathbf{y}"],
+      "challenge": "Trova η che arriva entro l'1% del minimo in meno di 30 passi senza divergere.",
+      "size": "L",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "p07-uno-contro-tutti",
+      "title": "Uno contro tutti: tre classificatori per tre coperture del suolo",
+      "concepts": ["c32", "c33", "c34"],
+      "scenario": "telerilevamento",
+      "realExample": "Pixel di un'immagine satellitare multispettrale descritti da due feature (riflettanza nel rosso e nel vicino infrarosso NIR); classi acqua, vegetazione e suolo nudo. Un perceptron binario non basta per tre classi: si allenano tre classificatori 'classe contro resto' (dati sintetici).",
+      "storyboard": [
+        "Stato iniziale: scatter di 90 pixel (30 per classe) nello spazio (riflettanza rosso, riflettanza NIR) colorati per classe (acqua blu: rosso e NIR bassi; vegetazione verde: rosso basso, NIR alto; suolo marrone: entrambi medi) con un solo iperpiano trascinabile: comunque lo si muova separa al massimo una classe dalle altre due; contatore errori sempre ≥ 30 e messaggio 'un solo classificatore lineare non basta'.",
+        "'Allena OvA': tre carte in fila. Carta 'acqua': in 400 ms i pixel d'acqua diventano + e tutti gli altri si ingrigiscono come - (rietichettatura y^{(i)}); la retta acqua-vs-resto si addestra con passi di perceptron visibili (uno ogni 150 ms, l'esempio usato lampeggia). Poi, allo stesso modo, le carte vegetazione e suolo; contatore 'classificatori: c = 3' e badge 'dati per classificatore: 90 su 90'.",
+        "Predizione: l'utente trascina un pixel nuovo; tre barre orizzontali mostrano f_acqua(x), f_veg(x), f_suolo(x) = w_i^T x con i valori (per esempio 0,82, -0,31, -0,54) aggiornati a ogni movimento; la barra più lunga si illumina in 150 ms e il pixel prende il colore della classe vincente (argmax).",
+        "Toggle 'mappa': in 800 ms il piano si colora secondo l'argmax, riga dopo riga dall'alto, e le regioni di decisione emergono a bassa opacità.",
+        "Slider numero di classi: aggiungendo urbano, nuvole e ombra compaiono (fade 300 ms) nuove nuvole di pixel, nuove carte e nuovi colori; c cresce e ogni classificatore usa comunque tutto il dataset."
+      ],
+      "interactions": ["trascinare il pixel di test (riflettanze da 0 a 1)", "pulsante Allena OvA", "clic su una carta per vedere il suo problema binario", "slider c da 3 a 6", "toggle mappa delle regioni"],
+      "visual": "Scatter SVG nello spazio (rosso, NIR); carte dei classificatori con miniatura del problema binario; barre degli score con valore numerico; mappa colorata a bassa opacità.",
+      "aha": "Un problema a c classi diventa c problemi binari 'questa classe contro il resto'; in predizione vince il classificatore più sicuro, cioè lo score w_i^T x più alto.",
+      "formulasShown": ["y^{(i)} = \\begin{cases} +1 & \\text{if } \\mathbf{x} \\in \\text{class } i \\\\ -1 & \\text{otherwise} \\end{cases}", "\\hat{y}(\\mathbf{x}) = \\arg\\max_{i} \\mathbf{w}_i^T\\mathbf{x}"],
+      "challenge": "Trova una posizione del pixel in cui le due barre più lunghe sono uguali entro 0,05: sei esattamente su un confine.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p07-confini-differenza-pesi",
+      "title": "I confini nascono dalla differenza dei pesi",
+      "concepts": ["c35", "c36", "c37", "c38"],
+      "scenario": "cifre",
+      "realExample": "Cifre scritte a mano 0, 1 e 7 (immagini 8×8) descritte da due feature centrate: quantità di inchiostro e simmetria orizzontale. Tre vettori peso di un One-vs-All già addestrato definiscono le tre regioni della mappa di decisione, come nella figura di pagina 43 (dati sintetici).",
+      "storyboard": [
+        "Stato iniziale: tre frecce w_0 = (2, 1), w_1 = (-1, 2), w_7 = (-1, -3) dall'origine, con le punte trascinabili; il piano è colorato secondo argmax_i w_i^T x e contiene 60 punti-cifra (20 per classe); tre semirette nere separano le regioni, disegnate dall'origine verso l'esterno in 500 ms.",
+        "Hover su un confine: in 300 ms compare la freccia tratteggiata w_i - w_j disegnata a partire dal confine e una squadretta a 90 gradi che si apre ruotando; l'etichetta (w_i - w_j)^T x = 0 segue il cursore con i numeri sostituiti (per esempio (3, -1)^T x = 0 per il confine 0-1).",
+        "Toggle 'rette complete': in 400 ms ogni confine si prolunga in retta intera; il pezzo della retta 0-1 che entra nella regione del 7 appare grigio chiaro con la nota 'esiste ma è irrilevante: qui vince il 7' e i tre score del punto sotto il cursore mostrano f_7 più grande degli altri due.",
+        "Trascinando la punta di un w le regioni e i confini si ridisegnano a ogni frame; i tre confini si incontrano sempre in un punto (l'origine, perché non c'è bias) e la freccia differenza resta perpendicolare al suo confine.",
+        "Toggle 'bias': compaiono tre slider w_i0 (da -2 a 2); spostandoli il punto triplo si stacca dall'origine con una transizione di 300 ms e le regioni traslano."
+      ],
+      "interactions": ["trascinare le punte di w_0, w_1, w_7 (componenti da -4 a 4)", "hover sui confini", "toggle rette complete", "toggle bias con slider w_i0 da -2 a 2", "clic su una cifra per vedere i tre score e la sua immagine 8×8"],
+      "visual": "SVG con regioni colorate semitrasparenti, punti-cifra con miniatura 8×8 al passaggio del mouse, frecce dei pesi colorate, vettore differenza tratteggiato con squadretta, prolungamenti grigi.",
+      "aha": "Il confine tra due classi One-vs-All dipende solo da w_i - w_j ed è perpendicolare a quel vettore; le regioni sono intersezioni di semipiani, quindi i pezzi di retta dentro la regione di una terza classe non contano.",
+      "formulasShown": ["f_i(\\mathbf{x}) = f_j(\\mathbf{x})", "\\mathbf{w}_i^T\\mathbf{x} = \\mathbf{w}_j^T\\mathbf{x}", "\\left(\\mathbf{w}_i - \\mathbf{w}_j\\right)^T\\mathbf{x} = 0"],
+      "challenge": "Disponi i tre vettori in modo che le tre regioni abbiano angoli uguali (120 gradi ciascuna); poi prevedi come cambia il confine 0-1 se raddoppi solo w_7.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p07-torneo-all-pairs",
+      "title": "Il torneo All-Pairs",
+      "concepts": ["c39", "c40"],
+      "scenario": "cifre",
+      "realExample": "Riconoscimento delle cifre 0-4 (c = 5) con 10 classificatori binari, uno per coppia (0 vs 1, 0 vs 2, ...), ognuno addestrato solo sulle immagini delle sue due cifre; in predizione le coppie votano (dati sintetici stile MNIST).",
+      "storyboard": [
+        "Stato iniziale: tabellone triangolare c×c con le 10 'partite' (celle sopra la diagonale); ogni cella mostra le miniature delle due cifre; le celle compaiono con uno stagger di 60 ms e il contatore sale fino a c(c-1)/2 = 10 con i numeri sostituiti (5·4/2 = 10).",
+        "'Allena': cliccando una cella (per esempio 3 vs 4) il dataset di 500 immagini si filtra in 400 ms, le altre cifre svaniscono e restano circa 2N/c = 200 esempi; il classificatore della coppia si addestra sui soli esempi delle due classi e la sua accuratezza compare nella cella.",
+        "Play della votazione: si carica un'immagine 8×8 di test (un 4 scritto in modo ambiguo); le celle si accendono una alla volta (250 ms ciascuna, 10 celle in 2,5 s) e ciascuna lancia un gettone animato verso la colonna della cifra che vota; le celle che non contengono il 4 votano comunque per una delle loro due cifre (bordo tratteggiato).",
+        "Classifica finale: istogramma dei voti per cifra che cresce a ogni gettone, massimo possibile c - 1 = 4; vince la cifra con più voti (corona in 300 ms); in caso di pareggio le colonne pari lampeggiano in giallo con la nota 'la fonte non dice come si rompe il pareggio'.",
+        "Disegno libero: l'utente disegna una cifra sulla griglia 8×8 e la votazione si ricalcola in tempo reale (istogramma aggiornato a ogni pixel dipinto)."
+      ],
+      "interactions": ["slider c da 3 a 10 (il tabellone e il contatore c(c-1)/2 si ricostruiscono)", "disegno e cancellazione sulla griglia 8×8", "Play della votazione o Passo cella per cella", "clic su una cella per vedere il classificatore della coppia e i suoi dati"],
+      "visual": "Tabellone a griglia con miniature, gettoni animati, istogramma dei voti, griglia di disegno pixelata; contatore dei classificatori.",
+      "aha": "Con All-Pairs ogni classificatore è esperto di una sola coppia; la classe giusta vince molte sfide e la maggioranza dei voti la fa emergere, anche se alcuni classificatori votano 'a caso' perché la cifra non è nessuna delle loro due.",
+      "formulasShown": ["\\#\\text{classifiers} = \\frac{c(c-1)}{2}", "\\hat{y}(\\mathbf{x}) = \\arg\\max_{i} \\sum_{j \\neq i} \\mathbb{1}\\left[h_{ij}(\\mathbf{x}) = i\\right]"],
+      "challenge": "Disegna una cifra che produca un pareggio tra due classi.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p07-bilancio-ova-allpairs",
+      "title": "OvA o All-Pairs? Il bilancio di classificatori e dati",
+      "concepts": ["c41", "c42", "c43"],
+      "scenario": "telerilevamento",
+      "realExample": "Mappa di copertura del suolo da immagini satellitari con N = 12.000 pixel etichettati e c classi (acqua, bosco, prato, coltivo, urbano, suolo nudo, ...): quale strategia multiclasse conviene? (dati sintetici).",
+      "storyboard": [
+        "Stato iniziale: due colonne affiancate, One-vs-All e All-Pairs, con gli slider c (2-20, default 6) e N (1.000-100.000, default 12.000).",
+        "Per OvA compaiono a cascata (stagger 40 ms) c blocchi-classificatore, ognuno con una barra 'dati' lunga N che si riempie in 300 ms; per All-Pairs c(c-1)/2 blocchi con barre lunghe circa 2N/c. Le formule mostrano i valori sostituiti (con c = 6, N = 12.000: OvA 6 × 12.000; All-Pairs 15 × 4.000 = 60.000 = (c-1)N). Spostando uno slider i blocchi si aggiungono o si tolgono con la stessa animazione.",
+        "Contatori live: numero di classificatori, campioni per classificatore, campioni totali elaborati (cN contro (c-1)N); toggle del costo di addestramento lineare o quadratico nel numero di campioni: con costo quadratico All-Pairs costa molto meno in totale.",
+        "Toggle 'classi sbilanciate': le barre di All-Pairs diventano |D_i| + |D_j|, diverse da coppia a coppia, e l'etichetta '≈ 2N/c' si barra.",
+        "Tabella riassuntiva che si compila a fine animazione: semplicità, numero di classificatori, dati per classificatore, possibile guadagno di prestazioni, popolarità in pratica."
+      ],
+      "interactions": ["slider c da 2 a 20", "slider N da 1.000 a 100.000 (scala logaritmica)", "toggle costo di addestramento lineare / quadratico nel numero di campioni", "toggle classi sbilanciate (una classe con il 50% dei dati)"],
+      "visual": "Due colonne di blocchi con barre di lunghezza proporzionale ai dati, contatori numerici grandi, formule con i valori sostituiti, tabella comparativa.",
+      "aha": "All-Pairs moltiplica i classificatori ma ciascuno vede molti meno dati (e in totale non di più); OvA resta popolare perché è semplice ed efficiente.",
+      "formulasShown": ["\\text{OvA: } c \\times N", "\\text{All-Pairs: } \\frac{c(c-1)}{2} \\times \\frac{2N}{c} = (c-1)N"],
+      "challenge": "Per quale c il numero di classificatori All-Pairs diventa 10 volte quello di OvA? (risposta: c = 21, perché (c-1)/2 = 10).",
+      "size": "S",
+      "tech": "html+motion"
+    },
+    {
+      "id": "p07-gaussiane-covarianza-condivisa",
+      "title": "Gaussiane con la stessa covarianza: il confine diventa una retta",
+      "concepts": ["c44", "c45", "c46", "c47"],
+      "scenario": "pesce",
+      "realExample": "Salmone vs spigola con feature luminosità e larghezza: il classificatore generativo stima per ogni specie una gaussiana 2D (media e covarianza) e il prior, e classifica con il teorema di Bayes (dati sintetici).",
+      "storyboard": [
+        "Stato iniziale: scatter di 60 pesci (luminosità x_1 e larghezza x_2 standardizzate) con due ellissi di iso-densità (1σ e 2σ) per salmone (μ = (2, 1)) e spigola (μ = (-1, 3)), e il confine P(salmone|x) = P(spigola|x) in nero.",
+        "Toggle 'Σ condivisa' spento: le ellissi hanno orientamenti e dimensioni diverse e il confine è una curva (parabola o iperbole), che può anche chiudersi attorno alla classe più compatta.",
+        "Toggle acceso: le due ellissi assumono la stessa forma (covarianza comune) in un morphing di 600 ms e il confine si raddrizza in una retta; compare w = Σ^{-1}(μ_salmone - μ_spigola) come freccia perpendicolare al confine.",
+        "Hover su un pesce: pannello Bayes con p(x|y_i), P(y_i), P(x) e la posterior P(y_i|x) calcolati con i numeri; una barra mostra la posterior.",
+        "Slider del prior P(salmone): con Σ condivisa la retta trasla parallelamente a sé stessa (cambia solo il bias, di log(P(salmone)/P(spigola))), non ruota; la formula del confine mostra i numeri live (con Σ = diag(1, 4) e prior uguali 3x_1 - 0,5x_2 - 0,5 = 0; con P(salmone) = 0,8 il termine noto diventa +0,886).",
+        "Pulsante 'Genera pesci': il modello generativo campiona nuovi pesci dalle gaussiane stimate, che piovono nel grafico: conosce P(x, y) e può produrre dati."
+      ],
+      "interactions": ["toggle Σ condivisa", "trascinare le medie delle due classi (entro [-3, 3] × [-3, 3])", "ruotare (0-180 gradi) e stirare le ellissi (varianze lungo gli assi da 0,25 a 4)", "slider prior P(salmone) da 0,05 a 0,95", "pulsante Genera pesci (50 per volta)", "hover sui pesci"],
+      "visual": "SVG con ellissi colorate per specie, confine nero che si deforma, freccia w, pannello Bayes con numeri, formula della regola lineare con valori sostituiti.",
+      "aha": "Se Σ è la stessa per tutte le classi, il termine quadratico x^T Σ^{-1} x è identico e si cancella nel confronto: resta una regola lineare in x, cioè un classificatore generativo lineare.",
+      "formulasShown": ["P(y_i|\\mathbf{x}) = \\frac{P(\\mathbf{x}|y_i)P(y_i)}{P(\\mathbf{x})}", "\\Sigma_i = \\Sigma", "\\mathbf{w}_i = \\Sigma^{-1}\\boldsymbol{\\mu}_i, \\quad w_{i0} = -\\frac{1}{2}\\boldsymbol{\\mu}_i^T\\Sigma^{-1}\\boldsymbol{\\mu}_i + \\log P(y_i)", "\\left(\\mathbf{w}_i - \\mathbf{w}_j\\right)^T\\mathbf{x} + \\left(w_{i0} - w_{j0}\\right) = 0"],
+      "challenge": "Con Σ separate trova una configurazione in cui il confine è un'ellisse chiusa attorno ai salmoni; poi accendi Σ condivisa e prevedi dove cadrà la retta prima di vederla.",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p07-naive-bayes-parola-per-parola",
+      "title": "Naive Bayes parola per parola",
+      "concepts": ["c48", "c49", "c50", "c51", "c52", "c53", "c54"],
+      "scenario": "spam",
+      "realExample": "Filtro antispam con vocabolario di K = 8 parole (offerta, gratis, vinci, clicca, riunione, progetto, allegato, grazie); ogni email è una sequenza di parole x[1], ..., x[|X|]; i parametri θ_{k,spam} e θ_{k,ham} sono stimati da 1.000 email etichettate (dati sintetici).",
+      "storyboard": [
+        "Stato iniziale: un'email entra da sinistra in 500 ms come nastro di token ('gratis offerta gratis vinci riunione', |X| = 5); sotto, la tabella θ con K = 8 righe (parole) e due colonne (spam, ham), ogni colonna somma a 1.",
+        "Play (o Passo): per ogni posizione j, una ogni 600 ms, si accende una colonna di indicatori z_k(x[j]): un solo 1 nella riga della parola, gli altri 0 grigi; il fattore θ_{k y}^{z_k} con esponente 1 vola (300 ms) nel prodotto della sua classe, i fattori con esponente 0 valgono 1 e svaniscono.",
+        "Due prodotti crescono in parallelo (spam e ham) come barre in scala logaritmica con il valore numerico accanto (per esempio dopo 'gratis': 0,20 contro 0,02); alla fine si moltiplicano per il prior P(y_i) con un'ultima animazione di 300 ms.",
+        "Risultato: f_spam(x) e f_ham(x) non normalizzati, con i numeri; toggle 'normalizza' divide per P(x) = somma dei due (transizione 400 ms delle barre) e mostra le vere posterior: la decisione non cambia perché P(x) è comune.",
+        "Riquadro 'ipotesi naive': evidenzia coppie di parole che nella realtà vanno insieme ('clicca' e 'qui') e mostra che il modello le moltiplica come indipendenti; nota: con migliaia di parole funziona comunque sorprendentemente bene."
+      ],
+      "interactions": ["scrivere l'email o cliccare le parole del vocabolario per comporla (da 1 a 20 parole)", "Passo/Play lungo le posizioni", "slider su θ di una parola per classe da 0,01 a 0,6 (le altre θ della stessa classe si riscalano per sommare a 1)", "toggle normalizza per P(x)"],
+      "visual": "Nastro di token, matrice di indicatori z che si accende colonna per colonna, tabella θ con celle evidenziate, due barre logaritmiche dei prodotti, formule con i valori sostituiti.",
+      "aha": "L'indipendenza condizionale trasforma una distribuzione impossibile da stimare su tutte le email possibili in un prodotto di probabilità di singole parole: ogni parola è un voto moltiplicativo per ciascuna classe.",
+      "formulasShown": ["f_i(\\mathbf{x}) = P(\\mathbf{x}|y_i)P(y_i)", "P(\\mathbf{x}|y_i) = \\prod_{j=1}^{|\\mathbf{X}|}\\prod_{k=1}^{K}\\theta_{ky_i}^{z_k(x[j])}", "z_k(x[j]) \\in \\{0, 1\\}"],
+      "challenge": "Aggiungi una sola parola all'email per ribaltare la decisione da spam a ham.",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p07-conteggi-e-prior",
+      "title": "Dai prodotti per posizione ai conteggi e ai prior",
+      "concepts": ["c55", "c56", "c57"],
+      "scenario": "spam",
+      "realExample": "Stesso filtro antispam: invece di moltiplicare posizione per posizione basta contare quante volte compare ogni parola; il prior si stima contando le email di ogni classe nel training (400 spam e 600 ham, dati sintetici).",
+      "storyboard": [
+        "L'email del widget precedente; pulsante 'raggruppa': i token uguali scivolano uno sull'altro e si impilano (animazione 500 ms), formando l'istogramma dei conteggi N_{kx} = Σ_j z_k(x[j]).",
+        "Il prodotto per posizioni si riscrive come prodotto per parole (dissolvenza incrociata di 400 ms tra le due formule): accanto a ogni pila appare θ_{k y}^{N_{kx}} con l'esponente uguale all'altezza della pila e il valore numerico (per esempio θ_{gratis,spam}^2 = 0,4^2 = 0,16).",
+        "Due urne di email di training (|D_spam| = 400, |D_ham| = 600, |D| = 1000) si riempiono di palline-email in 600 ms; la frazione |D_i|/|D| appare come barra con i numeri (400/1000 = 0,4 e 600/1000 = 0,6) e vola come ultimo fattore, fuori dal prodotto, nel risultato finale f_i(x).",
+        "Slider sulle dimensioni delle urne: il prior e i due punteggi si aggiornano a ogni movimento; per un'email ambigua la decisione cambia (il bordo del risultato passa da rosso a verde in 200 ms) quando il prior dello spam supera una soglia, indicata sullo slider.",
+        "Toggle 'mescola le parole': i token si rimescolano in 500 ms ma le pile e il punteggio restano identici (un badge 'punteggio invariato' lampeggia)."
+      ],
+      "interactions": ["modificare l'email (da 1 a 20 parole)", "slider |D_spam| e |D_ham| da 10 a 2.000 email ciascuno", "toggle vista per posizione / per parola", "pulsante mescola"],
+      "visual": "Token impilabili, istogramma dei conteggi, formula del prodotto con esponenti live, urne con palline-email, barra del prior.",
+      "aha": "Dell'email serve solo quante volte compare ogni parola (l'ordine non conta), e il prior si stima semplicemente contando gli esempi di ogni classe.",
+      "formulasShown": ["N_{k\\mathbf{x}} = \\sum_{j=1}^{|\\mathbf{X}|} z_k(x[j])", "f_i(\\mathbf{x}) = \\left(\\prod_{k=1}^{K}\\theta_{ky_i}^{N_{k\\mathbf{x}}}\\right)\\frac{|D_i|}{|D|}", "P(y_i) = \\frac{|D_i|}{|D|}"],
+      "challenge": "Date due email con le stesse parole in ordine diverso, prevedi se il punteggio cambia; poi trova il prior minimo di spam che fa classificare come spam un'email data.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p07-underflow-logaritmo",
+      "title": "Underflow: quando il prodotto diventa zero",
+      "concepts": ["c58", "c59"],
+      "scenario": "spam",
+      "realExample": "Una newsletter di 300 parole: moltiplicando 300 probabilità dell'ordine di 0,01 il prodotto scende sotto il minimo numero rappresentabile e il computer lo arrotonda a 0 per entrambe le classi. Il filtro reale lavora con i logaritmi (dati sintetici).",
+      "storyboard": [
+        "Play: l'email lunga viene elaborata parola per parola (20 parole al secondo); due contatori in virgola mobile a 64 bit (spam e ham) mostrano il prodotto in notazione scientifica: 1e-2, 1e-10, ..., 1e-300; sotto 2,2e-308 i numeri denormalizzati (lampeggio giallo) e infine '0' rosso dopo circa 162 parole: entrambe le classi valgono 0, decisione impossibile (la bilancia spam/ham si blocca in pari).",
+        "Toggle 'log' (transizione 400 ms): la stessa corsa con la somma dei logaritmi; una linea scende tranquilla (-460 dopo 100 parole, -700 dopo 152, ...) senza rompersi e la differenza tra spam e ham resta leggibile con il suo valore numerico.",
+        "Grafico del punteggio log f_i in funzione del conteggio di una parola: una retta con pendenza log θ_{k y_i} (per θ = 0,05 la pendenza è -3,0); trascinando lo slider del conteggio il punto scende o sale a gradini costanti (animazione di 200 ms per gradino) e il termine N_{kx} log θ_{ky_i} si aggiorna con i numeri.",
+        "Selettore precisione float32/float64: si riavvia la corsa (300 ms di reset) e in float32 lo zero arriva già dopo circa 23 parole."
+      ],
+      "interactions": ["slider lunghezza dell'email da 10 a 1000 parole", "slider probabilità media per parola da 0,001 a 0,2", "toggle prodotto / log", "selettore float32 / float64", "slider del conteggio di una parola da 0 a 20", "Play/Pausa della corsa"],
+      "visual": "Contatore numerico grande con notazione scientifica e colori di allarme, grafico a linea del log-punteggio, retta del punteggio in funzione del conteggio con pendenza annotata.",
+      "aha": "Il logaritmo non cambia la decisione (è monotono) ma trasforma prodotti di numeri minuscoli in somme stabili, e rende il punteggio lineare nei conteggi.",
+      "formulasShown": ["\\log\\left(f_i(\\mathbf{x})\\right) = \\sum_{k=1}^{K} N_{k\\mathbf{x}}\\log\\left(\\theta_{ky_i}\\right) + \\log\\left(\\frac{|D_i|}{|D|}\\right)"],
+      "challenge": "In float32 trova la lunghezza minima dell'email che manda a zero il prodotto delle probabilità.",
+      "size": "S",
+      "tech": "html+motion"
+    },
+    {
+      "id": "p07-naive-bayes-lineare",
+      "title": "Naive Bayes è un classificatore lineare",
+      "concepts": ["c60", "c61", "c62", "c63", "c64"],
+      "scenario": "spam",
+      "realExample": "Il filtro antispam visto come modello lineare: il vettore dei conteggi delle parole x' moltiplicato per i pesi log θ più un bias log-prior; con due sole parole il confine spam/ham è una retta nel piano dei conteggi (dati sintetici).",
+      "storyboard": [
+        "Stato iniziale: tre righe allineate per l'email 'gratis offerta gratis riunione' (dati di es06): x' (barre dei conteggi N_{kx} = 1, 2, 1), w (barre di log θ_{k,spam}, tutte negative: ln 0,5, ln 0,4, ln 0,1), prodotto elemento per elemento; al clic su 'Calcola' le barre dei prodotti si impilano in un totale in 500 ms e si aggiunge w_0 = log|D_spam| - log|D| = ln 40 - ln 100: ecco log f_spam(x) = -5,74.",
+        "Stessa costruzione per ham (log f_ham(x) = -7,64); una bilancia confronta i due punteggi inclinandosi in 400 ms (easing a molla) e il suo braccio mostra (w_spam - w_ham)^T x' + (w_0,spam - w_0,ham) = 1,90 > 0: spam.",
+        "Toggle 'vista 2D' (morphing 600 ms): solo due parole ('gratis', 'riunione'); nel piano dei conteggi (N_gratis, N_riunione) le email sono punti a coordinate intere e il confine di decisione è una retta; trascinando un'email (a scatti interi) oltre la retta cambia colore e classe; muovendo gli slider di θ la retta ruota e trasla in tempo reale.",
+        "Pannello gemello: accanto, il confine lineare delle gaussiane con Σ condivisa (widget p07-gaussiane-covarianza-condivisa) con la stessa forma w^T x + w_0, evidenziata in parallelo sulle due formule (300 ms); didascalia 'generativi, ma log-lineari'."
+      ],
+      "interactions": ["slider θ di due parole per classe da 0,01 a 0,5", "slider prior P(spam) da 0,05 a 0,95", "trascinare email nel piano dei conteggi (conteggi interi da 0 a 10)", "toggle vista 2D", "pulsante Calcola"],
+      "visual": "Barre allineate per x', w e prodotti; bilancia animata; piano dei conteggi con griglia intera e retta di confine; pannello gemello con ellissi gaussiane.",
+      "aha": "Sotto la veste probabilistica Naive Bayes calcola un prodotto scalare pesi × conteggi più un bias: è log-lineare come la gaussiana con Σ condivisa, pur essendo un modello generativo.",
+      "formulasShown": ["\\log\\left(f_i(\\mathbf{x})\\right) = \\mathbf{w}^T\\mathbf{x}' + w_0", "\\mathbf{x}' = \\left[N_{1\\mathbf{x}} \\cdots N_{K\\mathbf{x}}\\right]^T", "\\mathbf{w} = \\left[\\log\\left(\\theta_{1y_i}\\right) \\cdots \\log\\left(\\theta_{Ky_i}\\right)\\right]^T", "w_0 = \\log\\left(|D_i|\\right) - \\log\\left(|D|\\right)"],
+      "challenge": "Scegli i θ delle due parole in modo che la retta di confine passi per il punto (3, 3) del piano dei conteggi.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p07-svm-fascio-di-iperpiani",
+      "title": "Tanti iperpiani separano: quale scegliere?",
+      "concepts": ["c65", "c66", "c70", "c71", "c72", "c73"],
+      "scenario": "banca",
+      "realExample": "Rilevamento di frodi con carta di credito: transazioni legittime (cerchi) e fraudolente (quadrati) descritte da importo normalizzato e distanza dalla residenza; 20 transazioni sintetiche linearmente separabili, come nella figura di pagina 46.",
+      "storyboard": [
+        "Stato iniziale: 20 transazioni (10 legittime, cerchi verdi, in basso a sinistra; 10 fraudolente, quadrati rossi, in alto a destra) e un fascio di 12 rette grigie sottili che compaiono a ventaglio (stagger 60 ms) e separano correttamente tutte le transazioni; accanto a ciascuna l'etichetta 'errori di training: 0'.",
+        "Clic su una retta: in 300 ms compaiono le frecce ortogonali verso la transazione legittima più vicina e verso la fraudolenta più vicina, con le due distanze d_+ e d_- calcolate con la formula (numeri sostituiti) e la loro somma; le rette che quasi toccano un punto hanno somma minuscola e le frecce lampeggiano in arancio.",
+        "Slider angolo e offset: si esplorano tutte le rette separatrici e le due distanze si aggiornano a ogni movimento; un indicatore a barra misura d_+ + d_- e, raggiunto il massimo (entro l'1%), la retta diventa nera in grassetto in 300 ms con la banda del margine colorata: il classificatore a margine massimo, a uguale distanza dalle due classi.",
+        "'Perturba': ogni transazione trema 50 volte con rumore gaussiano di deviazione σ (animazione di 3 s); per ogni retta del fascio si conta la percentuale di errori e l'istogramma cresce in tempo reale: la retta a margine massimo sbaglia meno.",
+        "'Nuove transazioni di test': 30 punti compaiono (fade 400 ms) vicino al confine; la retta a margine massimo le classifica meglio delle rette 'al limite' (accuratezze a confronto con i numeri)."
+      ],
+      "interactions": ["clic sulle rette del fascio", "slider angolo della retta da 0 a 180 gradi", "slider offset da -2 a 2", "pulsante Perturba", "slider del rumore σ da 0 a 0,5", "pulsante Mostra ottimo", "pulsante Nuove transazioni di test"],
+      "visual": "SVG con fascio di rette grigie, retta ottima nera spessa, banda del margine, frecce di distanza con valori, istogramma degli errori sotto perturbazione.",
+      "aha": "Tra le infinite rette che separano il training, quella più lontana dagli esempi più vicini di entrambe le classi è la più robusta a rumore e piccole variazioni.",
+      "formulasShown": ["d(\\mathbf{x}, H) = \\frac{|\\mathbf{w}^T\\mathbf{x} + b|}{\\|\\mathbf{w}\\|}", "d_{+}(H) = \\min_{\\mathbf{x} \\in \\text{fraud}} d(\\mathbf{x}, H), \\quad d_{-}(H) = \\min_{\\mathbf{x} \\in \\text{legit}} d(\\mathbf{x}, H)", "\\max_{H}\\; \\left(d_{+}(H) + d_{-}(H)\\right)"],
+      "challenge": "Trova a mano la retta a margine massimo entro il 5% prima di premere 'Mostra ottimo'.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p07-svm-vettori-di-supporto",
+      "title": "Vettori di supporto: pochi esempi decidono il confine",
+      "concepts": ["c67", "c68"],
+      "scenario": "banca",
+      "realExample": "Sistema antifrode di una banca: 30 transazioni con carta (15 legittime, 15 fraudolente) descritte da importo normalizzato e distanza normalizzata dalla residenza del cliente, linearmente separabili. Solo le poche transazioni 'al limite' tra i due gruppi determinano il confine a margine massimo: sono i vettori di supporto, e tutte le altre si possono spostare o cancellare senza cambiare il classificatore (dati sintetici dichiarati come tali).",
+      "storyboard": [
+        "Stato iniziale: piano (x_1 importo normalizzato, x_2 distanza normalizzata) con 15 cerchi verdi (legittime) in basso a sinistra e 15 quadrati rossi (frodi) in alto a destra; retta nera a margine massimo, banda del margine grigio chiaro delimitata da due rette tratteggiate parallele; in alto a destra 'margine = 0,84' e 'vettori di supporto: 3 su 30'.",
+        "Dopo 600 ms i 3 punti che toccano i bordi della banda (2 cerchi e 1 quadrato) si accendono uno dopo l'altro (stagger 150 ms) con un anello arancio pulsante ed etichetta 'vettore di supporto'; gli altri 27 punti scendono al 50% di opacità in 300 ms.",
+        "Trascinamento di un punto non di supporto: finché resta fuori dalla banda la retta non si muove e un badge verde dice 'soluzione invariata'; appena entra nella banda diventa a sua volta vettore di supporto (anello arancio in 150 ms), la retta si ricalcola con una transizione di 300 ms e il valore del margine scende.",
+        "Trascinamento di un vettore di supporto: retta, banda e margine si ricalcolano a ogni movimento (risolutore del margine massimo in tempo reale); le distanze d(x, H) dei 3 vettori di supporto restano uguali tra loro e sono scritte accanto ai punti con i numeri sostituiti.",
+        "Pulsante 'Cancella i non-supporto': i 27 punti non di supporto svaniscono in dissolvenza (400 ms, stagger 20 ms) e la retta resta identica al pixel; contatore 'esempi usati dalla soluzione: 3 su 30'. 'Ripristina' li fa ricomparire in 400 ms.",
+        "Pannello 'garanzie di generalizzazione': una lancetta qualitativa 'margine più grande → bound d'errore più piccolo' segue il margine corrente (animazione a molla 300 ms) e accanto un istogramma dell'errore misurato su 200 nuove transazioni di test della stessa distribuzione; stringendo il margine con i vettori di supporto la lancetta va verso 'bound largo' e l'errore di test tende a crescere. Nota: 'la forma esatta dei bound non è data a pagina 46'."
+      ],
+      "interactions": ["trascinare qualsiasi punto (coordinate limitate a [-3, 3] × [-3, 3], senza cambiarne l'etichetta)", "pulsanti 'Cancella i non-supporto' e 'Ripristina'", "pulsante 'Nuove transazioni di test' (200 punti)", "toggle 'mostra le distanze' di tutti i punti dalla retta", "slider rumore dei dati di test da 0 a 0,5"],
+      "visual": "SVG quadrato con assi x_1, x_2 e griglia leggera; cerchi verdi (legittime) e quadrati rossi (frodi); retta nera spessa, bordi del margine tratteggiati e banda grigia; anelli arancio sui vettori di supporto; distanze scritte accanto ai vettori di supporto; contatori del margine e dei vettori di supporto; pannello laterale con lancetta del bound qualitativo e istogramma dell'errore di test.",
+      "aha": "La soluzione SVM dipende solo da un piccolo sottoinsieme di esempi, i più vicini all'iperpiano: gli altri si possono spostare (restando fuori dal margine) o cancellare senza cambiare nulla; e un margine più ampio si accompagna a garanzie di generalizzazione migliori.",
+      "formulasShown": ["d(\\mathbf{x}, H) = \\frac{|\\mathbf{w}^T\\mathbf{x} + b|}{\\|\\mathbf{w}\\|}", "\\text{margin} = \\min_{i} d(\\mathbf{x}_i, H)"],
+      "challenge": "Sposta un solo punto (senza cambiarne l'etichetta) in modo da cambiare l'insieme dei vettori di supporto; livello 2: con un nuovo dataset, prevedi quali punti resteranno prima di premere 'Cancella i non-supporto'.",
+      "size": "M",
+      "tech": "svg+motion",
+      "addedBy": "verificatore"
+    },
+    {
+      "id": "p07-svm-kernel-sollevamento",
+      "title": "Kernel: sollevare i dati per separarli con un piano",
+      "concepts": ["c69"],
+      "scenario": "banca",
+      "realExample": "Antifrode sulle carte: le transazioni legittime hanno importi e distanze tipici del cliente (una nuvola attorno al suo profilo), le frodi stanno tutto intorno (importi anomali sia molto piccoli, come i test della carta, sia molto grandi, e acquisti lontani). Nel piano (importo, distanza) centrato sul profilo del cliente nessuna retta separa le due classi; mappando i dati in uno spazio a dimensione più alta un piano le separa (dati sintetici dichiarati come tali).",
+      "storyboard": [
+        "Stato iniziale: piano (x_1 importo centrato sul profilo, x_2 distanza centrata) con 40 cerchi verdi (legittime) entro raggio 1 dall'origine e 40 quadrati rossi (frodi) su un anello tra raggio 1,6 e 2,5. Una retta trascinabile: il contatore 'errori' non scende mai sotto circa un terzo dei punti; messaggio 'non linearmente separabili'.",
+        "Pulsante 'Solleva' (kernel): in 800 ms (ease-in-out) ogni punto sale lungo un terzo asse z = x_1^2 + x_2^2 mentre la camera ruota di 35 gradi in 600 ms verso una vista prospettica; i cerchi restano sotto z = 1, i quadrati salgono sopra z = 2,56. Un paraboloide in wireframe leggero mostra la superficie su cui i punti si sono posati.",
+        "Compare in 300 ms un piano orizzontale semitrasparente z = c (default c = 1,8): il contatore errori va a 0. Lo slider c muove il piano su e giù in tempo reale; sotto z = 1 o sopra z = 2,56 riappaiono errori, che lampeggiano in rosso.",
+        "Pulsante 'Riproietta': la vista torna 2D in 800 ms e l'intersezione del piano con il paraboloide scende nel piano originale come un cerchio di raggio √c, disegnato con un tratto animato (500 ms): il confine lineare nello spazio sollevato è un confine non lineare (circolare) nello spazio di partenza.",
+        "Pannello 'mappa implicita': clic su due punti mostra φ(x), φ(x') e il loro prodotto scalare calcolato con i numeri sostituiti, uguale a x^T x' + ||x||^2 ||x'||^2; nota: le kernel machines calcolano questi prodotti senza costruire esplicitamente lo spazio più grande (dettagli nei moduli p10 e p11)."
+      ],
+      "interactions": ["pulsanti 'Solleva' e 'Riproietta'", "slider della soglia del piano c da 0,5 a 6", "trascinare la vista 3D (azimut 0-360 gradi, elevazione 10-80 gradi)", "slider raggio interno dell'anello delle frodi da 1,0 a 2,0 (vicino a 1 le classi si toccano e anche lassù nessun piano è privo di errori)", "clic su due punti per il prodotto scalare nello spazio sollevato", "retta trascinabile nella vista 2D"],
+      "visual": "Canvas che passa da vista 2D a vista 3D prospettica: punti colorati per classe (cerchi verdi, quadrati rossi), paraboloide z = x_1^2 + x_2^2 in wireframe, piano separatore semitrasparente; nel piano originale il cerchio riproiettato di raggio √c; contatore errori; pannello con φ(x) e prodotto scalare con i valori sostituiti.",
+      "aha": "Dati non separabili linearmente nello spazio originale possono diventarlo in uno spazio a dimensione più alta: un piano lassù è un cerchio quaggiù. Le kernel machines sfruttano questa mappa in modo implicito.",
+      "formulasShown": ["\\phi(\\mathbf{x}) = \\left(x_1, x_2, x_1^2 + x_2^2\\right)", "\\phi(\\mathbf{x})^T\\phi(\\mathbf{x}') = \\mathbf{x}^T\\mathbf{x}' + \\|\\mathbf{x}\\|^2\\|\\mathbf{x}'\\|^2", "z = c \\iff x_1^2 + x_2^2 = c"],
+      "challenge": "Scegli la soglia c che lascia il margine più ampio tra le due quote (il piano a metà tra il cerchio più alto e il quadrato più basso); poi riduci il raggio interno dell'anello e trova il valore sotto il quale anche nello spazio sollevato non esiste più un piano senza errori.",
+      "size": "M",
+      "tech": "canvas2d",
+      "addedBy": "verificatore"
+    }
+  ],
+  "exercises": [
+    {
+      "id": "es01",
+      "title": "Regressione in forma chiusa su quattro appartamenti",
+      "type": "numerico",
+      "description": "Superficie (in centinaia di m²) 1, 2, 3, 4 e prezzo (in centinaia di migliaia di euro) 2, 3, 5, 6. Con la colonna di 1 per l'intercetta X = [[1,1],[1,2],[1,3],[1,4]], y = (2, 3, 5, 6). Calcola X^T X, X^T y, (X^T X)^{-1} e w = (X^T X)^{-1} X^T y, poi i residui e l'errore E = Σ(y - f(x))^2. Soluzione: X^T X = [[4,10],[10,30]], X^T y = (16, 47), det = 20, (X^T X)^{-1} = (1/20)[[30,-10],[-10,4]], w = (0,5; 1,4); predizioni 1,9; 3,3; 4,7; 6,1; residui 0,1; -0,3; 0,3; -0,1; E = 0,2. Parametri randomizzabili: superfici intere tra 1 e 6 (almeno due diverse, così det ≠ 0) e prezzi interi tra 1 e 10; la soluzione si ricalcola con la stessa formula.",
+      "concepts": ["c13", "c21", "c22"]
+    },
+    {
+      "id": "es02",
+      "title": "Perché non si può usare X^{-1}",
+      "type": "concettuale",
+      "description": "Spiega perché con 200 appartamenti e 3 feature non si può scrivere w = X^{-1} y (X è 200×3: non quadrata; sistema sovradeterminato con 200 equazioni e 3 incognite, in generale incoerente). Poi: se si aggiunge la superficie in piedi quadrati accanto a quella in m², cosa succede a X^T X e come si rimedia? (colonne linearmente dipendenti, X^T X singolare, rimuovere la feature ridondante). Infine: quando la soluzione MSE coincide con X^{-1} y? (X quadrata non singolare).",
+      "concepts": ["c10", "c11", "c12", "c24", "c25", "c26"]
+    },
+    {
+      "id": "es03",
+      "title": "Tre passi di discesa del gradiente",
+      "type": "numerico",
+      "description": "Con i dati di es01 ed E = 1/2 Σ(y - f(x))^2, parti da w = (0, 0) con η = 0,01. Passo 1: gradiente (∂E/∂w_0, ∂E/∂w_1) = (-16, -47), nuovo w = (0,16; 0,47), E scende da 37 a 16,4667. Passo 2: gradiente (-10,66; -31,30), w = (0,2666; 0,7830), E = 7,3594. Passo 3: gradiente (-7,1036; -20,844), w = (0,3376; 0,9914), E = 3,3199. Il minimo è in (0,5; 1,4) con E = 0,1 (metà di 0,2 per il fattore 1/2). Parametri randomizzabili: η (0,005-0,05, oltre circa 0,06 la discesa diverge per questi dati), punto di partenza; la soluzione si calcola con ∂E/∂w_i = Σ(y - f(x))(-x_i).",
+      "concepts": ["c29", "c30", "c31"]
+    },
+    {
+      "id": "es04",
+      "title": "Predizione One-vs-All e confini",
+      "type": "numerico",
+      "description": "Tre classificatori One-vs-All (bias assorbito, b = 0) con w_1 = (2, 1), w_2 = (-1, 2), w_3 = (-1, -3). Classifica x = (1, 1): score 3, 1, -4, vince la classe 1. Scrivi i tre confini: 1-2: (3, -1)^T x = 0, cioè x_2 = 3x_1; 1-3: (3, 4)^T x = 0; 2-3: (0, 5)^T x = 0, cioè x_2 = 0. Verifica che ogni confine è ortogonale alla differenza dei pesi. Parametri randomizzabili: componenti intere dei w tra -3 e 3 e punto x; si calcolano gli score w_i^T x, l'argmax e le differenze w_i - w_j.",
+      "concepts": ["c34", "c35", "c36"]
+    },
+    {
+      "id": "es05",
+      "title": "Votazione All-Pairs",
+      "type": "numerico",
+      "description": "c = 4 classi bilanciate, N = 1000 esempi. Quanti classificatori servono con All-Pairs e su quanti esempi è addestrato ciascuno? (6 classificatori, circa 2N/c = 500 esempi). E con OvA? (4 classificatori su 1000 esempi). Un esempio di test riceve i voti h_12 → 1, h_13 → 3, h_14 → 1, h_23 → 3, h_24 → 2, h_34 → 3: voti 1: 2, 2: 1, 3: 3, 4: 0, classe predetta 3. Parametri randomizzabili: c (3-8), N, esiti dei classificatori (generati a caso, segnalando i pareggi).",
+      "concepts": ["c39", "c40", "c41"]
+    },
+    {
+      "id": "es06",
+      "title": "Naive Bayes su un'email",
+      "type": "numerico",
+      "description": "Vocabolario di K = 3 parole {offerta, gratis, riunione}; θ_spam = (0,5; 0,4; 0,1), θ_ham = (0,1; 0,1; 0,8); training con |D_spam| = 40, |D_ham| = 60, |D| = 100. Email 'gratis offerta gratis riunione': x' = (N_offerta, N_gratis, N_riunione) = (1, 2, 1). log f_spam = ln 0,5 + 2 ln 0,4 + ln 0,1 + ln 0,4 = -5,7446; log f_ham = ln 0,1 + 2 ln 0,1 + ln 0,8 + ln 0,6 = -7,6417: spam. Normalizzando, P(spam|x) ≈ 0,870. Scrivi anche la forma w^T x' + w_0 per ciascuna classe (w_spam = (ln 0,5; ln 0,4; ln 0,1), w_0 = ln 40 - ln 100). Parametri randomizzabili: θ per classe (sommano a 1), dimensioni delle classi, email di 3-8 parole; soluzione con log f_i = Σ_k N_kx log θ_ky_i + log(|D_i|/|D|).",
+      "concepts": ["c55", "c56", "c57", "c58", "c60", "c61", "c62", "c63"]
+    },
+    {
+      "id": "es07",
+      "title": "Dimostra la soluzione in forma chiusa",
+      "type": "dimostrazione",
+      "description": "Partendo da E(w; D) = (y - Xw)^T(y - Xw), calcola il gradiente, ponilo a zero e ricava w = (X^T X)^{-1} X^T y, giustificando ogni passaggio (regola della catena, trasposizione, simmetria di X^T X). Spiega quando il left-inverse esiste e perché si chiama 'sinistro'. Traccia: der01, der02, der03.",
+      "concepts": ["c18", "c19", "c20", "c21", "c22", "c23", "c24"]
+    },
+    {
+      "id": "es08",
+      "title": "Dimostra che i classificatori generativi di pagina 44-45 sono lineari",
+      "type": "dimostrazione",
+      "description": "(a) Mostra che un classificatore gaussiano con Σ_i = Σ per tutte le classi ha funzioni discriminanti lineari in x e trova w_i e w_i0 (der07). (b) Mostra che Naive Bayes con la likelihood multinomiale diventa log f_i(x) = w^T x' + w_0, specificando x', w e w_0 (der08). (c) Scrivi il confine tra due classi in entrambi i casi e confrontalo con il confine One-vs-All (w_i - w_j)^T x = 0.",
+      "concepts": ["c46", "c47", "c52", "c58", "c60", "c64"]
+    },
+    {
+      "id": "es09",
+      "title": "OvA contro All-Pairs su MNIST",
+      "type": "concettuale",
+      "description": "Per le cifre MNIST (c = 10, N = 60.000 immagini bilanciate) confronta le due strategie: OvA addestra 10 classificatori su 60.000 immagini ciascuno; All-Pairs 45 classificatori su circa 12.000 immagini ciascuno (in totale 540.000 contro 600.000 immagini elaborate). Discuti quale scegliere se l'addestramento costa circa n^2 (All-Pairs molto più economico) e quale se conta la semplicità di implementazione.",
+      "concepts": ["c41", "c42", "c43"]
+    },
+    {
+      "id": "es10",
+      "title": "Margine massimo e vettori di supporto",
+      "type": "concettuale",
+      "description": "Guardando la figura di pagina 46: perché tra tutte le rette che separano correttamente i dati si sceglie quella in grassetto? Definisci il margine, spiega cosa sono i vettori di supporto e perché la soluzione non cambia se si eliminano gli altri esempi, e cita le altre due caratteristiche chiave delle SVM (garanzie di generalizzazione, estensione con i kernel).",
+      "concepts": ["c65", "c66", "c67", "c68", "c69", "c70", "c71", "c72", "c73"]
+    },
+    {
+      "id": "es11",
+      "title": "Quali pezzi dei confini One-vs-All contano davvero",
+      "type": "numerico",
+      "description": "Con i pesi di es04 (w_1 = (2, 1), w_2 = (-1, 2), w_3 = (-1, -3), b = 0) i tre iperpiani (w_i - w_j)^T x = 0 passano tutti per l'origine. Per ciascuno trova la semiretta che fa davvero parte della mappa di decisione (dove f_i = f_j ≥ f_k per la terza classe k) e quella irrilevante perché cade nella regione della terza classe (osservazione di pagina 43). Soluzione: confine 1-2 (x_2 = 3x_1): nel punto (1, 3) gli score sono (5, 5, -10), rilevante; nel punto (-1, -3) sono (-5, -5, 10), vince la classe 3, irrilevante. Confine 1-3 ((3, 4)^T x = 0): nel punto (4, -3) score (5, -10, 5), rilevante; nel punto (-4, 3) score (-5, 10, -5), vince la classe 2, irrilevante. Confine 2-3 (x_2 = 0): nel punto (-1, 0) score (-2, 1, 1), rilevante; nel punto (1, 0) score (2, -1, -1), vince la classe 1, irrilevante. Le tre semirette rilevanti (direzioni (1, 3), (4, -3), (-1, 0)) dividono il piano in tre regioni convesse come nella figura di pagina 43; controllo: (1, 0) → classe 1, (-1, 1) → classe 2, (0, -1) → classe 3. Parametri randomizzabili: i tre w (componenti intere tra -3 e 3, differenze non nulle); per ogni confine si prende un punto su ciascuna delle due semirette e si confrontano i tre score.",
+      "concepts": ["c35", "c36", "c37", "c38"],
+      "addedBy": "revisore"
+    },
+    {
+      "id": "es12",
+      "title": "Classificatore gaussiano con covarianza condivisa: pesi, bias e confine",
+      "type": "numerico",
+      "description": "Impianto del pesce, feature standardizzate (luminosità x_1, larghezza x_2). Salmone: μ_s = (2, 1); spigola: μ_b = (-1, 3); covarianza condivisa Σ = diag(1, 4), quindi Σ^{-1} = diag(1; 0,25). (a) Con prior uguali calcola w_i = Σ^{-1}μ_i e w_i0 = -1/2 μ_i^T Σ^{-1} μ_i + log P(y_i): w_s = (2; 0,25), w_b = (-1; 0,75), -1/2 μ_s^T Σ^{-1} μ_s = -2,125, -1/2 μ_b^T Σ^{-1} μ_b = -1,625 (il log 0,5 comune si cancella). Confine: (w_s - w_b)^T x + (w_s0 - w_b0) = 3x_1 - 0,5x_2 - 0,5 = 0, cioè x_2 = 6x_1 - 1; passa per il punto medio delle medie (0,5; 2) e la normale (3; -0,5) = Σ^{-1}(μ_s - μ_b). Il pesce (1, 1) dà 3 - 0,5 - 0,5 = 2 > 0: salmone. (b) Con P(salmone) = 0,8 il bias aumenta di log(0,8/0,2) = log 4 ≈ 1,386: confine 3x_1 - 0,5x_2 + 0,886 = 0, retta parallela alla precedente spostata verso la spigola (la regione del salmone si allarga). (c) Se invece Σ_b = diag(2, 2), il termine -1/2 x^T(Σ_s^{-1} - Σ_b^{-1})x = -1/2(0,5x_1^2 - 0,25x_2^2) non si cancella e il confine è quadratico: la condizione Σ_i = Σ di pagina 44 è necessaria. Parametri randomizzabili: medie (interi tra -3 e 3), Σ diagonale con varianze tra 0,5 e 4, prior tra 0,1 e 0,9; soluzione con le formule di der07.",
+      "concepts": ["c45", "c46", "c47"],
+      "addedBy": "revisore"
+    },
+    {
+      "id": "es13",
+      "title": "MSE o cross-entropy per un paziente classificato male con sicurezza",
+      "type": "numerico",
+      "description": "Classificatore di COVID-19 da radiografia con uscita p = σ(z), z = w^T x (sigmoide e cross-entropy sono del modulo d01: servono solo da confronto per la frase di pagina 41). Un paziente positivo (y = 1) riceve p = 0,01. MSE: (y - p)^2 = 0,9801, derivata rispetto a z pari a 2(p - y)p(1 - p) = 2(-0,99)(0,01)(0,99) ≈ -0,0196. Cross-entropy: -log p = 4,605, derivata p - y = -0,99. Il gradiente della MSE è circa 50 volte più piccolo proprio quando l'errore è più grave: la MSE 'non ottimizza bene per le probabilità'. Confronto con p = 0,5: MSE 0,25 con derivata -0,25, cross-entropy 0,693 con derivata -0,5. Parametri randomizzabili: p tra 0,001 e 0,999, y in {0, 1}; soluzione con le due formule delle derivate.",
+      "concepts": ["c17"],
+      "addedBy": "revisore"
+    }
+  ],
+  "examQuestions": [
+    {
+      "text": "Linear functions for both classification and regression: discriminant functions, classification concept, functional/geometric margin, perceptron, loss function for classification, gradient descent, regression, matrix inversion problem, pseudoinverse, loss function for regression.",
+      "prof": "Passerini",
+      "concepts": ["c04", "c09", "c10", "c11", "c12", "c13", "c17", "c22", "c23", "c28", "c29", "c30"]
+    },
+    {
+      "text": "Perceptron for classification and regression: entire chapter with proofs, feature mapping and kernel perceptron",
+      "prof": "Passerini",
+      "concepts": ["c01", "c02", "c03", "c04", "c13", "c19", "c22", "c29"]
+    },
+    {
+      "text": "He asked me to formulaize everything about linear regression for perceptron and linear classification for perceptron and svm. I wrote all the equations till i reached the soft case for svm so i stopped as i took too much time. He did not ask me any questions and that's all",
+      "prof": "Passerini",
+      "concepts": ["c06", "c07", "c09", "c13", "c19", "c20", "c21", "c22", "c29", "c65"]
+    },
+    {
+      "text": "asked to talk about linear models and during the oral he asked me to explain what I wrote",
+      "prof": "Passerini",
+      "concepts": ["c04", "c32", "c35", "c44", "c47", "c64"]
+    },
+    {
+      "text": "Linear Classifiers. Questions: (1) when do we use (and why) primal or dual (2) meaning of adapting learning rate",
+      "prof": "Passerini",
+      "concepts": ["c02", "c28", "c30", "c65"]
+    },
+    {
+      "text": "Unsupervised learning (everything I knew) + scheme of a perceptron and regression for perceptron",
+      "prof": "Passerini",
+      "concepts": ["c04", "c06", "c09", "c13", "c22"]
+    },
+    {
+      "text": "Regression (perceptron + svm) + a tricky question on the pseudoinverse and in which topic it is used and how. He wanted me to talk about principal component analysis",
+      "prof": "Passerini",
+      "concepts": ["c22", "c23", "c24", "c25", "c26", "c27"]
+    },
+    {
+      "text": "Perceptron (All) + Parameter estimation Questions: - Problem with analytical solution for perceptron regression - Example of estimation of Gaussian parameters: why do we obtain a Gaussian also as posterior? - How to use parameter estimation in Bayesian Networks - Why ML is fast in Bayesian Network (CDP independence)",
+      "prof": "Passerini",
+      "concepts": ["c10", "c11", "c12", "c24", "c25", "c28"]
+    },
+    {
+      "text": "Learning Parameters  (ML with complete data, MAP), SVM (Hard Margin, Lagrangian, Soft Margin), NonLinear,  Kernel Machine, Perceptron)",
+      "prof": "Passerini",
+      "concepts": ["c01", "c65", "c67", "c69"]
+    },
+    {
+      "text": "Hard or soft margin svm (choose one) + Learning bayesian network. Questions afterwards: canonical hyperplane, why do we use kkt, why solution of dual is equal to primal, disjoint cpd in BN, explain E-M in BN",
+      "prof": "Passerini",
+      "concepts": ["c65", "c66", "c71", "c72"]
+    },
+    {
+      "text": "SVM (when should we opt for primal or dual formulation)",
+      "prof": "Passerini",
+      "concepts": ["c65"]
+    },
+    {
+      "text": "Non-linear machines (non-linear SVM, SV regression, kernel machines)",
+      "prof": "Passerini",
+      "concepts": ["c69"]
+    },
+    {
+      "text": "Design phase of an ML system, difference between supervised and unsupervised classification, some examples of loss functions (for regression), cross-validation (k-fold, leave-one-out), confusion matrix (two-class/multi-class, accuracy, precision, recall). What can we do when the model has low accuracy?",
+      "prof": "Melgani",
+      "concepts": ["c13", "c17", "c32"]
+    },
+    {
+      "text": "Generalization error (Approximation error - Estimation error) - (Trained machine) - Target space/ hypothesis space - Empirical risk Loss function (correlation coefficient - MSE - RMSE-absolute error)",
+      "prof": "Melgani",
+      "concepts": ["c13", "c31"]
+    },
+    {
+      "text": "How does the Minimum risk criterium work, comparison with MAP and ML classification. Which is the best one (minimum risk). He also asked me the formula of the Gaussian curve in a multi dimensional space (with mean vector and covariance matrix).",
+      "prof": "Melgani",
+      "concepts": ["c44", "c45", "c46", "c47"]
+    }
+  ],
+  "crossLinks": [
+    {"moduleId": "p06-discriminanti-perceptron", "why": "Perceptron, vettore aumentato, margine funzionale e geometrico, discesa del gradiente e discesa stocastica: la figura in cima a pagina 40 chiude la sezione di p06 e la regressione riusa lo stesso modello f(x) = w^T x e la stessa regola di aggiornamento."},
+    {"moduleId": "p08-svm-hard-margin", "why": "Pagina 46 (introduzione alle SVM, margine, vettori di supporto, figura del fascio di iperpiani) è condivisa: p08 prosegue con margine geometrico, iperpiano canonico, Lagrangiana, KKT e duale."},
+    {"moduleId": "p02-bernoulli-multinomiale", "why": "I parametri θ_{ky} di Naive Bayes sono quelli di una multinomiale per classe; la loro stima ML (frequenze relative) e MAP con prior di Dirichlet, e il problema dei conteggi nulli (log 0), sono trattati lì."},
+    {"moduleId": "p03-reti-bayesiane", "why": "Naive Bayes è una rete bayesiana con la classe come unico genitore di tutte le feature: l'indipendenza condizionale data la classe è una d-separazione."},
+    {"moduleId": "m19-funzioni-discriminanti", "why": "Melgani ricava le funzioni discriminanti gaussiane: caso Σ_i = Σ (discriminante lineare) contro Σ_i arbitrarie (quadratico), la dimostrazione ricostruita in der07."},
+    {"moduleId": "m06-modelli-pdf-gaussiana", "why": "Densità gaussiana multivariata con vettore medio e matrice di covarianza, usata dai classificatori generativi gaussiani (c45)."},
+    {"moduleId": "m17-bayes-map-ml", "why": "Teorema di Bayes e criterio MAP: i classificatori generativi scelgono la classe con posterior massima, P(x) comune a tutte le classi."},
+    {"moduleId": "m21-errore-generalizzazione", "why": "Funzioni di loss per la regressione (MSE, RMSE, errore assoluto) nella parte di Melgani; qui la MSE è la loss della regressione con il perceptron."},
+    {"moduleId": "m14-pca", "why": "X^T X chiamata 'covariance matrix' a pagina 42 (per dati centrati è proporzionale alla covarianza campionaria usata dalla PCA); la domanda d'esame sulla pseudoinversa porta a parlare di PCA."},
+    {"moduleId": "m15-lda", "why": "Anche LDA assume covarianza condivisa tra le classi e produce una direzione lineare Σ^{-1}(μ_1 - μ_2), la stessa che compare nel classificatore gaussiano lineare."},
+    {"moduleId": "d01-reti-feedforward", "why": "Cross-entropy e softmax: la loss 'specializzata' citata a pagina 41 come migliore della MSE per la classificazione, e il modo standard di fare classificazione multiclasse nelle reti neurali."},
+    {"moduleId": "d03-ottimizzazione", "why": "Discesa del gradiente stocastica e a mini-batch, scelta e adattamento del learning rate usato nel passo di discesa per la regressione."},
+    {"moduleId": "p10-kernel-trick", "why": "L'estensione non lineare delle SVM con i kernel citata a pagina 46 è sviluppata lì."},
+    {"moduleId": "p11-kernel-machines", "why": "Kernel machines, kernel perceptron e regressione con i kernel (SVR): la 'tricky question' sulla pseudoinversa e 'Regression (perceptron + svm)' collegano le due parti."}
+  ],
+  "emptyPages": [],
+  "gaps": [
+    "part2 pagina 40 (revisore): la figura a quattro pannelli non indica il w iniziale né il valore di η; gli aggiornamenti sono tre (il pannello 1 è lo stato iniziale). Nel pannello 1 la freccia di w termina esattamente su un cerchio rosso: la fonte non dice se w è stato inizializzato con quell'esempio.",
+    "part2 pagine 40, 44, 45 (revisore): il numero di esempi di training ha tre notazioni diverse: n = |D| a pagina 40, N nel confronto OvA/All-Pairs di pagina 44, |D| (con |D_i| per la classe i) nel Naive Bayes di pagina 45.",
+    "part2 pagine 41-42 (revisore): la fonte non collega il gradiente vettoriale di pagina 41 alla derivata per singolo peso di pagina 42; la coerenza (stessa formula a meno del fattore 2 dovuto all'1/2) è ricavata in der09.",
+    "part2 pagina 40: la notazione della matrice di input è ambigua. La fonte scrive X ∈ R^n × R^d (invece di R^{n×d}) e X = [x^1 ··· x^n], che letta alla lettera mette gli esempi in colonna, ma subito dopo dice 'rows represent examples, columns represent features'. L'inventario adotta la lettura coerente con Xw = y: la riga i di X è (x^i)^T.",
+    "part2 pagina 41: la MSE è definita a parole come 'average squared difference', ma la formula E(w; D) = Σ (y - f(x))^2 non ha il fattore 1/n (è la somma dei quadrati). Il minimo non cambia (c31).",
+    "part2 pagine 41-42: l'errore è scritto senza 1/2 a pagina 41 (forma chiusa) e con 1/2 a pagina 42 (discesa del gradiente). La differenza è solo un fattore costante; l'inventario lo segnala in c31 e der04.",
+    "part2 pagina 41: il gradiente ∇E = -2y^T X + 2w^T X^T X è scritto come vettore riga; la forma colonna -2X^T y + 2X^T X w è esplicitata in der01.",
+    "part2 pagina 42: X^T X è chiamata 'the covariance matrix'. È la matrice di scatter (Gram) non centrata; coincide con n volte la covarianza campionaria solo se le feature hanno media zero.",
+    "part2 pagina 42: la frase sulla discesa del gradiente 'for a single weight w_i, while keeping the other weights constant' descrive la derivata parziale; la fonte non scrive la regola di aggiornamento né dice se si aggiornano i pesi uno alla volta o tutti insieme. La regola w_i ← w_i + η Σ (y - f(x)) x_i (c30, der04) è esplicitata dall'inventario seguendo la discesa del gradiente del modulo p06.",
+    "part2 pagina 42: conflitto di notazione tra x^i (i-esimo esempio, apice, pagine 40-41) e x_i (i-esima feature di x, pedice, nel gradiente di pagina 42).",
+    "part2 pagina 42: la verifica che il punto a gradiente nullo sia un minimo (convessità, hessiana 2X^T X semidefinita positiva) non è nella fonte; aggiunta in der02.",
+    "part2 pagina 43: la predizione One-vs-All usa 'maximum functional margin' per indicare lo score f_i(x) = w_i^T x senza etichetta; la fonte non discute che classificatori addestrati separatamente possono avere scale non confrontabili.",
+    "part2 pagina 44: All-Pairs, la fonte non dice come si risolvono i pareggi nel voto a maggioranza; il valore 2N/c presuppone classi bilanciate.",
+    "part2 pagina 44: l'affermazione che le gaussiane con Σ condivisa danno una regola lineare è data senza dimostrazione e senza scrivere la densità; der07 ricostruisce la derivazione (formula gaussiana dal modulo m06).",
+    "part2 pagine 44-45: notazione di Naive Bayes incoerente. A pagina 44 x = [x[1], ..., x[K]] ha K feature; a pagina 45 x[j] indicizza le posizioni j = 1, ..., |X| e K diventa il numero di feature possibili del vocabolario (indice k). Compaiono sia X maiuscolo in grassetto sia x minuscolo (N_{kX} e N_{kx}).",
+    "part2 pagine 44-45: f_i(x) è definita come posterior P(y_i|x) ma poi posta uguale a P(x|y_i)P(y_i): manca la divisione per P(x), irrilevante per la decisione ma non per il valore della probabilità.",
+    "part2 pagina 45: nella forma lineare w e w_0 non hanno l'indice di classe, ma dipendono da y_i (andrebbero scritti w_i e w_i0). La fonte non dice come si stimano i θ_{ky_i} né come si evita log 0 per parole mai viste in una classe (vedi p02).",
+    "part2 pagina 45 (verificatore): nella formula f_i(x) = Π_{k=1}^{K} θ_{ky_i}^{N_{kX}} |D_i|/|D| la frazione |D_i|/|D| è impaginata all'altezza dell'esponente (si leggerebbe θ_{ky_i}^{N_{kX}|D_i|/|D|}) e, senza parentesi, potrebbe sembrare dentro il prodotto su k (cioè elevata alla K). È un refuso tipografico: il prior è un unico fattore che moltiplica l'intero prodotto, come conferma la versione logaritmica Σ_k N_{kx} log(θ_{ky_i}) + log(|D_i|/|D|). Trascritta corretta, con le parentesi, in c55, der08 e nel widget p07-conteggi-e-prior; in c55 l'esponente conserva la notazione N_{kX} della fonte.",
+    "part2 pagina 46: 'the maximum margin classifier maximizes the sum of the margins to these closest examples' è una formulazione a parole; la definizione operativa (margine geometrico minimo, iperpiano canonico) arriva nel modulo p08. La forma degli error bounds delle garanzie di generalizzazione non è riportata."
+  ]
+}

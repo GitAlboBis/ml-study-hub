@@ -1,0 +1,1110 @@
+## Panoramica
+
+Il Capitolo 2 di Melgani si intitola *Statistical Estimation Theory*, teoria della stima statistica. Questo foglio copre le prime undici slide del capitolo (introduzione, stima della pdf, avvio della stima parametrica) e le pagine 12-19 degli appunti. Gli appunti aggiungono tre cose che le slide non hanno: l'esempio del canale di telecomunicazione PAM, la distinzione tra machine learning statistico e non statistico, e un anticipo sulla bontà di uno stimatore (bias, varianza, bound di Cramér-Rao, consistenza). <SourceRef doc="ch2" page={1} /> <SourceRef doc="part1" page={12} />
+
+Il filo del foglio è questo. Un sistema di machine learning deve decidere in presenza di rumore, e per decidere gli servono le distribuzioni di probabilità dei dati. Tu quelle distribuzioni non le conosci: le devi stimare da un insieme finito di campioni. Il capitolo formula il problema (stimare la funzione densità di probabilità, *probability density function* o pdf, $p(\mathbf{x})$ a partire da $N$ campioni iid), divide gli approcci in parametrici e non parametrici e, per quelli parametrici, introduce l'oggetto che userai in tutti i moduli successivi: la <Term en="likelihood function">funzione di verosimiglianza</Term> $p(\mathbf{X}\mid\boldsymbol{\theta})$.
+
+<KeyIdea>
+Tre domande guidano il foglio. Perché stimare? Perché la decisione dipende dalle densità, come mostra il canale PAM rumoroso. Che cosa stimare? Pochi parametri $\boldsymbol{\theta}$ se conosci la forma della pdf, l'intera funzione se non la conosci. Come giudicare la stima? Con bias, varianza, bound di Cramér-Rao e proprietà asintotiche.
+</KeyIdea>
+
+<Callout kind="esame">
+Una domanda della banca di Melgani parte dalla verosimiglianza: «What is the formula of Maximum Likelihood, why we can use the separate products of the probabilities and what the Likelihood describe». Devi saper scrivere $p(\mathbf{X}\mid\boldsymbol{\theta}) = \prod_{k=1}^{N} p(\mathbf{x}_k\mid\boldsymbol{\theta})$, giustificare il prodotto con l'ipotesi iid e dire che la funzione misura l'accordo tra $\boldsymbol{\theta}$ e i campioni. La stessa domanda prosegue con la bontà di uno stimatore e con il confronto tra ML e Bayes. Ognuno dei tre temi ha una sezione qui sotto; in fondo, la sezione per l'orale raccoglie le dieci domande della banca collegate a queste pagine.
+</Callout>
+
+## Dal Capitolo 1: il confine che insegue ogni pesce
+
+La pagina 12 degli appunti inizia con la coda del Capitolo 1, cioè con l'ultimo gradino dell'esempio del pesce di <ModLink to="m02-sistema-ml-design">sistema di ML e fasi di design</ModLink>. Un impianto di confezionamento deve separare salmoni (*salmon*) e spigole (*sea bass*) usando feature misurate da una telecamera. La figura era annunciata in fondo a p.11. <SourceRef doc="part1" page={12} />
+
+<Figure id="fig01" />
+
+La figura si intitola «2D Feature Space: Highly Nonlinear Classifier». Sull'asse orizzontale c'è la luminosità (*Lightness*, tacche 2, 4, 6, 8, 10), su quello verticale la larghezza (*Width*, tacche 14, 18, 22). I salmoni sono i punti blu, le spigole i punti gialli. Una curva rossa molto tortuosa serpeggia attorno ai singoli campioni e mette ogni punto di training dalla parte giusta.
+
+L'esempio del pesce sale una scala di complessità in tre gradini. Primo gradino: una sola feature con una soglia. Secondo gradino: un classificatore lineare (*linear classifier*) nel piano con due parametri, pendenza (*slope*) e intercetta (*intercept*), che lascia ancora qualche pesce dalla parte sbagliata della retta. A p.11 le note spiegano come si misura la sua bontà con un esempio di calcolo: se ci fossero 5 errori su 100 classificazioni, l'accuratezza (*accuracy*) sarebbe del 95%. Terzo gradino: questo modello non lineare molto flessibile, che non sbaglia nessun campione di training.
+
+### Overfitting
+
+<Definition term="Overfitting" en="overfitting">
+Il modello impara «troppo bene» i dati di training, compreso il rumore presente nelle feature o nelle etichette (*labels*), che possono contenere errori umani (*human error*). Invece di generalizzare a dati nuovi, mai visti (*new, unseen data*), il classificatore memorizza i campioni di training (*memorize the training samples*).
+</Definition>
+
+Le note partono da un'osservazione: un modello altamente flessibile (*highly flexible model*) migliora l'adattamento (*fit*) ai dati di training, ma rischia l'overfitting. Guarda la figura. Un punto giallo in mezzo ai blu può essere una spigola atipica, oppure un salmone che l'operatore ha etichettato male. La curva rossa non distingue i due casi e piega il confine per includerli entrambi. Un pesce nuovo che cade in una di quelle anse verrà classificato male.
+
+### Complessità contro generalizzazione
+
+Le note concludono che non devi adattare eccessivamente (*excessively tune*, cioè *overfit*) il classificatore ai campioni di training: solo con questo equilibrio classifichi in modo soddisfacente i pattern nuovi (*novel patterns or samples*). La frase finale va ricordata: «we need to strike a compromise between model complexity and generalization capability». Ti serve un <Term en="compromise between model complexity and generalization capability">compromesso tra complessità del modello e capacità di generalizzazione</Term>.
+
+Il compromesso riprende la regola di p.11, spiegata in <ModLink to="m02-sistema-ml-design">sistema di ML e fasi di design</ModLink>: parti da modelli semplici, che tendono a essere più robusti, e aumenti la complessità (più feature, oppure un classificatore non lineare più flessibile) solo se non bastano.
+
+<Example id="ex04" title="Esempio del pesce, ultimo stadio: confine molto non lineare e overfitting">
+
+<Step title="Il piano delle feature">
+
+Ogni pesce è un punto del piano Lightness (da 2 a 10) per Width (da 14 a 22). I salmoni (blu) stanno in prevalenza a sinistra, le spigole (gialle) a destra, ma le due nuvole si toccano al centro.
+
+</Step>
+
+<Step title="I gradini precedenti">
+
+Con una soglia su una sola feature i due gruppi si sovrappongono molto. Il classificatore lineare nel piano, con due parametri (pendenza e intercetta), separa meglio ma lascia ancora qualche pesce dalla parte sbagliata. Le note (p.11) aggiungono un esempio di calcolo, non un risultato misurato: se ci fossero 5 errori su 100 classificazioni, l'accuratezza sarebbe del 95%.
+
+</Step>
+
+<Step title="Il confine tortuoso">
+
+Il modello molto flessibile disegna una curva rossa che gira attorno ai singoli campioni. Sul training l'errore scende a zero: nessun punto sta dalla parte sbagliata.
+
+</Step>
+
+<Step title="La diagnosi delle note">
+
+Il modello ha imparato anche il rumore delle feature e delle etichette (che possono contenere errori umani) e ha memorizzato i campioni. Su pesci nuovi le anse della curva producono errori che il classificatore lineare non farebbe. È overfitting.
+
+</Step>
+
+<Step title="La conclusione">
+
+Non conta azzerare l'errore sul training. Serve un compromesso tra complessità del modello e capacità di generalizzazione.
+
+</Step>
+
+</Example>
+
+Subito dopo, le note riportano in maiuscolo un promemoria di chi le ha scritte: «// THERE ARE 30 ADDITIONAL SLIDES WITH EXAMPLES». Il numero viene dalle note: nel PDF del Capitolo 1, dopo la slide 20 sull'overfitting, restano 23 slide, la 21 («Application Domains») e le 22-43 di esempi applicativi (analisi di immagini da UAV, mappatura su larga scala, batimetria, rilevamento di oggetti e altri, fino al rilevamento del COVID-19). Gli appunti non le trascrivono; le trovi in <ModLink to="m02-sistema-ml-design">sistema di ML e fasi di design</ModLink>. Il promemoria non aggiunge teoria. Segna il confine tra i due capitoli: la riga successiva degli appunti è il titolo «Statistical Estimation Theory». <SourceRef doc="part1" page={12} />
+
+Nel widget qui sotto regoli la flessibilità del confine e guardi due errori insieme: quello sui pesci di training e quello su pesci nuovi.
+
+<Widget id="m03-overfitting-confine-pesce" />
+
+<Check id="chk-01" />
+
+<Callout kind="esame">
+L'overfitting compare in due domande della banca sul progetto di un sistema di ML: la prima cita la selezione del modello («cit. of overfitting») prima di training e valutazione, la seconda chiede «What can we do when the model has low accuracy?». Descrivi la figura del pesce, dai la definizione con il rumore nelle feature e nelle etichette e chiudi con il compromesso tra complessità e generalizzazione. La misura dell'errore su dati nuovi e la cross-validation sono in <ModLink to="m21-errore-generalizzazione">errore di generalizzazione e cross-validation</ModLink>.
+</Callout>
+
+## La mappa del Capitolo 2
+
+La slide di copertina elenca sette argomenti, in quest'ordine: Introduction, PDF Estimation, Maximum Likelihood Estimation, Bayesian Estimation, K-NN Estimation, Parzen Windows Estimation, Expectation-Maximization Algorithm. <SourceRef doc="ch2" page={1} />
+
+L'ordine segue una logica. Prima il problema: che cosa vuol dire stimare una pdf, ed è il tema di questo foglio. Poi i metodi parametrici, che assumono la forma della pdf e ne stimano i parametri: la <ModLink to="m05-max-likelihood">stima a massima verosimiglianza</ModLink> e la <ModLink to="m07-stima-bayesiana">stima bayesiana</ModLink>. Poi i metodi non parametrici, che non assumono alcuna forma: il <ModLink to="m08-non-parametrica-knn">K-NN</ModLink> e le <ModLink to="m09-parzen-windows">finestre di Parzen</ModLink>. Infine il caso dei dati incompleti, con l'<ModLink to="m10-em-dati-incompleti">algoritmo EM</ModLink>. Tra una tappa e l'altra si inseriscono la <ModLink to="m04-bonta-stimatori">bontà degli stimatori</ModLink> e i <ModLink to="m06-modelli-pdf-gaussiana">modelli di pdf</ModLink>, gaussiana in testa.
+
+| Argomento della slide | Famiglia di metodi |
+|---|---|
+| Introduction, PDF Estimation | il problema |
+| Maximum Likelihood Estimation, Bayesian Estimation | stima parametrica |
+| K-NN Estimation, Parzen Windows Estimation | stima non parametrica |
+| Expectation-Maximization Algorithm | dati incompleti |
+
+<Widget id="m03-mappa-capitolo-2" />
+
+## Il canale PAM: perché servono le densità
+
+Gli appunti aprono «Statistical Estimation Theory» con un esempio che nelle slide non c'è: un sistema di telecomunicazione. Serve a farti vedere che per decidere servono le distribuzioni statistiche: nell'esempio delle note sono note (si conoscono le leggi di $x$ e di $n$); quando non lo sono, vanno stimate dai dati. La slide 5 cita il PAM come esempio di segnale deterministico rumoroso. La slide 6 dice che la pdf è importante «as we have understood before», ma non dice a che cosa rimandi: negli appunti il discorso che precede è questo esempio PAM, e più in generale il Capitolo 1. <SourceRef doc="part1" page={12} /> <SourceRef doc="part1" page={13} />
+
+### Il sistema ideale
+
+In un sistema di telecomunicazione di base (*basic telecommunication system*) ci sono una sorgente (*source*) e un ricevitore (*receiver*); tra i due passa il canale di comunicazione (*communication channel*). Assumi una sorgente discreta che emette tre tipi di informazione: Yes, No e Maybe. Allo stadio del trasmettitore (*transmitter stage*) l'informazione va convertita in un segnale.
+
+<Definition term="Modulazione di ampiezza degli impulsi" en="Pulse Amplitude Modulation, PAM">
+Dispositivo che mappa ogni simbolo in un impulso rettangolare (*rectangular pulse*). L'ampiezza, cioè l'altezza, dell'impulso trasporta l'informazione, con valori possibili 0.25, 0.5 e 0.75. Ogni impulso dura $1T$.
+</Definition>
+
+La regola del classificatore, data subito dopo nelle note, fissa la corrispondenza tra simboli e ampiezze:
+
+<Formula id="f-c06" />
+
+Allo stadio del ricevitore un campionatore (*sampler*) preleva campioni del segnale «every x.5T». La lettura più naturale è: agli istanti $0.5T$, $1.5T$, $2.5T$ e così via, cioè al centro di ogni impulso, lontano dai fronti di salita e di discesa. Senza rumore il modello di classificazione è immediato (*straightforward*): se il valore campionato è 0.25 decide Yes, se è 0.5 decide Maybe, se è 0.75 decide No.
+
+<Formula id="f-c07" />
+
+<Formula id="f-c07-2" />
+
+Il valore campionato, indicato con $Y_s$, è una <Term en="discrete random variable">variabile aleatoria discreta</Term> con tre valori possibili: 0.25, 0.5 e 0.75. Le note assumono un sistema ideale in cui la probabilità a priori (*prior probability*) di ciascun valore è 1/3.
+
+<Formula id="f-c08" />
+
+La probabilità condizionata (*conditional probability*) di $Y_s$ dato Yes vale 1 quando $Y_s = 0.25$ e 0 altrimenti; lo stesso principio vale per gli altri simboli. Le distribuzioni condizionate sono impulsi: nessuna incertezza da modellare.
+
+<Formula id="f-c08-2" />
+
+Il valore 1/3 traduce l'ipotesi di simboli equiprobabili emessi dalla sorgente. Con condizionate che valgono 0 oppure 1, il teorema della probabilità totale (*total probability theorem*) dice che la distribuzione di $Y_s$ coincide con quella dei simboli:
+
+<Formula id="f-c08-3" />
+
+Se la sorgente emettesse Yes, Maybe e No con prior 0.5, 0.3 e 0.2, cambierebbero le probabilità dei tre valori di $Y_s$, non le condizionate. Nel canale rumoroso, invece, prior diversi spostano le soglie di decisione: lo vedrai tra poco.
+
+<Example id="ex01" title="Canale PAM ideale: tre simboli, tre ampiezze, classificatore a valori esatti">
+
+<Step title="Sorgente e canale">
+
+La sorgente discreta emette Yes, No e Maybe. Tra sorgente e ricevitore c'è il canale di comunicazione; al trasmettitore l'informazione diventa un segnale.
+
+</Step>
+
+<Step title="Il trasmettitore PAM">
+
+Ogni simbolo diventa un impulso rettangolare di durata $T$ e ampiezza 0.25 (Yes), 0.5 (Maybe) o 0.75 (No). Per esempio la sequenza Yes, No, Maybe produce tre gradini di altezza 0.25 su $[0, T)$, 0.75 su $[T, 2T)$ e 0.5 su $[2T, 3T)$.
+
+</Step>
+
+<Step title="Il campionatore">
+
+Il ricevitore campiona al centro di ogni impulso, in $0.5T$, $1.5T$ e $2.5T$, e legge 0.25, 0.75 e 0.5.
+
+</Step>
+
+<Step title="Il classificatore a valori esatti">
+
+La regola 0.25 → Yes, 0.5 → Maybe, 0.75 → No ricostruisce Yes, No, Maybe senza errori.
+
+</Step>
+
+<Step title="Le probabilità">
+
+$Y_s$ è discreta con tre valori, ciascuno con prior 1/3. La condizionata di $Y_s$ dato Yes vale 1 in 0.25 e 0 altrove, e così per gli altri simboli. Nel caso ideale la decisione è certa e non c'è nulla da stimare.
+
+</Step>
+
+</Example>
+
+<Widget id="m03-pam-canale-ideale" />
+
+<Check id="chk-02" />
+
+### Arriva il rumore
+
+Un sistema ideale in pratica non esiste, a causa del rumore di canale (*channel noise*), che può distorcere il segnale trasmesso. Le note assumono un <Term en="additive Gaussian noise">rumore gaussiano additivo</Term>: il segnale ricevuto $y$ è la somma del segnale trasmesso $x$ e del rumore $n$, e $n$ segue una distribuzione gaussiana. <SourceRef doc="part1" page={13} />
+
+<Formula id="f-c09" />
+
+Le note non dichiarano media e varianza del rumore. La media nulla è implicita: la densità di $y$ dato Yes, come dirà la stessa pagina, è centrata in 0.25, cioè sul livello trasmesso.
+
+<Formula id="f-c09-2" />
+
+<Callout kind="attenzione">
+Qui $x$ è uno scalare, l'ampiezza PAM trasmessa, e $n$ è il rumore. Dalla slide 7 in poi $\mathbf{x}$ in grassetto sarà il vettore delle feature e $n$ il numero di feature. Le fonti usano le stesse lettere per cose diverse: tienile distinte dal contesto.
+</Callout>
+
+Con il rumore il classificatore di prima, basato sui valori esatti 0.25, 0.5 e 0.75, non funziona più: i valori ricevuti si discostano (*deviate*) da quelli nominali. Se trasmetti Yes e il rumore vale 0.03, ricevi 0.28, un valore che la regola a casi non prevede. Anzi, per un rumore continuo la probabilità di ricevere esattamente 0.25 è zero. Devi abbandonare il ragionamento per valori esatti e descrivere $y$ in termini statistici.
+
+<Formula id="f-c10" />
+
+Il punto di partenza delle note è che conosci la distribuzione sia di $x$ sia di $n$. Il segnale $x$ è una variabile aleatoria discreta (assume uno di tre valori), il rumore $n$ è continuo (segue una gaussiana). Quindi $y$, somma dei due, è continuo anch'esso.
+
+<KeyIdea>
+Discreta più continua fa continua. Il segnale $y$ possiede una **funzione densità di probabilità** (*probability density function*, PDF), mentre $x$ aveva una **distribuzione di probabilità** (*probability distribution*): tre masse di probabilità concentrate su tre valori.
+</KeyIdea>
+
+<Widget id="m03-pam-rumore-gaussiano" />
+
+### La densità del segnale ricevuto è una convoluzione
+
+Le note proseguono: poiché $x$ e $n$ sono indipendenti, la densità di probabilità di $y$, indicata con $P_y$, è la <Term en="convolution">convoluzione</Term> della distribuzione di probabilità di $x$ ($P_x$) con la densità di probabilità di $n$ ($P_n$).
+
+<Formula id="f-c12" />
+
+Le note scrivono $P$ maiuscola sia per la distribuzione discreta di $x$ sia per le densità di $n$ e di $y$. Nello sviluppo esplicito qui sotto le densità sono in minuscolo. Convolvere tre impulsi di massa 1/3 con una campana significa copiare la campana su ciascuno dei tre livelli e pesarla 1/3: il risultato è una mistura (*mixture*) di tre gaussiane.
+
+<Formula id="f-c12-2" />
+
+Le note danno un esempio: la distribuzione condizionata di $y$ dato Yes è una gaussiana centrata attorno a 0.25, con una dispersione (*spread*) determinata dal rumore. Allo stesso modo $p(y\mid\text{Maybe})$ è centrata in 0.5 e $p(y\mid\text{No})$ in 0.75.
+
+<Formula id="f-c13" />
+
+Il rumore «spalma» ogni impulso della distribuzione di $x$ in una campana. Se $\sigma_n$ è piccola le tre campane restano separate e la densità di $y$ ha tre gobbe; se $\sigma_n$ cresce le campane si sovrappongono e oltre $\sigma_n \approx 0.121$ la densità perde i tre massimi distinti.
+
+<Check id="chk-03" />
+
+### Decidere con le soglie
+
+Nello scenario rumoroso il classificatore va adattato. Invece di classificare in base a valori specifici del segnale usi un <Term en="threshold-based model">modello a soglie</Term>. Il modello definisce soglie di decisione (*decision thresholds*) che tengono conto del rumore e ti permettono di classificare il segnale ricevuto in base alla verosimiglianza (*likelihood*) che appartenga a una delle tre categorie originali. <SourceRef doc="part1" page={13} />
+
+«In base alla verosimiglianza», scritto in simboli, è una regola di arg max sulle densità condizionate: scegli il simbolo che rende più alta la densità del valore ricevuto.
+
+<Formula id="f-c14" />
+
+Le soglie sono il modo pratico di applicare questa regola su un asse monodimensionale. Il vincitore dell'arg max cambia dove due campane adiacenti si incrociano. Con prior uguali (1/3) e stessa varianza, gli incroci cadono a metà tra i livelli. Le note non danno i valori numerici: 0.375 e 0.625 sono una conseguenza diretta delle ipotesi dell'esempio.
+
+<Formula id="f-c14-2" />
+
+La derivazione che segue esplicita i passaggi che le note danno a parole: densità condizionate gaussiane, densità di $y$ come convoluzione, soglie e probabilità d'errore (*error probability*).
+
+<Derivation id="der02" />
+
+<Example id="ex02" title="Canale PAM reale: rumore gaussiano additivo, convoluzione e soglie di decisione">
+
+<Step title="Il modello del canale">
+
+Il segnale ricevuto è $y = x + n$, con $x \in \{0.25,\ 0.5,\ 0.75\}$ equiprobabili e $n$ gaussiano a media nulla, indipendente da $x$.
+
+</Step>
+
+<Step title="Il classificatore esatto fallisce">
+
+Trasmetti Yes (0.25), il rumore vale 0.03 e ricevi $y = 0.28$. Il valore non è 0.25, né 0.5, né 0.75: la regola a casi non sa che cosa decidere.
+
+</Step>
+
+<Step title="La densità di y">
+
+Per la convoluzione $p_y(y)$ è la mistura
+
+$$
+p_y(y) = \frac{1}{3}\left[p_n(y - 0.25) + p_n(y - 0.5) + p_n(y - 0.75)\right]
+$$
+
+Tre campane uguali centrate sui tre livelli, ciascuna con area 1/3.
+
+</Step>
+
+<Step title="Le densità condizionate e le soglie">
+
+$p(y\mid\text{Yes})$ è la campana centrata in 0.25, e così per gli altri simboli. Le campane adiacenti si incrociano a metà strada: le soglie sono 0.375 e 0.625. Con $y = 0.28$ decidi Yes; con $y = 0.40$ decidi Maybe.
+
+</Step>
+
+<Step title="La probabilità d'errore">
+
+I simboli estremi sbagliano solo da un lato, quello centrale da entrambi, e ogni coda parte a distanza 0.125 dal livello:
+
+$$
+P_e = \frac{1}{3}\left[Q\!\left(\frac{0.125}{\sigma_n}\right) + 2\,Q\!\left(\frac{0.125}{\sigma_n}\right) + Q\!\left(\frac{0.125}{\sigma_n}\right)\right] = \frac{4}{3}\,Q\!\left(\frac{0.125}{\sigma_n}\right)
+$$
+
+Con $\sigma_n = 0.05$: $P_e = \frac{4}{3}Q(2.5) \approx 0.83\%$. Con $\sigma_n = 0.1$: $P_e = \frac{4}{3}Q(1.25) \approx 14.1\%$.
+
+</Step>
+
+<Step title="I casi limite">
+
+Con $\sigma_n \to 0$ l'errore tende a zero e torni al sistema ideale. Con $\sigma_n \to +\infty$ vale $Q(0) = 1/2$ e $P_e \to 2/3$: l'errore di chi tira a indovinare tra tre simboli equiprobabili.
+
+</Step>
+
+</Example>
+
+<Widget id="m03-pam-convoluzione-soglie" />
+
+Le soglie a metà strada sono le migliori solo con prior uguali e stessa varianza. Se la sorgente emette i simboli con probabilità diverse, la regola ottima pesa ogni verosimiglianza con il suo prior (regola MAP, *maximum a posteriori*). La soglia tra due livelli adiacenti $a_1 < a_2$, con prior $P_1$ e $P_2$, si sposta verso il simbolo meno probabile di $\frac{\sigma_n^2}{a_2 - a_1}\ln\frac{P_1}{P_2}$. Con prior 0.5, 0.3 e 0.2 per Yes, Maybe e No e $\sigma_n = 0.1$ le soglie diventano 0.395 e 0.641, e l'errore medio scende dal 13.7% delle soglie a metà strada al 13.2%.
+
+<Derivation id="der08" />
+
+<Check id="chk-04" />
+
+<KeyIdea>
+Nel corso, qui compaiono per la prima volta le densità condizionate $p(y\mid s)$. Conoscerle, o stimarle dai dati, è ciò che ti permette di piazzare le soglie. Il resto del capitolo insegna a stimarle.
+</KeyIdea>
+
+<Callout kind="esame">
+Una domanda della banca sul criterio MAP chiede «Example of how priors change the threshold compared to ML criterion». Il canale PAM è l'esempio giusto: con prior uguali la soglia sta all'incrocio delle due verosimiglianze (criterio ML); con prior diversi scrivi $t_{12} = \frac{a_1 + a_2}{2} + \frac{\sigma_n^2}{a_2 - a_1}\ln\frac{P_1}{P_2}$ e di' che la soglia si sposta verso il simbolo meno probabile. La teoria completa di MAP e ML è in <ModLink to="m17-bayes-map-ml">classificazione bayesiana: criteri MAP e ML</ModLink>.
+</Callout>
+
+## Perché la stima statistica conta
+
+La slide 2 afferma che la <Term en="statistical estimation">stima statistica</Term> è piuttosto importante, perché può intervenire in diverse parti di un sistema basato sul machine learning. Le note rafforzano: la stima gioca un ruolo cruciale in vari stadi di un sistema di ML ed è fondamentale per l'addestramento del modello (*model training*), l'inferenza (*inference*) e la valutazione delle prestazioni (*performance evaluation*), perché ti aiuta a dare senso ai dati e ai pattern sottostanti. <SourceRef doc="ch2" page={2} /> <SourceRef doc="part1" page={13} />
+
+<Definition term="Obiettivo del Capitolo 2" en="estimating the statistical distribution of a stochastic signal from a set of available observations">
+Studiare metodi e algoritmi per stimare la distribuzione statistica di un segnale stocastico a partire da un insieme di osservazioni disponibili, i campioni (*samples*).
+</Definition>
+
+Le note aggiungono il perché: stimando con accuratezza queste distribuzioni capisci meglio le caratteristiche dei dati e migliori le prestazioni dei modelli di machine learning. L'oggetto da stimare è la pdf del segnale; segnali stocastici e rumore sono introdotti in <ModLink to="m01-segnali-learning">segnali, acquisizione e apprendimento</ModLink>.
+
+<Formula id="f-c16" />
+
+A destra della slide 2 c'è un grafico tridimensionale. Sul piano orizzontale gli assi $x_1$ e $x_2$ sono due feature; in verticale c'è $p(\mathbf{x})$. Più superfici a campana, di forma, altezza e orientamento diversi e di colore diverso (rossa, grigio chiaro, grigio scuro, marrone), si sovrappongono in parte.
+
+<Figure id="fig02" />
+
+<Formula id="f-c17" />
+
+Il messaggio: la distribuzione statistica da stimare è una funzione sullo spazio delle feature. La fonte non commenta i colori. Una lettura naturale è che in un problema con più classi ogni classe abbia la sua «montagna» di densità, e le montagne possono sovrapporsi. Stimare la distribuzione vuol dire ricostruire le montagne guardando dove sono caduti i campioni.
+
+<Reveal label="La stessa figura negli appunti">
+
+<Figure id="fig08" />
+
+</Reveal>
+
+<Widget id="m03-superfici-densita-2d" />
+
+## Dove serve la stima nel sistema di machine learning
+
+La slide 3 riprende lo schema a blocchi del Capitolo 1: Physical World, Acquisition, Pre-processing, Feature Extraction, Recognition, Post-recognition, Decision. Tre manine rosse puntano verso Pre-processing, Feature Extraction e Recognition, e il fumetto del docente dice «Statistical estimation can be necessary here». Nessuna manina indica Acquisition, Post-recognition e Decision. <SourceRef doc="ch2" page={3} />
+
+<Figure id="fig03" />
+
+<Reveal label="Lo schema negli appunti">
+
+<Figure id="fig09" />
+
+</Reveal>
+
+Le note spiegano a che cosa serve la stima in ciascuno dei tre blocchi. <SourceRef doc="part1" page={13} /> <SourceRef doc="part1" page={14} />
+
+- **Pre-processing.** La stima statistica aiuta nella normalizzazione dei dati (*data normalization*), nella riduzione del rumore (*noise reduction*) e nella gestione dei valori mancanti (*handling missing values*), perché l'ingresso sia pulito e adatto alle elaborazioni successive. Tre esempi concreti: per normalizzare una feature stimi dai campioni la sua media e la sua deviazione standard; per sostituire un valore mancante ti serve una stima della distribuzione di quella feature; per attenuare il rumore ne stimi la varianza.
+- **Feature extraction.** Le tecniche di stima ricavano feature significative dai dati grezzi analizzandone le proprietà statistiche. Queste feature danno una rappresentazione compatta e informativa (*compact and informative representation*) dei dati per i compiti a valle (*downstream tasks*).
+- **Recognition.** Nel riconoscimento (classificazione, *pattern recognition*) la stima aiuta a identificare i pattern, ad apprendere distribuzioni di probabilità (*learning probability distributions*) e a migliorare i processi decisionali (*decision-making*) nei modelli. È il caso del canale PAM: le soglie si piazzano solo conoscendo le densità condizionate.
+
+<Widget id="m03-dove-serve-la-stima" />
+
+<Check id="chk-05" />
+
+<Callout kind="esame">
+Nella domanda «Block scheme/Design phases of an ML system, describe all the blocks and phases with examples» puoi aggiungere dove interviene la stima statistica: pre-processing, feature extraction e recognition, con un esempio per blocco. Lo schema completo è in <ModLink to="m02-sistema-ml-design">sistema di ML e fasi di design</ModLink>.
+</Callout>
+
+## Dalla sorgente all'uscita
+
+La slide 4 disegna un sistema di decisione statistico. Le note lo introducono come «An overview of a machine learning or statistical decision system pipeline». <SourceRef doc="ch2" page={4} /> <SourceRef doc="part1" page={14} />
+
+<Figure id="fig04" />
+
+Il blocco azzurro Information Source manda una freccia nell'ellisse verde Observation Space. Accanto all'ellisse c'è il blocco rosso Statistical Modeling & Estimation, collegato all'ellisse da una freccia rossa curva che torna verso lo spazio delle osservazioni. In alto a destra la figura di un progettista, con la scritta Parametric/Nonparametric, manda una freccia nel blocco rosso. Dal blocco rosso una linea scende a Output, che si dirama in Classification, Detection e Prediction.
+
+<Reveal label="Il diagramma negli appunti">
+
+<Figure id="fig11" />
+
+</Reveal>
+
+Le note descrivono i quattro stadi.
+
+<Definition term="Sorgente di informazione" en="Information Source">
+Da qui arrivano i dati di ingresso: osservazioni o misure del mondo reale (*real-world observations or measurements*). Possono essere dati di qualunque tipo, letture di sensori, immagini o testo, che alimentano il sistema.
+</Definition>
+
+<Definition term="Spazio delle osservazioni" en="Observation Space">
+I dati della sorgente entrano nello spazio delle osservazioni, che rappresenta il dominio, cioè l'insieme di tutte le osservazioni possibili che il sistema può analizzare. Sono i dati grezzi (*raw*), forse rumorosi (*possibly noisy*), con cui lavora il modello.
+</Definition>
+
+<Definition term="Modellazione statistica e stima" en="Statistical Modeling & Estimation">
+Stadio in cui applichi metodi statistici per modellare i pattern o le distribuzioni sottostanti nello spazio delle osservazioni. Puoi usare approcci parametrici o non parametrici per stimare le proprietà statistiche dei dati. I modelli ottenuti servono poi a prendere decisioni o a fare previsioni.
+</Definition>
+
+La freccia rossa curva dice che il modello si costruisce sullo spazio delle osservazioni e si riferisce a esso. La scelta tra parametrico e non parametrico arriva da fuori, dal progettista: è l'unica decisione a monte del blocco. Vedrai più avanti che dipende da quanto conosci della sorgente.
+
+<Widget id="m03-pipeline-sorgente-uscita" />
+
+<Definition term="Uscita del sistema" en="Output">
+I risultati della modellazione statistica, utilizzabili in varie applicazioni. **Classification**: assegnare i dati a una tra più categorie predefinite. **Detection**: identificare la presenza o l'assenza di specifici pattern o segnali nei dati. **Prediction**: prevedere esiti futuri in base al modello appreso. <SourceRef doc="part1" page={15} />
+</Definition>
+
+Le tre uscite usano lo stesso oggetto, la distribuzione stimata. Con un sensore di temperatura, per esempio, la densità stimata delle letture normali ti serve per classificare il regime di funzionamento, per rivelare un'anomalia (una lettura in una zona di densità bassissima) e per prevedere la prossima lettura.
+
+<Widget id="m03-tre-uscite" />
+
+## Tre categorie di segnali stocastici
+
+Nella teoria della stima i segnali stocastici (*stochastic signals*) si dividono in tre categorie. Il criterio, evidenziato in rosso nella slide, è quanto conosci della sorgente di informazione: completamente nota (*completely known*), solo parzialmente nota (*partially known*), completamente ignota (*completely unknown*). Il rumore c'è in tutti e tre i casi. <SourceRef doc="ch2" page={5} /> <SourceRef doc="part1" page={15} />
+
+<Definition term="Segnali deterministici rumorosi" en="Noisy deterministic signals">
+La sorgente di informazione è completamente nota (nelle note *fully known*). Il rumore interferisce durante le fasi di trasmissione e/o di acquisizione. Esempio: la trasmissione di segnali nei sistemi di telecomunicazione basati su PAM; il segnale è deterministico ma subisce rumore additivo durante la trasmissione.
+</Definition>
+
+<Definition term="Segnali parametrici rumorosi" en="Noisy parametric signals">
+La sorgente è solo parzialmente nota. Le osservazioni permettono di stimare i parametri aleatori (*random parameters*) che controllano il comportamento del segnale. Esempio: la stima della velocità del bersaglio (*target speed velocity estimation*) nei sistemi sonar; la struttura del segnale è nota, ma parametri come la velocità vanno inferiti da osservazioni rumorose.
+</Definition>
+
+<Definition term="Segnali aleatori rumorosi" en="Noisy random signals">
+Il segnale è completamente ignoto (nelle note *entirely unknown*). La stima deve basarsi del tutto sulle osservazioni disponibili. Esempio: la rivelazione di oggetti sepolti con il georadar (*buried object detection with ground penetrating radar*); segnale e rumore sono entrambi aleatori e solo i dati osservati guidano la stima.
+</Definition>
+
+| Categoria | Conoscenza della sorgente | Esempio | Che cosa resta da stimare |
+|---|---|---|---|
+| deterministici rumorosi | completamente nota | PAM | niente: resta da decidere nel rumore |
+| parametrici rumorosi | parzialmente nota | velocità del bersaglio nel sonar | pochi parametri |
+| aleatori rumorosi | completamente ignota | oggetti sepolti con il georadar | l'intera distribuzione |
+
+L'ultima colonna è un'anticipazione che la fonte rende evidente accostando le slide 5, 6 e 8: la sviluppa la sezione sulla scelta dell'approccio.
+
+<Example id="ex05" title="I tre esempi applicativi delle categorie di segnali: PAM, sonar, georadar">
+
+<Step title="Categoria 1: il PAM">
+
+Nei sistemi di telecomunicazione basati su PAM la sorgente è completamente nota: sai quali simboli esistono e quale ampiezza corrisponde a ciascuno. Il segnale è deterministico, ma subisce rumore additivo durante la trasmissione e/o l'acquisizione. Non c'è una densità da scoprire: resta da decidere in presenza di rumore, come nel canale delle note.
+
+</Step>
+
+<Step title="Categoria 2: il sonar">
+
+Nella stima della velocità del bersaglio conosci la struttura del segnale (la forma dell'eco), ma non i parametri che lo controllano, come la velocità. Li inferisci da osservazioni rumorose: stimi pochi numeri.
+
+</Step>
+
+<Step title="Categoria 3: il georadar">
+
+Nella rivelazione di oggetti sepolti con il georadar il segnale è completamente ignoto; segnale e rumore sono entrambi aleatori. Solo i dati osservati guidano la stima: devi ricostruire la distribuzione per intero.
+
+</Step>
+
+<Step title="Il fuoco del corso">
+
+Il corso si concentra sulla seconda e sulla terza categoria, le più comuni nelle applicazioni reali.
+
+</Step>
+
+</Example>
+
+<Widget id="m03-tre-categorie-di-segnali" />
+
+<Check id="chk-06" />
+
+## La stima della pdf al centro del corso
+
+La slide 6 fissa il fuoco. D'ora in poi il corso si concentra sulla seconda e sulla terza categoria, segnali parametrici rumorosi e segnali aleatori rumorosi, perché sono le più comuni nelle applicazioni reali. In particolare affronterai il problema della stima della <Term en="probability density function, pdf">funzione densità di probabilità</Term> (pdf), «which is important as we have understood before». La slide non dice a che cosa rimandi: negli appunti il discorso che precede è l'esempio PAM, dove per decidere servono le densità, e più in generale il Capitolo 1 (le note scrivono «as discussed earlier»). Le note aggiungono che la pdf è cruciale per molti compiti di machine learning e di elaborazione dei segnali (*signal processing*). <SourceRef doc="ch2" page={6} /> <SourceRef doc="part1" page={15} />
+
+Il solo motivo che la fonte dà per la scelta è che la seconda e la terza categoria sono le più comuni nelle applicazioni reali. Una lettura in più, che non è nella slide: con una sorgente completamente nota non resta una densità da stimare, resta solo da decidere nel rumore.
+
+Solo negli appunti trovi una seconda distinzione, che divide il machine learning in due grandi famiglie. <SourceRef doc="part1" page={15} />
+
+<Columns>
+<Col title="Machine learning statistico">
+
+**Statistical Machine Learning.** Si basa fortemente su metodi statistici, in cui la PDF ha un ruolo chiave per modellare i dati e fare previsioni in base alle loro distribuzioni. Stimare la PDF permette ai modelli statistici di inferire pattern e relazioni nei dati.
+
+</Col>
+<Col title="Machine learning non statistico">
+
+**Non-Statistical Machine Learning.** Approcci come certi tipi di deep learning possono non richiedere la PDF in modo esplicito. Imparano i pattern con approcci guidati dai dati (*data-driven*), senza assumere un modello probabilistico sottostante.
+
+</Col>
+</Columns>
+
+La conclusione delle note: per il ML statistico una stima accurata della PDF è essenziale per migliorare prestazioni e affidabilità del modello. Nell'esempio del pesce la strada statistica stima le densità di luminosità dei salmoni e delle spigole e mette la soglia dove si incrociano; la strada non statistica (un percettrone, per esempio) cerca direttamente la soglia che separa i campioni, senza passare dalle densità.
+
+<Widget id="m03-statistico-vs-non-statistico" />
+
+<Check id="chk-07" />
+
+## Il problema della stima di pdf
+
+La slide 7 formula il problema con tre definizioni e un obiettivo. <SourceRef doc="ch2" page={7} /> <SourceRef doc="part1" page={16} />
+
+### Feature, campioni di training e pdf incognita
+
+Sia $\mathbf{x} = (x_1, x_2, \dots, x_n)$ un vettore di $n$ feature con pdf incognita $p(\mathbf{x})$; «unknown pdf» è scritto in rosso nella slide. Il numero $n$ è la dimensione dello spazio delle feature. La pdf $p(\mathbf{x})$ è la densità congiunta (*joint density*) delle $n$ feature: esiste, ma chi progetta il sistema non la conosce.
+
+<Formula id="f-c34" />
+
+<Formula id="f-c34-2" />
+
+Sia $\mathbf{X} = \{\mathbf{x}_1, \mathbf{x}_2, \dots, \mathbf{x}_N\}$ un insieme finito di $N$ campioni (osservazioni) <Term en="independent and identically distributed, iid">indipendenti e identicamente distribuiti</Term> (iid), estratti dalla pdf considerata. Questi campioni si chiamano **campioni di training** (*training samples*). Indipendenti: il valore di un campione non influenza gli altri. Identicamente distribuiti: tutti seguono la stessa $p(\mathbf{x})$.
+
+<Formula id="f-c35" />
+
+<Formula id="f-c35-2" />
+
+<Callout kind="attenzione">
+Occhio agli indici. $n$ minuscolo è il numero di feature (la lunghezza di ogni vettore $\mathbf{x}_k$), $N$ maiuscolo è il numero di campioni. Nell'esempio del pesce con luminosità e larghezza hai $n = 2$; se l'impianto misura 500 pesci, $N = 500$.
+</Callout>
+
+<Widget id="m03-campioni-che-rivelano-la-pdf" />
+
+### L'ipotesi iid
+
+Una nota presente solo negli appunti avverte che l'ipotesi iid è raramente vera nei casi reali, a causa delle dipendenze tra i dati (*dependencies between data points*); la si assume per semplificare il calcolo (*to simplify the computation*). È l'ipotesi che ti permetterà di scrivere la verosimiglianza come prodotto delle densità dei singoli campioni. <SourceRef doc="part1" page={16} />
+
+Tre esempi di dati non iid: letture consecutive dello stesso sensore, correlate nel tempo; pixel vicini di un'immagine telerilevata, correlati nello spazio; battiti successivi dello stesso ECG. L'iid è un'ipotesi di lavoro, non una proprietà garantita dei dati. Con dati dipendenti $N$ campioni valgono meno di $N$ osservazioni indipendenti, e il prodotto delle densità non è più la densità congiunta esatta.
+
+<Widget id="m03-ipotesi-iid-alla-prova" />
+
+### L'obiettivo: una stima vicina alla pdf vera
+
+Il riquadro verde della slide 7, indicato dalla manina, fissa l'obiettivo: «to determine an estimate $\hat{p}(\mathbf{x})$ on the basis of the available samples $\mathbf{X}$, which is as close as possible to the true pdf $p(\mathbf{x})$». In rosso: *Objective*, *estimate*, *as close as possible*. Le note riformulano: vuoi stimare un modello di densità che rifletta con accuratezza la distribuzione sottostante dei dati.
+
+<Formula id="f-c37" />
+
+Il cappello indica sempre una quantità stimata dai dati. La stima deve avvicinarsi alla pdf vera:
+
+<Formula id="f-c37-2" />
+
+La stima nasce «on the basis of the available samples», quindi è una funzione dei campioni. Se cambi l'insieme di training, cambia anche la stima.
+
+<Formula id="f-c37-3" />
+
+In queste pagine la fonte non definisce una misura di «vicinanza» tra stima e pdf vera. La qualità verrà giudicata con bias, varianza e consistenza: per i parametri nella sezione sulla bontà di una stima e in <ModLink to="m04-bonta-stimatori">bontà degli stimatori</ModLink>, per le stime non parametriche in <ModLink to="m09-parzen-windows">finestre di Parzen</ModLink>.
+
+<Check id="chk-08" />
+
+### Non sprecare informazione
+
+Gli appunti aggiungono un principio generale. In statistica è cruciale massimizzare l'uso di tutta l'informazione disponibile (*maximize the use of all available information*). Anche quando i dati sono incompleti o imperfetti devi estrarne quanta più conoscenza possibile. I metodi statistici efficaci sono progettati per usare al meglio dati parziali o incompleti, in modo che nessuna informazione preziosa vada sprecata; con tecniche avanzate si possono ancora fare inferenze e previsioni robuste in presenza di incertezza o di dati mancanti. <SourceRef doc="part1" page={16} />
+
+Un esempio: una rete di sensori in cui ogni stazione perde qualche lettura. Se scarti ogni riga con almeno un valore mancante butti via anche le misure buone di quella riga; un metodo che le usa tutte stima meglio. Il principio anticipa la stima con dati incompleti e l'algoritmo EM di <ModLink to="m10-em-dati-incompleti">dati incompleti ed EM</ModLink>.
+
+<Widget id="m03-non-sprecare-informazione" />
+
+## Gli approcci alla stima di pdf
+
+La slide 8 è un albero. Dalla radice Approaches partono due rami, Parametric e Nonparametric. Sotto Parametric ci sono tre foglie: Gaussian, Gamma, Rayleigh. Sotto Nonparametric altre tre: K-Nearest Neighbors, Parzen Windows, Orthogonal Function Approximation. Le note confermano: «There are two primary approaches to probability density function (PDF) estimation». <SourceRef doc="ch2" page={8} /> <SourceRef doc="part1" page={16} />
+
+<Figure id="fig05" />
+
+<Widget id="m03-albero-degli-approcci" />
+
+### Approcci parametrici
+
+<Definition term="Approcci parametrici" en="Parametric Approaches">
+La forma della distribuzione è nota (*the shape of the distribution is known*): puoi concentrarti solo sulla stima dei suoi parametri.
+</Definition>
+
+Corrispondono alla categoria dei segnali parametrici rumorosi: conosci il modello, non i suoi parametri. Le note citano tre esempi comuni, solo a parole; le formule sono in <ModLink to="m06-modelli-pdf-gaussiana">modelli di PDF e modello gaussiano</ModLink>.
+
+- **Gaussiana** (*Gaussian Distribution*). È caratterizzata da media e varianza (*mean and variance*) ed è molto usata in statistica e nel machine learning. Nel linguaggio della slide 9 la gaussiana monodimensionale ha un vettore dei parametri con due componenti.
+
+<Formula id="f-c41" />
+
+- **Gamma** (*Gamma Distribution*). Una famiglia flessibile di distribuzioni, usata spesso nei modelli di code (*queuing models*) e nell'analisi di affidabilità (*reliability analysis*). È definita solo per valori positivi ed è asimmetrica: per questo si adatta a grandezze come tempi di attesa, durate e intensità.
+- **Rayleigh** (*Rayleigh Distribution*). Modella il modulo (*magnitude*) di un vettore nello spazio bidimensionale, in particolare nell'elaborazione dei segnali. Il caso tipico è l'ampiezza di un segnale le cui due componenti, in fase e in quadratura, sono gaussiane indipendenti a media nulla e con la stessa varianza. Ha un solo parametro di scala ed è definita solo per valori positivi.
+
+<Widget id="m03-famiglie-parametriche" />
+
+### Approcci non parametrici
+
+<Definition term="Approcci non parametrici" en="Nonparametric Approaches">
+Non assumono una forma specifica per la densità (*do not assume a specific shape for the density*): si affidano ai dati disponibili per inferire la distribuzione.
+</Definition>
+
+Corrispondono alla categoria dei segnali aleatori rumorosi, dove la sorgente è completamente ignota e la stima si basa del tutto sulle osservazioni. Le note elencano tre tecniche, qui solo annunciate.
+
+- **K-Nearest Neighbors** (KNN). Un algoritmo semplice ma efficace che stima la densità in base alla prossimità dei punti (*proximity of data points*) nello spazio delle feature. Lo sviluppa <ModLink to="m08-non-parametrica-knn">stima non parametrica e K-NN</ModLink>.
+- **Finestre di Parzen** (*Parzen Windows*). Una tecnica che usa una funzione finestra (*windowing function*) per lisciare (*smooth*) i contributi dei punti e costruire una stima della PDF. La sviluppa <ModLink to="m09-parzen-windows">finestre di Parzen</ModLink>.
+- **Approssimazione con funzioni ortogonali** (*Orthogonal Function Approximation*). Usa funzioni ortogonali per approssimare la densità senza imporre una forma predeterminata. Questo è l'unico punto del corso in cui compare: slide e note non la sviluppano oltre la definizione.
+
+<Widget id="m03-anteprima-non-parametrici" />
+
+### Quale approccio scegliere
+
+Le note chiudono la tassonomia così: ciascuno di questi metodi ha i propri vantaggi e la propria applicabilità (*its own advantages and applicability*), secondo le caratteristiche dei dati e i requisiti specifici dell'analisi. Il discrimine dichiarato dalla fonte è la conoscenza della forma. Parametrico: la forma è nota e stimi solo i parametri. Non parametrico: nessuna forma assunta, la densità si inferisce dai dati. Il confronto operativo torna nei moduli su K-NN e Parzen: pochi parametri ed efficienza se il modello è giusto, contro flessibilità e bisogno di più campioni. <SourceRef doc="part1" page={16} />
+
+La fonte non scrive in una frase unica il legame tra le categorie di segnali e i due rami dell'albero, ma lo rende evidente se accosti le slide 5, 6 e 8.
+
+- Categoria 2, segnali parametrici rumorosi: la sorgente è «only partially known» e le osservazioni servono a stimare «the random parameters controlling the behavior of the signal»; le note precisano che «the signal's structure is known». È la situazione degli approcci parametrici, in cui «the shape of the distribution is known»: resta da stimare un vettore $\boldsymbol{\theta}$ di $r$ numeri.
+- Categoria 3, segnali aleatori rumorosi: il segnale è «completely unknown» e la stima «should rely completely on the available observations». È la situazione degli approcci non parametrici, che «do not assume a specific shape for the density»: resta da stimare un'intera funzione.
+- Categoria 1, sorgente completamente nota: nessuna densità da stimare, solo una decisione nel rumore, come nel canale PAM. È una lettura del foglio: la slide 6 la lascia da parte dicendo soltanto che la seconda e la terza categoria sono le più comuni nelle applicazioni reali.
+
+Nello schema della slide 4 questa scelta è l'etichetta Parametric/Nonparametric che il progettista immette nel blocco Statistical Modeling & Estimation. <SourceRef doc="ch2" page={5} /> <SourceRef doc="ch2" page={8} />
+
+<Formula id="f-c78" />
+
+<KeyIdea>
+Meno sai della sorgente, più devi stimare. Forma nota: pochi parametri, pochi campioni, ma una stima sbagliata per qualunque $N$ se la forma è sbagliata. Forma ignota: un'intera funzione, molti campioni, nessuna ipotesi da sbagliare.
+</KeyIdea>
+
+<Widget id="m03-quanto-sai-cosa-stimi" />
+
+<Check id="chk-09" />
+
+<Callout kind="esame">
+Melgani chiede «what non-parametric means and why we use it». Rispondi con la definizione (nessuna forma assunta per la densità, si inferisce dai dati) e con il motivo: la usi quando non disponi di un modello affidabile della forma della densità, cioè con una sorgente completamente ignota. Aggiungi il contrasto con il parametrico (forma nota, stimi $\boldsymbol{\theta}$) e cita le tre tecniche dell'albero. Le domande su K-NN e Parzen partono sempre da qui: «general context: what we want to do, why they are non parametric estimation».
+</Callout>
+
+## La stima parametrica
+
+La slide 9 entra nella stima parametrica e definisce tre oggetti: il vettore dei parametri, il modello $p(\mathbf{x}\mid\boldsymbol{\theta})$ e la funzione di verosimiglianza. <SourceRef doc="ch2" page={9} /> <SourceRef doc="part1" page={17} />
+
+### Il vettore dei parametri
+
+Assumi che il modello di $p(\mathbf{x})$ sia caratterizzato da $r$ parametri («parameters» in rosso), che formano il <Term en="parameter vector">vettore dei parametri</Term>. Per una gaussiana monodimensionale $r = 2$: media e varianza. Stimare la pdf equivale allora a stimare un punto nello spazio $r$-dimensionale dei parametri. La slide scrive il vettore con un punto di troppo dopo $\theta_r$, un refuso senza conseguenze.
+
+<Formula id="f-c49" />
+
+La dipendenza del modello da $\boldsymbol{\theta}$ è sottolineata (*underlined*) dalla notazione $p(\mathbf{x}\mid\boldsymbol{\theta})$: la pdf di $\mathbf{x}$ quando i parametri valgono $\boldsymbol{\theta}$. Al variare di $\boldsymbol{\theta}$ ottieni una famiglia di pdf, tutte della stessa forma. La barra verticale ricorda che la curva dipende dai parametri.
+
+<Formula id="f-c50" />
+
+<Widget id="m03-modello-e-parametri" />
+
+### La funzione di verosimiglianza
+
+Poiché $\mathbf{X} = \{\mathbf{x}_1, \mathbf{x}_2, \dots, \mathbf{x}_N\}$ è un vettore di variabili aleatorie iid («random variables» in rosso), puoi definire una **funzione di verosimiglianza** associata (*likelihood function*, in rosso): il prodotto, per $k$ da 1 a $N$, delle densità dei singoli campioni. È la formula che Melgani chiede all'orale. La slide chiama «vettore» l'insieme $\mathbf{X}$ definito nella slide 7: per il calcolo non cambia nulla.
+
+<Formula id="f-c51" />
+
+Perché proprio il prodotto? Le note rispondono in una riga: poiché i campioni sono indipendenti, la probabilità complessiva si può esprimere come prodotto delle probabilità individuali di ciascun campione. In dettaglio, $p(\mathbf{X}\mid\boldsymbol{\theta})$ è la densità congiunta (*joint density*) degli $N$ campioni. L'indipendenza la fattorizza nel prodotto delle densità marginali (*marginal densities*); l'identica distribuzione fa sì che ogni fattore sia la stessa funzione $p(\cdot\mid\boldsymbol{\theta})$, valutata nel rispettivo $\mathbf{x}_k$. La fonte scrive solo il primo e l'ultimo membro; il membro con la densità congiunta esplicita la frase delle note.
+
+<Formula id="f-c52" />
+
+L'indipendenza che serve è quella per $\boldsymbol{\theta}$ fissato. Senza, la regola della catena (*chain rule*) lascia densità condizionate ai campioni precedenti e il prodotto delle marginali non è più la densità congiunta. La derivazione mostra tutti i passi, compreso questo controesempio e il passaggio al logaritmo.
+
+<Derivation id="der01" />
+
+<Widget id="m03-verosimiglianza-come-prodotto" />
+
+<Check id="chk-10" />
+
+<Check id="chk-11" />
+
+### Che cosa misura la verosimiglianza
+
+La slide dice che la funzione definisce la verosimiglianza di $\boldsymbol{\theta}$ rispetto all'insieme di campioni considerato ($\mathbf{X}$). In altre parole fornisce un'utile **misura di compatibilità/accordo** (*measure of compatibility/agreement*, in rosso) tra $\boldsymbol{\theta}$ e $\mathbf{X}$. Le note aggiungono: serve come misura di quanto bene il modello scelto sa «spiegare» (*explain*) i campioni di training.
+
+Un valore alto dice che il modello con quei parametri rende plausibili i campioni osservati. Un valore basso dice che i campioni cadono dove il modello assegna poca densità. Basta un solo campione lontano dalla campana candidata per abbattere tutto il prodotto.
+
+Le note proseguono: analizzando la funzione di verosimiglianza puoi identificare quali parametri del modello hanno con maggiore probabilità generato i campioni osservati (*which model parameters are most likely to have generated the observed samples*). Il processo è fondante nell'inferenza statistica (*foundational in statistical inference*) e ti permette di stimare i parametri che meglio si adattano ai dati (*best fit the data*). È il ponte verso la <ModLink to="m05-max-likelihood">stima a massima verosimiglianza</ModLink>. <SourceRef doc="part1" page={17} />
+
+<Widget id="m03-accordo-tra-theta-e-dati" />
+
+<Callout kind="esame">
+«What the Likelihood describe»: rispondi che $p(\mathbf{X}\mid\boldsymbol{\theta})$, letta come funzione di $\boldsymbol{\theta}$ con i campioni fissati, misura la compatibilità tra i parametri e i dati, cioè quanto bene il modello spiega i campioni di training. Aggiungi che non è la probabilità che $\boldsymbol{\theta}$ sia vero: come funzione di $\boldsymbol{\theta}$ non è nemmeno una densità (lo vedi nell'esempio qui sotto).
+</Callout>
+
+## Un esempio di verosimiglianza
+
+La slide 10, «Likelihood Function: Example», è una figura senza testo né didascalia; negli appunti è incollata come immagine dopo la definizione di verosimiglianza. Tre pannelli impilati condividono l'asse orizzontale da 1 a 7. La figura viene dal manuale di Duda, Hart e Stork, *Pattern Classification* (cap. 3), la cui didascalia conferma la lettura che segue. <SourceRef doc="ch2" page={10} /> <SourceRef doc="part1" page={17} />
+
+<Figure id="fig06" />
+
+<Reveal label="La stessa figura negli appunti">
+
+<Figure id="fig10" />
+
+</Reveal>
+
+### I campioni e le pdf candidate
+
+Nel pannello in alto l'ascissa è $x$. Dodici pallini rossi sull'asse sono i campioni di training monodimensionali (due coppie sono quasi sovrapposte). Misurati sull'immagine, stanno in 1.87, 2.08, 2.30, 2.34, 2.54, 2.88, 3.37, 3.66, 3.70, 3.89, 4.14 e 4.78, con media 3.13. Sopra ci sono quattro gaussiane tratteggiate della stessa larghezza ($\sigma = 1$) e medie diverse (2.5, 3, 3.5 e 5): quattro delle infinite pdf candidate $p(x\mid\theta)$. Il parametro incognito $\theta$ è la media; la varianza è nota.
+
+<Formula id="f-c55" />
+
+La candidata centrata in 5 lascia quasi tutti i campioni nella sua coda sinistra: è poco compatibile con i dati. Le candidate in 3 e 3.5 li coprono bene.
+
+### La verosimiglianza in funzione di theta
+
+Nel pannello centrale l'ascissa è $\theta$ e l'ordinata $p(\mathbf{X}\mid\theta)$, con tacche $0.4\times10^{-7}$, $0.8\times10^{-7}$ e $1.2\times10^{-7}$. Ogni punto della curva è un intero prodotto: le $N = 12$ densità dei campioni calcolate con quel valore di $\theta$.
+
+<Formula id="f-c56" />
+
+La curva è una campana stretta, praticamente nulla fuori dall'intervallo tra 2 e 4. Il massimo, circa $1.5\times10^{-7}$, cade in $\hat{\theta} \approx 3.1$, indicato da una freccia verticale con l'etichetta $\hat{\theta}$. È la media dei dodici pallini. La campana ha deviazione standard $0.29 \approx 1/\sqrt{12}$, cioè $\sigma/\sqrt{N}$: con più campioni il picco diventerebbe più stretto.
+
+<Formula id="f-c56-2" />
+
+Le etichette dell'asse sono sfalsate di mezza divisione rispetto alla linea di base. Misurando dalla base il picco vale circa $1.5\times10^{-7}$, che coincide con il valore teorico $1.48\times10^{-7}$ calcolato con i dodici campioni.
+
+### La log-verosimiglianza
+
+Nel pannello in basso l'ascissa è ancora $\theta$ e l'ordinata $l(\theta)$, con tacche da $-20$ a $-100$. La curva è un arco concavo di forma parabolica. Il massimo, tra $-15$ e $-16$, cade nello stesso $\hat{\theta} \approx 3.1$ del pannello centrale (stessa freccia). La curva parte da circa $-73$ al bordo sinistro (il modello dà $-74.5$ in $\theta = 0$) e scende sotto $-100$ per $\theta = 7$.
+
+Nella slide 10 il simbolo $l(\theta)$ compare solo come etichetta dell'asse. La definizione come logaritmo naturale della verosimiglianza è coerente con la slide 17 (in <ModLink to="m05-max-likelihood">stima a massima verosimiglianza</ModLink>), che introduce la *log-likelihood* come $\ln p(\mathbf{X}\mid\boldsymbol{\theta})$.
+
+<Formula id="f-c57" />
+
+Il logaritmo è monotono crescente, quindi non sposta il massimo. Trasforma il prodotto in una somma e una campana strettissima in una parabola ben leggibile.
+
+<Formula id="f-c57-2" />
+
+<Widget id="m03-tre-pannelli-della-verosimiglianza" />
+
+La slide non riporta calcoli. La derivazione seguente spiega con i conti perché, per una gaussiana con varianza nota, la verosimiglianza è una campana larga $\sigma/\sqrt{N}$ e la log-verosimiglianza una parabola con vertice nella media campionaria (*sample mean*).
+
+<Derivation id="der03" />
+
+<Example id="ex03" title="Likelihood Function: Example, i tre pannelli della slide 10 con i numeri">
+
+<Step title="I dati letti dalla figura">
+
+Dodici campioni: 1.87, 2.08, 2.30, 2.34, 2.54, 2.88, 3.37, 3.66, 3.70, 3.89, 4.14, 4.78. Media $\bar{x} = 3.13$, somma dei quadrati degli scarti dalla media $9.40$. Il modello è una gaussiana con $\sigma = 1$ nota e media $\theta$ incognita.
+
+</Step>
+
+<Step title="La formula della log-verosimiglianza">
+
+$$
+l(\theta) = -\frac{N}{2}\ln(2\pi\sigma^2) - \frac{1}{2\sigma^2}\sum_{k=1}^{N}(x_k - \theta)^2 = l(\bar{x}) - \frac{N}{2\sigma^2}(\theta - \bar{x})^2
+$$
+
+Con $N = 12$ e $\sigma = 1$ la parabola ha coefficiente $N/(2\sigma^2) = 6$.
+
+</Step>
+
+<Step title="Il massimo">
+
+$$
+l(\hat{\theta}) = -\frac{12}{2}\ln(2\pi) - \frac{9.40}{2} = -11.03 - 4.70 = -15.73, \qquad p(\mathbf{X}\mid\hat{\theta}) = e^{-15.73} \approx 1.48\times 10^{-7}
+$$
+
+Il massimo sta in $\hat{\theta} = \bar{x} = 3.13$, lo stesso punto nei due pannelli.
+
+</Step>
+
+<Step title="Le quattro candidate">
+
+$$
+l(3) = -15.73 - 6\cdot(0.13)^2 = -15.83, \qquad l(3.5) = -16.55, \qquad l(2.5) = -18.10, \qquad l(5) = -15.73 - 6\cdot(1.87)^2 = -36.73
+$$
+
+In verosimiglianza: circa $1.3\times10^{-7}$, $6.5\times10^{-8}$, $1.4\times10^{-8}$ e $1.1\times10^{-16}$. La candidata in 5 sta nove ordini di grandezza sotto il massimo.
+
+</Step>
+
+<Step title="La larghezza del picco">
+
+Esponenziando la parabola, la verosimiglianza in $\theta$ è una campana con deviazione standard $\sigma/\sqrt{N} = 1/\sqrt{12} \approx 0.289$. Il pannello centrale conferma: larghezza a metà altezza $0.68 = 2.355 \cdot 0.289$.
+
+</Step>
+
+<Step title="Il pannello inferiore ai bordi">
+
+$l(0) = -74.5$, $l(1) = -42.9$, $l(2) = -23.4$, $l(7) = -105.6$: sono i valori che la curva della figura attraversa.
+
+</Step>
+
+</Example>
+
+<Callout kind="esame">
+Il pannello centrale e quello inferiore sono la base della domanda «Explain ML estimation, develop the first derivative for a gaussian and explain the meaning of the result». Derivando $l(\theta)$ trovi $\frac{1}{\sigma^2}\sum_k (x_k - \theta) = 0$, quindi $\hat{\theta} = \bar{x}$: la stima ML della media è la media campionaria, cioè la freccia $\hat{\theta}$ della figura. Il calcolo completo è in <ModLink to="m05-max-likelihood">stima a massima verosimiglianza</ModLink>.
+</Callout>
+
+### Funzione di x o funzione di theta
+
+Confronta gli assi. Nel pannello superiore l'ascissa è $x$: le curve tratteggiate sono pdf $p(x\mid\theta)$, con $\theta$ fissato, e ciascuna ha area 1. Nei pannelli centrale e inferiore l'ascissa è $\theta$ e i campioni $\mathbf{X}$ sono fissati. Le curve si somigliano ma sono oggetti diversi.
+
+<Formula id="f-c58" />
+
+Come funzione di $\theta$ la verosimiglianza $p(\mathbf{X}\mid\theta)$ non è una densità di probabilità: la sua area non vale 1 e non ha significato. Non è nemmeno «la probabilità che $\theta$ sia vero»: è la misura di compatibilità della slide 9.
+
+<Formula id="f-c58-2" />
+
+Nell'esempio della slide 10 puoi calcolare quell'area dalla forma gaussiana in $\theta$ della derivazione precedente: circa $1.07\times10^{-7}$, lontanissima da 1.
+
+<Formula id="f-c58-3" />
+
+<Check id="chk-12" />
+
+### Ordini di grandezza
+
+Nel pannello centrale i valori di $p(\mathbf{X}\mid\theta)$ sono dell'ordine di $10^{-7}$ con appena dodici campioni. La verosimiglianza è un prodotto di $N$ densità, ciascuna di solito minore di 1, e quindi decresce in modo esponenziale con $N$: con centinaia di campioni va in *underflow* numerico. Nel pannello inferiore gli stessi valori, in logaritmo, stanno tra $-15$ e $-100$, numeri trattabili. Ecco il motivo pratico, oltre a quello analitico (il prodotto diventa somma), per lavorare con la log-verosimiglianza. <SourceRef doc="ch2" page={10} />
+
+<Formula id="f-c59" />
+
+Con $\sigma = 1$ ogni fattore vale al più $1/\sqrt{2\pi} \approx 0.399$. Con dodici campioni la verosimiglianza non può superare $0.399^{12} \approx 1.6\times10^{-5}$: è il termine costante $-\frac{N}{2}\ln(2\pi\sigma^2) = -11.03$ di $l(\theta)$. Il resto dell'ordine di grandezza viene dagli scarti dei campioni, $-9.40/2$.
+
+<Formula id="f-c59-2" />
+
+Una densità però può superare 1: con $\sigma = 0.1$ il picco della gaussiana vale 3.99. «Ciascuna minore di 1» vale quindi solo se $\sigma$ non è troppo piccola; con densità grandi il prodotto può andare in *overflow* invece che in underflow. Il logaritmo risolve entrambi i problemi.
+
+<Widget id="m03-funzione-di-x-o-di-theta" />
+
+<Check id="chk-13" />
+
+## Le procedure di stima: massima verosimiglianza e stima bayesiana
+
+La slide 11 è un altro albero. Dalla radice Main Procedures partono due rami verso i blocchi blu Maximum Likelihood Estimation e Bayesian Estimation; sotto ciascuno una pergamena con la descrizione in rosso. Le note: «The main estimation procedures of the parameter vector are: Maximum Likelihood Estimation (MLE) and Bayesian Estimation (BE)». Entrambe partono dalla stessa funzione di verosimiglianza $p(\mathbf{X}\mid\boldsymbol{\theta})$, ma interpretano $\boldsymbol{\theta}$ in modo diverso. <SourceRef doc="ch2" page={11} /> <SourceRef doc="part1" page={17} />
+
+<Figure id="fig07" />
+
+<Widget id="m03-ml-contro-bayes-anteprima" />
+
+### Stima a massima verosimiglianza
+
+La pergamena di sinistra dice: «Θ is viewed as a vector of quantities whose values are fixed but unknown. The best estimate of their value is defined to be the one that maximizes the probability of obtaining the samples actually observed.» Qui la slide scrive theta maiuscola, altrove minuscola in grassetto: è lo stesso vettore dei parametri.
+
+<Definition term="Stima a massima verosimiglianza" en="Maximum Likelihood Estimation, MLE">
+Il vettore $\boldsymbol{\theta}$ è un insieme di quantità fisse ma incognite (*fixed but unknown*). La stima migliore è quella che massimizza la verosimiglianza di ottenere i campioni osservati.
+</Definition>
+
+La formula con l'arg max è scritta nella slide 17 ed è qui solo come riferimento; la trattazione è in <ModLink to="m05-max-likelihood">stima a massima verosimiglianza</ModLink>.
+
+<Formula id="f-c61" />
+
+Con dati continui la probabilità di ottenere esattamente i campioni osservati è zero, quindi «maximizes the probability» va letto sulla densità. La probabilità di cadere in celle piccole di volume $\Delta$ attorno ai campioni vale circa $p(\mathbf{X}\mid\boldsymbol{\theta})\,\Delta^N$, e $\Delta^N$ non dipende da $\boldsymbol{\theta}$: massimizzare quella probabilità equivale a massimizzare $p(\mathbf{X}\mid\boldsymbol{\theta})$.
+
+### Stima bayesiana
+
+La pergamena di destra dice: «The parameters are viewed as random variables having some known prior distribution. Observation of the samples converts this to a posterior density.» <SourceRef doc="ch2" page={11} />
+
+<Definition term="Stima bayesiana" en="Bayesian Estimation, BE">
+I parametri sono variabili aleatorie con una distribuzione a priori (*prior*) nota. Quando osservi i campioni, il prior viene aggiornato tramite il teorema di Bayes (*Bayes' theorem*) e produce una densità a posteriori (*posterior density*).
+</Definition>
+
+Le note spiegano il vantaggio: l'approccio ti permette di incorporare conoscenze o convinzioni a priori sui parametri (*prior knowledge or beliefs*) e di combinarle con l'informazione dei dati osservati per ottenere una stima più informata. La frase prosegue a p.18. La formula è la forma esplicita del teorema di Bayes che le note richiamano a parole; la sviluppa <ModLink to="m07-stima-bayesiana">stima bayesiana e confronto ML vs Bayes</ModLink>. <SourceRef doc="part1" page={17} /> <SourceRef doc="part1" page={18} />
+
+<Formula id="f-c62" />
+
+### Le due differenze chiave
+
+Gli appunti elencano le differenze tra MLE e BE (*Key Differences Between MLE and BE*) in due punti. <SourceRef doc="part1" page={18} />
+
+<Columns>
+<Col title="Natura dei parametri">
+
+**MLE**: $\boldsymbol{\theta}$ è una costante che vuoi stimare.
+
+**BE**: $\boldsymbol{\theta}$ è una variabile aleatoria, che riflette l'incertezza e integra la conoscenza a priori nel processo di stima.
+
+</Col>
+<Col title="Obiettivo">
+
+**MLE**: ottimizza una funzione costo o funzione obiettivo (*cost or objective function*) basata solo sui dati osservati (*based solely on the observed data*) e trova i valori dei parametri che massimizzano la verosimiglianza.
+
+**BE**: combina l'informazione dei campioni di training con la distribuzione a priori e produce una densità a posteriori, cioè una descrizione probabilistica completa dell'incertezza sul parametro (*complete probabilistic description of the parameter's uncertainty*).
+
+</Col>
+</Columns>
+
+Le note chiudono: comprendendo i due approcci scegli il metodo più adatto al contesto del problema e alla natura dei dati disponibili. Un filtro antispam lo mostra bene. Se stimi la probabilità che un'email sia spam da cinque email tutte legittime, la MLE risponde 0; la BE, con un prior ragionevole, risponde un numero piccolo ma positivo e ti dice anche quanto è incerta. L'esempio con prior Beta è sviluppato in <ModLink to="p02-bernoulli-multinomiale">Bernoulli e multinomiale</ModLink>.
+
+<Widget id="m03-costante-o-variabile-aleatoria" />
+
+<Check id="chk-14" />
+
+### Quando ML e Bayes coincidono
+
+Le pagine di questo foglio presentano le due procedure e le loro differenze, ma non dicono quando coincidono. La domanda d'esame collegata lo chiede: «In which case ML and Bayesian are the same?». La risposta è nella slide 40 del capitolo, «ML versus Bayesian Estimation», anticipata qui. <SourceRef doc="ch2" page={40} />
+
+La slide 40 dice che l'approccio ML stima un *point* nello spazio di $\boldsymbol{\theta}$, mentre l'approccio bayesiano stima una *distribution* $p(\mathbf{x}\mid\mathbf{X})$ da cui $\boldsymbol{\theta}$ è inferito. Poi: «ML and Bayes solutions are equivalent: in the asymptotic limit of infinite training samples, or if the prior $p(\theta)$ is uniform». In pratica la ML è spesso preferita per la minore complessità computazionale (*computational complexity*) e la più facile interpretabilità (*interpretability*).
+
+Il perché sta nel teorema di Bayes. Il posterior è proporzionale alla verosimiglianza per il prior:
+
+<Formula id="f-c79" />
+
+Se il prior è costante, sparisce dalla proporzionalità: il posterior ha la stessa forma della verosimiglianza e quindi lo stesso massimo.
+
+<Formula id="f-c79-2" />
+
+Se $N$ cresce, la verosimiglianza diventa un picco sempre più stretto (larghezza $\sigma/\sqrt{N}$ nell'esempio della slide 10) e domina qualunque prior che non sia nullo attorno al valore vero. I due casi della slide sono i due modi di rendere trascurabile il prior.
+
+Una precisazione, utile se il docente insiste. Con prior uniforme (*uniform prior*) coincide con $\hat{\theta}_{ML}$ il massimo del posterior, cioè la stima MAP (*maximum a posteriori*). La media a posteriori (*posterior mean*) coincide solo se il posterior, che qui ha la forma della verosimiglianza, è simmetrico attorno al massimo: succede nell'esempio gaussiano con prior piatto su tutta la retta, non in generale. Controesempio: la probabilità di spam del filtro di prima, con prior uniforme e $k$ email spam su $N$. ML e MAP valgono $k/N$, la media a posteriori $(k+1)/(N+2)$: con 0 spam su 5 email, $0$ contro $1/7$. In generale anche un prior uniforme su un intervallo limitato stacca la media dal massimo, perché tronca il posterior. E anche dove le stime puntuali coincidono, la densità bayesiana $p(x\mid\mathbf{X})$ resta più larga di quella ML, perché conserva l'incertezza residua su $\theta$: nell'esempio gaussiano ha varianza $\sigma^2(1 + 1/N)$ invece di $\sigma^2$. Le due densità coincidono esattamente solo per $N \to \infty$.
+
+<Formula id="f-c79-3" />
+
+La derivazione esplicita il meccanismo, compreso il completamento del quadrato che rende gaussiano il posterior.
+
+<Derivation id="der07" />
+
+<Widget id="m03-quando-ml-e-bayes-coincidono" />
+
+<Check id="chk-15" />
+
+<Callout kind="esame">
+Tre domande della banca passano di qui. Melgani: «Is it better or not with respect to the Bayesian Estimation? Why?» e «In which case ML and Bayesian are the same?»; rispondi con le due differenze delle note e con i due casi della slide 40 (prior uniforme, infiniti campioni). Passerini: «why do we obtain a Gaussian also as posterior?»; rispondi che il prodotto di due esponenziali di quadratiche in $\theta$ è l'esponenziale di una quadratica, quindi ancora una gaussiana (completamento del quadrato). Passerini chiede anche l'apprendimento dei parametri nelle reti bayesiane come «ML with complete data, MAP with prior knowledge, EM with incomplete data»: sono le due procedure della slide 11 più il principio degli appunti sui dati incompleti. Vedi <ModLink to="p01-stima-parametri">stima ML e bayesiana dei parametri</ModLink> e <ModLink to="p05-apprendimento-reti">apprendimento nei modelli grafici</ModLink>.
+</Callout>
+
+## La bontà di una stima
+
+Le pagine 18-19 degli appunti trattano la bontà di una stima (*Estimation Goodness*). Corrispondono alle slide 12-16 del capitolo, trattate in <ModLink to="m04-bonta-stimatori">bontà di uno stimatore</ModLink>; qui le trovi per intero perché cadono nelle pagine di questo foglio e perché la domanda d'esame sulla verosimiglianza prosegue con «How we can describe the goodness of an estimation». <SourceRef doc="part1" page={18} /> <SourceRef doc="part1" page={19} />
+
+### La stima è un vettore aleatorio
+
+La stima del vettore dei parametri dipende dal vettore delle osservazioni $\mathbf{X}$:
+
+<Formula id="f-c65" />
+
+Di conseguenza la stima $\hat{\boldsymbol{\theta}}$ è essa stessa un **vettore aleatorio** (*random vector*): se l'insieme dei campioni di training cambia, anche la stima cambia. Pensa a due giornate di pesca nello stesso impianto: i salmoni misurati sono diversi, e la luminosità media stimata esce diversa. Ha quindi senso parlare di media e varianza della stima.
+
+Per quantificare l'accuratezza delle stime definisci l'<Term en="estimation error">errore di stima</Term> $\boldsymbol{\varepsilon}$, la differenza tra valore stimato e valore vero del parametro. Dipende sia dai campioni $\mathbf{X}$ sia da $\boldsymbol{\theta}$ ed è un vettore con $r$ componenti, una per parametro.
+
+<Formula id="f-c66" />
+
+<Widget id="m03-stima-che-cambia-col-training-set" />
+
+### La stima ideale: niente bias, niente varianza
+
+Per ottenere una stima ideale di ogni parametro $\theta_i$ ($i = 1, 2, \dots, r$), ogni errore $\varepsilon_i$ deve soddisfare due criteri: **non polarizzazione** (*Unbiasedness*) e **varianza nulla** (*No Variance*). Le note ammettono che in pratica ottenere entrambe le cose può essere difficile, ma i due criteri restano i riferimenti fondamentali (*fundamental benchmarks*) per valutare la bontà dei metodi di stima. La fonte li enuncia a parole; in simboli diventano:
+
+<Formula id="f-c67" />
+
+<Definition term="Bias e stimatore non polarizzato" en="bias; unbiased estimator">
+Il bias di un errore di stima è il suo valore medio. Uno stimatore è non polarizzato (*unbiased*) se il valore atteso dell'errore è nullo, e quindi il valore atteso della stima coincide con il parametro vero: in media lo stimatore produce il valore corretto.
+</Definition>
+
+<Formula id="f-c68" />
+
+La fonte non introduce un simbolo per il bias. Scritta in simboli, la frase «The bias of an estimation error is its mean value» diventa:
+
+<Formula id="f-c68-2" />
+
+La varianza dell'errore di stima è definita alla fine di p.18 e scritta in cima a p.19. Il secondo termine è $\hat{\theta}_i$ con una barra sopra il cappello, cioè il valor medio della stima. Nel testo estratto dal PDF la barra si perde, ma l'immagine degli appunti e la slide 13 mostrano lo stesso simbolo.
+
+<Formula id="f-c69" />
+
+La varianza misura la dispersione della stima attorno alla propria media. Coincide con la varianza di $\hat{\theta}_i$, perché $\theta_i$ è una costante e sottrarla non cambia la dispersione.
+
+<Derivation id="der04" />
+
+La derivazione chiude con la scomposizione dell'errore quadratico medio (*mean squared error*, MSE), $E\{\varepsilon_i^2\} = \operatorname{var}\{\varepsilon_i\} + (E\{\varepsilon_i\})^2$. I due criteri insieme equivalgono a errore quadratico medio nullo, e nessuno dei due basta da solo. Uno stimatore che ignora i dati e restituisce sempre la stessa costante ha varianza nulla ma è polarizzato. Lo stimatore «solo il primo campione» è non polarizzato, ma la sua varianza $\sigma^2$ non cala con $N$.
+
+<Widget id="m03-bersaglio-bias-varianza" />
+
+<Check id="chk-16" />
+
+### Il bound di Cramér-Rao
+
+Per valutare la bontà della varianza devi riferirti al <Term en="Cramér-Rao bound">bound di Cramér-Rao</Term>. Stabilisce un limite inferiore alla varianza di uno stimatore statistico **non polarizzato**, basato sull'informazione di Fisher (*Fisher information*). La disuguaglianza di Cramér-Rao dice che la varianza dell'errore sull'$i$-esimo parametro non può scendere sotto l'$i$-esimo elemento diagonale dell'inversa della matrice di informazione di Fisher. <SourceRef doc="part1" page={19} />
+
+<Formula id="f-c70" />
+
+Le note dichiarano che il bound vale per stimatori non polarizzati: senza questa ipotesi non vale (lo stimatore costante ha varianza nulla, sotto qualunque bound). Sottintendono invece le condizioni di regolarità (*regularity conditions*) del modello, cioè supporto di $p(\mathbf{x}\mid\boldsymbol{\theta})$ indipendente da $\boldsymbol{\theta}$, derivabilità in $\boldsymbol{\theta}$ e possibilità di scambiare derivata e integrale.
+
+La <Term en="Fisher information matrix">matrice di informazione di Fisher</Term> $\mathbf{I}(\boldsymbol{\theta})$ è il valore atteso del prodotto esterno (*outer product*) del gradiente, rispetto a $\boldsymbol{\theta}$, del logaritmo della verosimiglianza per il suo trasposto. È una matrice $r \times r$.
+
+<Formula id="f-c71" />
+
+Elemento per elemento, è il valore atteso del prodotto delle derivate parziali della log-verosimiglianza rispetto a $\theta_i$ e a $\theta_j$.
+
+<Formula id="f-c71-2" />
+
+L'interpretazione: più la log-verosimiglianza è sensibile a $\boldsymbol{\theta}$ (derivate grandi), più informazione i dati portano sul parametro e più basso è il bound. Due conseguenze utili. Con campioni iid $\mathbf{I}(\boldsymbol{\theta}) = N\,\mathbf{I}_1(\boldsymbol{\theta})$, quindi il bound cala come $1/N$. E poiché per una matrice definita positiva $[\mathbf{I}^{-1}]_{ii} \ge 1/[\mathbf{I}]_{ii}$, dover stimare anche gli altri parametri non può abbassare il bound sul parametro $i$-esimo.
+
+<Definition term="Stimatore efficiente" en="efficient estimator">
+Quando la varianza raggiunge il bound di Cramér-Rao, lo stimatore è detto efficiente (*efficient*): ottiene la minima varianza possibile per uno stimatore non polarizzato, ed è quindi ottimo in termini di efficienza statistica.
+</Definition>
+
+<Formula id="f-c72" />
+
+Nell'esempio della slide 10 la media campionaria di campioni gaussiani con $\sigma$ nota ha varianza $\sigma^2/N$, pari a $[I(\theta)]^{-1}$: è efficiente, ed è anche la stima ML. Con $N = 12$ e $\sigma = 1$ il bound vale $1/12$ e la sua radice, 0.289, è proprio la larghezza della campana del pannello centrale.
+
+<Derivation id="der05" />
+
+<Widget id="m03-cramer-rao-e-fisher" />
+
+<Check id="chk-17" />
+
+### Stimatori reali e proprietà asintotiche
+
+In molti scenari pratici le stime che usi vengono da stimatori polarizzati e inefficienti (*biased and inefficient estimators*). L'efficacia di uno stimatore può soffrire molto del numero limitato di campioni di training. La qualità di uno stimatore dipende da due fattori chiave: il numero di campioni di training e la qualità intrinseca di quei campioni. Per valutare e confrontare gli stimatori si assume spesso un numero infinito di campioni di training (*infinite number of training samples*): se ne analizza il comportamento quando la dimensione del campione tende all'infinito. Uno stimatore è buono se ha proprietà asintotiche (*asymptotic properties*) favorevoli. <SourceRef doc="part1" page={19} />
+
+<Formula id="f-c73" />
+
+<Definition term="Non polarizzazione asintotica" en="Asymptotic Unbiasedness">
+Il valore atteso dell'errore tende a zero per $N \to +\infty$: al crescere del numero di campioni il valore atteso dello stimatore tende al valore vero del parametro.
+</Definition>
+
+<Formula id="f-c74" />
+
+<Definition term="Efficienza asintotica" en="Asymptotic Efficiency">
+Nel limite di campioni numerosi lo stimatore raggiunge la minima varianza possibile, cioè il bound di Cramér-Rao, tra tutti gli stimatori non polarizzati: il rapporto tra la varianza dell'errore e il corrispondente elemento diagonale dell'inversa della matrice di Fisher tende a 1.
+</Definition>
+
+<Formula id="f-c75" />
+
+Un esempio per ciascuna. La varianza campionaria con $1/N$ è polarizzata (bias $-\sigma^2/N$) ma asintoticamente non polarizzata. La mediana di campioni gaussiani è non polarizzata, ma il rapporto tra la sua varianza e il bound tende a $\pi/2 \approx 1.57$, non a 1: non è asintoticamente efficiente.
+
+<Widget id="m03-proprieta-asintotiche" />
+
+### Consistenza
+
+<Definition term="Stimatore consistente" en="consistent estimator">
+Lo stimatore converge al valore vero del parametro quando il numero di campioni tende all'infinito: per ogni $\delta > 0$ la probabilità che la norma dell'errore di stima sia minore di $\delta$ tende a 1 (convergenza in probabilità, *convergence in probability*).
+</Definition>
+
+<Formula id="f-c76" />
+
+Le note (e la slide 16) indicano come **condizioni necessarie** (*necessary conditions*) per la consistenza che lo stimatore sia asintoticamente non polarizzato e che la sua varianza converga a zero quando il numero di campioni tende all'infinito.
+
+<Formula id="f-c77" />
+
+<Formula id="f-c77-2" />
+
+La frase che chiude l'argomento sta in cima a p.20: assicurando queste proprietà asintotiche hai più fiducia nell'affidabilità degli stimatori su grandi dataset. La derivazione mostra, con la disuguaglianza di Chebyshev (*Chebyshev inequality*), che le due condizioni bastano a garantire la consistenza. Mostra anche un controesempio: uno stimatore consistente con bias costante uguale a 1. A rigore le due condizioni sono quindi sufficienti, non necessarie. All'orale riporta la formulazione del docente e precisa solo se te lo chiede.
+
+<Derivation id="der06" />
+
+<Widget id="m03-consistenza-imbuto" />
+
+<Check id="chk-18" />
+
+<Callout kind="esame">
+«How we can describe the goodness of an estimation and Is Maximum Likelihood Estimation a good estimator?» Segui la catena: la stima è un vettore aleatorio, definisci l'errore, i due criteri della stima ideale (bias e varianza), il bound di Cramér-Rao con la matrice di Fisher e l'efficienza, poi le proprietà asintotiche e la consistenza. Per la ML: sotto certe ipotesi su $p(\mathbf{x}\mid\boldsymbol{\theta})$ (slide 19), se esiste uno stimatore efficiente e la ML è non polarizzata, lo stimatore efficiente è quello ML; in ogni caso la ML è asintoticamente non polarizzata, asintoticamente efficiente e consistente (slide 19, in <ModLink to="m05-max-likelihood">stima a massima verosimiglianza</ModLink>). Le stesse definizioni servono per le domande su Parzen: «Is Parzen a good estimator (bias/variance)?».
+</Callout>
+
+## Collegamenti
+
+- <ModLink to="m01-segnali-learning">Segnali, acquisizione e apprendimento</ModLink>: la slide 5 colloca il rumore nelle fasi di trasmissione e/o acquisizione e parla di segnali stocastici e sorgente di informazione, concetti introdotti nel Capitolo 1.
+- <ModLink to="m02-sistema-ml-design">Sistema di ML e fasi di design</ModLink>: lo schema a blocchi della slide 3 e l'esempio del pesce con l'overfitting vengono da lì, come le slide di esempi applicativi che gli appunti citano come «30 additional slides» (nel PDF sono le slide 21-43).
+- <ModLink to="m04-bonta-stimatori">Bontà di uno stimatore</ModLink>: stima come vettore aleatorio, errore, bias, varianza, Cramér-Rao, Fisher, efficienza, proprietà asintotiche e consistenza, sulle slide 12-16.
+- <ModLink to="m05-max-likelihood">Stima a massima verosimiglianza</ModLink>: la verosimiglianza definita qui è ciò che la ML massimizza, con l'arg max, la log-verosimiglianza e le proprietà della stima ML.
+- <ModLink to="m06-modelli-pdf-gaussiana">Modelli di PDF e modello gaussiano</ModLink>: Gaussian, Gamma e Rayleigh, solo nominati nell'albero della slide 8, con formule e criteri di scelta.
+- <ModLink to="m07-stima-bayesiana">Stima bayesiana e confronto ML vs Bayes</ModLink>: prior, posterior, teorema di Bayes, posterior gaussiano e densità $p(x\mid\mathbf{X})$; la slide 40 sui casi in cui ML e Bayes coincidono.
+- <ModLink to="m08-non-parametrica-knn">Stima non parametrica e K-NN</ModLink>: prima foglia del ramo non parametrico, con il perché della stima non parametrica.
+- <ModLink to="m09-parzen-windows">Finestre di Parzen</ModLink>: seconda foglia del ramo non parametrico; le domande su Parzen chiedono bias, varianza e consistenza, definite qui.
+- <ModLink to="m10-em-dati-incompleti">Dati incompleti ed EM</ModLink>: il principio «non sprecare informazione» anticipa la stima con dati incompleti.
+- <ModLink to="m17-bayes-map-ml">Criteri MAP e ML</ModLink>: il classificatore a soglie del canale PAM è un'anteprima dei criteri ML e MAP, con lo spostamento della soglia dovuto ai prior.
+- <ModLink to="m21-errore-generalizzazione">Errore di generalizzazione e cross-validation</ModLink>: overfitting e compromesso tra complessità e generalizzazione, misurati sull'errore su dati nuovi.
+- <ModLink to="p01-stima-parametri">Stima ML e bayesiana dei parametri</ModLink>: Passerini riprende le stesse definizioni di verosimiglianza, prior e posterior, con statistiche sufficienti e prior coniugati.
+- <ModLink to="p02-bernoulli-multinomiale">Bernoulli e multinomiale</ModLink>: l'esempio dello spam, stima di una probabilità di Bernoulli con prior Beta.
+- <ModLink to="p05-apprendimento-reti">Apprendimento nei modelli grafici</ModLink>: ML con dati completi, MAP con conoscenza a priori, EM con dati incompleti; le stesse due procedure della slide 11 più il principio sui dati incompleti.
+
+## Per l'orale
+
+Dieci domande della banca toccano questo foglio. Qui trovi il testo originale e lo scheletro della risposta per la parte che riguarda queste pagine; le risposte complete, con i punti da toccare, sono nella scheda dell'orale del modulo.
+
+### Verosimiglianza, bontà della stima e confronto con Bayes
+
+<Callout kind="esame" title="Melgani">
+«What is the formula of Maximum Likelihood, why we can use the separate products of the probabilities and what the Likelihood describe. How we can describe the goodness of an estimation and Is Maximum Likelihood Estimation a good estimator? Is it better or not with respect to the Bayesian Estimation? Why? Then he asked me to apply Maximum Likelihood estimation on an exercise. Last question was: In which case ML and Bayesian are the same?»
+</Callout>
+
+Parto dal vettore dei parametri e dal modello $p(\mathbf{x}\mid\boldsymbol{\theta})$. Scrivo $p(\mathbf{X}\mid\boldsymbol{\theta}) = \prod_{k=1}^{N} p(\mathbf{x}_k\mid\boldsymbol{\theta})$ e la giustifico: densità congiunta, fattorizzata per l'indipendenza, con fattori uguali per l'identica distribuzione. Dico che misura l'accordo tra $\boldsymbol{\theta}$ e i campioni, cioè quanto bene il modello li spiega, e che la stima ML è l'arg max. Per la bontà: la stima è aleatoria, errore, bias, varianza, Cramér-Rao, efficienza, proprietà asintotiche, consistenza; la ML è asintoticamente non polarizzata, efficiente e consistente. Confronto con Bayes: parametro costante contro variabile aleatoria, punto contro densità a posteriori. Chiudo con i due casi di coincidenza: prior uniforme oppure infiniti campioni.
+
+### Che cosa vuol dire non parametrico
+
+<Callout kind="esame" title="Melgani">
+«Explain non-parametric estimation, what non-parametric means and why we use it, explain both KNN and Parzen windows, do they tend to the optimal solution? Explain ML estimation, develop the first derivative for a gaussian and explain the meaning of the result. Explain box classifier»
+</Callout>
+
+Per la parte di questo foglio: parto dall'albero della slide 8. Non parametrico vuol dire che non assumo alcuna forma per la densità e la inferisco dai dati; lo uso quando la sorgente è completamente ignota e non ho un modello affidabile della forma. Contrappongo il parametrico, dove la forma è nota e stimo $\boldsymbol{\theta}$, e cito le tre tecniche. Per la derivata prima della gaussiana uso la log-verosimiglianza dell'esempio della slide 10: si annulla in $\hat{\theta} = \bar{x}$, la media campionaria. K-NN, Parzen e box classifier sono in altri moduli.
+
+### Parzen: contesto e bontà dello stimatore
+
+<Callout kind="esame" title="Melgani">
+«Parzen Window Estimation: context, properties etc. Which is the most common window function (write the formula)? Is Parzen a good estimator (bias/variance)? Graphical representation of how the counting/interpolation works with a couple of samples.»
+</Callout>
+
+Da questo foglio prendo il contesto e il vocabolario. Il contesto: voglio una stima $\hat{p}(\mathbf{x})$ il più vicina possibile alla pdf vera, senza assumerne la forma (ramo non parametrico). Il giudizio: bias come media dell'errore, varianza come dispersione della stima, e i due criteri della stima ideale. Kernel, formula e disegno sono in <ModLink to="m09-parzen-windows">finestre di Parzen</ModLink>.
+
+### Parzen: larghezza e consistenza
+
+<Callout kind="esame" title="Melgani">
+«Parzen Windows: general context (what we want to do, why they are non parametric estimation), gaussian kernel with spherical symmetry with formula and some drawing to represent it, How the choice of the width impacts our estimate? Is it a good estimate? (Bias, variance and consideration about the characteristics of the width to have a consistent estimate)»
+</Callout>
+
+Il «general context» è quello di questo foglio: la sorgente è ignota, quindi stimo l'intera funzione dai campioni. «Why non parametric»: nessuna forma assunta. Per la consistenza uso la definizione con $\lim_{N\to+\infty} P\{\lVert\boldsymbol{\varepsilon}\rVert < \delta\} = 1$ e le due condizioni, bias che svanisce e varianza che va a zero; per Parzen diventano condizioni sulla larghezza della finestra.
+
+### K-NN e differenze con Parzen
+
+<Callout kind="esame" title="Melgani">
+«K-NN estimation, how does it works, we draw a graph for example and asked how is the distribution, what does it mean overfit and oversmooth. Then he asked how the K-NN classifier works and made an example. Last question what are the difference with parzen window»
+</Callout>
+
+Qui colloco i due metodi nell'albero: sono due foglie del ramo non parametrico. Il K-NN stima la densità dalla prossimità dei punti nello spazio delle feature; Parzen liscia i contributi dei punti con una funzione finestra. Il resto è in <ModLink to="m08-non-parametrica-knn">stima non parametrica e K-NN</ModLink>.
+
+### Schema a blocchi e fasi di progetto
+
+<Callout kind="esame" title="Melgani">
+«Block scheme/Design phases of an ML system, describe all the blocks and phases with examples (in particular at the beginning of data acquisition and feature extraction, which is the best feature in terms of discrimination, cit. of LDA). Then speaking about the selection (cit. of overfitting), the training and the evaluation of the model (cit. of k-fold), we reach the probabilities regarding the binary classifier (cit. of MAP). At the end, what can we do when the model has low accuracy or in general if a final user wants to reduce the probability of false alarm and the probability of missed alarm?»
+</Callout>
+
+Da questo foglio porto due pezzi. Sullo schema a blocchi indico i tre punti in cui serve la stima statistica (pre-processing, feature extraction, recognition). Sulla selezione del modello racconto l'esempio del pesce con il confine tortuoso: overfitting e compromesso tra complessità e generalizzazione.
+
+### Fasi di progetto e bassa accuratezza
+
+<Callout kind="esame" title="Melgani">
+«Design phase of an ML system, difference between supervised and unsupervised classification, some examples of loss functions (for regression), cross-validation (k-fold, leave-one-out), confusion matrix (two-class/multi-class, accuracy, precision, recall). What can we do when the model has low accuracy?»
+</Callout>
+
+Per «low accuracy» distinguo due casi. Se sbaglia già sul training il modello è troppo semplice e ne aumento la complessità, come nella scala del pesce. Se va bene sul training e male su dati nuovi è overfitting: riduco la flessibilità o aggiungo campioni, cercando il compromesso tra complessità e generalizzazione.
+
+### Perché il posterior gaussiano
+
+<Callout kind="esame" title="Passerini">
+«Perceptron (All) + Parameter estimation Questions: - Problem with analytical solution for perceptron regression - Example of estimation of Gaussian parameters: why do we obtain a Gaussian also as posterior? - How to use parameter estimation in Bayesian Networks - Why ML is fast in Bayesian Network (CDP independence)»
+</Callout>
+
+Per la parte di stima: il posterior è proporzionale a verosimiglianza per prior. Con verosimiglianza gaussiana in $\theta$ e prior gaussiano, il prodotto è l'esponenziale di una quadratica in $\theta$; completando il quadrato ottengo una gaussiana con precisione $N/\sigma^2 + 1/\sigma_0^2$ e media pesata tra $\bar{x}$ e $\mu_0$. Distinguo le due procedure della slide 11: parametro fisso (ML) contro variabile aleatoria con prior (Bayes).
+
+### MAP contro ML: come i prior spostano la soglia
+
+<Callout kind="esame" title="Melgani">
+«MAP criterion: comparison and main differences between ML. Example of how priors change the threshold compared to ML criterion. Proof of MAP as error minimization. At the end of the day is better MAP or ML and why? Why MAP could not be the best one? (Linked to approximation error)»
+</Callout>
+
+Uso il canale PAM come esempio. Con rumore gaussiano di varianza uguale e prior uguali la soglia ML tra due livelli sta a metà strada, 0.375 tra Yes e Maybe. Con prior diversi la regola MAP pesa le verosimiglianze con i prior e la soglia si sposta verso il simbolo meno probabile di $\frac{\sigma_n^2}{a_2 - a_1}\ln\frac{P_1}{P_2}$: con prior 0.5 e 0.3 e $\sigma_n = 0.1$ va a 0.395. Il resto è in <ModLink to="m17-bayes-map-ml">criteri MAP e ML</ModLink>.
+
+### Apprendimento dei parametri nelle reti bayesiane
+
+<Callout kind="esame" title="Passerini">
+«Bayesian networks: formalization (DAG, local independencies, various case of d-separation criterion, general d-separation criterion and global independencies) and learning of the parameters (ML with complete data, MAP with prior knowledge, EM with incomplete data)»
+</Callout>
+
+La parte sull'apprendimento riprende le due procedure della slide 11: con dati completi e nessuna conoscenza a priori massimizzo la verosimiglianza (ML); se ho conoscenza a priori sui parametri uso un prior e prendo il massimo del posterior (MAP). Con dati incompleti applico il principio degli appunti, non sprecare l'informazione disponibile, e uso l'EM. La formalizzazione è in <ModLink to="p05-apprendimento-reti">apprendimento nei modelli grafici</ModLink>.

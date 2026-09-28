@@ -1,0 +1,564 @@
+{
+  "c01": [
+    "#il-punto-di-partenza-le-proprietà-asintotiche-della-stima-ml",
+    "#le-proprietà-delle-stime",
+    "formula:f-c01",
+    "formula:f-c01-2",
+    "formula:f-c01-3",
+    "derivation:der19",
+    "widget:m06-proprieta-asintotiche-stime",
+    "quiz:chk-01"
+  ],
+  "c02": [
+    "#la-scelta-del-modello-statistico",
+    "formula:f-c02",
+    "widget:m06-catena-acquisizione-modello",
+    "quiz:chk-02"
+  ],
+  "c03": [
+    "#primo-aspetto-la-natura-statistica-del-fenomeno",
+    "widget:m06-catena-acquisizione-modello",
+    "quiz:chk-02"
+  ],
+  "c04": [
+    "#secondo-aspetto-il-rumore-di-trasmissione-e-di-acquisizione",
+    "widget:m06-catena-acquisizione-modello",
+    "quiz:chk-02"
+  ],
+  "c05": [
+    "#terzo-aspetto-pre-processing-ed-estrazione-delle-feature",
+    "widget:m06-catena-acquisizione-modello",
+    "quiz:chk-02"
+  ],
+  "c06": [
+    "#i-modelli-statistici-più-diffusi",
+    "widget:m06-indovina-il-modello",
+    "figure:fig07",
+    "quiz:chk-07"
+  ],
+  "c07": [
+    "#scegliere-il-modello-non-è-banale",
+    "widget:m06-indovina-il-modello"
+  ],
+  "c08": [
+    "#la-gaussiana",
+    "example:ex01",
+    "formula:f-c08",
+    "derivation:der01",
+    "widget:m06-gaussiana-mu-sigma",
+    "figure:fig01",
+    "quiz:chk-03"
+  ],
+  "c09": [
+    "#la-gaussiana",
+    "example:ex01",
+    "formula:f-c09",
+    "widget:m06-gaussiana-mu-sigma",
+    "figure:fig01",
+    "quiz:chk-03"
+  ],
+  "c10": [
+    "#la-gaussiana-generalizzata",
+    "example:ex02",
+    "formula:f-c10",
+    "derivation:der02",
+    "widget:m06-gaussiana-generalizzata-beta",
+    "figure:fig02",
+    "quiz:chk-04"
+  ],
+  "c11": [
+    "#la-gaussiana-generalizzata",
+    "example:ex02",
+    "formula:f-c11",
+    "derivation:der02",
+    "widget:m06-gaussiana-generalizzata-beta",
+    "figure:fig02",
+    "quiz:chk-04"
+  ],
+  "c12": [
+    "#la-gaussiana-generalizzata",
+    "example:ex02",
+    "formula:f-c12",
+    "formula:f-c12-2",
+    "derivation:der02",
+    "widget:m06-gaussiana-generalizzata-beta",
+    "figure:fig02",
+    "quiz:chk-04"
+  ],
+  "c13": [
+    "#la-gamma",
+    "example:ex03",
+    "formula:f-c13",
+    "derivation:der03",
+    "widget:m06-gamma-attesa-k-eventi",
+    "figure:fig03",
+    "quiz:chk-05"
+  ],
+  "c14": [
+    "#la-gamma",
+    "example:ex03",
+    "formula:f-c14",
+    "widget:m06-gamma-attesa-k-eventi",
+    "figure:fig03"
+  ],
+  "c15": [
+    "#la-rayleigh",
+    "example:ex04",
+    "formula:f-c15",
+    "derivation:der13",
+    "widget:m06-rayleigh-eco-radar",
+    "figure:fig04"
+  ],
+  "c16": [
+    "#la-rayleigh",
+    "example:ex04",
+    "formula:f-c16",
+    "derivation:der13",
+    "widget:m06-rayleigh-eco-radar",
+    "figure:fig04"
+  ],
+  "c17": [
+    "#il-chi-quadro",
+    "example:ex05",
+    "formula:f-c17",
+    "derivation:der03",
+    "widget:m06-chi-quadro-somma-quadrati",
+    "figure:fig05",
+    "quiz:chk-05"
+  ],
+  "c18": [
+    "#il-chi-quadro",
+    "example:ex05",
+    "formula:f-c18",
+    "derivation:der03",
+    "widget:m06-chi-quadro-somma-quadrati",
+    "figure:fig05",
+    "quiz:chk-05"
+  ],
+  "c19": [
+    "#la-log-normale",
+    "example:ex06",
+    "formula:f-c19",
+    "derivation:der14",
+    "widget:m06-log-normale-prezzi-case",
+    "figure:fig06",
+    "quiz:chk-06"
+  ],
+  "c20": [
+    "#la-log-normale",
+    "example:ex06",
+    "formula:f-c20",
+    "derivation:der14",
+    "widget:m06-log-normale-prezzi-case",
+    "figure:fig06",
+    "quiz:chk-06"
+  ],
+  "c21": [
+    "#sei-modelli-a-confronto",
+    "widget:m06-indovina-il-modello",
+    "figure:fig07",
+    "quiz:chk-07"
+  ],
+  "c22": [
+    "#il-modello-gaussiano-e-il-limite-centrale",
+    "#un-modello-parametrico-usato-ovunque",
+    "widget:m06-limite-centrale-somma-cause"
+  ],
+  "c23": [
+    "#il-teorema-del-limite-centrale",
+    "formula:f-c23",
+    "formula:f-c23-2",
+    "widget:m06-limite-centrale-somma-cause",
+    "quiz:chk-08"
+  ],
+  "c24": [
+    "#le-tre-ipotesi-del-teorema",
+    "formula:f-c24",
+    "widget:m06-limite-centrale-somma-cause",
+    "quiz:chk-08"
+  ],
+  "c25": [
+    "#perché-la-gaussiana-è-ovunque",
+    "widget:m06-limite-centrale-somma-cause",
+    "quiz:chk-08"
+  ],
+  "c26": [
+    "#la-gaussiana-multivariata",
+    "#la-formula",
+    "#la-formula-della-gaussiana-in-più-dimensioni",
+    "formula:f-c26",
+    "derivation:der01",
+    "derivation:der15",
+    "widget:m06-formula-viva-bivariata",
+    "figure:fig08"
+  ],
+  "c27": [
+    "#i-simboli-e-la-notazione-compatta",
+    "formula:f-c27",
+    "widget:m06-formula-viva-bivariata",
+    "quiz:chk-09"
+  ],
+  "c28": [
+    "#i-simboli-e-la-notazione-compatta",
+    "formula:f-c28",
+    "widget:m06-formula-viva-bivariata",
+    "figure:fig08"
+  ],
+  "c29": [
+    "#la-distanza-di-mahalanobis-allesponente",
+    "formula:f-c29",
+    "formula:f-c29-2",
+    "widget:m06-mahalanobis-contro-euclidea",
+    "quiz:chk-09"
+  ],
+  "c30": [
+    "#che-cosa-rappresentano-media-e-covarianza",
+    "widget:m06-mahalanobis-contro-euclidea"
+  ],
+  "c31": [
+    "#lesempio-bivariato",
+    "formula:f-c31",
+    "widget:m06-volume-unitario",
+    "figure:fig08",
+    "figure:fig09"
+  ],
+  "c32": [
+    "#la-costante-di-normalizzazione-e-il-determinante",
+    "formula:f-c32",
+    "formula:f-c32-2",
+    "formula:f-c32-3",
+    "formula:f-c32-4",
+    "derivation:der01",
+    "derivation:der15",
+    "widget:m06-volume-unitario",
+    "quiz:chk-11"
+  ],
+  "c33": [
+    "#due-parametri-definiscono-tutto",
+    "formula:f-c33",
+    "widget:m06-formula-viva-bivariata",
+    "quiz:chk-10"
+  ],
+  "c34": [
+    "#il-vettore-media",
+    "formula:f-c34",
+    "widget:m06-costruisci-la-covarianza"
+  ],
+  "c35": [
+    "#la-matrice-di-covarianza",
+    "#matrice-di-covarianza-e-autovettori-nella-pca",
+    "formula:f-c35",
+    "derivation:der04",
+    "widget:m06-costruisci-la-covarianza"
+  ],
+  "c36": [
+    "#la-matrice-di-covarianza",
+    "formula:f-c36",
+    "derivation:der04",
+    "widget:m06-costruisci-la-covarianza"
+  ],
+  "c37": [
+    "#varianze-sulla-diagonale-covarianze-fuori",
+    "formula:f-c37",
+    "formula:f-c37-2",
+    "widget:m06-costruisci-la-covarianza",
+    "quiz:chk-11"
+  ],
+  "c38": [
+    "#prima-proprietà-la-simmetria",
+    "formula:f-c38",
+    "derivation:der05",
+    "derivation:der16",
+    "widget:m06-varianza-proiezione-psd",
+    "quiz:chk-10",
+    "quiz:chk-12"
+  ],
+  "c39": [
+    "#seconda-proprietà-semidefinita-positiva",
+    "formula:f-c39",
+    "formula:f-c39-2",
+    "derivation:der05",
+    "derivation:der17",
+    "widget:m06-varianza-proiezione-psd",
+    "quiz:chk-12"
+  ],
+  "c40": [
+    "#feature-indipendenti-la-matrice-diagonale",
+    "#il-kernel-gaussiano-di-parzen",
+    "example:ex08",
+    "formula:f-c40",
+    "derivation:der06",
+    "derivation:der18",
+    "widget:m06-feature-indipendenti-prodotto",
+    "figure:fig10",
+    "quiz:chk-13"
+  ],
+  "c41": [
+    "#la-pdf-congiunta-diventa-un-prodotto",
+    "formula:f-c41",
+    "formula:f-c41-2",
+    "derivation:der06",
+    "derivation:der18",
+    "widget:m06-feature-indipendenti-prodotto",
+    "figure:fig10",
+    "quiz:chk-13"
+  ],
+  "c42": [
+    "#la-forma-di-una-gaussiana-2-d",
+    "#una-campana-di-volume-unitario",
+    "formula:f-c42",
+    "derivation:der15",
+    "widget:m06-volume-unitario",
+    "figure:fig11"
+  ],
+  "c43": [
+    "#gli-isolivelli-sono-ellissi",
+    "example:ex07",
+    "formula:f-c43",
+    "formula:f-c43-2",
+    "derivation:der07",
+    "widget:m06-affetta-la-campana",
+    "figure:fig11",
+    "quiz:chk-15"
+  ],
+  "c44": [
+    "#gli-assi-seguono-gli-autovettori",
+    "#matrice-di-covarianza-e-autovettori-nella-pca",
+    "example:ex07",
+    "formula:f-c44",
+    "formula:f-c44-2",
+    "derivation:der07",
+    "widget:m06-autovettori-assi-ellisse",
+    "figure:fig11",
+    "quiz:chk-14"
+  ],
+  "c45": [
+    "#lasse-principale-e-la-massima-varianza",
+    "example:ex07",
+    "formula:f-c45",
+    "derivation:der07",
+    "derivation:der17",
+    "widget:m06-autovettori-assi-ellisse",
+    "figure:fig11",
+    "quiz:chk-14"
+  ],
+  "c46": [
+    "#gli-autovalori-fissano-la-lunghezza-degli-assi",
+    "formula:f-c46",
+    "derivation:der07",
+    "widget:m06-autovettori-assi-ellisse",
+    "quiz:chk-14"
+  ],
+  "c47": [
+    "#la-figura-della-slide-28",
+    "example:ex07",
+    "formula:f-c47",
+    "formula:f-c47-2",
+    "widget:m06-affetta-la-campana",
+    "figure:fig11",
+    "figure:fig12",
+    "quiz:chk-15"
+  ],
+  "c48": [
+    "#la-forma-di-una-gaussiana-n-d",
+    "#autovalori-e-autovettori-in-n-dimensioni",
+    "formula:f-c48",
+    "formula:f-c48-2",
+    "derivation:der16",
+    "widget:m06-spettro-autovalori-nd"
+  ],
+  "c49": [
+    "#lordinamento-degli-autovalori",
+    "formula:f-c49",
+    "derivation:der16",
+    "derivation:der17",
+    "widget:m06-spettro-autovalori-nd"
+  ],
+  "c50": [
+    "#autovalori-positivi",
+    "formula:f-c50",
+    "derivation:der05",
+    "derivation:der16",
+    "widget:m06-varianza-proiezione-psd",
+    "quiz:chk-12"
+  ],
+  "c51": [
+    "#gli-autovettori-formano-una-base-ortogonale",
+    "formula:f-c51",
+    "formula:f-c51-2",
+    "derivation:der15",
+    "derivation:der16",
+    "widget:m06-spettro-autovalori-nd"
+  ],
+  "c52": [
+    "#gli-isolivelli-sono-iperellissi",
+    "formula:f-c52",
+    "formula:f-c52-2",
+    "derivation:der07",
+    "widget:m06-nuvola-3d-proiezioni"
+  ],
+  "c53": [
+    "#asse-principale-e-asse-più-piccolo",
+    "formula:f-c53",
+    "derivation:der07",
+    "derivation:der17",
+    "widget:m06-nuvola-3d-proiezioni"
+  ],
+  "c54": [
+    "#un-esempio-in-tre-dimensioni",
+    "#la-nuvola-e-le-sue-ombre",
+    "example:ex08",
+    "widget:m06-nuvola-3d-proiezioni",
+    "figure:fig12",
+    "figure:fig13",
+    "quiz:chk-16"
+  ],
+  "c55": [
+    "#perché-x1-e-x3-sono-indipendenti",
+    "example:ex08",
+    "formula:f-c55",
+    "formula:f-c55-2",
+    "derivation:der18",
+    "widget:m06-nuvola-3d-proiezioni",
+    "figure:fig13",
+    "quiz:chk-16"
+  ],
+  "c56": [
+    "#la-stima-ml-della-gaussiana",
+    "#limpostazione-n-campioni-iid",
+    "formula:f-c56",
+    "formula:f-c56-2",
+    "derivation:der08",
+    "derivation:der09",
+    "widget:m06-stima-ml-campione-per-campione"
+  ],
+  "c57": [
+    "#la-stima-del-vettore-media",
+    "#la-derivata-prima-per-una-gaussiana",
+    "formula:f-c57",
+    "derivation:der08",
+    "derivation:der09",
+    "widget:m06-stima-ml-campione-per-campione",
+    "widget:m06-derivata-log-verosimiglianza",
+    "figure:fig14",
+    "quiz:chk-17"
+  ],
+  "c58": [
+    "#la-stima-della-matrice-di-covarianza",
+    "#lem-con-le-gaussiane",
+    "formula:f-c58",
+    "formula:f-c58-2",
+    "derivation:der08",
+    "derivation:der09",
+    "derivation:der10",
+    "widget:m06-stima-ml-campione-per-campione",
+    "figure:fig14",
+    "quiz:chk-17"
+  ],
+  "c59": [
+    "#la-seconda-forma-della-stima",
+    "formula:f-c59",
+    "derivation:der10",
+    "widget:m06-stima-ml-campione-per-campione",
+    "figure:fig14"
+  ],
+  "c60": [
+    "#le-proprietà-delle-stime",
+    "#la-stima-ml-è-un-buon-stimatore",
+    "formula:f-c60",
+    "formula:f-c60-2",
+    "formula:f-c60-3",
+    "derivation:der12",
+    "derivation:der19",
+    "widget:m06-proprieta-asintotiche-stime",
+    "quiz:chk-18"
+  ],
+  "c61": [
+    "#la-media-campionaria-è-non-distorta",
+    "formula:f-c61",
+    "derivation:der11",
+    "derivation:der19",
+    "widget:m06-bias-covarianza-ml",
+    "figure:fig14",
+    "quiz:chk-18"
+  ],
+  "c62": [
+    "#la-covarianza-ml-è-distorta",
+    "formula:f-c62",
+    "derivation:der12",
+    "derivation:der19",
+    "widget:m06-bias-covarianza-ml",
+    "figure:fig14",
+    "quiz:chk-18",
+    "quiz:chk-19"
+  ],
+  "c63": [
+    "#lo-stimatore-non-distorto-elementare",
+    "formula:f-c63",
+    "derivation:der12",
+    "widget:m06-bias-covarianza-ml",
+    "figure:fig14",
+    "quiz:chk-19"
+  ],
+  "c64": [
+    "#lo-stimatore-non-distorto-elementare",
+    "formula:f-c64",
+    "derivation:der12",
+    "widget:m06-bias-covarianza-ml",
+    "quiz:chk-19"
+  ],
+  "c65": [
+    "#verso-la-stima-bayesiana",
+    "#theta-fisso-o-theta-aleatorio",
+    "widget:m06-theta-fisso-o-aleatorio",
+    "quiz:chk-20"
+  ],
+  "c66": [
+    "#theta-fisso-o-theta-aleatorio",
+    "formula:f-c66",
+    "widget:m06-theta-fisso-o-aleatorio",
+    "quiz:chk-20"
+  ],
+  "c67": [
+    "#theta-fisso-o-theta-aleatorio",
+    "#stima-dei-parametri-di-una-gaussiana-con-passerini",
+    "formula:f-c67",
+    "widget:m06-theta-fisso-o-aleatorio",
+    "quiz:chk-20"
+  ],
+  "c68": [
+    "#la-prima-ipotesi-forma-della-densità-nota",
+    "formula:f-c68",
+    "widget:m06-theta-fisso-o-aleatorio",
+    "quiz:chk-20"
+  ],
+  "c69": [
+    "#due-feature-e-il-coefficiente-di-correlazione",
+    "formula:f-c69",
+    "formula:f-c69-2",
+    "formula:f-c69-3",
+    "widget:m06-volume-unitario",
+    "widget:m06-costruisci-la-covarianza",
+    "quiz:chk-11"
+  ],
+  "c70": [
+    "#la-derivata-prima-nel-caso-a-una-dimensione",
+    "#la-derivata-prima-per-una-gaussiana",
+    "formula:f-c70",
+    "formula:f-c70-2",
+    "derivation:der08",
+    "derivation:der19",
+    "widget:m06-derivata-log-verosimiglianza",
+    "widget:m06-bias-covarianza-ml",
+    "quiz:chk-17"
+  ],
+  "c71": [
+    "#indipendenza-e-covarianza-nulla",
+    "formula:f-c71",
+    "formula:f-c71-2",
+    "formula:f-c71-3",
+    "derivation:der18",
+    "widget:m06-feature-indipendenti-prodotto",
+    "quiz:chk-13"
+  ]
+}

@@ -1,0 +1,3516 @@
+{
+ "moduleId": "p06-discriminanti-perceptron",
+ "title": "Funzioni discriminanti lineari e perceptron",
+ "stages": {
+  "inventario": "done",
+  "completezza": "done",
+  "formule": "done"
+ },
+ "pagesReviewed": [
+  {
+   "doc": "part2",
+   "from": 31,
+   "to": 40
+  }
+ ],
+ "overview": "Il modulo apre la parte di Passerini sui modelli lineari: distingue l'apprendimento generativo da quello discriminativo (vantaggi e svantaggi), definisce la funzione discriminante lineare f(x) = wᵀx + w₀ e il classificatore binario sign(·), con l'iperpiano di decisione, l'ortogonalità di w, il margine funzionale e il margine geometrico r^x = f(x)/||w|| con la sua dimostrazione. Segue il perceptron, dalla motivazione biologica ai limiti (XOR, reti a due strati esponenzialmente larghe, reti profonde), la notazione aumentata e l'apprendimento come minimizzazione di un errore: discesa del gradiente, learning rate, perché la loss di misclassificazione non va bene, criterio del perceptron con gradiente −Σ y x, regola batch e stocastica, mini-batch e minimi locali, con l'illustrazione a quattro pannelli. Chiude con l'inizio della regressione (matrice X, vettore y). All'orale di Passerini è una domanda ricorrente: 'Linear functions ... functional/geometric margin, perceptron, loss function for classification, gradient descent' e 'Perceptron ... entire chapter with proofs'.",
+ "concepts": [
+  {
+   "id": "c01",
+   "name": "Model averaging: integrare su tutti i DAG è intrattabile",
+   "nameEn": "This approach integrates over all possible DAGs but is computationally intractable",
+   "kind": "osservazione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 31
+    }
+   ],
+   "detail": "Coda della sezione sull'apprendimento della struttura delle reti bayesiane (modulo p05, inventariata anche qui perché sta a pagina 31). L'approccio bayesiano completo (model averaging, introdotto a pagina 30) integra su tutti i possibili grafi aciclici diretti (DAG), pesando le predizioni con la probabilità a posteriori di ciascuna struttura, ma è computazionalmente intrattabile (intractable) nella maggior parte dei casi, a causa della grandezza dello spazio delle strutture (large space of structures). Per dare l'ordine di grandezza (conteggio di Robinson dei DAG etichettati, non nella fonte): 1, 3, 25, 543, 29.281 DAG per 1-5 nodi, circa 4,2·10^18 per 10 nodi. La formula della media sui grafi è scritta qui per chiarezza: la pagina la descrive solo a parole.",
+   "latex": [
+    "p(y \\mid \\mathbf{x}, D) = \\sum_{G} p(y \\mid \\mathbf{x}, G, D)\\, p(G \\mid D)"
+   ],
+   "symbols": [
+    {
+     "s": "G",
+     "meaning": "una struttura possibile (DAG) della rete"
+    },
+    {
+     "s": "p(G \\mid D)",
+     "meaning": "probabilità a posteriori della struttura dati i dati"
+    }
+   ],
+   "examRelevance": 1
+  },
+  {
+   "id": "c02",
+   "name": "Naive Bayes: struttura predefinita",
+   "nameEn": "In the Naive Bayes model, the structure is predefined",
+   "kind": "definizione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 31
+    }
+   ],
+   "detail": "Nel modello Naive Bayes la struttura non si apprende: è predefinita (predefined). Ogni feature è assunta condizionalmente indipendente dalle altre data l'etichetta di classe (conditionally independent of the others, given the class label). Il grafo è quindi una stella: la classe è l'unico genitore di ogni feature e non ci sono archi tra feature. La fattorizzazione che ne segue (scritta qui, la pagina la enuncia a parole) riduce la congiunta al prodotto di una prior di classe e di una distribuzione per feature. Contenuto della sezione reti bayesiane (possibile doppione con p05).",
+   "latex": [
+    "p(y, x_1, \\dots, x_m) = p(y) \\prod_{j=1}^{m} p(x_j \\mid y)"
+   ],
+   "symbols": [
+    {
+     "s": "y",
+     "meaning": "etichetta di classe (unico genitore di tutte le feature)"
+    },
+    {
+     "s": "x_j",
+     "meaning": "j-esima feature"
+    }
+   ],
+   "examRelevance": 2
+  },
+  {
+   "id": "c03",
+   "name": "Naive Bayes: ipotesi quasi mai vera, ma funziona bene",
+   "nameEn": "While simple, this structure rarely holds in practice. Despite this, Naive Bayes often performs well due to its computational simplicity",
+   "kind": "osservazione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 31
+    }
+   ],
+   "detail": "Pur semplice, la struttura del Naive Bayes raramente vale in pratica (rarely holds in practice): feature reali restano correlate anche a classe fissata (in un'email di spam 'gratis' e 'offerta' compaiono spesso insieme). Nonostante questo, il Naive Bayes spesso funziona bene grazie alla sua semplicità computazionale (computational simplicity): pochi parametri, stimabili con semplici conteggi. Osservazione aggiunta: la violazione dell'ipotesi tende a rendere le probabilità a posteriori troppo estreme (l'evidenza correlata viene contata due volte), mentre la decisione (la classe più probabile) resta spesso corretta.",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c04",
+   "name": "Causalità dai dati osservazionali e direzioni causali",
+   "nameEn": "Understanding causal relationships from data alone is difficult; causal directions must be specified manually or inferred using external interventions or domain knowledge",
+   "kind": "osservazione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 31
+    }
+   ],
+   "detail": "Capire le relazioni causali dai soli dati è difficile, perché i dati osservazionali (observational data) spesso non contengono informazione sufficiente per inferire la causalità. Per esempio, le implementazioni software dell'apprendimento di reti bayesiane producono strutture basate su correlazioni e indipendenze (correlations and independencies), ma le direzioni causali (causal directions) vanno specificate a mano oppure inferite con interventi esterni (external interventions) o con conoscenza di dominio (domain knowledge). Esempio aggiunto: con due sole variabili, X → Y e Y → X descrivono la stessa congiunta, p(x)p(y|x) = p(y)p(x|y), e quindi si adattano ugualmente bene ai dati osservati.",
+   "latex": [
+    "p(x)\\,p(y \\mid x) = p(x, y) = p(y)\\,p(x \\mid y)"
+   ],
+   "symbols": [],
+   "examRelevance": 1
+  },
+  {
+   "id": "c05",
+   "name": "Apprendimento generativo",
+   "nameEn": "Generative Learning",
+   "kind": "definizione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 31
+    }
+   ],
+   "detail": "Apertura della sezione Linear Discriminant Functions ('Discriminative vs Generative'). L'apprendimento generativo (generative learning) presuppone la conoscenza della distribuzione dei dati e la modella esplicitamente (assumes knowledge of the data distribution and models it explicitly). Questo permette di svolgere vari compiti di inferenza (various inference tasks), come generare nuovi dati (generating new data) o predire valori mancanti (predicting missing values). Scrittura aggiunta: un modello generativo per la classificazione stima tipicamente p(x | y) e p(y), e quindi la congiunta p(x, y); la classe si ottiene poi con Bayes (moduli m17 e p07).",
+   "latex": [
+    "p(\\mathbf{x}, y) = p(\\mathbf{x} \\mid y)\\, p(y)"
+   ],
+   "symbols": [
+    {
+     "s": "p(\\mathbf{x} \\mid y)",
+     "meaning": "distribuzione dei dati della classe y (modellata esplicitamente)"
+    }
+   ],
+   "examRelevance": 3
+  },
+  {
+   "id": "c06",
+   "name": "Apprendimento discriminativo",
+   "nameEn": "Discriminative Learning",
+   "kind": "definizione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 31
+    }
+   ],
+   "detail": "L'apprendimento discriminativo (discriminative learning) si concentra direttamente sul modellare il confine di decisione (decision boundary) o la funzione discriminante (discriminant function), aggirando la necessità di modellare la distribuzione sottostante dei dati (bypassing the need to model the underlying data distribution). È il punto di vista dell'intero capitolo: le funzioni discriminanti lineari e il perceptron imparano solo la frontiera tra le classi.",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 3
+  },
+  {
+   "id": "c07",
+   "name": "Il discriminativo usa i parametri solo per classificare",
+   "nameEn": "More efficient parameter utilization compared to generative models",
+   "kind": "osservazione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 31
+    }
+   ],
+   "detail": "L'apprendimento discriminativo mira a predire le etichette corrette sfruttando i parametri del modello solo per il compito di classificazione (leveraging model parameters solely for the classification task). Questo porta spesso a un uso più efficiente dei parametri (more efficient parameter utilization) rispetto ai modelli generativi, che devono dedicare risorse a modellare l'intera distribuzione dei dati. Conto aggiunto: con d feature, due gaussiane a covarianza piena (una per classe) più la prior richiedono 2(d + d(d+1)/2) + 1 parametri, una funzione discriminante lineare d + 1. Con d = 2 (pesce: luminosità e larghezza) sono 11 contro 3; con d = 100 bande (telerilevamento) 10.301 contro 101.",
+   "latex": [
+    "\\#\\theta_{\\text{gen}} = 2\\left(d + \\frac{d(d+1)}{2}\\right) + 1 \\qquad \\#\\theta_{\\text{discr}} = d + 1"
+   ],
+   "symbols": [
+    {
+     "s": "d",
+     "meaning": "numero di feature"
+    }
+   ],
+   "examRelevance": 2
+  },
+  {
+   "id": "c08",
+   "name": "Vantaggio dei discriminativi: efficienza con dati complessi",
+   "nameEn": "Advantages of Discriminative Models: Efficiency for Complex Data",
+   "kind": "proprieta",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 31
+    }
+   ],
+   "detail": "Efficiency for Complex Data: modellare distribuzioni di dati complesse è difficile e computazionalmente costoso (difficult and computationally expensive). I modelli discriminativi evitano questo passo, concentrandosi solo sull'obiettivo della discriminazione dei dati (focusing only on the goal of data discrimination). Caso tipico: classi con distribuzioni multimodali o irregolari ma separate da una frontiera semplice.",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c09",
+   "name": "Vantaggio dei discriminativi: ottimizzazione delle risorse",
+   "nameEn": "Advantages of Discriminative Models: Resource Optimization",
+   "kind": "proprieta",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 31
+    }
+   ],
+   "detail": "Resource Optimization: parametri e dati di training sono usati in modo efficace per massimizzare le prestazioni di classificazione (parameters and training data are utilized effectively to maximize classification performance). Ogni parametro e ogni esempio servono alla frontiera, non a descrivere zone dello spazio lontane dal confine.",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c10",
+   "name": "Vantaggio dei discriminativi: obiettivi più semplici",
+   "nameEn": "Advantages of Discriminative Models: Simpler Objectives",
+   "kind": "proprieta",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 31
+    }
+   ],
+   "detail": "Simpler Objectives: senza il peso di modellare le distribuzioni dei dati, l'addestramento è spesso più diretto (without the burden of modeling data distributions, training is often more straightforward). L'obiettivo è un errore di classificazione sul training set (la funzione di errore E(w; D) introdotta a pagina 36), non una verosimiglianza di tutti i dati.",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c11",
+   "name": "Svantaggio dei discriminativi: flessibilità limitata",
+   "nameEn": "Disadvantages of Discriminative Models: Limited Flexibility",
+   "kind": "proprieta",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 31
+    }
+   ],
+   "detail": "Limited Flexibility: sono specifici del compito (task-specific) e adatti soprattutto a predire etichette dati gli input (predicting labels given inputs). Compiti di inferenza arbitrari, come predire valori mancanti (predicting missing values) o generare nuovi dati, non sono supportati. È il rovescio del vantaggio generativo di c05.",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c12",
+   "name": "Svantaggio dei discriminativi: nessuna capacità di generare dati",
+   "nameEn": "Disadvantages of Discriminative Models: No Data Generation Capability",
+   "kind": "proprieta",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 32
+    }
+   ],
+   "detail": "No Data Generation Capability: i modelli discriminativi non possono generare nuovi dati per una data classe né simulare campioni realistici (cannot generate new data for a given class or simulate realistic samples). Non avendo una stima di p(x | y), non c'è nulla da cui campionare.",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c13",
+   "name": "Svantaggio dei discriminativi: problemi di calibrazione",
+   "nameEn": "Disadvantages of Discriminative Models: Calibration Issues",
+   "kind": "proprieta",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 32
+    }
+   ],
+   "detail": "Calibration Issues: i modelli discriminativi possono essere mal calibrati (poorly calibrated), cioè produrre predizioni troppo sicure (overconfident predictions) anche per classificazioni sbagliate. Un modello è calibrato quando, tra i casi a cui assegna confidenza 0,9, circa il 90% è davvero corretto. Precisazione aggiunta: per un classificatore lineare il valore |f(x)| cresce con la scala di w senza che il confine cambi (c25), quindi una 'confidenza' ricavata dal punteggio può crescere a piacere anche su punti mal classificati.",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c14",
+   "name": "Funzione discriminante lineare",
+   "nameEn": "Linear discriminant function",
+   "kind": "formula",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 32
+    }
+   ],
+   "detail": "Una funzione discriminante lineare (linear discriminant function) è definita come f(x) = wᵀx + w₀. È la forma più elementare di funzione discriminante e si basa su combinazioni lineari delle feature. La seconda formula (esplicitazione aggiunta) mostra la somma pesata componente per componente.",
+   "latex": [
+    "f(\\mathbf{x}) = \\mathbf{w}^T\\mathbf{x} + w_0",
+    "\\mathbf{w}^T\\mathbf{x} = \\sum_{i=1}^{d} w_i x_i"
+   ],
+   "symbols": [
+    {
+     "s": "\\mathbf{x}",
+     "meaning": "vettore delle feature"
+    },
+    {
+     "s": "\\mathbf{w}",
+     "meaning": "vettore dei pesi"
+    },
+    {
+     "s": "w_0",
+     "meaning": "bias o soglia (threshold)"
+    }
+   ],
+   "examRelevance": 3
+  },
+  {
+   "id": "c15",
+   "name": "Ruolo di f(x), wᵀx e w₀",
+   "nameEn": "f(x): the discriminant function; wᵀx: the linear combination of the feature vector x weighted by the vector w; w₀: the bias or threshold",
+   "kind": "definizione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 32
+    }
+   ],
+   "detail": "Legenda della formula: f(x) è la funzione discriminante, che rappresenta il confine di decisione (representing the decision boundary); wᵀx è la combinazione lineare del vettore di feature x pesato dal vettore w (the linear combination of the feature vector x weighted by the vector w); w₀ è il bias o soglia (bias or threshold), che regola la posizione del confine di decisione rispetto all'origine (adjusts the position of the decision boundary relative to the origin). Con w₀ = 0 il confine passa per l'origine; cambiando w₀ il confine trasla parallelamente a sé stesso, cambiando w ruota.",
+   "latex": [
+    "f(\\mathbf{x}) = \\mathbf{w}^T\\mathbf{x} + w_0"
+   ],
+   "symbols": [
+    {
+     "s": "f(\\mathbf{x})",
+     "meaning": "funzione discriminante (confine di decisione dove vale 0)"
+    },
+    {
+     "s": "\\mathbf{w}^T\\mathbf{x}",
+     "meaning": "combinazione lineare delle feature"
+    },
+    {
+     "s": "w_0",
+     "meaning": "bias: posizione del confine rispetto all'origine"
+    }
+   ],
+   "examRelevance": 3
+  },
+  {
+   "id": "c16",
+   "name": "La forma più semplice: efficiente e interpretabile",
+   "nameEn": "It is the most basic form of a discriminant function; simplicity makes it computationally efficient and easy to interpret",
+   "kind": "proprieta",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 32
+    }
+   ],
+   "detail": "È la forma più elementare di funzione discriminante (most basic form), basata su combinazioni lineari delle feature. La semplicità la rende computazionalmente efficiente (computationally efficient: d moltiplicazioni e somme per classificare un punto) e facile da interpretare (easy to interpret): il segno e la grandezza di ogni peso w_i dicono in che verso e quanto la feature i spinge verso la classe positiva, a parità di scala delle feature.",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c17",
+   "name": "Il primo modello da provare e il benchmark",
+   "nameEn": "Linear discriminant functions are often the first model attempted; they can serve as a benchmark",
+   "kind": "osservazione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 32
+    }
+   ],
+   "detail": "Per la semplicità e il basso costo computazionale, le funzioni discriminanti lineari sono spesso il primo modello tentato (first model attempted) in un problema di classificazione. Possono servire da benchmark per valutare se modelli più complessi siano davvero necessari (evaluate the necessity of more complex models): un modello complesso vale la pena solo se batte il lineare sui dati di test.",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c18",
+   "name": "Separabilità lineare o pochi dati: buone prestazioni senza overfitting",
+   "nameEn": "For tasks with linear separability or limited available data, linear discriminant functions can provide strong performance; they avoid overfitting by limiting model complexity",
+   "kind": "proprieta",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 32
+    }
+   ],
+   "detail": "In compiti con separabilità lineare (linear separability) o con pochi dati disponibili (limited available data), le funzioni discriminanti lineari possono dare prestazioni forti (strong performance). Evitano l'overfitting limitando la complessità del modello (limiting model complexity), e sono quindi particolarmente utili quando i dati scarseggiano (when data is scarce). Collegamento: con d + 1 parametri c'è poco spazio per memorizzare il rumore del training set (moduli m21 e m11).",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c19",
+   "name": "Classificatore binario lineare",
+   "nameEn": "Linear binary classifier",
+   "kind": "formula",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 32
+    }
+   ],
+   "detail": "Il classificatore binario lineare (linear binary classifier) si basa su una regola di decisione derivata da una funzione lineare: f(x) = sign(wᵀx + w₀). La funzione segno trasforma il punteggio reale in un'etichetta ±1. Attenzione alla notazione delle note: la stessa lettera f indica sia il punteggio lineare wᵀx + w₀ sia la decisione sign(·) (vedi c63 e gaps).",
+   "latex": [
+    "f(\\mathbf{x}) = \\mathrm{sign}\\left(\\mathbf{w}^T\\mathbf{x} + w_0\\right)"
+   ],
+   "symbols": [
+    {
+     "s": "\\mathrm{sign}(\\cdot)",
+     "meaning": "funzione segno: +1 per argomento positivo, -1 per argomento negativo"
+    }
+   ],
+   "examRelevance": 3
+  },
+  {
+   "id": "c20",
+   "name": "Assegnazione della classe",
+   "nameEn": "Class Assignment",
+   "kind": "definizione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 32
+    }
+   ],
+   "detail": "Class Assignment: se f(x) > 0 la classe predetta è positiva (positive), se f(x) < 0 è negativa (negative). Qui f(x) indica il valore del punteggio lineare wᵀx + w₀. La fonte non dice cosa succede per f(x) = 0 (punto esattamente sul confine): è una convenzione (per esempio sign(0) = +1, oppure 'non deciso'), segnalata nei gaps.",
+   "latex": [
+    "f(\\mathbf{x}) > 0 \\;\\Rightarrow\\; \\text{classe positiva} \\qquad f(\\mathbf{x}) < 0 \\;\\Rightarrow\\; \\text{classe negativa}"
+   ],
+   "symbols": [],
+   "examRelevance": 3
+  },
+  {
+   "id": "c21",
+   "name": "Il confine di decisione è un iperpiano H",
+   "nameEn": "The decision boundary is where f(x) = 0, forming a hyperplane (H) in feature space",
+   "kind": "definizione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 32
+    }
+   ],
+   "detail": "Il confine di decisione (decision boundary) è il luogo dove f(x) = 0 e forma un iperpiano (hyperplane) H nello spazio delle feature (feature space). L'iperpiano separa le due classi ed è definito da H: wᵀx + w₀ = 0. In 2 dimensioni è una retta, in 3 un piano, in d dimensioni un sottospazio affine di dimensione d − 1.",
+   "latex": [
+    "H : \\mathbf{w}^T\\mathbf{x} + w_0 = 0"
+   ],
+   "symbols": [
+    {
+     "s": "H",
+     "meaning": "iperpiano di decisione"
+    }
+   ],
+   "examRelevance": 3
+  },
+  {
+   "id": "c22",
+   "name": "Il vettore dei pesi w è ortogonale all'iperpiano",
+   "nameEn": "The weight vector w is orthogonal to the decision hyperplane",
+   "kind": "teorema",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 32
+    },
+    {
+     "doc": "part2",
+     "page": 33
+    }
+   ],
+   "detail": "Il vettore dei pesi w è ortogonale all'iperpiano di decisione (orthogonal to the decision hyperplane). Dimostrazione della fonte (der01): per due punti qualsiasi x e x' su H vale f(x) = f(x') = 0; sottraendo, wᵀx + w₀ − wᵀx' − w₀ = 0, cioè wᵀ(x − x') = 0. Poiché x − x' è una direzione qualunque contenuta nell'iperpiano, w è perpendicolare alla superficie dell'iperpiano (perpendicular to the surface of the hyperplane). Conseguenza: w punta verso il semispazio in cui f(x) > 0.",
+   "latex": [
+    "f(\\mathbf{x}) = f(\\mathbf{x}') = 0",
+    "\\mathbf{w}^T\\mathbf{x} + w_0 - \\mathbf{w}^T\\mathbf{x}' - w_0 = 0",
+    "\\mathbf{w}^T(\\mathbf{x} - \\mathbf{x}') = 0"
+   ],
+   "symbols": [
+    {
+     "s": "\\mathbf{x}, \\mathbf{x}'",
+     "meaning": "due punti qualsiasi sull'iperpiano H"
+    }
+   ],
+   "examRelevance": 3
+  },
+  {
+   "id": "c23",
+   "name": "Margine funzionale",
+   "nameEn": "Functional margin",
+   "kind": "definizione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 33
+    }
+   ],
+   "detail": "Il valore f(x) per un punto x si chiama margine funzionale (functional margin). Riflette la confidenza della predizione del classificatore (reflects the confidence in the classifier's prediction): un margine più grande indica che il punto è più lontano dal confine di decisione, e quindi aumenta la confidenza nella classificazione. Precisazioni: nelle note il margine funzionale è f(x) stesso; a pagina 37 la confidenza nella predizione corretta si legge in y f(x) (versione con l'etichetta, usata anche nel capitolo SVM). Il margine funzionale dipende dalla scala di w (c25).",
+   "latex": [
+    "f(\\mathbf{x}) = \\mathbf{w}^T\\mathbf{x} + w_0"
+   ],
+   "symbols": [],
+   "examRelevance": 3
+  },
+  {
+   "id": "c24",
+   "name": "Margine geometrico",
+   "nameEn": "Geometric margin",
+   "kind": "formula",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 33
+    },
+    {
+     "doc": "part2",
+     "page": 34
+    }
+   ],
+   "detail": "Il margine geometrico (geometric margin) misura invece la distanza minima (shortest distance) da un punto x all'iperpiano di decisione H: r^x = f(x)/||w||. È una versione normalizzata del margine funzionale (normalized version of the functional margin) che garantisce l'invarianza rispetto alla scala di w (invariance to the scale of w). La formula si dimostra a pagine 33-34 (der02).",
+   "latex": [
+    "r^{\\mathbf{x}} = \\frac{f(\\mathbf{x})}{\\|\\mathbf{w}\\|}"
+   ],
+   "symbols": [
+    {
+     "s": "r^{\\mathbf{x}}",
+     "meaning": "margine geometrico (distanza con segno) del punto x"
+    },
+    {
+     "s": "\\|\\mathbf{w}\\|",
+     "meaning": "norma euclidea del vettore dei pesi"
+    }
+   ],
+   "examRelevance": 3
+  },
+  {
+   "id": "c25",
+   "name": "Invarianza alla scala di w",
+   "nameEn": "Ensuring invariance to the scale of w",
+   "kind": "proprieta",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 33
+    }
+   ],
+   "detail": "La fonte dice che il margine geometrico, normalizzando per ||w||, è invariante alla scala di w. Esplicitazione: moltiplicando (w, w₀) per α > 0 l'iperpiano H non cambia (αwᵀx + αw₀ = 0 ha le stesse soluzioni), il margine funzionale si moltiplica per α, mentre il margine geometrico resta identico. Il margine funzionale da solo è quindi una misura di confidenza in 'unità arbitrarie'; il geometrico è una vera distanza nelle unità delle feature. È il motivo per cui l'SVM fissa la scala (iperpiano canonico, modulo p08).",
+   "latex": [
+    "f_{\\alpha}(\\mathbf{x}) = \\alpha\\mathbf{w}^T\\mathbf{x} + \\alpha w_0 = \\alpha f(\\mathbf{x})",
+    "r^{\\mathbf{x}}_{\\alpha} = \\frac{\\alpha f(\\mathbf{x})}{\\alpha\\|\\mathbf{w}\\|} = r^{\\mathbf{x}}"
+   ],
+   "symbols": [
+    {
+     "s": "\\alpha",
+     "meaning": "fattore di scala positivo applicato a w e w0"
+    }
+   ],
+   "examRelevance": 3
+  },
+  {
+   "id": "c26",
+   "name": "Distanza dell'origine dall'iperpiano",
+   "nameEn": "The distance from the origin to the hyperplane",
+   "kind": "formula",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 33
+    }
+   ],
+   "detail": "La distanza dall'origine all'iperpiano è data da r^0 = f(0)/||w|| = w₀/||w||: basta applicare la formula del margine geometrico al punto x = 0, per cui f(0) = w₀ (der03). È una distanza con segno: positiva se l'origine sta dal lato verso cui punta w, negativa altrimenti. Nella figura di pagina 33 l'origine sta dal lato opposto a w, quindi w₀ < 0 e la distanza vera è |w₀|/||w||. Conferma il ruolo di w₀ in c15: sposta il confine rispetto all'origine.",
+   "latex": [
+    "r^{\\mathbf{0}} = \\frac{f(\\mathbf{0})}{\\|\\mathbf{w}\\|} = \\frac{w_0}{\\|\\mathbf{w}\\|}"
+   ],
+   "symbols": [
+    {
+     "s": "r^{\\mathbf{0}}",
+     "meaning": "distanza (con segno) dell'origine dall'iperpiano"
+    }
+   ],
+   "examRelevance": 3
+  },
+  {
+   "id": "c27",
+   "name": "Scomposizione di x in proiezione più componente normale",
+   "nameEn": "Any point x can be expressed as x = x^p + r^x w/||w||",
+   "kind": "formula",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 33
+    }
+   ],
+   "detail": "Primo passo della dimostrazione (Demonstration): ogni punto x si può scrivere come x = x^p + r^x w/||w||, dove x^p è la proiezione di x sull'iperpiano H (projection of x onto the hyperplane H) e r^x è la distanza da x all'iperpiano, moltiplicata per il versore nella direzione di w (scaled by the unit vector in the direction of w). La scomposizione funziona perché w è normale a H (c22): da x^p ci si muove lungo la normale di una quantità r^x.",
+   "latex": [
+    "\\mathbf{x} = \\mathbf{x}^p + r^{\\mathbf{x}}\\frac{\\mathbf{w}}{\\|\\mathbf{w}\\|}"
+   ],
+   "symbols": [
+    {
+     "s": "\\mathbf{x}^p",
+     "meaning": "proiezione ortogonale di x su H"
+    },
+    {
+     "s": "\\frac{\\mathbf{w}}{\\|\\mathbf{w}\\|}",
+     "meaning": "versore normale all'iperpiano"
+    }
+   ],
+   "examRelevance": 3
+  },
+  {
+   "id": "c28",
+   "name": "Figura: geometria dell'iperpiano, di x, x^p, r^x e r^0",
+   "nameEn": "Hyperplane geometry figure (x, x^p, r^x, w, w/||w||, r^0)",
+   "kind": "figura",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 33
+    }
+   ],
+   "detail": "Figura nel piano (x₁, x₂): la retta H scende da sinistra in alto a destra in basso; dall'origine partono il vettore w (perpendicolare a H), il vettore verso x e il vettore verso x^p (piede della perpendicolare da x su H). La freccia r^x misura il segmento tratteggiato tra x^p e x, parallelo a w; la freccia r^0 misura la distanza dall'origine a H lungo la direzione di w; a destra è disegnato il versore w/||w||. L'origine sta dal lato opposto rispetto a w (w₀ < 0), x dal lato di w (f(x) > 0). Dettaglio aggiunto dal revisore: un secondo tratteggio sottile scende da x perpendicolarmente sulla freccia w e segna la proiezione di x sulla direzione di w, wᵀx/||w||; nel disegno questa lunghezza è la somma delle frecce r^0 e r^x (con i segni: wᵀx/||w|| = r^x − r^0, e qui r^0 < 0). La freccia w è disegnata più lunga della distanza di H dall'origine: nella figura conta la sua direzione, non la sua lunghezza.",
+   "latex": [
+    "\\frac{\\mathbf{w}^T\\mathbf{x}}{\\|\\mathbf{w}\\|} = r^{\\mathbf{x}} - r^{\\mathbf{0}}"
+   ],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c29",
+   "name": "Dimostrazione: f(x) = r^x ||w||",
+   "nameEn": "Demonstration: f(x) = r^x ||w||, thus f(x)/||w|| = r^x",
+   "kind": "teorema",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 33
+    },
+    {
+     "doc": "part2",
+     "page": 34
+    }
+   ],
+   "detail": "Poiché x^p sta sull'iperpiano, f(x^p) = 0. Sostituendo la scomposizione: f(x) = wᵀx + w₀ = wᵀ(x^p + r^x w/||w||) + w₀; espandendo e semplificando (expanding and simplifying) f(x) = wᵀx^p + r^x wᵀw/||w|| + w₀; poiché wᵀx^p + w₀ = f(x^p) = 0 resta f(x) = r^x wᵀw/||w||; e poiché √(wᵀw) = ||w|| si ha f(x) = r^x ||w||, quindi f(x)/||w|| = r^x. Passaggi completi in der02. Il teorema lega margine funzionale e geometrico: differiscono esattamente per il fattore ||w||. Formula √(wᵀw) = ||w|| di pagina 34 trascritta come passaggio a sé dal verificatore.",
+   "latex": [
+    "f(\\mathbf{x}) = \\mathbf{w}^T\\mathbf{x} + w_0 = \\mathbf{w}^T\\left(\\mathbf{x}^p + r^{\\mathbf{x}}\\frac{\\mathbf{w}}{\\|\\mathbf{w}\\|}\\right) + w_0",
+    "f(\\mathbf{x}) = \\mathbf{w}^T\\mathbf{x}^p + r^{\\mathbf{x}}\\mathbf{w}^T\\frac{\\mathbf{w}}{\\|\\mathbf{w}\\|} + w_0",
+    "f(\\mathbf{x}) = r^{\\mathbf{x}}\\mathbf{w}^T\\frac{\\mathbf{w}}{\\|\\mathbf{w}\\|}",
+    "\\sqrt{\\mathbf{w}^T\\mathbf{w}} = \\|\\mathbf{w}\\|",
+    "f(\\mathbf{x}) = r^{\\mathbf{x}}\\|\\mathbf{w}\\|",
+    "\\frac{f(\\mathbf{x})}{\\|\\mathbf{w}\\|} = r^{\\mathbf{x}}"
+   ],
+   "symbols": [],
+   "examRelevance": 3
+  },
+  {
+   "id": "c30",
+   "name": "Il margine geometrico ha un segno",
+   "nameEn": "Signed distance: sign of r^x",
+   "kind": "osservazione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 33
+    }
+   ],
+   "detail": "Osservazione esplicitata qui (la fonte chiama r^x semplicemente 'distance'): r^x = f(x)/||w|| ha lo stesso segno di f(x). È positivo per i punti dal lato verso cui punta w (classe positiva), negativo dall'altro lato; il suo valore assoluto |r^x| è la distanza euclidea vera. Moltiplicando per l'etichetta, y r^x > 0 se e solo se il punto è classificato correttamente: è la versione geometrica della confidenza y f(x) di pagina 37.",
+   "latex": [
+    "\\mathrm{dist}(\\mathbf{x}, H) = |r^{\\mathbf{x}}| = \\frac{|\\mathbf{w}^T\\mathbf{x} + w_0|}{\\|\\mathbf{w}\\|}"
+   ],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c31",
+   "name": "Motivazione biologica delle reti neurali",
+   "nameEn": "Biological motivation for artificial neural networks",
+   "kind": "osservazione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 34
+    }
+   ],
+   "detail": "La motivazione biologica (biological motivation) delle reti neurali artificiali nasce dalla struttura e dal funzionamento del cervello umano, dove reti di neuroni interconnessi elaborano e trasmettono informazione tramite segnali elettrochimici (electrochemical signals). Il cervello umano (human brain) è una rete densamente interconnessa di neuroni (densely interconnected network of neurons), i mattoni del sistema nervoso (building blocks of the nervous system).",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 1
+  },
+  {
+   "id": "c32",
+   "name": "Struttura del neurone: soma, dendriti, assone, sinapsi",
+   "nameEn": "Neuron structure: Soma, Dendrites, Axon, Synapses",
+   "kind": "definizione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 34
+    }
+   ],
+   "detail": "Ogni neurone ha una struttura specializzata: Soma, il corpo centrale che contiene il nucleo e regola l'attività cellulare (central body containing the nucleus); Dendrites, filamenti ramificati che partono dal soma e ricevono i segnali dagli altri neuroni (receiving signals from other neurons); Axon, un filamento lungo (fino a 100 volte il diametro del soma, up to 100 times the diameter of the soma) che trasmette i segnali agli altri neuroni; Synapses, giunzioni dove l'assone di un neurone si collega ai dendriti di un altro, permettendo la comunicazione. Figura della pagina: disegno del neurone con 'INPUT from other neurons', 'Dendrites', 'Cell body', 'Axon', 'sends signal down the axon', 'Terminal branches', 'OUTPUT to other neurons'.",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 1
+  },
+  {
+   "id": "c33",
+   "name": "Propagazione elettrochimica: eccitazione o inibizione alle sinapsi",
+   "nameEn": "Signals propagate through electrochemical reactions: Excitation or Inhibition at Synapses",
+   "kind": "proprieta",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 34
+    }
+   ],
+   "detail": "I segnali nel cervello si propagano attraverso reazioni elettrochimiche (electrochemical reactions) che attraversano le componenti del neurone. Excitation or Inhibition at Synapses: le sinapsi trasmettono segnali che possono eccitare o inibire il potenziale del neurone ricevente (either excite or inhibit the potential of the receiving neuron). Nel perceptron corrisponde al segno del peso: w_i > 0 eccitatorio, w_i < 0 inibitorio.",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 1
+  },
+  {
+   "id": "c34",
+   "name": "Attivazione a soglia: il neurone 'spara'",
+   "nameEn": "Threshold Activation: the neuron \"fires\"",
+   "kind": "proprieta",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 34
+    }
+   ],
+   "detail": "Threshold Activation: quando il potenziale di un neurone supera una certa soglia (exceeds a certain threshold), il neurone 'spara' (fires) generando un segnale, che viaggia lungo l'assone e comunica con altri neuroni attraverso le loro sinapsi. È l'origine della funzione di attivazione a gradino sign(·) del perceptron: sotto soglia nessun segnale, sopra soglia uscita. Traduzione aggiunta: 'sparare se Σ w_i x_i > θ' equivale a sign(wᵀx + w₀) con w₀ = −θ.",
+   "latex": [
+    "\\sum_i w_i x_i > \\theta \\;\\Longleftrightarrow\\; \\mathbf{w}^T\\mathbf{x} + w_0 > 0, \\quad w_0 = -\\theta"
+   ],
+   "symbols": [
+    {
+     "s": "\\theta",
+     "meaning": "soglia di attivazione del neurone"
+    }
+   ],
+   "examRelevance": 2
+  },
+  {
+   "id": "c35",
+   "name": "Un neurone è un classificatore lineare",
+   "nameEn": "A single neuron can be viewed as a simple decision-making unit, or linear classifier",
+   "kind": "osservazione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 35
+    }
+   ],
+   "detail": "Un singolo neurone si può vedere come un'unità decisionale semplice, cioè un classificatore lineare (simple decision-making unit, or linear classifier). Questa idea è alla base del perceptron, concetto fondante delle reti neurali artificiali. Come un classificatore lineare, il neurone integra i segnali in ingresso (ingressi pesati, weighted inputs) e applica una soglia per decidere se generare un segnale di uscita.",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c36",
+   "name": "Perceptron: definizione",
+   "nameEn": "Perceptron",
+   "kind": "definizione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 35
+    }
+   ],
+   "detail": "Un perceptron, ispirato al neurone biologico, è un'unità computazionale di base e un classificatore lineare (basic computational unit and a linear classifier), definito come f(x) = sign(wᵀx + w₀). Un perceptron calcola la somma pesata degli ingressi, applica una soglia e restituisce un'etichetta di classe (computes the weighted sum of inputs, applies a threshold, and outputs a class label).",
+   "latex": [
+    "f(\\mathbf{x}) = \\mathrm{sign}\\left(\\mathbf{w}^T\\mathbf{x} + w_0\\right)"
+   ],
+   "symbols": [],
+   "examRelevance": 3
+  },
+  {
+   "id": "c37",
+   "name": "Struttura del perceptron e schema a blocchi",
+   "nameEn": "Structure: wᵀx, w₀ (bias as a weight on a constant input of 1), sign(·) threshold activation",
+   "kind": "definizione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 35
+    }
+   ],
+   "detail": "Structure: wᵀx è la combinazione lineare delle feature d'ingresso, con w vettore dei pesi; w₀ è il termine di bias, che si può trattare come un peso moltiplicato per un ingresso costante uguale a 1 (can be treated as a weight multiplied by a constant input of 1); sign(·) è la funzione di attivazione a soglia (threshold activation function) che restituisce +1 o −1 e determina l'etichetta di classe. Lo schema della pagina mostra: un box 'Bias' con valore 1 e peso w^0, gli ingressi x^1, x^2, x^3, …, x^m con pesi w^1, …, w^m, un nodo somma Σ (giallo), il box 'Activation function' con il gradino (verde) e l'uscita 'Output'. Nello schema indici di feature e pesi sono in apice.",
+   "latex": [
+    "f(\\mathbf{x}) = \\mathrm{sign}\\left(\\sum_{i=1}^{m} w^{i} x^{i} + w^{0}\\cdot 1\\right)",
+    "\\mathrm{sign}(a) = \\begin{cases} +1 & a > 0 \\\\ -1 & a < 0 \\end{cases}"
+   ],
+   "symbols": [
+    {
+     "s": "x^{i}",
+     "meaning": "i-esimo ingresso (feature) nello schema"
+    },
+    {
+     "s": "w^{i}",
+     "meaning": "peso dell'i-esimo ingresso; w^0 è il peso dell'ingresso costante 1 (bias)"
+    }
+   ],
+   "examRelevance": 3
+  },
+  {
+   "id": "c38",
+   "name": "Capacità del perceptron: dati linearmente separabili, AND, OR, NAND, NOT",
+   "nameEn": "Capability: a perceptron can represent any linearly separable dataset (AND, OR, NAND, NOT)",
+   "kind": "proprieta",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 35
+    }
+   ],
+   "detail": "Capability: un perceptron può rappresentare qualsiasi dataset linearmente separabile (any linearly separable dataset). Esempi di funzioni che può modellare sono le funzioni booleane primitive AND, OR, NAND, NOT. Pesi di esempio calcolati qui (ingressi in {0,1}, uscita +1 = vero): AND con w = (1, 1), w₀ = −1,5; OR con w = (1, 1), w₀ = −0,5; NAND con w = (−1, −1), w₀ = 1,5; NOT con w = −1, w₀ = 0,5. Poiché NAND è funzionalmente completa, reti di perceptron possono realizzare qualunque funzione booleana (collegamento con c40).",
+   "latex": [
+    "\\mathrm{AND}: \\mathrm{sign}(x_1 + x_2 - 1.5) \\qquad \\mathrm{OR}: \\mathrm{sign}(x_1 + x_2 - 0.5)",
+    "\\mathrm{NAND}: \\mathrm{sign}(-x_1 - x_2 + 1.5) \\qquad \\mathrm{NOT}: \\mathrm{sign}(-x_1 + 0.5)"
+   ],
+   "symbols": [],
+   "examRelevance": 3
+  },
+  {
+   "id": "c39",
+   "name": "Limite del perceptron: lo XOR",
+   "nameEn": "Limitation: a perceptron cannot represent non-linearly separable datasets, such as the XOR function",
+   "kind": "proprieta",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 35
+    }
+   ],
+   "detail": "Limitation: un perceptron non può rappresentare dataset non linearmente separabili (non-linearly separable datasets), come la funzione XOR, a causa del suo confine di decisione lineare (due to its linear decision boundary). Nel quadrato unitario i punti (0,1) e (1,0) (XOR = 1) stanno su una diagonale e (0,0), (1,1) (XOR = 0) sull'altra: nessuna retta li separa. Dimostrazione per assurdo aggiunta in der07.",
+   "latex": [
+    "\\mathrm{XOR}(x_1, x_2) = 1 \\iff x_1 \\neq x_2"
+   ],
+   "symbols": [],
+   "examRelevance": 3
+  },
+  {
+   "id": "c40",
+   "name": "Rete a due strati: qualsiasi formula logica in DNF o CNF",
+   "nameEn": "Two-layer network: any logical formula can be represented using a disjunctive normal form (DNF) or conjunctive normal form (CNF)",
+   "kind": "teorema",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 35
+    }
+   ],
+   "detail": "Combinando più perceptron in una rete a due strati (two-layer network), qualsiasi formula logica (come lo XOR) si può rappresentare usando una forma normale disgiuntiva (DNF) o congiuntiva (CNF): 1. First Layer, il primo strato apprende congiunzioni degli ingressi (learn conjunctions of inputs); 2. Second Layer, il secondo strato combina queste congiunzioni in disgiunzioni (combines these conjunctions into disjunctions). Una rete di perceptron a due strati può modellare qualsiasi funzione booleana (any boolean function). Nota: la descrizione a strati corrisponde alla DNF; per la CNF i ruoli si scambiano (disgiunzioni nel primo strato, congiunzione nel secondo). Esempio aggiunto (ex03): XOR = (x₁ ∧ ¬x₂) ∨ (¬x₁ ∧ x₂).",
+   "latex": [
+    "\\mathrm{XOR}(x_1, x_2) = (x_1 \\wedge \\neg x_2) \\vee (\\neg x_1 \\wedge x_2)",
+    "\\mathrm{XOR}(x_1, x_2) = (x_1 \\vee x_2) \\wedge (\\neg x_1 \\vee \\neg x_2)"
+   ],
+   "symbols": [],
+   "examRelevance": 3
+  },
+  {
+   "id": "c41",
+   "name": "Crescita esponenziale dei neuroni: rete 'shallow but wide'",
+   "nameEn": "The number of required neurons grows exponentially with the number of input variables, making the network shallow but wide",
+   "kind": "proprieta",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 35
+    }
+   ],
+   "detail": "Una rete di perceptron a due strati può modellare qualsiasi funzione booleana, però il numero di neuroni richiesti cresce esponenzialmente (grows exponentially) con il numero di variabili d'ingresso, e la rete diventa poco profonda ma larghissima (shallow but wide). Esempio aggiunto: la funzione di parità su n bit ha in DNF 2^(n−1) congiunzioni (tutte le configurazioni con un numero dispari di 1), quindi servono 2^(n−1) perceptron nascosti: 512 per n = 10.",
+   "latex": [
+    "\\#\\text{neuroni nascosti (parità, DNF)} = 2^{\\,n-1}"
+   ],
+   "symbols": [
+    {
+     "s": "n",
+     "meaning": "numero di variabili booleane in ingresso"
+    }
+   ],
+   "examRelevance": 2
+  },
+  {
+   "id": "c42",
+   "name": "Limiti delle architetture poco profonde",
+   "nameEn": "Single perceptrons or shallow architectures cannot separate complex datasets; two-layer networks often require an exponential number of perceptrons",
+   "kind": "confronto",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 36
+    }
+   ],
+   "detail": "Riepilogo della fonte ('So:'): i singoli perceptron o le architetture poco profonde (single perceptrons or shallow architectures) non separano dataset complessi che non sono linearmente separabili; rappresentare formule logiche complesse con una rete a due strati richiede spesso un numero esponenziale di perceptron al crescere della dimensione dell'input (exponential number of perceptrons as input size increases). Il primo limite è di espressività (un solo perceptron), il secondo di efficienza (due strati bastano in teoria ma costano troppo).",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c43",
+   "name": "Reti neurali profonde: rappresentazioni gerarchiche",
+   "nameEn": "Deep neural networks (DNNs): intermediate layers, hierarchical feature computation",
+   "kind": "definizione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 36
+    }
+   ],
+   "detail": "Le reti neurali profonde (Deep neural networks, DNNs) affrontano questi problemi introducendo strati intermedi (intermediate layers) che permettono un calcolo gerarchico delle feature (hierarchical feature computation). Ogni strato costruisce rappresentazioni sempre più astratte (increasingly abstract representations), permettendo di modellare in modo efficiente pattern complessi. Esempio aggiunto: la parità di n bit con un albero di blocchi XOR richiede circa 3(n − 1) perceptron invece di 2^(n−1).",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c44",
+   "name": "Vettori aumentati dei pesi e degli ingressi",
+   "nameEn": "Augmented weight and input vectors",
+   "kind": "formula",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 36
+    }
+   ],
+   "detail": "Per semplificare la notazione del perceptron, il termine di bias w₀ si può incorporare direttamente nei cosiddetti vettori aumentati dei pesi e degli ingressi (augmented weight and input vectors): f(x) = sign(ŵᵀx̂), dove ŵ = (w₀, w) si ottiene mettendo w₀ in testa a w e x̂ = (1, x) mettendo 1 in testa a x (box colorato della pagina). Il prodotto scalare aumentato restituisce esattamente wᵀx + w₀ (der08).",
+   "latex": [
+    "f(\\mathbf{x}) = \\mathrm{sign}\\left(\\widehat{\\mathbf{w}}^T\\widehat{\\mathbf{x}}\\right)",
+    "\\hat{\\mathbf{w}} = \\begin{pmatrix} w_0 \\\\ \\mathbf{w} \\end{pmatrix} \\qquad \\hat{\\mathbf{x}} = \\begin{pmatrix} 1 \\\\ \\mathbf{x} \\end{pmatrix}",
+    "\\hat{\\mathbf{w}}^T\\hat{\\mathbf{x}} = w_0\\cdot 1 + \\mathbf{w}^T\\mathbf{x}"
+   ],
+   "symbols": [
+    {
+     "s": "\\hat{\\mathbf{w}}",
+     "meaning": "vettore aumentato dei pesi (d+1 componenti)"
+    },
+    {
+     "s": "\\hat{\\mathbf{x}}",
+     "meaning": "vettore aumentato dell'ingresso, con la costante 1 in testa"
+    }
+   ],
+   "examRelevance": 3
+  },
+  {
+   "id": "c45",
+   "name": "Il bias diventa un peso come gli altri",
+   "nameEn": "The bias w₀ is now treated like any other weight",
+   "kind": "proprieta",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 36
+    }
+   ],
+   "detail": "Con i vettori aumentati il bias w₀ è trattato come qualsiasi altro peso, eliminando la necessità di gestirlo a parte (eliminating the need for special handling). Il processo di trovare w₀ e w diventa equivalente a trovare il vettore dei pesi aumentato ŵ. Interpretazione geometrica aggiunta: nello spazio aumentato di dimensione d + 1 il confine ŵᵀx̂ = 0 è un iperpiano passante per l'origine; la sua intersezione con il piano x₀ = 1 è l'iperpiano H originale.",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c46",
+   "name": "Notazione aumentata implicita: sign(wᵀx)",
+   "nameEn": "In practice, the augmented notation ^ is often skipped and used implicitly",
+   "kind": "osservazione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 36
+    }
+   ],
+   "detail": "In pratica la notazione aumentata con il cappello ^ viene spesso omessa e usata implicitamente, definendo f(x) = sign(wᵀx). Da qui in poi nelle note w e x vanno letti come vettori aumentati: è il motivo per cui il gradiente (pagina 38) e la regola di aggiornamento non contengono w₀ separato, e per cui l'illustrazione di pagina 39-40 con 'b = 0' ha il confine passante per l'origine.",
+   "latex": [
+    "f(\\mathbf{x}) = \\mathrm{sign}\\left(\\mathbf{w}^T\\mathbf{x}\\right)"
+   ],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c47",
+   "name": "Il problema dell'apprendimento dei parametri",
+   "nameEn": "The fundamental problem in parameter learning",
+   "kind": "definizione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 36
+    }
+   ],
+   "detail": "Il problema fondamentale dell'apprendimento dei parametri (parameter learning) è determinare come imparare il vettore dei pesi w dai dati. Serve trovare una funzione dei parametri da ottimizzare (a function of the parameters to optimize), in modo simile alla stima a massima verosimiglianza (maximum likelihood estimation) per le distribuzioni di probabilità: là si massimizza la verosimiglianza rispetto a θ, qui si minimizza un errore rispetto a w.",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c48",
+   "name": "Funzione di loss",
+   "nameEn": "Loss function l",
+   "kind": "definizione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 36
+    }
+   ],
+   "detail": "Una scelta ragionevole per la funzione da ottimizzare è una misura di errore sul training set D, nota come funzione di loss (loss function) l. In generale la minimizzazione dell'errore (error minimization) è l'approccio tipico per apprendere i parametri in classificazione. La loss prende due ingressi (una predizione e la sua etichetta) e restituisce l'errore (loss) sostenuto; la loss è più grande quando l'errore è più grave (the loss is larger when the error is more severe).",
+   "latex": [
+    "l\\left(y, f(\\mathbf{x})\\right)"
+   ],
+   "symbols": [
+    {
+     "s": "l",
+     "meaning": "funzione di loss: (etichetta, predizione) → errore"
+    }
+   ],
+   "examRelevance": 3
+  },
+  {
+   "id": "c49",
+   "name": "Funzione di errore sul training set",
+   "nameEn": "Error function E(w; D)",
+   "kind": "formula",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 36
+    }
+   ],
+   "detail": "La funzione di errore (error function) si calcola come somma della loss su tutti i campioni di training del dataset: E(w; D) = Σ_{(x,y)∈D} l(y, f(x)). Qui f(x) è la predizione per un dato ingresso x e y è la sua etichetta vera (true label). E dipende da w attraverso f.",
+   "latex": [
+    "E(\\mathbf{w}; D) = \\sum_{(\\mathbf{x}, y) \\in D} l\\left(y, f(\\mathbf{x})\\right)"
+   ],
+   "symbols": [
+    {
+     "s": "D",
+     "meaning": "training set di coppie (x, y)"
+    },
+    {
+     "s": "E(\\mathbf{w}; D)",
+     "meaning": "errore totale del modello di pesi w sul training set"
+    }
+   ],
+   "examRelevance": 3
+  },
+  {
+   "id": "c50",
+   "name": "Overfitting meno grave per i classificatori lineari",
+   "nameEn": "Overfitting tends to be less severe for linear classifiers",
+   "kind": "osservazione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 37
+    }
+   ],
+   "detail": "Anche se l'overfitting è un problema importante nel machine learning, tende a essere meno grave per i classificatori lineari (less severe for linear classifiers). Per ora quindi ci si concentra solo sulla minimizzazione dell'errore, senza affrontare l'overfitting in dettaglio. Coerente con c18: pochi parametri, poca capacità di memorizzare il rumore.",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 1
+  },
+  {
+   "id": "c51",
+   "name": "Discesa del gradiente: l'idea",
+   "nameEn": "Gradient Descent",
+   "kind": "definizione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 37
+    }
+   ],
+   "detail": "La discesa del gradiente (Gradient Descent) è un metodo molto usato per minimizzare funzioni di errore, soprattutto quando non esiste una soluzione in forma chiusa (closed-form solution). L'idea chiave è aggiornare iterativamente il vettore dei pesi w nella direzione opposta al gradiente della funzione di errore ∇E(w; D), perché il gradiente punta verso il massimo (the gradient points toward the maximum), cioè nella direzione di massima crescita locale. La scrittura per componenti del gradiente è aggiunta: la fonte usa solo il simbolo ∇E(w; D); con la notazione aumentata implicita le componenti vanno da w₀ a w_d.",
+   "latex": [
+    "\\nabla E(\\mathbf{w}; D) = \\left(\\frac{\\partial E}{\\partial w_0}, \\dots, \\frac{\\partial E}{\\partial w_d}\\right)^T"
+   ],
+   "symbols": [
+    {
+     "s": "\\nabla E(\\mathbf{w}; D)",
+     "meaning": "gradiente dell'errore rispetto ai pesi"
+    }
+   ],
+   "examRelevance": 3
+  },
+  {
+   "id": "c52",
+   "name": "Algoritmo della discesa del gradiente",
+   "nameEn": "Gradient descent algorithm: Initialize, Iterate",
+   "kind": "algoritmo",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 37
+    }
+   ],
+   "detail": "L'algoritmo: Initialize, si fissa w (per esempio w = 0); Iterate, si ripete il passo w = w − η∇E(w; D) finché ∇E(w; D) ≃ 0. Il criterio di arresto è quindi un gradiente (quasi) nullo, cioè un punto stazionario dell'errore. Il simbolo '=' va letto come assegnazione (il nuovo w si calcola dal vecchio).",
+   "latex": [
+    "\\mathbf{w} = \\mathbf{0}",
+    "\\mathbf{w} = \\mathbf{w} - \\eta\\nabla E(\\mathbf{w}; D) \\quad \\text{finché } \\nabla E(\\mathbf{w}; D) \\simeq \\mathbf{0}"
+   ],
+   "symbols": [
+    {
+     "s": "\\eta",
+     "meaning": "learning rate (passo)"
+    }
+   ],
+   "examRelevance": 3
+  },
+  {
+   "id": "c53",
+   "name": "Learning rate e convergenza a un ottimo locale",
+   "nameEn": "η is the learning rate; Gradient Descent guarantees convergence to a local optimum of E(w; D), provided η is small enough",
+   "kind": "proprieta",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 37
+    }
+   ],
+   "detail": "η è il learning rate, che controlla l'ampiezza del passo a ogni iterazione (controls the step size at each iteration). La discesa del gradiente garantisce la convergenza a un ottimo locale (local optimum) di E(w; D), purché η sia abbastanza piccolo (provided η is small enough). Conseguenze esplicitate: con η troppo grande il passo scavalca il minimo e può oscillare o divergere; l'ottimo raggiunto è locale e dipende dal punto di partenza, salvo che E sia convessa.",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 3
+  },
+  {
+   "id": "c54",
+   "name": "Note sul learning rate: passo piccolo e passo adattivo",
+   "nameEn": "Notes on Learning Rate η: a very small η results in slow convergence; adaptive techniques exist to adjust η dynamically",
+   "kind": "osservazione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 37
+    }
+   ],
+   "detail": "Notes on Learning Rate η: un η molto piccolo porta a una convergenza lenta (slow convergence); esistono tecniche adattive (adaptive techniques) per regolare η dinamicamente, migliorando la velocità di convergenza. All'orale è stato chiesto il 'meaning of adapting learning rate': η grande all'inizio per avanzare in fretta, più piccolo vicino al minimo per non oscillare (esempi del corso di Deep Learning: decadimento del passo, AdaGrad, Adam, modulo d03).",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 3
+  },
+  {
+   "id": "c55",
+   "name": "La loss di misclassificazione a gradini non va bene per il gradiente",
+   "nameEn": "A piecewise constant function, such as the misclassification loss, is not suitable for gradient descent",
+   "kind": "osservazione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 37
+    }
+   ],
+   "detail": "Una funzione costante a tratti (piecewise constant function), come la loss di misclassificazione (misclassification loss, che conta il numero di esempi mal classificati del dataset), non è adatta alla discesa del gradiente: non è liscia (not smooth) e non fornisce gradienti significativi (either zero or nonexistent: nulli dove è piatta, inesistenti nei salti). Serve una funzione di errore liscia (smooth error function) per applicare efficacemente l'ottimizzazione basata sul gradiente. La formula del conteggio è scritta qui, la pagina la descrive a parole.",
+   "latex": [
+    "E_{0/1}(\\mathbf{w}; D) = \\sum_{(\\mathbf{x}, y) \\in D} \\mathbb{1}\\left[y \\neq \\mathrm{sign}(\\mathbf{w}^T\\mathbf{x})\\right]"
+   ],
+   "symbols": [
+    {
+     "s": "\\mathbb{1}[\\cdot]",
+     "meaning": "indicatrice: 1 se la condizione è vera, 0 altrimenti"
+    }
+   ],
+   "examRelevance": 3
+  },
+  {
+   "id": "c56",
+   "name": "f(x) come confidenza; il prodotto y f(x)",
+   "nameEn": "The value of f(x) provides confidence in its predictions; yf(x)",
+   "kind": "proprieta",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 37
+    }
+   ],
+   "detail": "Il valore di f(x) (l'uscita del modello) fornisce una confidenza (confidence) nelle predizioni: il segno di f(x) indica l'etichetta predetta; un valore alto e positivo di y f(x) indica alta confidenza in una predizione corretta, mentre un valore negativo indica una misclassificazione (misclassification). Con y ∈ {−1, +1}, y f(x) > 0 se e solo se segno di f e etichetta coincidono.",
+   "latex": [
+    "y f(\\mathbf{x}) > 0 \\iff \\text{corretto} \\qquad y f(\\mathbf{x}) < 0 \\iff \\text{errato}"
+   ],
+   "symbols": [
+    {
+     "s": "y \\in \\{-1, +1\\}",
+     "meaning": "etichetta vera"
+    }
+   ],
+   "examRelevance": 3
+  },
+  {
+   "id": "c57",
+   "name": "Dalla confidenza alla surrogata liscia: minimizzare −y f(x)",
+   "nameEn": "Error minimization translates into minimizing −yf(x); smooth surrogate loss function",
+   "kind": "procedura",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 37
+    }
+   ],
+   "detail": "Per massimizzare la confidenza nelle predizioni corrette e minimizzare gli errori si usa questa trasformazione: per un dato punto y f(x) è positivo se la predizione è corretta e negativo altrimenti; la minimizzazione dell'errore si traduce nel minimizzare −y f(x). Sommando questa quantità sugli esempi di training si ottiene una funzione di loss surrogata liscia (smooth surrogate loss function) adatta alla discesa del gradiente (amenable to gradient descent). 'Liscia' qui significa continua e lineare a tratti in w, con gradiente non nullo dove ci sono errori.",
+   "latex": [
+    "\\min_{\\mathbf{w}} \\; -y f(\\mathbf{x})"
+   ],
+   "symbols": [],
+   "examRelevance": 3
+  },
+  {
+   "id": "c58",
+   "name": "Funzione di errore del perceptron",
+   "nameEn": "Perceptron Algorithm error function",
+   "kind": "formula",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 37
+    }
+   ],
+   "detail": "Per il Perceptron Algorithm la funzione di errore è E(w; D) = Σ_{(x,y)∈D_E} −y f(x), dove D_E è l'insieme dei campioni di training attualmente mal classificati (currently misclassified), cioè quelli con y f(x) ≤ 0. Ogni termine è ≥ 0, quindi E ≥ 0, ed E = 0 quando D_E è vuoto. Attenzione (gaps): con w = 0 tutti i punti hanno y f(x) = 0 e stanno in D_E, e anche E vale 0. Riscrittura aggiunta dal revisore: la somma su D_E equivale a Σ_{(x,y)∈D} max(0, −y f(x)), perché gli esempi corretti danno 0; è la hinge loss dell'SVM senza il margine 1 (modulo p09). Motivo della restrizione a D_E (der09): sommando −y f(x) anche sugli esempi corretti, basterebbe allungare w per far scendere l'errore senza limite.",
+   "latex": [
+    "E(\\mathbf{w}; D) = \\sum_{(\\mathbf{x}, y) \\in D_E} -y f(\\mathbf{x})",
+    "D_E = \\left\\{(\\mathbf{x}, y) \\in D : y f(\\mathbf{x}) \\le 0\\right\\}",
+    "E(\\mathbf{w}; D) = \\sum_{(\\mathbf{x}, y) \\in D} \\max\\left(0, -y f(\\mathbf{x})\\right)"
+   ],
+   "symbols": [
+    {
+     "s": "D_E",
+     "meaning": "insieme degli esempi attualmente mal classificati"
+    }
+   ],
+   "examRelevance": 3
+  },
+  {
+   "id": "c59",
+   "name": "L'errore è la somma dei margini funzionali dei mal classificati",
+   "nameEn": "The error is the sum of the functional margins of incorrectly classified examples",
+   "kind": "osservazione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 38
+    }
+   ],
+   "detail": "L'errore è la somma dei margini funzionali (functional margins) degli esempi classificati in modo errato. Precisazione: per questi esempi y f(x) ≤ 0, quindi ogni termine −y f(x) = |f(x)| è il valore assoluto del margine funzionale; per c29 vale anche |f(x)| = ||w|| · |r^x|, quindi l'errore è ||w|| moltiplicato per la somma delle distanze dei mal classificati dal confine. Un errore 'grosso' (punto lontano dal lato sbagliato) pesa più di uno vicino al confine: è ciò che rende la loss informativa, a differenza del conteggio.",
+   "latex": [
+    "-y f(\\mathbf{x}) = |f(\\mathbf{x})| = \\|\\mathbf{w}\\|\\,|r^{\\mathbf{x}}| \\quad \\text{per } (\\mathbf{x}, y) \\in D_E"
+   ],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c60",
+   "name": "Gradiente dell'errore del perceptron",
+   "nameEn": "The error gradient",
+   "kind": "formula",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 38
+    }
+   ],
+   "detail": "Il gradiente dell'errore quantifica quanto cambia la funzione di errore rispetto al vettore dei pesi w. Per l'errore del perceptron, che considera solo i campioni mal classificati, si deriva passo per passo: ∇E(w; D) = ∇ Σ_{D_E} −y f(x) = ∇ Σ_{D_E} −y(wᵀx); prendendo il gradiente rispetto a w, ∇E(w; D) = −Σ_{D_E} y x (der04). Nel passaggio f(x) è sostituito dal punteggio lineare wᵀx (notazione aumentata implicita).",
+   "latex": [
+    "\\nabla E(\\mathbf{w}; D) = \\nabla \\sum_{(\\mathbf{x}, y) \\in D_E} -y f(\\mathbf{x}) = \\nabla \\sum_{(\\mathbf{x}, y) \\in D_E} -y\\left(\\mathbf{w}^T\\mathbf{x}\\right)",
+    "\\nabla E(\\mathbf{w}; D) = -\\sum_{(\\mathbf{x}, y) \\in D_E} y\\mathbf{x}"
+   ],
+   "symbols": [],
+   "examRelevance": 3
+  },
+  {
+   "id": "c61",
+   "name": "Regola di aggiornamento batch del perceptron",
+   "nameEn": "Weight update: w = w + η Σ yx",
+   "kind": "formula",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 38
+    }
+   ],
+   "detail": "Per minimizzare l'errore si usa la discesa del gradiente, aggiornando w nella direzione opposta al gradiente: w = w − η∇E(w; D). Sostituendo ∇E(w; D) si ottiene w = w + η Σ_{(x,y)∈D_E} y x. Il processo si itera finché ∇E(w; D) è approssimativamente zero, momento in cui l'errore è minimizzato sui dati di training (the error is minimized for the training data). Per il perceptron il gradiente si annulla quando D_E è vuoto, cioè quando tutti gli esempi sono classificati correttamente (a parte il caso degenere w = 0 citato nei gaps).",
+   "latex": [
+    "\\mathbf{w} = \\mathbf{w} - \\eta\\nabla E(\\mathbf{w}; D)",
+    "\\mathbf{w} = \\mathbf{w} + \\eta\\sum_{(\\mathbf{x}, y) \\in D_E} y\\mathbf{x}"
+   ],
+   "symbols": [],
+   "examRelevance": 3
+  },
+  {
+   "id": "c62",
+   "name": "Punti chiave dell'aggiornamento: y x, η e i punti corretti che non contano",
+   "nameEn": "Key Points: each term weighted by the product of the label y and the feature vector x; correctly classified samples do not affect the weight updates",
+   "kind": "proprieta",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 38
+    }
+   ],
+   "detail": "Key Points: il gradiente ∇E(w; D) è una somma su tutti gli esempi mal classificati in D_E, con ogni termine pesato dal prodotto dell'etichetta y e del vettore di feature x; il passo di aggiornamento scala questo gradiente per il learning rate η, controllando l'ampiezza del passo a ogni iterazione; i campioni classificati correttamente non influenzano l'aggiornamento dei pesi (correctly classified samples do not affect the weight updates), così l'attenzione resta sugli esempi sbagliati. Geometricamente: un positivo sbagliato tira w verso di sé (+x), un negativo sbagliato lo spinge via (−x).",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 3
+  },
+  {
+   "id": "c63",
+   "name": "Nella loss f(x) è il punteggio lineare, non il segno",
+   "nameEn": "Inside the error function f(x) = wᵀx (linear output), not sign(wᵀx)",
+   "kind": "osservazione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 37
+    },
+    {
+     "doc": "part2",
+     "page": 38
+    }
+   ],
+   "detail": "Osservazione esplicitata (le note usano la stessa f per entrambe le cose): nell'errore E(w; D) = Σ_{D_E} −y f(x) e nel gradiente di pagina 38 f(x) è il punteggio lineare wᵀx, come mostra il passaggio −y f(x) = −y(wᵀx). Se al posto di f si mettesse la decisione sign(wᵀx), ogni termine varrebbe esattamente 1 per ogni errore e la somma tornerebbe a essere il conteggio degli errori, cioè la loss di misclassificazione costante a tratti con gradiente nullo (c55). La 'surrogata liscia' esiste proprio perché usa il valore continuo del margine.",
+   "latex": [
+    "\\sum_{(\\mathbf{x}, y) \\in D_E} -y\\,\\mathrm{sign}(\\mathbf{w}^T\\mathbf{x}) = |D_E| \\qquad \\text{contro} \\qquad \\sum_{(\\mathbf{x}, y) \\in D_E} -y\\,\\mathbf{w}^T\\mathbf{x}"
+   ],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c64",
+   "name": "Addestramento stocastico contro apprendimento batch",
+   "nameEn": "Stochastic perceptron training vs batch learning",
+   "kind": "confronto",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 38
+    }
+   ],
+   "detail": "Nell'addestramento stocastico del perceptron (stochastic perceptron training) l'aggiornamento dei pesi usa l'errore di un solo esempio di training alla volta (a single training example at a time), invece della somma degli errori su tutto il dataset. Si contrappone all'apprendimento batch (batch learning), in cui funzione di errore e gradiente si calcolano sull'intero training set prima di fare un aggiornamento.",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 3
+  },
+  {
+   "id": "c65",
+   "name": "Lo svantaggio del batch",
+   "nameEn": "Batch learning has a significant drawback",
+   "kind": "osservazione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 38
+    }
+   ],
+   "detail": "L'apprendimento batch ha uno svantaggio significativo: per fare un solo aggiornamento dei pesi bisogna calcolare le predizioni per tutti gli esempi di training (predictions for all training examples need to be computed), e questo diventa computazionalmente costoso, in particolare per dataset grandi (computationally expensive, particularly for large datasets). Costo per aggiornamento: N predizioni contro 1 dello stocastico.",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c66",
+   "name": "Algoritmo del perceptron stocastico",
+   "nameEn": "The stochastic training algorithm",
+   "kind": "algoritmo",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 38
+    },
+    {
+     "doc": "part2",
+     "page": 39
+    }
+   ],
+   "detail": "L'algoritmo di addestramento stocastico: inizializzare i pesi w in modo casuale (per esempio piccoli valori casuali o zeri, small random values or zeros); iterare finché tutti gli esempi di training sono classificati correttamente (until all training examples are correctly classified): per ogni esempio di training (x, y) classificato in modo errato, aggiornare il vettore dei pesi con w = w + η y x. È la regola di Rosenblatt; con notazione aumentata implicita il bias si aggiorna insieme agli altri pesi (w₀ ← w₀ + η y, perché la componente costante di x̂ vale 1).",
+   "latex": [
+    "\\mathbf{w} = \\mathbf{w} + \\eta y\\mathbf{x} \\quad \\text{per ogni } (\\mathbf{x}, y) \\text{ con } y\\,\\mathbf{w}^T\\mathbf{x} \\le 0"
+   ],
+   "symbols": [],
+   "examRelevance": 3
+  },
+  {
+   "id": "c67",
+   "name": "Perché si chiama stocastico: un'approssimazione del gradiente",
+   "nameEn": "This method is called \"stochastic\" because updates are performed using the gradient for a single training example; only an approximation of the true error gradient",
+   "kind": "osservazione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 39
+    }
+   ],
+   "detail": "Il metodo si chiama 'stocastico' perché gli aggiornamenti usano il gradiente di un singolo esempio di training invece di quello dell'intero dataset. È solo un'approssimazione (approximation) del vero gradiente dell'errore, che si calcola su tutti gli esempi. Esplicitazione: il gradiente vero è la somma dei gradienti dei singoli esempi mal classificati; scegliendo gli esempi in ordine casuale, il gradiente del singolo è una stima rumorosa (proporzionale in media) di quello vero.",
+   "latex": [
+    "\\nabla E\\left(\\mathbf{w}; (\\mathbf{x}, y)\\right) = -y\\mathbf{x}",
+    "\\nabla E(\\mathbf{w}; D) = \\sum_{(\\mathbf{x}, y) \\in D_E} \\nabla E\\left(\\mathbf{w}; (\\mathbf{x}, y)\\right)"
+   ],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c68",
+   "name": "Vantaggio dello stocastico: efficienza",
+   "nameEn": "Advantages and Trade-offs of Stochastic Training: Efficiency",
+   "kind": "proprieta",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 39
+    }
+   ],
+   "detail": "Efficiency: ogni passo di gradiente è molto veloce perché richiede calcoli su un solo esempio (computations on only a single example). Questo rende l'addestramento stocastico particolarmente adatto ai dataset grandi (well-suited for large datasets).",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c69",
+   "name": "Rumore e minimi locali: il rumore può aiutare",
+   "nameEn": "Noise and Local Minima",
+   "kind": "proprieta",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 39
+    }
+   ],
+   "detail": "Noise and Local Minima: la natura stocastica degli aggiornamenti introduce rumore nel processo di apprendimento, e questo a volte aiuta: evita di restare bloccati nei minimi locali (avoids getting stuck in local minima), perché i singoli esempi possono avere superfici di errore diverse (individual training examples may have different error surfaces), permettendo all'ottimizzazione di esplorare un'area più ampia dello spazio dei parametri (explore a broader area of the parameter space).",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c70",
+   "name": "Svantaggio dello stocastico: minore stabilità",
+   "nameEn": "Less Stability",
+   "kind": "proprieta",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 39
+    }
+   ],
+   "detail": "Less Stability: aggiornamenti basati su singoli esempi possono far oscillare il vettore dei pesi (cause the weight vector to oscillate) e rallentare la convergenza. Su molte iterazioni, però, l'algoritmo media il rumore (averages out the noise).",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c71",
+   "name": "Discesa del gradiente a mini-batch",
+   "nameEn": "Mini-batch gradient descent",
+   "kind": "definizione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 39
+    }
+   ],
+   "detail": "Nel deep learning la dimensione dei dataset moderni rende impraticabile la discesa del gradiente a batch completo (full-batch gradient descent), mentre la discesa stocastica a singolo esempio può essere troppo rumorosa per dare aggiornamenti affidabili. Si usa quindi comunemente la discesa del gradiente a mini-batch (mini-batch gradient descent): un mini-batch è un piccolo sottoinsieme dei dati di training (e.g., 32–256 esempi: un valore tipico, non un vincolo), e ogni passo di aggiornamento calcola il gradiente su questo mini-batch invece che su un singolo esempio o sull'intero dataset. La formula è scritta qui come esplicitazione.",
+   "latex": [
+    "\\mathbf{w} = \\mathbf{w} - \\eta\\nabla E(\\mathbf{w}; B), \\qquad B \\subset D, \\quad |B| \\in [32, 256] \\;\\text{(es.)}"
+   ],
+   "symbols": [
+    {
+     "s": "B",
+     "meaning": "mini-batch: sottoinsieme casuale del training set"
+    }
+   ],
+   "examRelevance": 2
+  },
+  {
+   "id": "c72",
+   "name": "Minimi locali: batch contro stocastico nei problemi non convessi",
+   "nameEn": "The error function computed over all training examples typically has many local minima; stochastic gradient descent can \"jump out\" of local minima",
+   "kind": "confronto",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 39
+    }
+   ],
+   "detail": "La funzione di errore calcolata su tutti gli esempi di training ha tipicamente molti minimi locali (many local minima). Gli aggiornamenti batch usano la superficie di errore completa (full error surface), aumentando la probabilità di bloccarsi in un minimo locale. La discesa stocastica invece approssima la superficie di errore di ogni esempio singolarmente: facendo passi basati su esempi diversi, l'algoritmo può 'saltare fuori' (jump out) dai minimi locali della superficie completa, esplorando direzioni alternative. Questo rende la discesa stocastica (o a mini-batch) particolarmente preziosa per i problemi non convessi (non-convex problems), come quelli del deep learning. Nota: l'errore del perceptron è convesso; il discorso sui minimi locali riguarda il caso generale.",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c73",
+   "name": "Illustrazione della discesa stocastica con b = 0",
+   "nameEn": "An illustration of how stochastic gradient descent works, assuming the bias is set to b = 0",
+   "kind": "esempio",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 39
+    },
+    {
+     "doc": "part2",
+     "page": 40
+    }
+   ],
+   "detail": "Illustrazione di come funziona la discesa stocastica, assumendo bias b = 0 (così il confine di decisione passa per l'origine). Quattro pannelli nel piano (x₁, x₂) con 7 cerchi rossi (classe positiva, metà sinistra) e 8 quadrati blu (classe negativa, a destra e in alto). Pannello 1: w iniziale (freccia nera, punta esattamente verso un cerchio rosso) e confine tratteggiato perpendicolare con pendenza positiva bassa; dal disegno risultano dal lato sbagliato 2 cerchi rossi (i due più in basso) e 4 quadrati blu (quelli sopra la retta): 6 errori. Pannello 2: si sceglie il cerchio rosso mal classificato in basso a sinistra; la freccia rossa è il suo vettore x (y = +1), il nuovo w (nero) è il vecchio (grigio) più η x e ruota verso sinistra (freccia curva punteggiata); il nuovo confine (nero tratteggiato, più ripido) sostituisce il vecchio (grigio tratteggiato); restano 3 errori (1 cerchio, 2 quadrati). Pannello 3: si sceglie l'altro cerchio rosso mal classificato (in basso); w ruota ancora verso sinistra e il confine diventa più ripido; resta 1 errore, il quadrato blu più in alto. Pannello 4: si sceglie quel quadrato; la freccia blu è il suo x e la freccia blu punteggiata −x (y = −1); w ruota di poco allontanandosi dal quadrato e il confine diventa quasi verticale: 0 errori, classi separate. Le frecce non sono in scala (figura qualitativa, vedi gaps). Dettaglio in ex01; conteggi degli errori ricostruiti dal revisore misurando il disegno.",
+   "latex": [
+    "\\mathbf{w} \\leftarrow \\mathbf{w} + \\eta y\\mathbf{x}, \\qquad b = 0"
+   ],
+   "symbols": [
+    {
+     "s": "b",
+     "meaning": "bias (chiamato w0 nel resto delle note)"
+    }
+   ],
+   "examRelevance": 2
+  },
+  {
+   "id": "c74",
+   "name": "Interpretazione geometrica: l'aggiornamento ruota w e il confine",
+   "nameEn": "Geometric interpretation of the update (rotation of w and of the boundary)",
+   "kind": "osservazione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 40
+    }
+   ],
+   "detail": "Messaggio della figura di pagina 40, esplicitato: aggiungere η y x a w ruota il vettore dei pesi verso l'esempio positivo mal classificato (y = +1, si somma x) o lontano dall'esempio negativo mal classificato (y = −1, si sottrae x). Poiché il confine è sempre perpendicolare a w (c22) e passa per l'origine (b = 0), ruota insieme a w, di un angolo che dipende da η||x|| rispetto a ||w||. Un aggiornamento può correggere un punto e sbagliarne un altro: per questo servono più passi.",
+   "latex": [],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c75",
+   "name": "Ogni aggiornamento aumenta il margine dell'esempio usato",
+   "nameEn": "Effect of an update on the functional margin of the updated example",
+   "kind": "osservazione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 39
+    }
+   ],
+   "detail": "Osservazione aggiunta (non nella fonte, utile per giustificare la regola all'orale): dopo l'aggiornamento w' = w + η y x, il margine funzionale con etichetta dell'esempio usato diventa y w'ᵀx = y wᵀx + η y² ||x||² = y wᵀx + η||x||², strettamente più grande di prima (y² = 1, η > 0, ||x||² > 0 perché x aumentato ha una componente uguale a 1). L'esempio non è necessariamente corretto dopo un solo passo, ma si sposta verso il lato giusto (der06).",
+   "latex": [
+    "y\\,(\\mathbf{w} + \\eta y\\mathbf{x})^T\\mathbf{x} = y\\,\\mathbf{w}^T\\mathbf{x} + \\eta\\|\\mathbf{x}\\|^2"
+   ],
+   "symbols": [],
+   "examRelevance": 2
+  },
+  {
+   "id": "c76",
+   "name": "L'algoritmo termina solo se i dati sono linearmente separabili",
+   "nameEn": "Termination of the perceptron: iterate until all training examples are correctly classified",
+   "kind": "osservazione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 38
+    },
+    {
+     "doc": "part2",
+     "page": 35
+    }
+   ],
+   "detail": "Osservazione esplicitata: il criterio di arresto 'iterate until all training examples are correctly classified' (pagina 38) può essere soddisfatto solo se esiste un iperpiano che separa i dati, cioè se il dataset è linearmente separabile (capacità e limiti di pagina 35). In quel caso il teorema di convergenza del perceptron (Rosenblatt, Novikoff; non nella fonte) garantisce un numero finito di aggiornamenti, al massimo (R/γ)² con R raggio dei dati e γ margine della soluzione migliore. Su dati non separabili, come lo XOR, il ciclo non termina: i pesi continuano a cambiare e in pratica si fissa un numero massimo di epoche.",
+   "latex": [
+    "\\#\\text{aggiornamenti} \\le \\left(\\frac{R}{\\gamma}\\right)^2"
+   ],
+   "symbols": [
+    {
+     "s": "R",
+     "meaning": "massima norma degli esempi"
+    },
+    {
+     "s": "\\gamma",
+     "meaning": "margine geometrico dell'iperpiano separatore migliore"
+    }
+   ],
+   "examRelevance": 2
+  },
+  {
+   "id": "c77",
+   "name": "Regressione con il perceptron",
+   "nameEn": "Perceptron Regression",
+   "kind": "definizione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 40
+    }
+   ],
+   "detail": "Inizio della sezione Perceptron Regression (continua nel modulo p07, inventariata anche qui perché sta a pagina 40). Usando lo schema del perceptron per la regressione (regression), il compito è predire un'uscita a valori reali (real-valued output) per ogni punto. Si tratta di adattare ai dati una retta (o un iperplano in dimensione maggiore) minimizzando la differenza tra i valori predetti (dal modello) e i valori reali (dai dati). Esplicitazione del revisore (la pagina 40 non scrive la formula): senza la funzione sign l'uscita è direttamente il punteggio lineare wᵀx.",
+   "latex": [
+    "f(\\mathbf{x}) = \\mathbf{w}^T\\mathbf{x}"
+   ],
+   "symbols": [],
+   "examRelevance": 3
+  },
+  {
+   "id": "c78",
+   "name": "Rappresentazione matriciale: matrice di training X e vettore di uscita y",
+   "nameEn": "Input training matrix X and output vector y",
+   "kind": "definizione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 40
+    }
+   ],
+   "detail": "Un modo comodo di formalizzare la regressione è la rappresentazione matriciale dei dati, che riduce il problema alla soluzione di un sistema di equazioni lineari (system of linear equations). Sia X ∈ R^n × R^d (con n = |D| e d = |x|) la matrice di training degli ingressi (input training matrix), X = [x^1 ··· x^n], con le righe che rappresentano gli esempi e le colonne le feature (rows represent examples, columns represent features). Sia y ∈ R^n il vettore di uscita (output vector), dove y_i è l'etichetta dell'ingresso corrispondente x^i. Il sistema da risolvere (pagina 41, modulo p07) è Xw = y. Nota di notazione: la fonte scrive R^n × R^d per R^{n×d}.",
+   "latex": [
+    "X \\in \\mathbb{R}^{n} \\times \\mathbb{R}^{d}, \\quad n = |D|, \\quad d = |\\mathbf{x}|",
+    "X = \\left[\\mathbf{x}^{1} \\cdots \\mathbf{x}^{n}\\right]",
+    "\\mathbf{y} \\in \\mathbb{R}^{n}",
+    "X\\mathbf{w} = \\mathbf{y}"
+   ],
+   "symbols": [
+    {
+     "s": "X",
+     "meaning": "matrice n×d: una riga per esempio, una colonna per feature"
+    },
+    {
+     "s": "\\mathbf{y}",
+     "meaning": "vettore delle n uscite reali"
+    },
+    {
+     "s": "\\mathbf{x}^{i}",
+     "meaning": "i-esimo esempio di training"
+    },
+    {
+     "s": "y_i",
+     "meaning": "uscita (etichetta reale) dell'ingresso corrispondente x^i"
+    },
+    {
+     "s": "n = |D|",
+     "meaning": "numero di esempi di training (righe di X)"
+    },
+    {
+     "s": "d = |\\mathbf{x}|",
+     "meaning": "numero di feature (colonne di X)"
+    }
+   ],
+   "examRelevance": 3
+  },
+  {
+   "id": "c79",
+   "name": "Nel perceptron da w = 0 il learning rate cambia solo la scala di w",
+   "nameEn": "Perceptron learning rate: starting from w = 0, η only rescales w",
+   "kind": "osservazione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 38
+    },
+    {
+     "doc": "part2",
+     "page": 39
+    }
+   ],
+   "detail": "Osservazione aggiunta dal revisore (non nella fonte), utile per la domanda d'esame 'meaning of adapting learning rate'. La fonte dice che η controlla l'ampiezza del passo (pagine 37-38) e che la discesa del gradiente converge se η è abbastanza piccolo. Nel perceptron però la decisione sign(wᵀx) non cambia se w si moltiplica per una costante positiva (stessa idea dell'invarianza alla scala di c25). Partendo da w = 0, ogni aggiornamento (batch w = w + η Σ_{D_E} y x, oppure stocastico w = w + η y x con lo stesso ordine degli esempi) aggiunge η volte un vettore che non dipende da η: dopo t passi w_t = η v_t, con v_t uguale per ogni η > 0. Insiemi D_E, confini e numero di aggiornamenti sono quindi identici, cambia solo la lunghezza di w. η conta invece quando w parte da un valore non nullo (pesa le correzioni rispetto al w iniziale) e nei modelli con loss non invarianti alla scala (regressione, reti profonde).",
+   "latex": [
+    "\\mathbf{w}_0 = \\mathbf{0} \\;\\Rightarrow\\; \\mathbf{w}_t = \\eta\\,\\mathbf{v}_t, \\qquad \\mathbf{v}_{t+1} = \\mathbf{v}_t + \\sum_{(\\mathbf{x}, y) \\in D_E} y\\mathbf{x}",
+    "\\mathrm{sign}\\left(\\eta\\,\\mathbf{v}_t^T\\mathbf{x}\\right) = \\mathrm{sign}\\left(\\mathbf{v}_t^T\\mathbf{x}\\right) \\qquad (\\eta > 0)"
+   ],
+   "symbols": [
+    {
+     "s": "\\mathbf{v}_t",
+     "meaning": "somma dei vettori y x usati negli aggiornamenti fino al passo t (non dipende da η)"
+    }
+   ],
+   "examRelevance": 2,
+   "addedBy": "revisore"
+  }
+ ],
+ "derivations": [
+  {
+   "id": "der01",
+   "title": "Il vettore w è ortogonale all'iperpiano di decisione",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 32
+    },
+    {
+     "doc": "part2",
+     "page": 33
+    }
+   ],
+   "goal": "Mostrare che w è perpendicolare a ogni direzione contenuta nell'iperpiano H: wᵀx + w₀ = 0.",
+   "steps": [
+    "\\mathbf{x}, \\mathbf{x}' \\in H \\;\\Rightarrow\\; f(\\mathbf{x}) = f(\\mathbf{x}') = 0",
+    "\\mathbf{w}^T\\mathbf{x} + w_0 - \\mathbf{w}^T\\mathbf{x}' - w_0 = 0",
+    "\\mathbf{w}^T(\\mathbf{x} - \\mathbf{x}') = 0",
+    "\\mathbf{w} \\perp (\\mathbf{x} - \\mathbf{x}') \\quad \\forall\\, \\mathbf{x}, \\mathbf{x}' \\in H"
+   ],
+   "stepWhy": [
+    "Due punti qualsiasi dell'iperpiano soddisfano entrambi l'equazione di H, cioè annullano la funzione discriminante.",
+    "Si sottraggono le due equazioni f(x) = 0 e f(x') = 0 membro a membro.",
+    "Il bias w₀ si cancella e, per la linearità del prodotto scalare, wᵀx − wᵀx' = wᵀ(x − x').",
+    "Prodotto scalare nullo significa ortogonalità; poiché x − x' descrive ogni direzione che giace in H, w è perpendicolare alla superficie dell'iperpiano (è la sua normale)."
+   ],
+   "concepts": [
+    "c22",
+    "c21"
+   ]
+  },
+  {
+   "id": "der02",
+   "title": "Margine geometrico: r^x = f(x)/||w||",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 33
+    },
+    {
+     "doc": "part2",
+     "page": 34
+    }
+   ],
+   "goal": "Dimostrare che la distanza (con segno) di un punto x dall'iperpiano H è il margine funzionale diviso per la norma di w.",
+   "steps": [
+    "\\mathbf{x} = \\mathbf{x}^p + r^{\\mathbf{x}}\\frac{\\mathbf{w}}{\\|\\mathbf{w}\\|}",
+    "f(\\mathbf{x}^p) = 0",
+    "f(\\mathbf{x}) = \\mathbf{w}^T\\mathbf{x} + w_0 = \\mathbf{w}^T\\left(\\mathbf{x}^p + r^{\\mathbf{x}}\\frac{\\mathbf{w}}{\\|\\mathbf{w}\\|}\\right) + w_0",
+    "f(\\mathbf{x}) = \\mathbf{w}^T\\mathbf{x}^p + r^{\\mathbf{x}}\\mathbf{w}^T\\frac{\\mathbf{w}}{\\|\\mathbf{w}\\|} + w_0",
+    "\\mathbf{w}^T\\mathbf{x}^p + w_0 = f(\\mathbf{x}^p) = 0 \\;\\Rightarrow\\; f(\\mathbf{x}) = r^{\\mathbf{x}}\\mathbf{w}^T\\frac{\\mathbf{w}}{\\|\\mathbf{w}\\|}",
+    "\\sqrt{\\mathbf{w}^T\\mathbf{w}} = \\|\\mathbf{w}\\| \\;\\Rightarrow\\; f(\\mathbf{x}) = r^{\\mathbf{x}}\\|\\mathbf{w}\\|",
+    "\\frac{f(\\mathbf{x})}{\\|\\mathbf{w}\\|} = r^{\\mathbf{x}}"
+   ],
+   "stepWhy": [
+    "Scomposizione di x: si parte dalla sua proiezione x^p sull'iperpiano e ci si sposta lungo la normale w/||w|| (versore, normale per der01) di una quantità r^x, la distanza con segno.",
+    "x^p appartiene all'iperpiano H, quindi annulla la funzione discriminante.",
+    "Si sostituisce la scomposizione di x nella definizione di f.",
+    "Espandendo e semplificando: linearità del prodotto scalare; lo scalare r^x esce dal prodotto.",
+    "I termini wᵀx^p + w₀ si raccolgono e formano f(x^p), che vale 0 per il passo 2.",
+    "wᵀw = ||w||², quindi wᵀw/||w|| = ||w||.",
+    "Si divide per ||w||, che è positivo se w ≠ 0: il margine geometrico è il margine funzionale normalizzato."
+   ],
+   "concepts": [
+    "c24",
+    "c27",
+    "c29",
+    "c28"
+   ]
+  },
+  {
+   "id": "der03",
+   "title": "Distanza dell'origine dall'iperpiano",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 33
+    }
+   ],
+   "goal": "Ricavare r^0 = w₀/||w|| come caso particolare del margine geometrico.",
+   "steps": [
+    "f(\\mathbf{0}) = \\mathbf{w}^T\\mathbf{0} + w_0 = w_0",
+    "r^{\\mathbf{0}} = \\frac{f(\\mathbf{0})}{\\|\\mathbf{w}\\|} = \\frac{w_0}{\\|\\mathbf{w}\\|}"
+   ],
+   "stepWhy": [
+    "Nell'origine la parte lineare wᵀx si annulla e resta solo il bias.",
+    "Si applica la formula del margine geometrico r^x = f(x)/||w|| al punto x = 0; il segno dice da che lato dell'iperpiano si trova l'origine."
+   ],
+   "concepts": [
+    "c26",
+    "c15"
+   ]
+  },
+  {
+   "id": "der04",
+   "title": "Gradiente dell'errore del perceptron e regola batch",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 38
+    }
+   ],
+   "goal": "Calcolare ∇E(w; D) per E = Σ_{D_E} −y f(x) e ricavare l'aggiornamento w = w + η Σ_{D_E} y x.",
+   "steps": [
+    "\\nabla E(\\mathbf{w}; D) = \\nabla \\sum_{(\\mathbf{x}, y) \\in D_E} -y f(\\mathbf{x})",
+    "= \\nabla \\sum_{(\\mathbf{x}, y) \\in D_E} -y\\left(\\mathbf{w}^T\\mathbf{x}\\right)",
+    "\\nabla_{\\mathbf{w}}\\left(-y\\,\\mathbf{w}^T\\mathbf{x}\\right) = -y\\mathbf{x}",
+    "\\nabla E(\\mathbf{w}; D) = -\\sum_{(\\mathbf{x}, y) \\in D_E} y\\mathbf{x}",
+    "\\mathbf{w} = \\mathbf{w} - \\eta\\nabla E(\\mathbf{w}; D)",
+    "\\mathbf{w} = \\mathbf{w} + \\eta\\sum_{(\\mathbf{x}, y) \\in D_E} y\\mathbf{x}"
+   ],
+   "stepWhy": [
+    "Definizione dell'errore del perceptron: somma su D_E, l'insieme degli esempi mal classificati.",
+    "Con la notazione aumentata implicita f(x) = wᵀx: nella loss si usa il punteggio lineare, non il segno (c63).",
+    "Il gradiente rispetto a w di una funzione lineare aᵀw è a; qui a = −y x e y è uno scalare costante.",
+    "Il gradiente di una somma è la somma dei gradienti; D_E si considera fisso, perché resta costante finché nessun punto attraversa il confine (l'errore è lineare a tratti).",
+    "Regola della discesa del gradiente: passo nella direzione opposta al gradiente.",
+    "Sostituendo il gradiente del passo 4 i due segni meno si annullano: si somma η y x per ogni esempio sbagliato."
+   ],
+   "concepts": [
+    "c60",
+    "c61",
+    "c62",
+    "c63"
+   ]
+  },
+  {
+   "id": "der05",
+   "title": "Regola stocastica da un solo esempio",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 38
+    },
+    {
+     "doc": "part2",
+     "page": 39
+    }
+   ],
+   "goal": "Mostrare che w = w + η y x è la discesa del gradiente sull'errore di un singolo esempio mal classificato, e che approssima il gradiente vero.",
+   "steps": [
+    "E\\left(\\mathbf{w}; (\\mathbf{x}, y)\\right) = -y\\,\\mathbf{w}^T\\mathbf{x} \\quad \\text{se } y\\,\\mathbf{w}^T\\mathbf{x} \\le 0",
+    "\\nabla E\\left(\\mathbf{w}; (\\mathbf{x}, y)\\right) = -y\\mathbf{x}",
+    "\\mathbf{w} = \\mathbf{w} - \\eta\\left(-y\\mathbf{x}\\right) = \\mathbf{w} + \\eta y\\mathbf{x}",
+    "\\nabla E(\\mathbf{w}; D) = \\sum_{(\\mathbf{x}, y) \\in D_E} \\nabla E\\left(\\mathbf{w}; (\\mathbf{x}, y)\\right)"
+   ],
+   "stepWhy": [
+    "Errore del perceptron ristretto a un solo esempio mal classificato (per un esempio corretto il contributo è 0).",
+    "Stesso calcolo di der04 con un solo termine.",
+    "Passo di discesa del gradiente con il gradiente del singolo esempio: è la regola stocastica di pagina 39.",
+    "Il gradiente vero è la somma dei gradienti dei singoli esempi: usarne uno alla volta è un'approssimazione (da qui il nome 'stocastico')."
+   ],
+   "concepts": [
+    "c66",
+    "c67",
+    "c64"
+   ]
+  },
+  {
+   "id": "der06",
+   "title": "Un aggiornamento aumenta il margine dell'esempio usato (aggiunta)",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 39
+    }
+   ],
+   "goal": "Giustificare la regola w = w + η y x mostrando che sposta l'esempio mal classificato verso il lato corretto. Derivazione non presente nella fonte.",
+   "steps": [
+    "\\mathbf{w}' = \\mathbf{w} + \\eta y\\mathbf{x}",
+    "y\\,\\mathbf{w}'^T\\mathbf{x} = y\\,\\mathbf{w}^T\\mathbf{x} + \\eta y^2\\,\\mathbf{x}^T\\mathbf{x}",
+    "= y\\,\\mathbf{w}^T\\mathbf{x} + \\eta\\|\\mathbf{x}\\|^2 > y\\,\\mathbf{w}^T\\mathbf{x}"
+   ],
+   "stepWhy": [
+    "Regola di aggiornamento stocastica applicata all'esempio (x, y) mal classificato.",
+    "Si calcola il margine funzionale con etichetta y f(x) usando i nuovi pesi e si distribuisce il prodotto scalare.",
+    "y² = 1 perché y ∈ {−1, +1}; η > 0 e ||x||² > 0 (il vettore aumentato contiene la componente 1): il margine cresce strettamente."
+   ],
+   "concepts": [
+    "c75",
+    "c74"
+   ]
+  },
+  {
+   "id": "der07",
+   "title": "Lo XOR non è linearmente separabile (aggiunta)",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 35
+    }
+   ],
+   "goal": "Dimostrare per assurdo che nessun perceptron sign(w₁x₁ + w₂x₂ + w₀) realizza lo XOR su ingressi in {0,1}. La fonte enuncia il limite senza dimostrarlo.",
+   "steps": [
+    "(0,0) \\mapsto -1: \\quad w_0 < 0",
+    "(1,0) \\mapsto +1: \\quad w_1 + w_0 > 0",
+    "(0,1) \\mapsto +1: \\quad w_2 + w_0 > 0",
+    "(1,1) \\mapsto -1: \\quad w_1 + w_2 + w_0 < 0",
+    "(w_1 + w_0) + (w_2 + w_0) > 0 \\;\\Rightarrow\\; w_1 + w_2 + w_0 > -w_0 > 0"
+   ],
+   "stepWhy": [
+    "XOR(0,0) = 0: il punteggio nell'origine è solo w₀ e deve essere negativo.",
+    "XOR(1,0) = 1: punteggio positivo.",
+    "XOR(0,1) = 1: punteggio positivo.",
+    "XOR(1,1) = 0: punteggio negativo.",
+    "Sommando le disuguaglianze 2 e 3 e usando la 1 (−w₀ > 0) si ottiene w₁ + w₂ + w₀ > 0, in contraddizione con la 4: non esistono pesi validi."
+   ],
+   "concepts": [
+    "c39",
+    "c76"
+   ]
+  },
+  {
+   "id": "der08",
+   "title": "Equivalenza tra notazione aumentata e bias esplicito",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 36
+    }
+   ],
+   "goal": "Verificare che sign(ŵᵀx̂) = sign(wᵀx + w₀).",
+   "steps": [
+    "\\hat{\\mathbf{w}}^T\\hat{\\mathbf{x}} = \\begin{pmatrix} w_0 & \\mathbf{w}^T \\end{pmatrix}\\begin{pmatrix} 1 \\\\ \\mathbf{x} \\end{pmatrix}",
+    "= w_0 \\cdot 1 + \\mathbf{w}^T\\mathbf{x} = \\mathbf{w}^T\\mathbf{x} + w_0",
+    "\\mathrm{sign}\\left(\\hat{\\mathbf{w}}^T\\hat{\\mathbf{x}}\\right) = \\mathrm{sign}\\left(\\mathbf{w}^T\\mathbf{x} + w_0\\right)"
+   ],
+   "stepWhy": [
+    "Definizione dei vettori aumentati: w₀ in testa ai pesi, 1 in testa all'ingresso.",
+    "Prodotto riga per colonna a blocchi: il primo blocco dà w₀·1, il secondo wᵀx.",
+    "Stesso argomento, stessa funzione segno: i due classificatori coincidono, e imparare ŵ equivale a imparare (w₀, w)."
+   ],
+   "concepts": [
+    "c44",
+    "c45",
+    "c46"
+   ]
+  },
+  {
+   "id": "der09",
+   "title": "Dalla confidenza y f(x) all'errore del perceptron (loss surrogata)",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 37
+    },
+    {
+     "doc": "part2",
+     "page": 38
+    }
+   ],
+   "goal": "Ricostruire il ragionamento di pagine 37-38 che porta dalla loss di misclassificazione, inservibile per il gradiente, alla funzione di errore del perceptron, continua e lineare a tratti, minimizzabile con la discesa del gradiente.",
+   "steps": [
+    "E_{0/1}(\\mathbf{w}; D) = \\sum_{(\\mathbf{x}, y) \\in D} \\mathbb{1}\\left[y \\neq \\mathrm{sign}(\\mathbf{w}^T\\mathbf{x})\\right]",
+    "\\hat{y} = \\mathrm{sign}\\left(f(\\mathbf{x})\\right)",
+    "y f(\\mathbf{x}) > 0 \\iff \\text{corretto}, \\qquad y f(\\mathbf{x}) \\le 0 \\iff \\text{errato}",
+    "\\max\\; y f(\\mathbf{x}) \\iff \\min\\; -y f(\\mathbf{x})",
+    "E(\\mathbf{w}; D) = \\sum_{(\\mathbf{x}, y) \\in D_E} -y f(\\mathbf{x}), \\qquad D_E = \\left\\{(\\mathbf{x}, y) \\in D : y f(\\mathbf{x}) \\le 0\\right\\}",
+    "-y f(\\mathbf{x}) = |f(\\mathbf{x})| \\ge 0 \\quad \\text{per } (\\mathbf{x}, y) \\in D_E",
+    "f(\\mathbf{x}) = \\mathbf{w}^T\\mathbf{x} \\;\\Rightarrow\\; E(\\mathbf{w}; D) = \\sum_{(\\mathbf{x}, y) \\in D_E} -y\\,\\mathbf{w}^T\\mathbf{x} = \\sum_{(\\mathbf{x}, y) \\in D} \\max\\left(0, -y\\,\\mathbf{w}^T\\mathbf{x}\\right)"
+   ],
+   "stepWhy": [
+    "Punto di partenza: la loss di misclassificazione conta gli errori; è costante a tratti, quindi il suo gradiente è nullo dove è piatta e non esiste nei salti (pagina 37): la discesa del gradiente non sa da che parte andare.",
+    "Il valore di f(x) contiene più informazione del conteggio: il suo segno dà l'etichetta predetta, il suo valore la confidenza (pagina 37).",
+    "Con y ∈ {−1, +1}, moltiplicare per l'etichetta rende il prodotto positivo esattamente quando segno predetto e classe vera coincidono; un valore alto e positivo indica una predizione corretta e sicura, uno negativo un errore.",
+    "Massimizzare la confidenza nelle predizioni corrette equivale a minimizzarne l'opposto: 'error minimization translates into minimizing −yf(x)'.",
+    "Si somma solo sugli esempi attualmente mal classificati (definizione della fonte). Motivo esplicitato dal revisore: sommando −y wᵀx su tutti gli esempi, quelli corretti darebbero termini negativi e basterebbe allungare w per far scendere l'errore senza limite; ristretto a D_E ogni termine è ≥ 0 ed E ≥ 0.",
+    "Per un esempio sbagliato y f(x) ≤ 0, quindi il termine è il valore assoluto del margine funzionale: 'the error is the sum of the functional margins of incorrectly classified examples' (pagina 38). Un errore lontano dal confine pesa più di uno vicino, a differenza del conteggio.",
+    "Nella loss f è il punteggio lineare (notazione aumentata implicita, c63): E è continua e lineare a tratti in w, con gradiente −Σ_{D_E} y x dove D_E non cambia (der04). La forma con max(0, ·) su tutto D, riscrittura del revisore, dà la stessa somma perché gli esempi corretti contribuiscono 0, e anticipa la hinge loss dell'SVM (modulo p09)."
+   ],
+   "concepts": [
+    "c55",
+    "c56",
+    "c57",
+    "c58",
+    "c59",
+    "c63"
+   ],
+   "addedBy": "revisore"
+  },
+  {
+   "id": "der10",
+   "title": "Perché un passo contro il gradiente fa scendere l'errore (aggiunta)",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 37
+    }
+   ],
+   "goal": "Giustificare le affermazioni di pagina 37: il gradiente indica la direzione di massima crescita, un passo w − η∇E riduce l'errore se η è abbastanza piccolo, η troppo piccolo rallenta e η troppo grande fa oscillare o divergere. Derivazione non presente nella fonte.",
+   "steps": [
+    "D_{\\mathbf{u}}E(\\mathbf{w}) = \\nabla E(\\mathbf{w}; D)^T\\mathbf{u} \\le \\|\\nabla E(\\mathbf{w}; D)\\|, \\qquad \\|\\mathbf{u}\\| = 1",
+    "\\mathbf{w}' = \\mathbf{w} - \\eta\\nabla E(\\mathbf{w}; D)",
+    "E(\\mathbf{w}'; D) \\approx E(\\mathbf{w}; D) + \\nabla E(\\mathbf{w}; D)^T(\\mathbf{w}' - \\mathbf{w})",
+    "E(\\mathbf{w}'; D) \\approx E(\\mathbf{w}; D) - \\eta\\|\\nabla E(\\mathbf{w}; D)\\|^2 < E(\\mathbf{w}; D)",
+    "E(\\mathbf{w}'; D) = E(\\mathbf{w}; D) - \\eta\\|\\nabla E\\|^2 + \\frac{\\eta^2}{2}\\nabla E^T\\mathbf{H}\\,\\nabla E + o(\\eta^2)",
+    "E(w) = (w - 3)^2: \\quad w' - 3 = (1 - 2\\eta)(w - 3)",
+    "\\nabla E(\\mathbf{w}; D) \\simeq \\mathbf{0} \\;\\Rightarrow\\; \\mathbf{w}' \\simeq \\mathbf{w}"
+   ],
+   "stepWhy": [
+    "Derivata direzionale lungo un versore u; per la disuguaglianza di Cauchy-Schwarz il massimo si ha con u = ∇E/||∇E||: il gradiente è la direzione di salita più ripida ('the gradient points toward the maximum'), −∇E quella di discesa più ripida.",
+    "Passo della discesa del gradiente di pagina 37.",
+    "Sviluppo di Taylor al primo ordine attorno a w, valido per passi piccoli.",
+    "Sostituendo w' − w = −η∇E: se ∇E ≠ 0 e η > 0 l'errore scende. È il motivo per cui ci si muove nel verso opposto al gradiente.",
+    "Al secondo ordine compare la curvatura (matrice hessiana H): per η piccolo domina il termine negativo, lineare in η (convergenza garantita 'provided η is small enough'); per η grande domina il termine in η² e il passo scavalca il minimo.",
+    "Esempio unidimensionale (es10): la distanza dal minimo si moltiplica per (1 − 2η) a ogni passo; converge per 0 < η < 1 (in un passo con η = 0,5), oscilla per η = 1, diverge per η > 1; con η molto piccolo il fattore è vicino a 1 e la convergenza è lenta, il motivo delle tecniche adattive.",
+    "Vicino a un punto stazionario il passo si annulla: è il criterio d'arresto '∇E(w; D) ≃ 0'. Il punto raggiunto è un ottimo locale, che dipende da dove si è partiti."
+   ],
+   "concepts": [
+    "c51",
+    "c52",
+    "c53",
+    "c54"
+   ],
+   "addedBy": "revisore"
+  }
+ ],
+ "workedExamples": [
+  {
+   "id": "ex01",
+   "title": "Illustrazione della discesa stocastica del perceptron con b = 0",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 39
+    },
+    {
+     "doc": "part2",
+     "page": 40
+    }
+   ],
+   "description": "Fonte: 'An illustration of how stochastic gradient descent works, assuming the bias is set to b = 0 (so the decision boundary passes through the origin)', seguita da quattro pannelli (2×2) senza didascalia. Dati: 7 cerchi rossi nella metà sinistra del piano (x₁, x₂), classe positiva, e 8 quadrati blu nella metà destra e in alto, classe negativa (conteggio verificato dal revisore sull'immagine). Pannello 1 (in alto a sinistra): w iniziale (freccia nera) punta in alto a sinistra, esattamente verso un cerchio rosso; il confine (retta nera tratteggiata per l'origine, perpendicolare a w) ha pendenza positiva bassa; sono dal lato sbagliato i 2 cerchi rossi più in basso e i 4 quadrati blu che stanno sopra la retta, cioè 6 errori. Pannello 2 (in alto a destra): si prende il cerchio rosso mal classificato in basso a sinistra; la freccia rossa dall'origine al punto è x (y = +1); il nuovo w (freccia nera) è il vecchio w (freccia grigia) più η x e ruota verso sinistra (freccia curva punteggiata); il vecchio confine resta grigio tratteggiato, il nuovo (nero tratteggiato) è più ripido; errori residui 3: il cerchio rosso in basso e i due quadrati blu più alti. Pannello 3 (in basso a sinistra): si prende quel cerchio rosso in basso, nuova freccia rossa, nuova rotazione di w verso sinistra e confine ancora più ripido; errore residuo 1: il quadrato blu più in alto. Pannello 4 (in basso a destra): si prende quel quadrato blu; la freccia blu è il suo x e la freccia blu punteggiata verso il basso è −x (y = −1); w ruota di poco allontanandosi dal quadrato (in senso antiorario verso il basso) e il confine diventa quasi verticale: 0 errori, tutti i cerchi rossi a sinistra e tutti i quadrati blu a destra. Sequenza degli errori 6 → 3 → 1 → 0 in tre aggiornamenti. Osservazioni del revisore: le frecce non sono in scala (nel pannello 2 il vettore w + x punterebbe in basso a sinistra, il nuovo w disegnato punta in alto a sinistra: la rotazione è qualitativa, come con un η piccolo); il w iniziale che punta esattamente verso un cerchio rosso è coerente con un primo aggiornamento da w = 0 (w = η x), ma le note non lo dicono. Messaggio: ogni passo usa un solo esempio sbagliato e ruota w (e il confine perpendicolare) finché i dati sono separati; un passo può correggere un punto senza correggere gli altri.",
+   "concepts": [
+    "c73",
+    "c74",
+    "c66",
+    "c62"
+   ]
+  },
+  {
+   "id": "ex02",
+   "title": "Funzioni booleane primitive con un perceptron: AND, OR, NAND, NOT",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 35
+    }
+   ],
+   "description": "La fonte elenca AND, OR, NAND, NOT come esempi di funzioni che un perceptron può modellare (sono linearmente separabili). Pesi calcolati qui, con ingressi in {0,1} e uscita +1 = vero, −1 = falso. AND: f = sign(x₁ + x₂ − 1,5), punteggi −1,5, −0,5, −0,5, +0,5 per (0,0), (0,1), (1,0), (1,1): solo (1,1) dà +1. OR: f = sign(x₁ + x₂ − 0,5), punteggi −0,5, +0,5, +0,5, +1,5: solo (0,0) dà −1. NAND: f = sign(−x₁ − x₂ + 1,5), opposto di AND. NOT: f = sign(−x₁ + 0,5), +0,5 per x₁ = 0 e −0,5 per x₁ = 1. In ogni caso la retta separa il vertice isolato dagli altri tre vertici del quadrato unitario.",
+   "concepts": [
+    "c38",
+    "c36"
+   ]
+  },
+  {
+   "id": "ex03",
+   "title": "XOR con una rete di perceptron a due strati (DNF)",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 35
+    }
+   ],
+   "description": "La fonte cita lo XOR come formula che un singolo perceptron non rappresenta ma una rete a due strati sì, tramite DNF o CNF (primo strato congiunzioni, secondo strato disgiunzioni). Costruzione calcolata qui: XOR(x₁, x₂) = (x₁ ∧ ¬x₂) ∨ (¬x₁ ∧ x₂). Primo strato: h₁ = sign(x₁ − x₂ − 0,5), che vale +1 solo per (1,0); h₂ = sign(x₂ − x₁ − 0,5), che vale +1 solo per (0,1). Secondo strato (OR in codifica ±1): y = sign(h₁ + h₂ + 1). Verifica: (0,0) → h = (−1, −1) → y = sign(−1) = −1; (1,0) → (+1, −1) → sign(1) = +1; (0,1) → (−1, +1) → +1; (1,1) → (−1, −1) → −1. Nello spazio (h₁, h₂) i quattro ingressi finiscono su tre punti linearmente separabili. Versione CNF: (x₁ ∨ x₂) ∧ (¬x₁ ∨ ¬x₂), con due OR nel primo strato e un AND nel secondo.",
+   "concepts": [
+    "c40",
+    "c39",
+    "c41"
+   ]
+  },
+  {
+   "id": "ex04",
+   "title": "Margini di un pesce: il calcolo completo (aggiunta)",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 32
+    },
+    {
+     "doc": "part2",
+     "page": 33
+    }
+   ],
+   "description": "Esempio numerico costruito dal revisore (dati sintetici) per applicare le formule di pagine 32-33. Pesce con feature standardizzate x = (x₁, x₂) = (4, 3); classificatore w = (3, 4), w₀ = −10. Punteggio: f(x) = 3·4 + 4·3 − 10 = 14 > 0, classe positiva (sign = +1). Norma: ||w|| = √(9 + 16) = 5. Margine funzionale 14, margine geometrico r^x = 14/5 = 2,8. Distanza dell'origine: r^0 = f(0)/||w|| = −10/5 = −2 (l'origine sta dal lato negativo, a distanza 2). Proiezione su H: x^p = x − r^x w/||w|| = (4, 3) − 2,8·(0,6; 0,8) = (2,32; 0,76); verifica f(x^p) = 3·2,32 + 4·0,76 − 10 = 6,96 + 3,04 − 10 = 0, quindi x^p sta su H. Proiezione di x sulla direzione di w: wᵀx/||w|| = 24/5 = 4,8 = r^x − r^0 = 2,8 + 2 (lettura della figura di pagina 33). Scala: moltiplicando (w, w₀) per α = 2, cioè w = (6, 8) e w₀ = −20, si ha f(x) = 28 (raddoppia), ||w|| = 10, r^x = 2,8 e r^0 = −2 (invariati): il margine funzionale dipende dalla scala di w, quello geometrico no.",
+   "concepts": [
+    "c14",
+    "c19",
+    "c23",
+    "c24",
+    "c25",
+    "c26",
+    "c27",
+    "c29",
+    "c30"
+   ],
+   "addedBy": "revisore"
+  },
+  {
+   "id": "ex05",
+   "title": "Perceptron a mano con b = 0: un passo batch contro due passi stocastici (aggiunta)",
+   "sourcePages": [
+    {
+     "doc": "part2",
+     "page": 38
+    },
+    {
+     "doc": "part2",
+     "page": 39
+    }
+   ],
+   "description": "Esempio numerico costruito dal revisore nello spirito dell'illustrazione di pagina 40 (bias b = 0, confine per l'origine). Dati sintetici: A = (−2, 1) e B = (−1, −2) positivi (y = +1, cerchi rossi); C = (1, 3) e D = (2, −1) negativi (y = −1, quadrati blu). Pesi iniziali w = (−1, 3), η = 1. Punteggi iniziali wᵀx: A 5, B −5, C 8, D −5; margini y wᵀx: A 5, B −5, C −8, D 5, quindi D_E = {B, C}. Errore del perceptron: E = 5 + 8 = 13. Gradiente: ∇E = −(y_B B + y_C C) = −((−1, −2) − (1, 3)) = (2, 5). Passo batch: w = (−1, 3) − 1·(2, 5) = (−3, −2); nuovi margini A 4, B 7, C 9, D 4, nessun errore, E = 0: fine in un aggiornamento, costato 4 predizioni. Versione stocastica, ordine A, B, C, D, sempre da w = (−1, 3): A corretto (5 > 0), nessun aggiornamento; B sbagliato (−5): w = (−1, 3) + (−1, −2) = (−2, 1), e il margine di B passa da −5 a 0 = −5 + ||B||² = −5 + 5 (sale di η||x||² ma resta sul confine, quindi ancora in D_E); C con il nuovo w: wᵀC = −2 + 3 = 1, margine −1, sbagliato: w = (−2, 1) − (1, 3) = (−3, −2), e il margine di C passa da −1 a 9 = −1 + ||C||² = −1 + 10; D: wᵀD = −6 + 2 = −4, margine 4, corretto. Seconda epoca: margini A 4, B 7, C 9, D 4, tutti positivi: fine con due aggiornamenti. Qui batch e stocastico arrivano allo stesso w = (−3, −2) (confine x₂ = −1,5 x₁), in generale no. Margini geometrici finali, con ||w|| = √13 ≈ 3,61: 4/√13 ≈ 1,11 per A e D, 7/√13 ≈ 1,94 per B, 9/√13 ≈ 2,50 per C.",
+   "concepts": [
+    "c58",
+    "c60",
+    "c61",
+    "c62",
+    "c64",
+    "c66",
+    "c75"
+   ],
+   "addedBy": "revisore"
+  }
+ ],
+ "figures": [
+  {
+   "id": "fig01",
+   "doc": "part2",
+   "page": 33,
+   "description": "Geometria dell'iperpiano nel piano (x₁, x₂): retta H, vettore w perpendicolare a H, punto x con la sua proiezione x^p, segmento r^x tra x^p e x parallelo a w, distanza r^0 dall'origine a H lungo w, versore w/||w|| disegnato a parte. L'origine sta dal lato opposto a w (w₀ < 0). Un secondo tratteggio sottile va da x perpendicolarmente alla freccia w (proiezione di x sulla direzione di w, lunga |r^0| + r^x nel disegno).",
+   "region": "centro della pagina, dopo la definizione di x^p e r^x",
+   "concepts": [
+    "c28",
+    "c27",
+    "c24",
+    "c26"
+   ],
+   "importance": 3
+  },
+  {
+   "id": "fig02",
+   "doc": "part2",
+   "page": 34,
+   "description": "Disegno di un neurone biologico: dendriti ramificati a sinistra ('INPUT from other neurons'), corpo cellulare ('Cell body'), lungo assone con la freccia 'sends signal down the axon', rami terminali a destra ('Terminal branches', 'OUTPUT to other neurons').",
+   "region": "metà inferiore della pagina, tra l'elenco delle parti del neurone e la propagazione dei segnali",
+   "concepts": [
+    "c32",
+    "c31"
+   ],
+   "importance": 2
+  },
+  {
+   "id": "fig03",
+   "doc": "part2",
+   "page": 35,
+   "description": "Schema del perceptron: box 'Bias' con valore 1 e peso w^0, ingressi x^1, x^2, x^3, …, x^m con pesi w^1 … w^m che convergono in un nodo somma Σ (giallo), seguito dal box 'Activation function' con il gradino (verde) e dall'uscita 'Output'.",
+   "region": "metà superiore della pagina, sotto la definizione del perceptron",
+   "concepts": [
+    "c37",
+    "c36"
+   ],
+   "importance": 3
+  },
+  {
+   "id": "fig04",
+   "doc": "part2",
+   "page": 36,
+   "description": "Box colorato con la definizione dei vettori aumentati: ŵ = (w₀, w) in colonna e x̂ = (1, x) in colonna.",
+   "region": "terzo superiore della pagina, dopo f(x) = sign(ŵᵀx̂)",
+   "concepts": [
+    "c44"
+   ],
+   "importance": 2
+  },
+  {
+   "id": "fig05",
+   "doc": "part2",
+   "page": 40,
+   "description": "Quattro pannelli 2×2 della discesa stocastica del perceptron con b = 0: cerchi rossi (positivi) e quadrati blu (negativi); in ogni pannello w vecchio (grigio) e nuovo (nero), vettore x dell'esempio mal classificato scelto (rosso per un positivo, blu con −x punteggiato per un negativo), freccia curva della rotazione, confine vecchio grigio tratteggiato e nuovo nero tratteggiato. L'ultimo pannello separa le classi. Punti: 7 cerchi, 8 quadrati. Ordine degli esempi usati: cerchio in basso a sinistra, cerchio in basso, quadrato più in alto; errori ricostruiti dal disegno 6 → 3 → 1 → 0. Frecce non in scala.",
+   "region": "due terzi superiori della pagina",
+   "concepts": [
+    "c73",
+    "c74",
+    "c66"
+   ],
+   "importance": 3
+  }
+ ],
+ "widgets": [
+  {
+   "id": "p06-quanti-dag-e-che-direzione",
+   "title": "Quanti grafi? E chi causa chi?",
+   "concepts": [
+    "c01",
+    "c04"
+   ],
+   "scenario": "medicina",
+   "realExample": "Un pronto soccorso vuole imparare dalla cartella di 2.000 pazienti (dati sintetici) la struttura di una rete bayesiana con variabili come Influenza, Febbre, Tosse, Stagione, Vaccinato. L'approccio bayesiano completo dovrebbe mediare le predizioni su tutti i DAG possibili; in più il software trova correlazioni ma non sa dire se è l'influenza a causare la febbre o viceversa.",
+   "storyboard": [
+    "Pannello sinistro 'Spazio delle strutture': slider n (numero di variabili) da 1 a 10. Per n = 3 compaiono in 500 ms le 25 miniature di tutti i DAG possibili in una griglia; per n = 4 le miniature diventano 543 puntini; da n = 5 in poi un contatore a scala logaritmica sale a scatti (29.281; 3.781.503; 1,1·10^9; 7,8·10^11; 1,2·10^15; 4,2·10^18).",
+    "Sotto il contatore la formula della media sui modelli p(y|x,D) = Σ_G p(y|x,G,D) p(G|D) con il numero di addendi aggiornato; un cronometro stima il tempo di calcolo a 1 ms per DAG: con n = 10 segna circa 130 milioni di anni e si colora di rosso con l'etichetta 'intractable'.",
+    "Pannello destro 'Chi causa chi?': due nodi, Influenza e Febbre, con una freccia. Pulsante 'Inverti la freccia': la freccia ruota di 180° in 400 ms e una barra di punteggio (verosimiglianza sui dati osservazionali) resta identica, con la formula p(I)p(F|I) = p(I,F) = p(F)p(I|F) evidenziata.",
+    "Pulsante 'Intervento: abbassa la febbre con un farmaco': nei dati simulati la febbre viene forzata a 'no' in metà dei pazienti; la frequenza di Influenza non cambia (istogramma prima e dopo affiancati), quindi la febbre non causa l'influenza e la freccia si fissa su Influenza → Febbre con un lucchetto.",
+    "Pulsante alternativo 'Chiedi al medico' (conoscenza di dominio): fumetto 'è l'infezione a provocare la febbre', stessa freccia fissata. Riepilogo finale: i dati danno correlazioni, le direzioni vengono da interventi o esperti."
+   ],
+   "interactions": [
+    "slider n da 1 a 10",
+    "pulsante 'Inverti la freccia'",
+    "pulsante 'Intervento'",
+    "pulsante 'Chiedi al medico'"
+   ],
+   "visual": "A sinistra griglia di miniature di DAG (nodi grigi, archi neri) e contatore logaritmico con cronometro; a destra due nodi con freccia animata, barra del punteggio che non si muove, due istogrammi prima/dopo l'intervento. Numeri e formule aggiornati live.",
+   "aha": "Mediare su tutte le strutture è impossibile già con 10 variabili, e i dati osservazionali non distinguono A → B da B → A: le direzioni causali richiedono un intervento o un esperto.",
+   "formulasShown": [
+    "p(y \\mid \\mathbf{x}, D) = \\sum_{G} p(y \\mid \\mathbf{x}, G, D)\\, p(G \\mid D)",
+    "p(x)\\,p(y \\mid x) = p(x, y) = p(y)\\,p(x \\mid y)"
+   ],
+   "challenge": "Trova il più piccolo n per cui il tempo di calcolo supera un anno (n = 8: 7,8·10^11 DAG, circa 25 anni; con n = 7 bastano circa 13 giorni); poi decidi la direzione di Tosse ↔ Influenza usando un solo intervento.",
+   "size": "M",
+   "tech": "svg+motion"
+  },
+  {
+   "id": "p06-naive-bayes-stella",
+   "title": "Naive Bayes: una stella che sbaglia le ipotesi ma azzecca la classe",
+   "concepts": [
+    "c02",
+    "c03"
+   ],
+   "scenario": "spam",
+   "realExample": "Filtro antispam su 400 email sintetiche con quattro parole binarie: 'gratis', 'offerta', 'riunione', 'fattura'. Il Naive Bayes assume le parole indipendenti data la classe, ma nelle email di spam 'gratis' e 'offerta' compaiono quasi sempre insieme.",
+   "storyboard": [
+    "Stato iniziale: il nodo Spam al centro e quattro nodi-parola intorno, collegati da frecce che partono dalla classe (stella). Un badge 'struttura predefinita: nessun arco da imparare' e un contatore dei parametri: Naive Bayes 1 + 2·4 = 9 contro 31 della congiunta completa.",
+    "Pannello 'Verifica l'ipotesi': matrice di correlazione 4×4 tra le parole calcolata sulle sole email di spam; le celle si colorano in 400 ms e la cella gratis-offerta si accende di rosso (0,6) con l'etichetta 'ipotesi violata'.",
+    "Clic su un'email della lista: due barre crescono in 500 ms e mostrano P(spam | parole) secondo il Naive Bayes e secondo il modello completo; sotto, la formula del Naive Bayes con i numeri sostituiti (p(spam) e le quattro p(x_j | spam), poi le stesse per ham, e la normalizzazione). Il Naive Bayes è più estremo (0,99 contro 0,93) perché conta due volte l'evidenza correlata, ma la decisione (spam) è la stessa.",
+    "Slider 'correlazione tra gratis e offerta' da 0 a 0,9: i dati vengono rigenerati; l'accuratezza dei due modelli è tracciata su un grafico: il Naive Bayes perde solo pochi punti mentre le sue probabilità diventano sempre più eccessive.",
+    "Riepilogo: tabella con parametri, tempo di stima (conteggi) e accuratezza dei due modelli."
+   ],
+   "interactions": [
+    "clic su un'email della lista",
+    "slider di correlazione tra gratis e offerta da 0 a 0,9 (passo 0,1)",
+    "interruttore Naive Bayes / modello completo",
+    "interruttore 'mostra i numeri' nella formula"
+   ],
+   "visual": "Grafo a stella SVG con nodi-parola, matrice di correlazione a colori, barre di probabilità affiancate, curva dell'accuratezza al variare della correlazione.",
+   "aha": "L'ipotesi di indipendenza condizionale quasi mai vale, ma con pochi parametri stimati da semplici conteggi il Naive Bayes classifica quasi sempre bene: sbaglia le probabilità più che le decisioni.",
+   "formulasShown": [
+    "p(y, x_1, \\dots, x_m) = p(y) \\prod_{j=1}^{m} p(x_j \\mid y)",
+    "P(\\text{spam} \\mid \\mathbf{x}) = \\frac{p(\\text{spam})\\prod_{j=1}^{4} p(x_j \\mid \\text{spam})}{\\sum_{y \\in \\{\\text{spam}, \\text{ham}\\}} p(y)\\prod_{j=1}^{4} p(x_j \\mid y)}"
+   ],
+   "challenge": "Trova un'email e un valore di correlazione per cui la decisione del Naive Bayes diventa diversa da quella del modello completo.",
+   "size": "M",
+   "tech": "svg+motion"
+  },
+  {
+   "id": "p06-generativo-vs-discriminativo",
+   "title": "Stesso pesce, due filosofie: generativo o discriminativo",
+   "concepts": [
+    "c05",
+    "c06",
+    "c07"
+   ],
+   "scenario": "pesce",
+   "realExample": "Nell'impianto di confezionamento 60 pesci (dati sintetici) sono misurati per luminosità e larghezza: salmoni e spigole. Un modello generativo stima la distribuzione di ciascuna specie, uno discriminativo impara solo la retta che le separa.",
+   "storyboard": [
+    "Due pannelli affiancati con lo stesso diagramma di dispersione (salmoni rossi, spigole blu) nel piano luminosità-larghezza.",
+    "Pannello 'Generativo': dalle medie delle due classi crescono in 600 ms le ellissi di due gaussiane; il confine appare dove le probabilità a posteriori si eguagliano; contatore parametri 11 (2 medie da 2, 2 covarianze da 3, 1 prior).",
+    "Pannello 'Discriminativo': una retta entra ruotando e si ferma sulla frontiera; contatore parametri 3 (w₁, w₂, w₀).",
+    "Pulsante 'Genera un salmone': a sinistra un nuovo punto rosso campionato dalla gaussiana cade nella nuvola; a destra il pulsante è disattivato con il messaggio 'il modello non conosce p(x|y)'. Pulsante 'Luminosità mancante': un pesce di cui si conosce solo la larghezza; a sinistra compare la curva della luminosità attesa, a destra il messaggio 'compito non supportato'.",
+    "Slider d (numero di feature misurate) da 2 a 100: i contatori si aggiornano con le formule, 2(d + d(d+1)/2) + 1 contro d + 1; a d = 100 si legge 10.301 contro 101."
+   ],
+   "interactions": [
+    "pulsante 'Genera un salmone'",
+    "pulsante 'Luminosità mancante'",
+    "slider d da 2 a 100",
+    "trascinare un pesce per vedere entrambe le decisioni"
+   ],
+   "visual": "Diagrammi di dispersione affiancati, ellissi gaussiane animate a sinistra, retta a destra, contatori dei parametri con formula e numeri sostituiti, pulsanti che si attivano solo dove il compito è possibile.",
+   "aha": "Il generativo modella tutto e quindi sa generare e completare dati; il discriminativo spende ogni parametro sulla frontiera ed è molto più economico, ma sa solo classificare.",
+   "formulasShown": [
+    "p(\\mathbf{x}, y) = p(\\mathbf{x} \\mid y)\\, p(y)",
+    "f(\\mathbf{x}) = \\mathbf{w}^T\\mathbf{x} + w_0",
+    "\\#\\theta_{\\text{gen}} = 2\\left(d + \\frac{d(d+1)}{2}\\right) + 1 \\qquad \\#\\theta_{\\text{discr}} = d + 1"
+   ],
+   "challenge": "Con 50 pesci per classe, per quale d il modello generativo ha più parametri che esempi? (d = 9: 2(9 + 45) + 1 = 109 > 100.)",
+   "size": "L",
+   "tech": "svg+motion"
+  },
+  {
+   "id": "p06-distribuzioni-complesse",
+   "title": "Distribuzioni complicate, frontiera semplice",
+   "concepts": [
+    "c08",
+    "c09",
+    "c10"
+   ],
+   "scenario": "telerilevamento",
+   "realExample": "Un drone con camera multispettrale classifica i pixel di un'immagine agricola in acqua o vegetazione usando la riflettanza nel rosso e nel vicino infrarosso (dati sintetici). La vegetazione ha più modi (prato, bosco, colture) ma la frontiera con l'acqua è quasi una retta.",
+   "storyboard": [
+    "Nuvola di 1.500 pixel nel piano rosso-infrarosso: l'acqua è un gruppo compatto, la vegetazione ha tre gruppi separati.",
+    "Slider 'complessità della distribuzione' da 1 a 5 modi per classe: i gruppi si dividono in 600 ms; il modello generativo con una gaussiana per classe mostra un'ellisse enorme che copre zone vuote e la sua log-verosimiglianza crolla; per rimediare serve una mistura con K componenti e il contatore dei parametri sale con la formula K(2 + 3) + (K − 1) per classe, con K sostituito (in 2D 2 parametri di media e 3 di covarianza per componente, più K − 1 pesi di mistura).",
+    "La retta discriminativa resta con 3 parametri e accuratezza del 98% a ogni livello di complessità.",
+    "Pannello 'Obiettivo': in modalità generativa si illuminano tutti i pixel (bisogna spiegare l'intera nuvola), in modalità discriminativa brillano solo i pixel vicini alla retta (contano solo gli errori sulla frontiera).",
+    "Slider 'budget di parametri' da 3 a 40: con budget 3 il discriminativo arriva al 98%, il generativo resta sotto finché il budget non basta a descrivere tutti i modi."
+   ],
+   "interactions": [
+    "slider complessità da 1 a 5 modi per classe",
+    "slider budget di parametri da 3 a 40",
+    "interruttore obiettivo generativo / discriminativo",
+    "pulsante Addestra (animazione di 1 s per modello)"
+   ],
+   "visual": "Canvas con migliaia di pixel colorati per classe, ellissi o misture sovrapposte, retta di separazione, grafici a barre di accuratezza e parametri usati.",
+   "aha": "Quando i dati sono complicati ma la frontiera è semplice, modellare le distribuzioni è costoso e inutile: il discriminativo usa parametri e dati solo dove servono e ha un obiettivo più semplice.",
+   "formulasShown": [
+    "\\#\\theta_{\\text{mix}} = K\\left(2 + 3\\right) + (K - 1) \\text{ per classe}",
+    "f(\\mathbf{x}) = w_1 x_{\\text{rosso}} + w_2 x_{\\text{NIR}} + w_0"
+   ],
+   "challenge": "Con un budget di 10 parametri, quale approccio raggiunge l'accuratezza più alta con 4 modi per classe?",
+   "size": "M",
+   "tech": "canvas2d"
+  },
+  {
+   "id": "p06-cosa-non-sa-fare-il-discriminativo",
+   "title": "Cosa non sa fare un modello discriminativo",
+   "concepts": [
+    "c11",
+    "c12",
+    "c13"
+   ],
+   "scenario": "medicina",
+   "realExample": "Un classificatore lineare discriminativo distingue ECG normali da aritmie usando frequenza cardiaca e durata del QRS (dati sintetici). I medici vorrebbero anche generare ECG sintetici per la formazione, completare misure mancanti e fidarsi della confidenza del modello.",
+   "storyboard": [
+    "Tre carte-richiesta: 'Predici l'etichetta', 'Genera un ECG di aritmia', 'Stima il QRS mancante'. La prima produce un'etichetta con animazione verde; le altre due si capovolgono in 400 ms mostrando una croce rossa e la spiegazione 'task-specific: il modello non conosce p(x|y)'.",
+    "Pannello calibrazione: a ogni paziente il modello associa una confidenza ricavata dal punteggio (sigmoide di α f(x), scelta didattica dichiarata). Slider α da 1 a 20 (scala di w): la retta di decisione non si muove, ma le confidenze salgono verso 0,99, anche sui pazienti classificati male (contorno rosso).",
+    "Diagramma di affidabilità: 10 barre (confidenza media contro frequenza reale di risposte corrette) con la diagonale ideale; con α grande le barre scendono sotto la diagonale e un indicatore ECE cresce.",
+    "Messaggio finale quando α = 20: 'dice 99% di sicurezza e sbaglia un paziente su cinque in quella fascia'."
+   ],
+   "interactions": [
+    "clic sulle tre carte-richiesta",
+    "slider α da 1 a 20 (passo 0,5)",
+    "clic su un paziente per vedere f(x), σ(α f(x)) con i numeri sostituiti ed esito"
+   ],
+   "visual": "Carte con animazione di capovolgimento, diagramma di dispersione con retta fissa e punti colorati per confidenza, reliability diagram a barre con diagonale e valore ECE live.",
+   "aha": "Un modello discriminativo risponde a una sola domanda (quale classe?); non genera dati, non completa quelli mancanti, e i suoi numeri di confidenza possono essere troppo sicuri anche quando sbaglia.",
+   "formulasShown": [
+    "\\hat{p} = \\sigma\\left(\\alpha f(\\mathbf{x})\\right)",
+    "\\mathrm{ECE} = \\sum_{m} \\frac{|B_m|}{n}\\left|\\mathrm{acc}(B_m) - \\mathrm{conf}(B_m)\\right|"
+   ],
+   "challenge": "Trova il valore di α per cui le barre stanno il più vicino possibile alla diagonale (ECE minimo).",
+   "size": "M",
+   "tech": "svg+motion"
+  },
+  {
+   "id": "p06-iperpiano-trascinabile",
+   "title": "La retta che smista salmoni e spigole",
+   "concepts": [
+    "c14",
+    "c15",
+    "c19",
+    "c20"
+   ],
+   "scenario": "pesce",
+   "realExample": "Sul nastro trasportatore dell'impianto una telecamera misura luminosità x₁ e larghezza x₂ di ogni pesce; il classificatore lineare sign(w₁x₁ + w₂x₂ + w₀) decide se mandarlo nella cassa delle spigole (+1) o dei salmoni (−1). Dati sintetici.",
+   "storyboard": [
+    "Piano luminosità-larghezza con 40 pesci di training; la retta H divide il piano in due semipiani colorati (azzurro f > 0 spigola, rosa f < 0 salmone).",
+    "Slider w₁, w₂: la retta ruota; slider w₀: la retta trasla parallelamente a sé stessa (l'etichetta 'w₀ sposta il confine rispetto all'origine' lampeggia).",
+    "Pulsante 'Nastro': un nuovo pesce scorre da sinistra in 1,2 s e si ferma nel suo punto; il riquadro formula mostra f(x) = w₁·x₁ + w₂·x₂ + w₀ con i numeri sostituiti, poi sign(·) e l'etichetta; il pesce cade nella cassa giusta in 500 ms.",
+    "Il contatore degli errori sul training si aggiorna a ogni movimento degli slider; i pesci sbagliati hanno un contorno rosso pulsante.",
+    "Interruttore 'wᵀx come somma': accanto al pesce selezionato compaiono le barre w₁x₁ e w₂x₂ impilate più la barra w₀, la cui somma è f(x)."
+   ],
+   "interactions": [
+    "slider w₁ e w₂ da −3 a 3",
+    "slider w₀ da −20 a 20",
+    "pulsante 'Nastro' per far arrivare un pesce",
+    "trascinare un pesce",
+    "interruttore 'wᵀx come somma'"
+   ],
+   "visual": "SVG con assi, punti colorati per specie, semipiani tinteggiati, retta H, formula live con valori sostituiti, contatore errori, barre impilate dei contributi.",
+   "aha": "Un classificatore lineare è solo un punteggio pesato più una soglia: i pesi orientano la retta, il bias la sposta, il segno sceglie la cassa.",
+   "formulasShown": [
+    "f(\\mathbf{x}) = \\mathbf{w}^T\\mathbf{x} + w_0",
+    "f(\\mathbf{x}) = \\mathrm{sign}\\left(\\mathbf{w}^T\\mathbf{x} + w_0\\right)"
+   ],
+   "challenge": "Porta gli errori sul training a 2 o meno in 30 secondi usando solo gli slider.",
+   "size": "M",
+   "tech": "svg+motion"
+  },
+  {
+   "id": "p06-iperpiano-h",
+   "title": "w è la normale dell'iperpiano",
+   "concepts": [
+    "c21",
+    "c22"
+   ],
+   "scenario": "pesce",
+   "realExample": "Lo stesso classificatore dei pesci: capire geometricamente che la retta di decisione è l'insieme f(x) = 0 e che il vettore dei pesi w è perpendicolare a essa, cioè indica la direzione in cui il punteggio cresce più in fretta.",
+   "storyboard": [
+    "Il piano mostra le curve di livello di f(x) a −2, −1, 0, 1, 2: rette parallele; quella a 0, più spessa, è H.",
+    "Due punti trascinabili x e x' vincolati a scorrere su H; il vettore x − x' è disegnato lungo H, la freccia w parte da H; il riquadro mostra wᵀx + w₀ − wᵀx' − w₀ = 0 e wᵀ(x − x') = 0,00 con l'angolo di 90° segnato.",
+    "Trascinando la punta di w l'iperpiano ruota in tempo reale restando perpendicolare; le curve di livello ruotano con lui e il simbolo di angolo retto resta a 90°; lo slider w₀ trasla H senza cambiarne l'orientamento.",
+    "Interruttore 'libera x′': x' può uscire da H; il prodotto scalare diventa diverso da zero e il riquadro mostra che vale f(x) − f(x')."
+   ],
+   "interactions": [
+    "trascinare x e x' lungo H (vincolati alla retta)",
+    "trascinare la punta di w (componenti da −3 a 3)",
+    "slider w₀ da −5 a 5",
+    "interruttore 'libera x′'"
+   ],
+   "visual": "SVG con curve di livello di f, iperpiano spesso, due punti, vettore differenza, freccia w, simbolo di angolo retto, calcolo del prodotto scalare live.",
+   "aha": "Ogni direzione dentro l'iperpiano ha prodotto scalare nullo con w: w è la normale di H e punta verso la classe positiva.",
+   "formulasShown": [
+    "H : \\mathbf{w}^T\\mathbf{x} + w_0 = 0",
+    "\\mathbf{w}^T(\\mathbf{x} - \\mathbf{x}') = 0"
+   ],
+   "challenge": "Sposta x' fuori da H in modo che wᵀ(x − x') valga −3.",
+   "size": "S",
+   "tech": "svg+motion"
+  },
+  {
+   "id": "p06-lineare-come-benchmark",
+   "title": "Prima il lineare: il benchmark da battere",
+   "concepts": [
+    "c16",
+    "c17",
+    "c18"
+   ],
+   "scenario": "banca",
+   "realExample": "Una piccola banca ha solo 40 prestiti storici (dati sintetici) con reddito e rapporto rata/reddito, etichettati restituito o insolvente. Prima di comprare un modello complesso vuole sapere se batte un semplice classificatore lineare, e il revisore deve poter leggere i pesi.",
+   "storyboard": [
+    "Slider N (esempi di training) da 10 a 500. Due pannelli: modello lineare (3 parametri) e modello flessibile (1-NN), con i rispettivi confini ridisegnati in 400 ms a ogni cambio di N; sotto ciascun pannello l'errore di training e di test in percentuale.",
+    "Con N piccolo il confine del modello flessibile è frastagliato attorno a ogni punto; il grafico dell'errore di test mostra il lineare più basso.",
+    "Aumentando N il confine flessibile si ammorbidisce e le due curve di errore si avvicinano; la frontiera vera (leggermente curva) permette al modello flessibile di scendere sotto il benchmark solo oltre un certo N.",
+    "Una linea orizzontale tratteggiata 'benchmark lineare' attraversa il grafico; un badge dice 'il modello complesso vale la pena?' e diventa verde solo quando la sua curva sta sotto.",
+    "Carta 'Interpretabilità': i pesi del modello lineare letti come frasi ('reddito: peso −0,8, più reddito meno rischio'; 'rata/reddito: +1,3')."
+   ],
+   "interactions": [
+    "slider N da 10 a 500",
+    "pulsante 'Nuovo campione' (rigenera i dati)",
+    "hover sui pesi per leggerne l'interpretazione"
+   ],
+   "visual": "Canvas con due mappe di decisione colorate, grafico errore di test contro N con due curve e linea di benchmark, carta dei pesi.",
+   "aha": "Con pochi dati il lineare è difficile da battere perché non ha abbastanza parametri per inseguire il rumore; è veloce, leggibile e fa da metro per decidere se serve di più.",
+   "formulasShown": [
+    "f(\\mathbf{x}) = w_1 x_{\\text{reddito}} + w_2 x_{\\text{rata}} + w_0"
+   ],
+   "challenge": "Trova il valore di N oltre il quale il modello flessibile batte stabilmente il benchmark lineare.",
+   "size": "M",
+   "tech": "canvas2d"
+  },
+  {
+   "id": "p06-due-margini",
+   "title": "Margine funzionale e margine geometrico",
+   "concepts": [
+    "c23",
+    "c24",
+    "c25",
+    "c30"
+   ],
+   "scenario": "pesce",
+   "realExample": "Il controllo qualità dell'impianto vuole sapere quanto è sicura ogni decisione: un pesce lontano dalla retta è classificato con fiducia, uno vicino è dubbio. Le feature sono standardizzate (stessa scala), dati sintetici.",
+   "storyboard": [
+    "Un pesce trascinabile; dal pesce parte un segmento tratteggiato perpendicolare a H con la lunghezza r^x; due indicatori a barra: margine funzionale f(x) e margine geometrico r^x = f(x)/||w|| con i numeri sostituiti.",
+    "Slider α da 0,2 a 5 che moltiplica sia w sia w₀: la retta resta ferma (animazione di conferma: nessun pixel si muove), la barra di f(x) si allunga di α volte, quella di r^x non cambia; compare l'etichetta 'invariante alla scala di w'.",
+    "Trascinando il pesce oltre H i due margini cambiano segno insieme e il colore passa da azzurro a rosa; un tooltip mostra |r^x| come distanza vera.",
+    "Classifica di 5 pesci per confidenza: l'ordine per |f(x)| e per |r^x| coincide, ma i valori di f cambiano con α e quelli di r^x no."
+   ],
+   "interactions": [
+    "trascinare il pesce",
+    "slider α da 0,2 a 5",
+    "clic su un pesce della classifica"
+   ],
+   "visual": "SVG con retta, segmento perpendicolare quotato, due barre orizzontali con valori, classifica laterale, formula live r^x = f(x)/||w|| con numeri.",
+   "aha": "Il margine funzionale misura la confidenza in unità arbitrarie che dipendono dalla scala di w; il margine geometrico è la vera distanza dalla frontiera, con segno.",
+   "formulasShown": [
+    "r^{\\mathbf{x}} = \\frac{f(\\mathbf{x})}{\\|\\mathbf{w}\\|}",
+    "f_{\\alpha}(\\mathbf{x}) = \\alpha f(\\mathbf{x}) \\qquad r^{\\mathbf{x}}_{\\alpha} = r^{\\mathbf{x}}"
+   ],
+   "challenge": "Trova due coppie (w, w₀) che danno la stessa retta ma margini funzionali che differiscono di 10 volte per lo stesso pesce.",
+   "size": "M",
+   "tech": "svg+motion"
+  },
+  {
+   "id": "p06-dimostrazione-margine-geometrico",
+   "title": "La dimostrazione del margine geometrico, passo per passo",
+   "concepts": [
+    "c26",
+    "c27",
+    "c28",
+    "c29"
+   ],
+   "scenario": "pesce",
+   "realExample": "Stesso impianto: il pesce x viene scomposto in proiezione sulla retta di decisione più spostamento lungo la normale, per ricavare r^x = f(x)/||w|| e la distanza dell'origine dalla retta. Numeri sintetici con feature standardizzate.",
+   "storyboard": [
+    "Ricostruzione animata della figura di pagina 33: assi x₁, x₂, retta H, freccia w dall'origine, versore w/||w|| a lato, punto x.",
+    "Passo 1 'Scomponi': dal punto x cade il piede della perpendicolare x^p su H; si disegna il vettore x^p dall'origine e poi, in coda, il vettore r^x w/||w|| fino a x; si evidenzia x = x^p + r^x w/||w||.",
+    "Passo 2 'Sostituisci': compare f(x) = wᵀ(x^p + r^x w/||w||) + w₀ con i numeri del punto corrente.",
+    "Passo 3 'Espandi': l'espressione si divide in due termini; il blocco wᵀx^p + w₀ lampeggia e si trasforma in 0 con la nota 'x^p sta su H'.",
+    "Passo 4 'Semplifica': wᵀw/||w|| diventa ||w||, poi r^x = f(x)/||w|| con il valore numerico uguale alla lunghezza misurata del segmento.",
+    "Passo 5 'Caso x = 0': il punto x scivola nell'origine; compare il segmento r^0 fino a H e la formula r^0 = f(0)/||w|| = w₀/||w||, negativa quando l'origine sta dal lato opposto a w."
+   ],
+   "interactions": [
+    "pulsanti Avanti / Indietro tra i passi (transizione di 600 ms)",
+    "trascinare x",
+    "slider w₀ da −10 a 10 per spostare H",
+    "interruttore 'mostra i numeri'"
+   ],
+   "visual": "SVG con vettori colorati per ruolo (x^p verde, r^x w/||w|| arancio, w nero), formula a destra con il termine attivo evidenziato e i valori sostituiti.",
+   "aha": "Il margine funzionale e la distanza differiscono solo per il fattore ||w||: basta scomporre x lungo la normale e usare f(x^p) = 0.",
+   "formulasShown": [
+    "\\mathbf{x} = \\mathbf{x}^p + r^{\\mathbf{x}}\\frac{\\mathbf{w}}{\\|\\mathbf{w}\\|}",
+    "f(\\mathbf{x}) = r^{\\mathbf{x}}\\|\\mathbf{w}\\|",
+    "r^{\\mathbf{0}} = \\frac{f(\\mathbf{0})}{\\|\\mathbf{w}\\|} = \\frac{w_0}{\\|\\mathbf{w}\\|}"
+   ],
+   "challenge": "Prima di muovere lo slider w₀, prevedi il segno di r^0 e verifica.",
+   "size": "M",
+   "tech": "svg+motion"
+  },
+  {
+   "id": "p06-anatomia-neurone",
+   "title": "Anatomia di un neurone e il suo gemello artificiale",
+   "concepts": [
+    "c31",
+    "c32"
+   ],
+   "scenario": "pesce",
+   "realExample": "Il neurone biologico come modello del perceptron che smista i pesci: i dendriti ricevono i segnali luminosità e larghezza, le sinapsi li pesano, il soma li somma, l'assone porta la decisione alla paratia del nastro.",
+   "storyboard": [
+    "Disegno stilizzato di un neurone come quello di pagina 34: dendriti ramificati, corpo cellulare con nucleo, lungo assone, rami terminali e sinapsi con un secondo neurone.",
+    "Passando il mouse su ogni parte si evidenzia e compare la scheda IT/EN (Soma, Dendrites, Axon, Synapses) con la funzione; sull'assone un righello animato mostra 'fino a 100 volte il diametro del soma'.",
+    "Interruttore 'vista artificiale': in 800 ms il disegno si trasforma nello schema del perceptron: dendriti → archi d'ingresso, sinapsi → pesi w^i, soma → nodo Σ, assone → uscita verso la paratia.",
+    "Vista 'rete': molti neuroni densamente interconnessi con impulsi che viaggiano, a ricordare che il cervello è una rete e non un singolo neurone."
+   ],
+   "interactions": [
+    "hover sulle parti del neurone",
+    "interruttore vista biologica / artificiale",
+    "gioco di trascinamento delle etichette sulle parti"
+   ],
+   "visual": "SVG con illustrazione del neurone, schede informative, morphing verso lo schema del perceptron, piccola rete animata.",
+   "aha": "Ogni pezzo del perceptron ha un corrispondente biologico: ingressi, pesi, somma, uscita.",
+   "formulasShown": [
+    "f(\\mathbf{x}) = \\mathrm{sign}\\left(\\sum_{i=1}^{m} w^{i} x^{i} + w^{0}\\cdot 1\\right)"
+   ],
+   "challenge": "Trascina le quattro etichette (soma, dendriti, assone, sinapsi) sulle parti giuste e poi sui blocchi corrispondenti del perceptron.",
+   "size": "S",
+   "tech": "svg+motion"
+  },
+  {
+   "id": "p06-neurone-che-spara",
+   "title": "Il neurone che spara: eccitazione, inibizione, soglia",
+   "concepts": [
+    "c33",
+    "c34",
+    "c35"
+   ],
+   "scenario": "pesce",
+   "realExample": "Un neurone didattico decide se aprire la paratia delle spigole: una sinapsi eccitatoria porta la luminosità, una eccitatoria la larghezza, una inibitoria un segnale di 'pesce danneggiato'. Se il potenziale supera la soglia il neurone spara e la paratia si apre.",
+   "storyboard": [
+    "Neurone con tre sinapsi colorate (verde +, verde +, rossa −) e un grafico del potenziale di membrana nel tempo con la soglia θ tratteggiata.",
+    "Arriva un pesce: gli impulsi partono dai dendriti con intensità proporzionale alle feature; il potenziale sale per gli impulsi eccitatori e scende per quello inibitorio.",
+    "Se il potenziale supera θ il neurone 'spara': un impulso luminoso corre lungo l'assone in 500 ms e la paratia si apre; altrimenti il potenziale torna a riposo.",
+    "Slider dei pesi sinaptici e della soglia: il riquadro traduce in tempo reale 'spara se Σ wᵢxᵢ > θ' in sign(wᵀx + w₀) con w₀ = −θ, mostrando la somma con i valori del pesce corrente (per esempio 0,8·1,2 + 0,5·0,9 − 1,5·1 = −0,09 < θ).",
+    "Sequenza di 10 pesci: sotto il grafico compare la riga di decisioni ±1, identica a quella di un classificatore lineare con gli stessi pesi."
+   ],
+   "interactions": [
+    "slider dei tre pesi sinaptici da −2 a 2 (negativo = inibitorio)",
+    "slider soglia θ da 0 a 5",
+    "pulsante 'Prossimo pesce'",
+    "Play per la sequenza (un pesce ogni 1,5 s)"
+   ],
+   "visual": "Canvas con neurone, impulsi animati lungo dendriti e assone, traccia del potenziale con soglia, riquadro con la traduzione nella formula del perceptron.",
+   "aha": "Eccitazione e inibizione sono pesi positivi e negativi, la soglia di sparo è il bias cambiato di segno: un neurone è un classificatore lineare.",
+   "formulasShown": [
+    "\\sum_i w_i x_i > \\theta \\;\\Longleftrightarrow\\; \\mathbf{w}^T\\mathbf{x} + w_0 > 0, \\quad w_0 = -\\theta"
+   ],
+   "challenge": "Regola pesi e soglia in modo che il neurone spari per tutte le spigole e per nessun salmone della sequenza.",
+   "size": "M",
+   "tech": "canvas2d"
+  },
+  {
+   "id": "p06-schema-perceptron",
+   "title": "Lo schema del perceptron in azione",
+   "concepts": [
+    "c36",
+    "c37"
+   ],
+   "scenario": "spam",
+   "realExample": "Un perceptron antispam riceve per ogni email le feature x^1 = numero di 'gratis', x^2 = numero di punti esclamativi, x^3 = numero di link, …, x^m = lunghezza dell'oggetto; l'uscita +1 manda l'email in Spam, −1 in Posta in arrivo. Email e pesi sintetici.",
+   "storyboard": [
+    "Schema come a pagina 35: box 'Bias' con 1, box degli ingressi x^1 … x^m, archi con i pesi w^0 … w^m, nodo Σ giallo, box 'Activation function' con il gradino verde, uscita.",
+    "Si sceglie un'email dalla casella: i box d'ingresso si riempiono con i valori; lungo ogni arco scorre in 700 ms una particella con il prodotto w^i x^i, archi più spessi per |w| grandi, verdi se positivi e rossi se negativi.",
+    "Il nodo Σ accumula i contributi con un contatore; il valore passa al gradino, dove un punto si posiziona sul grafico e salta a +1 o −1.",
+    "L'email vola nella cartella Spam o Posta in arrivo; se l'etichetta vera è diversa compare un bollino 'errore'.",
+    "Si possono modificare i pesi trascinando lo spessore degli archi; l'interruttore 'bias come ingresso costante 1' evidenzia il box 1 e il peso w^0."
+   ],
+   "interactions": [
+    "clic su un'email della casella",
+    "trascinare lo spessore di un arco per cambiarne il peso (da −3 a 3)",
+    "interruttore 'bias come ingresso costante 1'",
+    "slider velocità delle particelle da 0,5× a 2×"
+   ],
+   "visual": "Diagramma SVG fedele allo schema delle note, particelle animate lungo gli archi, contatore nel nodo Σ, grafico del gradino con il punto corrente, cartelle di destinazione.",
+   "aha": "Il perceptron è somma pesata più soglia: il bias è solo un peso su un ingresso che vale sempre 1, e il gradino trasforma il punteggio in un'etichetta ±1.",
+   "formulasShown": [
+    "f(\\mathbf{x}) = \\mathrm{sign}\\left(\\sum_{i=1}^{m} w^{i} x^{i} + w^{0}\\cdot 1\\right)",
+    "\\mathrm{sign}(a) = \\begin{cases} +1 & a > 0 \\\\ -1 & a < 0 \\end{cases}"
+   ],
+   "challenge": "Trova l'email con la somma più vicina a zero e cambia una sola parola perché passi dall'altra parte.",
+   "size": "M",
+   "tech": "svg+motion"
+  },
+  {
+   "id": "p06-porte-logiche",
+   "title": "Porte logiche con un perceptron: AND sì, XOR mai",
+   "concepts": [
+    "c38",
+    "c39",
+    "c76"
+   ],
+   "scenario": "fonte",
+   "realExample": "Le funzioni booleane citate nelle note (AND, OR, NAND, NOT, XOR) su ingressi in {0,1}: per esempio la regola di un allarme 'porta aperta AND sistema inserito', o lo XOR 'esattamente uno dei due sensori attivo'. Si verifica quali può imparare un singolo perceptron.",
+   "storyboard": [
+    "Schede AND / OR / NAND / NOT / XOR. Il quadrato unitario mostra i vertici colorati secondo la tabella di verità della porta scelta (verde = 1, grigio = 0); per NOT un solo asse.",
+    "L'utente trascina la retta o usa gli slider w₁, w₂, w₀: ogni vertice mostra ✓ o ✗ e il suo punteggio w₁x₁ + w₂x₂ + w₀.",
+    "Pulsante 'Addestra': parte il perceptron stocastico dai pesi nulli; per AND, OR, NAND e NOT la retta si assesta in poche epoche e un contatore mostra il numero di aggiornamenti.",
+    "Scheda XOR, 'Addestra': la retta continua a saltare, il contatore delle epoche sale senza fermarsi, gli errori non scendono mai sotto 1; dopo 100 epoche compare il banner 'non converge: lo XOR non è linearmente separabile, il ciclo until-all-correct non termina'.",
+    "Pannello 'Perché': le quattro disuguaglianze dello XOR compaiono una alla volta e le due centrali si sommano fino a contraddire la quarta (der07)."
+   ],
+   "interactions": [
+    "schede delle cinque porte",
+    "trascinare la retta o usare gli slider w₁, w₂, w₀ da −3 a 3 (passo 0,1)",
+    "pulsante 'Addestra' con velocità da 1 a 20 aggiornamenti al secondo",
+    "pulsante 'Mostra la prova'"
+   ],
+   "visual": "SVG del quadrato unitario con vertici colorati, retta con semipiani, punteggi sui vertici, contatore di epoche e aggiornamenti, pannello con le disuguaglianze animate.",
+   "aha": "Un perceptron realizza ogni funzione che una retta separa (AND, OR, NAND, NOT); lo XOR no, e su dati non separabili l'algoritmo che itera finché tutto è corretto non si ferma mai.",
+   "formulasShown": [
+    "\\mathrm{AND}: \\mathrm{sign}(x_1 + x_2 - 1.5)",
+    "\\mathrm{OR}: \\mathrm{sign}(x_1 + x_2 - 0.5)",
+    "w_0 < 0,\\; w_1 + w_0 > 0,\\; w_2 + w_0 > 0,\\; w_1 + w_2 + w_0 < 0"
+   ],
+   "challenge": "Trova a mano i pesi di NAND in al massimo 5 mosse; poi prova a battere lo XOR (impossibile) e spiega perché.",
+   "size": "M",
+   "tech": "svg+motion"
+  },
+  {
+   "id": "p06-xor-a-due-strati",
+   "title": "Lo XOR con due strati e il prezzo della larghezza",
+   "concepts": [
+    "c40",
+    "c41"
+   ],
+   "scenario": "fonte",
+   "realExample": "Lo XOR delle note realizzato con una rete di perceptron a due strati in DNF, poi generalizzato alla parità di n bit (il bit di controllo di un pacchetto di dati): con due soli strati servono 2^(n−1) neuroni nascosti.",
+   "storyboard": [
+    "Tabella di verità dello XOR e formula DNF (x₁ ∧ ¬x₂) ∨ (¬x₁ ∧ x₂).",
+    "Primo strato: il perceptron h₁ disegna la sua retta nel quadrato unitario e isola il vertice (1,0); h₂ isola (0,1). Ogni retta appare con un'animazione di 500 ms.",
+    "Il quadrato si deforma nello spazio (h₁, h₂): i quattro ingressi diventano tre punti; il secondo strato (OR) traccia una retta che li separa. Il percorso di ogni ingresso è mostrato con una traccia animata.",
+    "Interruttore DNF / CNF: nella versione (x₁ ∨ x₂) ∧ (¬x₁ ∨ ¬x₂) il primo strato calcola due OR e il secondo un AND.",
+    "Slider n da 2 a 10 con la parità: il disegno della rete si allarga, i neuroni nascosti diventano 2, 4, 8, …, 512 e si rimpiccioliscono; un contatore mostra 2^(n−1) e l'etichetta 'shallow but wide'."
+   ],
+   "interactions": [
+    "interruttore DNF / CNF",
+    "clic su un ingresso per seguirne il percorso nella rete",
+    "slider n da 2 a 10"
+   ],
+   "visual": "SVG con quadrato unitario, rette del primo strato, spazio (h₁, h₂) trasformato, diagramma della rete che si allarga, contatore esponenziale.",
+   "aha": "Due strati bastano per qualsiasi funzione booleana (congiunzioni poi disgiunzione), ma il numero di neuroni esplode con il numero di ingressi.",
+   "formulasShown": [
+    "\\mathrm{XOR}(x_1, x_2) = (x_1 \\wedge \\neg x_2) \\vee (\\neg x_1 \\wedge x_2)",
+    "h_1 = \\mathrm{sign}(x_1 - x_2 - 0.5), \\quad h_2 = \\mathrm{sign}(x_2 - x_1 - 0.5), \\quad y = \\mathrm{sign}(h_1 + h_2 + 1)",
+    "\\#\\text{neuroni nascosti} = 2^{\\,n-1}"
+   ],
+   "challenge": "Costruisci i pesi della versione CNF dello XOR e verifica i quattro ingressi.",
+   "size": "M",
+   "tech": "svg+motion"
+  },
+  {
+   "id": "p06-profondo-contro-largo",
+   "title": "Profondo contro largo",
+   "concepts": [
+    "c42",
+    "c43"
+   ],
+   "scenario": "cifre",
+   "realExample": "Due casi: la parità di n bit (quanti neuroni servono con 2 strati e con molti strati) e il riconoscimento di cifre scritte a mano 8×8, dove gli strati di una rete profonda costruiscono tratti, poi anelli e aste, poi la cifra.",
+   "storyboard": [
+    "Scheda 'Parità': a sinistra la rete a due strati con 2^(n−1) neuroni nascosti, a destra una catena ad albero di blocchi XOR con circa 3(n−1) perceptron. Slider n da 2 a 16: con n = 16 i contatori segnano 32.768 contro 45.",
+    "Grafico in scala logaritmica dei due conteggi contro n: una retta che sale (esponenziale) e una curva quasi piatta (lineare).",
+    "Scheda 'Cifre': un 8 disegnato in una griglia 8×8 entra nella rete profonda; passando sulle unità del primo strato si vedono piccoli tratti orientati, nel secondo anelli e curve, nel terzo le cifre intere (campi recettivi sintetici).",
+    "Messaggio finale: 'ogni strato costruisce rappresentazioni più astratte riusando quelle sotto'."
+   ],
+   "interactions": [
+    "slider n da 2 a 16",
+    "schede Parità / Cifre",
+    "hover sulle unità della rete per vederne il campo recettivo",
+    "disegnare una cifra nella griglia"
+   ],
+   "visual": "SVG di due architetture affiancate, grafico logaritmico, griglia 8×8 e mappe dei campi recettivi per strato.",
+   "aha": "La profondità sostituisce la larghezza: comporre funzioni semplici strato dopo strato costa molto meno che elencare tutti i casi in un solo strato.",
+   "formulasShown": [
+    "2^{\\,n-1} \\;\\text{(due strati)} \\quad \\text{contro} \\quad 3(n-1) \\;\\text{(profonda)}"
+   ],
+   "challenge": "Indovina il più piccolo n per cui la rete a due strati supera 1.000 neuroni nascosti (n = 11).",
+   "size": "M",
+   "tech": "svg+motion"
+  },
+  {
+   "id": "p06-vettori-aumentati-3d",
+   "title": "Il bias sparisce in una dimensione in più",
+   "concepts": [
+    "c44",
+    "c45",
+    "c46"
+   ],
+   "scenario": "pesce",
+   "realExample": "I pesci del nastro, descritti da luminosità e larghezza, vengono 'sollevati' aggiungendo una feature costante 1: il classificatore con bias diventa un classificatore senza bias in tre dimensioni. È la notazione usata da qui in poi per l'addestramento.",
+   "storyboard": [
+    "Vista 2D: pesci e retta H che non passa per l'origine, con w e w₀ indicati.",
+    "Pulsante 'Solleva': la vista ruota in prospettiva 3D e ogni pesce sale sul piano x₀ = 1 (animazione di 800 ms), diventando x̂ = (1, x₁, x₂).",
+    "Compare la freccia ŵ = (w₀, w₁, w₂) dall'origine 3D e il piano separatore passante per l'origine; la sua intersezione con il piano x₀ = 1 si illumina e coincide con la retta H originale.",
+    "Slider w₀: in 2D la retta trasla, in 3D il piano ruota attorno all'origine; le due viste sono sincronizzate.",
+    "Riquadro prodotto scalare: per il pesce selezionato ŵᵀx̂ = w₀·1 + w₁x₁ + w₂x₂ e wᵀx + w₀ mostrano lo stesso numero. Interruttore 'notazione implicita': i cappelli spariscono dalle formule e resta sign(wᵀx)."
+   ],
+   "interactions": [
+    "pulsante 'Solleva' / 'Abbassa'",
+    "trascinare per ruotare la vista 3D",
+    "slider w₀ da −10 a 10",
+    "clic su un pesce",
+    "interruttore 'notazione implicita'"
+   ],
+   "visual": "Canvas con proiezione 3D (assi x₀, x₁, x₂), piano x₀ = 1 semitrasparente, piano separatore, intersezione evidenziata, vista 2D sincronizzata, riquadro con i due prodotti scalari.",
+   "aha": "Il bias è solo il peso di una feature che vale sempre 1: ogni iperpiano diventa un iperpiano per l'origine in una dimensione in più, e imparare ŵ equivale a imparare w e w₀.",
+   "formulasShown": [
+    "\\hat{\\mathbf{w}} = \\begin{pmatrix} w_0 \\\\ \\mathbf{w} \\end{pmatrix} \\qquad \\hat{\\mathbf{x}} = \\begin{pmatrix} 1 \\\\ \\mathbf{x} \\end{pmatrix}",
+    "\\hat{\\mathbf{w}}^T\\hat{\\mathbf{x}} = \\mathbf{w}^T\\mathbf{x} + w_0",
+    "f(\\mathbf{x}) = \\mathrm{sign}\\left(\\mathbf{w}^T\\mathbf{x}\\right)"
+   ],
+   "challenge": "Imposta ŵ in modo che la retta passi esattamente per un pesce scelto a caso.",
+   "size": "M",
+   "tech": "canvas2d"
+  },
+  {
+   "id": "p06-dalla-loss-all-errore",
+   "title": "Dalla loss del singolo pesce all'errore sul training set",
+   "concepts": [
+    "c47",
+    "c48",
+    "c49",
+    "c50"
+   ],
+   "scenario": "pesce",
+   "realExample": "Per imparare i pesi del classificatore dei pesci serve un numero da minimizzare: la loss di ogni pesce di training, sommata su tutti, dà l'errore E(w; D). È l'equivalente della verosimiglianza nella stima dei parametri. Dati sintetici, 12 pesci.",
+   "storyboard": [
+    "Dodici pesci di training con la retta corrente; sotto ogni pesce una barra con la sua loss l(y, f(x)).",
+    "Selettore della loss: 0/1 (errore sì/no), perceptron (−y f(x) solo se sbagliato), quadratica (y − f(x))²; le barre si ricalcolano con un'animazione.",
+    "Pulsante 'Somma': le barre volano in 800 ms e si impilano in una torre alta E(w; D); la formula Σ l(y, f(x)) mostra i dodici addendi con i numeri.",
+    "Ruotando o spostando la retta la torre cambia altezza in tempo reale; un piccolo grafico traccia E in funzione dell'angolo della retta.",
+    "Carta 'Analogia': a sinistra 'stima ML: massimizza log p(D | θ)', a destra 'classificatore: minimizza E(w; D)'. Interruttore 'Overfitting?': compaiono 12 pesci di test (contorno tratteggiato) e due barre, errore di training e di test della retta; la differenza resta piccola (3 parametri), mentre per confronto una frontiera 1-NN ha errore di training 0 e test molto più alto. Etichetta: 'per i classificatori lineari l'overfitting è meno grave: per ora si minimizza solo l'errore'."
+   ],
+   "interactions": [
+    "selettore della loss (0/1, perceptron, quadratica)",
+    "ruotare la retta (angolo da 0° a 360°) e traslarla (w₀ da −5 a 5)",
+    "pulsante 'Somma'",
+    "clic su un pesce per vedere il calcolo della sua loss",
+    "interruttore 'Overfitting?'"
+   ],
+   "visual": "SVG con pesci, retta, barre di loss colorate per esempio, torre impilata di E, grafico E contro angolo, formula con addendi numerici.",
+   "aha": "L'apprendimento diventa ottimizzazione: si sceglie una loss che punisce di più gli errori gravi, la si somma sul training set e si cerca il w che la rende minima.",
+   "formulasShown": [
+    "E(\\mathbf{w}; D) = \\sum_{(\\mathbf{x}, y) \\in D} l\\left(y, f(\\mathbf{x})\\right)"
+   ],
+   "challenge": "Con la loss 0/1 trova una retta con E = 0: è unica? Confronta con la loss del perceptron.",
+   "size": "M",
+   "tech": "svg+motion"
+  },
+  {
+   "id": "p06-discesa-del-gradiente",
+   "title": "Scendere la valle dell'errore: il passo η",
+   "concepts": [
+    "c51",
+    "c52",
+    "c53",
+    "c54"
+   ],
+   "scenario": "energia",
+   "realExample": "Un impianto fotovoltaico adatta un modello a due parametri della radiazione solare giornaliera (ampiezza e frequenza di un'oscillazione) alle misure orarie (dati sintetici). Non c'è soluzione in forma chiusa e l'errore quadratico ha più minimi locali (frequenze sbagliate che si adattano in parte): si usa la discesa del gradiente.",
+   "storyboard": [
+    "Mappa a curve di livello dell'errore E(w₁, w₂) con colori caldi-freddi; i minimi sono segnati da piccoli cerchi, il più profondo con una stella.",
+    "Clic sulla mappa per scegliere il punto iniziale (predefinito w = 0); una pallina appare; la freccia rossa del gradiente punta in salita, la freccia verde −η∇E indica il passo.",
+    "Play: la pallina scende passo dopo passo lasciando una traccia; un grafico sotto mostra E e ||∇E|| per iterazione; si ferma quando ||∇E|| < ε con l'etichetta '∇E ≃ 0'. A fianco il grafico del modello sulle misure si adatta a ogni passo.",
+    "Slider η: con 0,001 la pallina striscia per centinaia di passi; con un valore medio scende pulita; con un valore grande fa zig-zag; oltre una soglia diverge e compare l'avviso 'η troppo grande'.",
+    "Interruttore 'η adattivo' (riduzione del passo quando l'errore sale): la stessa discesa arriva prima e senza oscillazioni.",
+    "Partendo da punti diversi la pallina finisce in minimi diversi: etichetta 'ottimo locale'.",
+    "Interruttore 'Perché scende' (der10): attorno alla pallina compare il piano tangente (approssimazione al primo ordine); il riquadro confronta la previsione E(w) − η||∇E||² con il valore vero E(w − η∇E): per η piccolo coincidono, per η grande la curvatura (termine in η²) le separa e l'errore risale."
+   ],
+   "interactions": [
+    "clic sulla mappa per il punto iniziale",
+    "slider η in scala logaritmica da 0,001 a 2",
+    "pulsanti Play (5 passi al secondo) / Passo / Reset",
+    "interruttore 'η adattivo'",
+    "interruttore 'Perché scende'"
+   ],
+   "visual": "Canvas con mappa di calore e curve di livello, pallina con frecce del gradiente e del passo, traccia della traiettoria, grafici di E e della norma del gradiente, curva del modello sulle misure.",
+   "aha": "Il gradiente indica la salita più ripida: si fa un passo nel verso opposto, lungo η; η piccolo è lento, η grande oscilla o diverge, e si arriva a un minimo locale che dipende da dove si parte.",
+   "formulasShown": [
+    "\\mathbf{w} = \\mathbf{w} - \\eta\\nabla E(\\mathbf{w}; D)",
+    "\\nabla E(\\mathbf{w}; D) \\simeq \\mathbf{0}",
+    "E(\\mathbf{w} - \\eta\\nabla E) \\approx E(\\mathbf{w}) - \\eta\\|\\nabla E(\\mathbf{w})\\|^2"
+   ],
+   "challenge": "Raggiungi il minimo globale (stella) in meno di 30 passi scegliendo punto iniziale e η.",
+   "size": "L",
+   "tech": "canvas2d"
+  },
+  {
+   "id": "p06-perdita-a-gradini-vs-perceptron",
+   "title": "Perché non contare gli errori: gradini contro rampa",
+   "concepts": [
+    "c55",
+    "c56",
+    "c57",
+    "c63"
+   ],
+   "scenario": "pesce",
+   "realExample": "Con feature standardizzate e bias nullo, il classificatore dei pesci è individuato dall'angolo θ del vettore w. Si confrontano due modi di misurare l'errore: il conteggio dei pesci sbagliati e la loss del perceptron che somma −y wᵀx sui pesci sbagliati. Dati sintetici, 20 pesci.",
+   "storyboard": [
+    "In alto il piano dei pesci con w (lunghezza 1) e il confine perpendicolare; slider θ da 0° a 360° fa ruotare entrambi.",
+    "In basso due curve in funzione di θ: il numero di errori (una scala di gradini) e l'errore del perceptron (una curva continua a tratti). Un cursore verticale segue θ.",
+    "Al cursore si disegna la pendenza: sui gradini è piatta (gradiente 0) o indefinita nei salti; sulla curva del perceptron è una freccia che indica da che parte scendere.",
+    "Pannello per punto: ogni pesce mostra la barra y f(x), verde e lunga se corretto e sicuro, rossa se sbagliato; i pesci in rosso sono quelli che contribuiscono a −y f(x).",
+    "Interruttore 'metti sign dentro la loss': la curva del perceptron collassa sui gradini (−y·sign vale 1 per ogni errore) e il messaggio spiega che nella loss f(x) deve essere il punteggio lineare."
+   ],
+   "interactions": [
+    "slider θ da 0° a 360°",
+    "interruttore 'metti sign dentro la loss'",
+    "hover su un pesce per il suo y f(x)"
+   ],
+   "visual": "SVG con piano ruotabile, due grafici sincronizzati (gradini e rampa), frecce di pendenza, barre y f(x) per pesce colorate per segno.",
+   "aha": "Il conteggio degli errori non dice mai da che parte andare; −y f(x) misura quanto è grave ogni errore e dà una pendenza utile alla discesa del gradiente.",
+   "formulasShown": [
+    "E_{0/1}(\\mathbf{w}; D) = \\sum_{(\\mathbf{x}, y) \\in D} \\mathbb{1}\\left[y \\neq \\mathrm{sign}(\\mathbf{w}^T\\mathbf{x})\\right]",
+    "y f(\\mathbf{x}) > 0 \\iff \\text{corretto} \\qquad y f(\\mathbf{x}) < 0 \\iff \\text{errato}",
+    "\\min_{\\mathbf{w}} \\; -y f(\\mathbf{x})",
+    "E(\\mathbf{w}; D) = \\sum_{(\\mathbf{x}, y) \\in D_E} -y\\,\\mathbf{w}^T\\mathbf{x}"
+   ],
+   "challenge": "Da un angolo in cui i gradini sono piatti, prevedi in che verso ruotare per ridurre gli errori usando solo la curva del perceptron.",
+   "size": "M",
+   "tech": "svg+motion"
+  },
+  {
+   "id": "p06-criterio-del-perceptron",
+   "title": "Il criterio del perceptron e il suo gradiente",
+   "concepts": [
+    "c58",
+    "c59",
+    "c60"
+   ],
+   "scenario": "pesce",
+   "realExample": "Il classificatore dei pesci con i pesi correnti sbaglia alcuni pesci: si costruisce l'insieme D_E, si calcola l'errore del perceptron come somma dei loro margini e si assembla il gradiente come somma dei vettori y x. Dati sintetici in notazione aumentata.",
+   "storyboard": [
+    "Pesci e retta corrente; i pesci mal classificati pulsano e compaiono nella lista D_E con il loro y f(x) ≤ 0.",
+    "Per ogni pesce in D_E un segmento perpendicolare alla retta, etichettato con −y f(x) = |f(x)|; i valori si impilano in una barra E(w; D). I pesci corretti diventano semitrasparenti con l'etichetta 'contributo 0'.",
+    "Costruttore del gradiente: dall'origine partono i vettori y x dei pesci sbagliati (verso il pesce se y = +1, opposto se y = −1); poi si mettono in coda uno dopo l'altro formando la somma Σ y x; la freccia risultante è −∇E, quella opposta ∇E.",
+    "Passando sul termine della formula si illumina il pesce corrispondente e viceversa.",
+    "Interruttore 'somma anche sui corretti' (der09): se si somma −y wᵀx anche sugli esempi corretti, allungando w (slider di scala) l'errore scende senza limite e il contatore corre verso −∞; con la somma solo su D_E l'errore resta ≥ 0. Accanto, il grafico di max(0, −y wᵀx) per un esempio: una rampa nulla dal lato giusto, la forma equivalente su tutto D."
+   ],
+   "interactions": [
+    "trascinare la retta per cambiare D_E",
+    "pulsante 'Somma i vettori' (vettori in coda uno dopo l'altro, 400 ms ciascuno)",
+    "hover sui termini della formula o sui pesci",
+    "interruttore 'somma anche sui corretti' con slider di scala di w da 0,5 a 10"
+   ],
+   "visual": "SVG con retta, segmenti dei margini, barra impilata dell'errore, vettori y x colorati per classe concatenati testa-coda, formula con i numeri.",
+   "aha": "L'errore del perceptron conta solo gli esempi sbagliati, ciascuno pesato per quanto è lontano dal lato giusto; il suo gradiente è semplicemente −Σ y x.",
+   "formulasShown": [
+    "E(\\mathbf{w}; D) = \\sum_{(\\mathbf{x}, y) \\in D_E} -y f(\\mathbf{x})",
+    "D_E = \\left\\{(\\mathbf{x}, y) \\in D : y f(\\mathbf{x}) \\le 0\\right\\}",
+    "\\nabla E(\\mathbf{w}; D) = -\\sum_{(\\mathbf{x}, y) \\in D_E} y\\mathbf{x}",
+    "E(\\mathbf{w}; D) = \\sum_{(\\mathbf{x}, y) \\in D} \\max\\left(0, -y\\,\\mathbf{w}^T\\mathbf{x}\\right)"
+   ],
+   "challenge": "Prima di premere 'Somma i vettori', prevedi la direzione di −∇E disegnando una freccia; il widget ti dice l'errore angolare.",
+   "size": "M",
+   "tech": "svg+motion"
+  },
+  {
+   "id": "p06-passo-batch",
+   "title": "Un passo batch alla volta",
+   "concepts": [
+    "c61",
+    "c62",
+    "c79"
+   ],
+   "scenario": "pesce",
+   "realExample": "Addestramento batch del classificatore dei pesci: a ogni passo si valutano tutti i pesci, si sommano i y x dei soli sbagliati e si aggiorna w. Dati sintetici linearmente separabili, notazione aumentata.",
+   "storyboard": [
+    "Partenza con w = 0: tutti i pesci hanno y f(x) = 0 ≤ 0 e sono in D_E (nota evidenziata).",
+    "Passo: i vettori y x dei pesci in D_E si sommano in coda (300 ms ciascuno), la somma si scala di η e si aggiunge a w; la retta salta nella nuova posizione in 500 ms, la vecchia resta come fantasma grigio; il riquadro mostra w + η Σ y x con i numeri sostituiti.",
+    "Contatori aggiornati: |D_E|, E(w; D), ||∇E||; i pesci corretti sono grigi con 'non contribuiscono'.",
+    "Play fino a D_E vuoto: ∇E = 0 e compare 'errore minimizzato sul training set'. Un grafico mostra E per passo.",
+    "Interruttore 'includi anche i corretti' (variante sbagliata): i pesci corretti tirano w nella loro direzione e l'addestramento peggiora, a mostrare perché la regola li esclude. Slider η: partendo da w = 0 i confini sono gli stessi per ogni η, cambia solo la scala di w."
+   ],
+   "interactions": [
+    "pulsanti Passo / Play (un passo ogni 800 ms) / Reset",
+    "slider η da 0,01 a 2 in scala logaritmica",
+    "interruttore 'includi anche i corretti'"
+   ],
+   "visual": "SVG con retta corrente e fantasmi delle precedenti, vettori y x sommati, contatori, grafico dell'errore per iterazione.",
+   "aha": "Il passo batch somma i contributi y x dei soli esempi sbagliati e sposta w di η volte quella somma; ci si ferma quando non resta nessun esempio sbagliato. Partendo da w = 0, η cambia solo la lunghezza di w, non i confini (c79).",
+   "formulasShown": [
+    "\\mathbf{w} = \\mathbf{w} - \\eta\\nabla E(\\mathbf{w}; D)",
+    "\\mathbf{w} = \\mathbf{w} + \\eta\\sum_{(\\mathbf{x}, y) \\in D_E} y\\mathbf{x}"
+   ],
+   "challenge": "Da w = 0 conta i passi necessari con η = 0,1 e con η = 1: perché sono uguali?",
+   "size": "M",
+   "tech": "svg+motion"
+  },
+  {
+   "id": "p06-batch-contro-stocastico",
+   "title": "Batch contro stocastico: chi aggiorna prima",
+   "concepts": [
+    "c64",
+    "c65",
+    "c67",
+    "c68"
+   ],
+   "scenario": "pesce",
+   "realExample": "L'impianto registra 100.000 pesci al giorno (dati sintetici). Con il batch ogni aggiornamento dei pesi richiede di classificarli tutti; con lo stocastico ogni pesce sbagliato produce subito un aggiornamento.",
+   "storyboard": [
+    "Due corsie: 'Batch' con una barra che scorre su tutti gli N pesci prima di un solo aggiornamento, 'Stocastico' con un aggiornamento per ogni pesce sbagliato incontrato.",
+    "Slider N da 100 a 100.000: i contatori 'predizioni calcolate' e 'aggiornamenti fatti' al secondo cambiano; con N grande la corsia batch sembra immobile.",
+    "Pannello gradienti: la freccia nera spessa è il gradiente vero (somma su D_E); pulsante 'Mostra 50 gradienti singoli': un ventaglio di frecce sottili −y x attorno a quella vera, che puntano in direzioni diverse ma in media sono allineate.",
+    "Grafico errore contro predizioni calcolate: la curva stocastica scende molto prima di quella batch."
+   ],
+   "interactions": [
+    "slider N da 100 a 100.000 (scala logaritmica)",
+    "pulsante 'Mostra 50 gradienti singoli'",
+    "pulsante Play per la gara (10 s di animazione a budget di calcolo uguale)"
+   ],
+   "visual": "Canvas con due corsie animate e contatori, ventaglio di vettori gradiente, grafico dell'errore in funzione del costo di calcolo.",
+   "aha": "Il batch paga N predizioni per ogni aggiornamento; lo stocastico aggiorna subito usando un'approssimazione rumorosa del gradiente vero, e sui dataset grandi vince.",
+   "formulasShown": [
+    "\\nabla E\\left(\\mathbf{w}; (\\mathbf{x}, y)\\right) = -y\\mathbf{x}",
+    "\\nabla E(\\mathbf{w}; D) = \\sum_{(\\mathbf{x}, y) \\in D_E} \\nabla E\\left(\\mathbf{w}; (\\mathbf{x}, y)\\right)"
+   ],
+   "challenge": "Con N = 10.000 e un budget di 100.000 predizioni, quanti aggiornamenti fa ciascun metodo? (Batch 10, stocastico fino a 100.000.)",
+   "size": "M",
+   "tech": "canvas2d"
+  },
+  {
+   "id": "p06-sgd-come-nelle-note",
+   "title": "Il perceptron stocastico come nella figura delle note",
+   "concepts": [
+    "c66",
+    "c73",
+    "c74",
+    "c75"
+   ],
+   "scenario": "pesce",
+   "realExample": "Pesci con feature standardizzate (centrate), così il confine può passare per l'origine (b = 0) come nell'illustrazione di pagina 40: cerchi rossi = spigole (+1), quadrati blu = salmoni (−1). Si ripercorrono gli aggiornamenti w = w + η y x uno alla volta.",
+   "storyboard": [
+    "Pannello 1 come nelle note: w iniziale (freccia nera) e confine tratteggiato perpendicolare; i punti mal classificati lampeggiano.",
+    "Modalità 'Figura delle note': 7 cerchi rossi e 8 quadrati blu nelle posizioni di pagina 40; un contatore 'errori' parte da 6 (2 cerchi, 4 quadrati) e segue la sequenza del disegno 6 → 3 → 1 → 0 mentre si scelgono, nell'ordine, il cerchio in basso a sinistra, il cerchio in basso e il quadrato più in alto; ogni punto sbagliato mostra il suo y wᵀx.",
+    "Passo: si sceglie un cerchio rosso sbagliato; la freccia rossa è il suo x; il vecchio w diventa grigio, il nuovo w = w + ηx appare nero con una rotazione animata di 700 ms lungo una freccia curva punteggiata; il vecchio confine resta grigio tratteggiato, il nuovo è nero tratteggiato.",
+    "Riquadro numerico: w prima, η y x, w dopo; margine y wᵀx dell'esempio prima e dopo, con la differenza η||x||² evidenziata.",
+    "Passo con un quadrato blu sbagliato: freccia blu verso il punto e freccia blu punteggiata −x; w ruota lontano dal quadrato.",
+    "Quando nessun punto è sbagliato compare 'tutti classificati correttamente: fine' e il numero totale di aggiornamenti; pulsante per mostrare i quattro pannelli originali affiancati."
+   ],
+   "interactions": [
+    "pulsante Passo (sceglie il primo sbagliato) e Play (un passo ogni 1,5 s)",
+    "clic su un punto mal classificato per sceglierlo",
+    "slider η da 0,1 a 2",
+    "pulsante 'Nuovo w casuale'",
+    "interruttore 'frecce in scala / come nella figura' (la figura delle note ruota w in modo qualitativo)"
+   ],
+   "visual": "SVG fedele alla figura di pagina 40 (sfondo sfumato, cerchi rossi, quadrati blu, frecce nere e grigie, rette tratteggiate), riquadro con i vettori numerici.",
+   "aha": "Ogni aggiornamento ruota w verso il positivo sbagliato o lontano dal negativo sbagliato e aumenta il suo margine di η||x||²; il confine ruota con w finché separa le classi.",
+   "formulasShown": [
+    "\\mathbf{w} = \\mathbf{w} + \\eta y\\mathbf{x}",
+    "y\\,(\\mathbf{w} + \\eta y\\mathbf{x})^T\\mathbf{x} = y\\,\\mathbf{w}^T\\mathbf{x} + \\eta\\|\\mathbf{x}\\|^2",
+    "E(\\mathbf{w}; D) = \\sum_{(\\mathbf{x}, y) \\in D_E} -y\\,\\mathbf{w}^T\\mathbf{x}"
+   ],
+   "challenge": "Trova un ordine di scelta dei punti sbagliati che converge con meno aggiornamenti di quello predefinito. Nella modalità 'Figura delle note', prevedi prima di ogni passo quanti errori resteranno (6 → 3 → 1 → 0).",
+   "size": "M",
+   "tech": "svg+motion"
+  },
+  {
+   "id": "p06-rumore-che-aiuta",
+   "title": "Il rumore che aiuta a uscire dai minimi locali",
+   "concepts": [
+    "c69",
+    "c70",
+    "c72"
+   ],
+   "scenario": "energia",
+   "realExample": "Stessa superficie di errore non convessa del modello della radiazione solare (dati sintetici): ogni misura oraria ha la sua superficie di errore, diversa da quella totale. Si confrontano discesa batch e stocastica dallo stesso punto di partenza.",
+   "storyboard": [
+    "Mappa della superficie di errore totale con un minimo locale poco profondo vicino al punto di partenza e il minimo globale più lontano.",
+    "Due palline partono insieme: quella batch (gradiente su tutte le misure) scende liscia nel minimo locale e si ferma.",
+    "Quella stocastica usa a ogni passo una sola misura: sullo sfondo lampeggia in trasparenza la superficie dell'esempio corrente, diversa ogni volta; la pallina trema, esce dalla conca poco profonda e raggiunge il minimo globale (con il seme predefinito).",
+    "Grafico delle componenti di w nel tempo: la traccia stocastica oscilla, la sua media mobile converge; la traccia batch è liscia ma ferma nel minimo sbagliato.",
+    "Slider 'rumore' (η e numero di esempi per passo): troppo poco rumore resta bloccato, troppo rumore non si assesta mai."
+   ],
+   "interactions": [
+    "pulsante Play (10 passi al secondo) / Reset",
+    "slider rumore: η da 0,005 a 0,5 e misure per passo da 1 a 24",
+    "selettore del seme casuale (1-10)",
+    "interruttore 'mostra la superficie del singolo esempio'"
+   ],
+   "visual": "Canvas con mappa a curve di livello, due traiettorie colorate, sovrapposizione trasparente della superficie del singolo esempio, grafici delle componenti di w con media mobile.",
+   "aha": "Il rumore dello stocastico esplora: gli esempi hanno superfici diverse e il passo può saltare fuori da un minimo locale; il prezzo è l'oscillazione, che si media su molte iterazioni.",
+   "formulasShown": [
+    "\\mathbf{w} = \\mathbf{w} - \\eta\\nabla E\\left(\\mathbf{w}; (\\mathbf{x}, y)\\right)",
+    "\\mathbf{w} = \\mathbf{w} - \\eta\\nabla E(\\mathbf{w}; D)"
+   ],
+   "challenge": "Trova un valore di rumore con cui la pallina stocastica esce dal minimo locale e poi si assesta entro 200 passi.",
+   "size": "M",
+   "tech": "canvas2d"
+  },
+  {
+   "id": "p06-mini-batch",
+   "title": "Quanto grande il mini-batch?",
+   "concepts": [
+    "c71"
+   ],
+   "scenario": "cifre",
+   "realExample": "Addestramento di un classificatore di cifre scritte a mano su 60.000 immagini 28×28 in stile MNIST (dati sintetici): il batch completo richiede 60.000 predizioni per aggiornamento, il singolo esempio è troppo rumoroso; si sceglie la dimensione del mini-batch.",
+   "storyboard": [
+    "Slider della dimensione B in scala logaritmica da 1 a 60.000, con la fascia 32-256 evidenziata come 'uso comune'.",
+    "Pannello gradiente: attorno alla freccia del gradiente vero si disegna un cono di stime ottenute da mini-batch diversi; il cono si stringe come 1/√B.",
+    "Barre: costo per aggiornamento (proporzionale a B) e aggiornamenti per epoca (N/B).",
+    "Grafico loss contro tempo per B = 1, 64 e 60.000: B = 1 è veloce ma zigzaga, B = 60.000 è liscio ma lento, B = 64 arriva prima al 95% di accuratezza.",
+    "Nota: le dimensioni 32-256 sfruttano anche il calcolo parallelo delle GPU."
+   ],
+   "interactions": [
+    "slider B da 1 a 60.000",
+    "pulsante 'Addestra' per le tre curve",
+    "hover sul cono per vedere le singole stime"
+   ],
+   "visual": "Canvas con cono di vettori gradiente, barre di costo, tre curve di loss nel tempo, fascia 32-256 colorata sullo slider.",
+   "aha": "Il mini-batch è il compromesso: abbastanza esempi da avere un gradiente affidabile, abbastanza pochi da fare molti aggiornamenti veloci.",
+   "formulasShown": [
+    "\\mathbf{w} = \\mathbf{w} - \\eta\\nabla E(\\mathbf{w}; B), \\qquad B \\subset D, \\quad |B| \\in [32, 256] \\;\\text{(es.)}"
+   ],
+   "challenge": "Scegli B per raggiungere il 95% di accuratezza nel minor tempo simulato.",
+   "size": "M",
+   "tech": "canvas2d"
+  },
+  {
+   "id": "p06-regressione-matrice",
+   "title": "Dal perceptron alla regressione: la matrice X e il vettore y",
+   "concepts": [
+    "c77",
+    "c78"
+   ],
+   "scenario": "case",
+   "realExample": "Un'agenzia vuole predire il prezzo delle case (in migliaia di euro) da superficie e numero di stanze. Sei case di esempio (dati sintetici) diventano la matrice di training X e il vettore delle uscite y; il perceptron senza segno diventa un modello di regressione.",
+   "storyboard": [
+    "Tabella di 6 case; ogni riga scivola nella matrice X (righe = esempi, colonne = feature) e il prezzo nel vettore y; le etichette mostrano n = |D| = 6 e d = |x| = 2 (3 con la colonna di 1 del bias).",
+    "Grafico prezzo contro superficie con i punti e una retta; per ogni casa un segmento verticale rosso tra valore predetto e valore vero.",
+    "Slider di w e w₀: la retta si muove, i segmenti cambiano e la somma dei quadrati dei residui si aggiorna.",
+    "Pannello 'Sistema lineare': Xw = y scritto come sei equazioni con i numeri; con 6 equazioni e 3 incognite nessun w le soddisfa tutte, quindi si minimizza la differenza (anteprima dei minimi quadrati e della pseudoinversa, modulo p07)."
+   ],
+   "interactions": [
+    "pulsante 'Costruisci X' (ogni riga scivola nella matrice in 400 ms)",
+    "slider pendenza w da 0 a 5 k€/m² e w₀ da −100 a 200 k€",
+    "aggiungere o togliere una casa dalla tabella"
+   ],
+   "visual": "SVG con tabella animata che si trasforma in matrice, grafico di dispersione con retta e residui, pannello con le equazioni e la somma dei quadrati.",
+   "aha": "In regressione l'uscita è il punteggio lineare stesso; mettendo gli esempi in righe il problema diventa un sistema Xw = y, di solito sovradeterminato.",
+   "formulasShown": [
+    "X \\in \\mathbb{R}^{n} \\times \\mathbb{R}^{d}",
+    "\\mathbf{y} \\in \\mathbb{R}^{n}",
+    "X\\mathbf{w} = \\mathbf{y}"
+   ],
+   "challenge": "Trova a mano w e w₀ che rendono minima la somma dei quadrati dei residui, poi confronta con la soluzione esatta del modulo successivo.",
+   "size": "M",
+   "tech": "svg+motion"
+  }
+ ],
+ "exercises": [
+  {
+   "id": "es01",
+   "title": "Punteggio, classe e margini di un pesce",
+   "type": "numerico",
+   "description": "Dati w = (w₁, w₂), w₀ e un punto x = (x₁, x₂), calcolare f(x) = wᵀx + w₀, la classe sign(f(x)), il margine geometrico r^x = f(x)/||w||, la distanza |r^x| e la distanza con segno dell'origine r^0 = w₀/||w||. Parametri randomizzabili: w₁, w₂ interi in [−5, 5] non entrambi nulli (terne pitagoriche come (3, 4) per norme intere), w₀ in [−10, 10], x₁, x₂ in [−5, 5]. Esempio: w = (3, 4), w₀ = −10, x = (4, 3): f = 12 + 12 − 10 = 14, classe +1, ||w|| = 5, r^x = 2,8, r^0 = −2 (origine dal lato negativo).",
+   "concepts": [
+    "c14",
+    "c19",
+    "c24",
+    "c26",
+    "c30"
+   ]
+  },
+  {
+   "id": "es02",
+   "title": "Dimostra che w è ortogonale all'iperpiano",
+   "type": "dimostrazione",
+   "description": "Partendo da due punti x e x' dell'iperpiano H: wᵀx + w₀ = 0, dimostrare che w è perpendicolare a H. Soluzione attesa: f(x) = f(x') = 0, sottrazione, wᵀ(x − x') = 0, x − x' è una direzione qualunque di H (der01).",
+   "concepts": [
+    "c22",
+    "c21"
+   ]
+  },
+  {
+   "id": "es03",
+   "title": "Dimostra la formula del margine geometrico",
+   "type": "dimostrazione",
+   "description": "Scomponendo x = x^p + r^x w/||w||, dimostrare che r^x = f(x)/||w|| e ricavare la distanza dell'origine r^0 = w₀/||w||. Indicare perché f(x^p) = 0 e perché wᵀw/||w|| = ||w|| (der02, der03).",
+   "concepts": [
+    "c27",
+    "c29",
+    "c24",
+    "c26"
+   ]
+  },
+  {
+   "id": "es04",
+   "title": "Scala di w: cosa cambia e cosa no",
+   "type": "numerico",
+   "description": "Dati (w, w₀) e un punto x, calcolare margine funzionale e geometrico; poi moltiplicare (w, w₀) per α e ricalcolare. Parametri randomizzabili: w, w₀, x come in es01, α in {0,5; 2; 10}. Soluzione: f diventa α f, r^x resta uguale, l'iperpiano non cambia. Domanda finale: perché serve fissare la scala per parlare di 'massimo margine' (collegamento con l'iperpiano canonico dell'SVM)?",
+   "concepts": [
+    "c23",
+    "c25",
+    "c24"
+   ]
+  },
+  {
+   "id": "es05",
+   "title": "Pesi per AND, OR, NAND, NOT",
+   "type": "numerico",
+   "description": "Trovare pesi (w₁, w₂, w₀) di un perceptron sign(w₁x₁ + w₂x₂ + w₀) con ingressi in {0,1} che realizzino AND, OR, NAND e (con un solo ingresso) NOT; verificare la tabella di verità calcolando i quattro punteggi. Una soluzione: AND (1, 1, −1,5), OR (1, 1, −0,5), NAND (−1, −1, 1,5), NOT (−1, 0,5). Variante randomizzabile: si fissa w₁ = w₂ = a con a in [0,5; 3] e si chiede l'intervallo di w₀ valido per AND (−2a < w₀ < −a) e per OR (−a < w₀ < 0).",
+   "concepts": [
+    "c38",
+    "c36"
+   ]
+  },
+  {
+   "id": "es06",
+   "title": "Dimostra che lo XOR non è linearmente separabile",
+   "type": "dimostrazione",
+   "description": "Scrivere le quattro disuguaglianze che un perceptron sign(w₁x₁ + w₂x₂ + w₀) dovrebbe soddisfare per realizzare lo XOR e mostrarne la contraddizione (der07). Poi costruire una rete a due strati (DNF) che lo realizza e verificarla sui quattro ingressi (ex03).",
+   "concepts": [
+    "c39",
+    "c40"
+   ]
+  },
+  {
+   "id": "es07",
+   "title": "Un passo del perceptron batch",
+   "type": "numerico",
+   "description": "Dato un piccolo dataset in notazione aumentata (4-6 punti x̂ = (1, x₁, x₂) con etichette ±1), un vettore w e η: individuare D_E (y wᵀx ≤ 0), calcolare E(w; D) = Σ_{D_E} −y wᵀx, il gradiente ∇E = −Σ_{D_E} y x e il nuovo w = w + η Σ_{D_E} y x; ricalcolare D_E dopo il passo. Parametri randomizzabili: coordinate intere in [−3, 3], etichette generate da un iperpiano casuale (dati separabili), w iniziale intero in [−2, 2], η in {0,5; 1}.",
+   "concepts": [
+    "c58",
+    "c60",
+    "c61",
+    "c62"
+   ]
+  },
+  {
+   "id": "es08",
+   "title": "Perceptron stocastico a mano fino alla convergenza",
+   "type": "numerico",
+   "description": "Su un dataset di 4-5 punti linearmente separabili con bias nullo (come nell'illustrazione di pagina 40), partire da w = 0 o da un w dato e applicare w = w + η y x a ogni punto mal classificato, scorrendo i punti in un ordine fissato, fino a un'epoca senza errori. Riportare w dopo ogni aggiornamento e verificare che il margine y wᵀx del punto usato aumenta di η||x||². Parametri randomizzabili: punti interi in [−4, 4], ordine di visita, η. Domanda finale: cosa succede se i dati non sono separabili?",
+   "concepts": [
+    "c66",
+    "c75",
+    "c76",
+    "c73"
+   ]
+  },
+  {
+   "id": "es09",
+   "title": "Perché non la loss di misclassificazione",
+   "type": "concettuale",
+   "description": "Spiegare perché il conteggio degli errori non si può minimizzare con la discesa del gradiente, come si arriva alla surrogata −y f(x), perché nella loss f(x) deve essere il punteggio lineare e non il segno, e in che senso l'errore del perceptron è 'la somma dei margini funzionali dei mal classificati'.",
+   "concepts": [
+    "c55",
+    "c56",
+    "c57",
+    "c59",
+    "c63"
+   ]
+  },
+  {
+   "id": "es10",
+   "title": "Discesa del gradiente e learning rate",
+   "type": "concettuale",
+   "description": "Descrivere l'algoritmo della discesa del gradiente (inizializzazione, iterazione, criterio d'arresto), spiegare perché si va contro il gradiente, cosa succede con η troppo piccolo o troppo grande, cosa garantisce la convergenza e cosa significa adattare il learning rate (domanda d'esame 'meaning of adapting learning rate'). Variante numerica: E(w) = (w − 3)², w = 0, η in {0,1; 0,5; 1; 1,1}: calcolare tre iterazioni e dire quando si converge, si oscilla o si diverge (w ← w − 2η(w − 3)).",
+   "concepts": [
+    "c51",
+    "c52",
+    "c53",
+    "c54"
+   ]
+  },
+  {
+   "id": "es11",
+   "title": "Batch, stocastico e mini-batch a confronto",
+   "type": "concettuale",
+   "description": "Confrontare i tre modi di calcolare il gradiente: costo per aggiornamento, qualità dell'approssimazione, stabilità, comportamento rispetto ai minimi locali, uso nel deep learning (mini-batch da 32-256 esempi). Numerico: con N esempi e un budget di P predizioni, quanti aggiornamenti fa ciascun metodo con mini-batch di dimensione B?",
+   "concepts": [
+    "c64",
+    "c65",
+    "c67",
+    "c68",
+    "c69",
+    "c70",
+    "c71",
+    "c72"
+   ]
+  },
+  {
+   "id": "es12",
+   "title": "Generativo o discriminativo?",
+   "type": "concettuale",
+   "description": "Definire apprendimento generativo e discriminativo, elencare i tre vantaggi e i tre svantaggi dei modelli discriminativi citati nelle note e dare un esempio per ciascuno. Numerico: contare i parametri di due gaussiane a covarianza piena più la prior contro una funzione discriminante lineare per d = 2, 10, 100.",
+   "concepts": [
+    "c05",
+    "c06",
+    "c07",
+    "c08",
+    "c09",
+    "c10",
+    "c11",
+    "c12",
+    "c13"
+   ]
+  },
+  {
+   "id": "es13",
+   "title": "Vettori aumentati",
+   "type": "numerico",
+   "description": "Dati w, w₀ e un punto x, scrivere ŵ e x̂, verificare che ŵᵀx̂ = wᵀx + w₀ e riscrivere una regola di aggiornamento w = w + η y x separando le componenti (w₀ ← w₀ + η y). Parametri randomizzabili: dimensione d in {2, 3}, componenti intere in [−5, 5].",
+   "concepts": [
+    "c44",
+    "c45",
+    "c46"
+   ]
+  },
+  {
+   "id": "es14",
+   "title": "Costruisci X e y per la regressione",
+   "type": "numerico",
+   "description": "Da una tabella di n case con d feature (superficie, stanze) e prezzo, scrivere la matrice X ∈ R^n × R^d (una riga per casa), la versione con colonna di 1 per il bias, e il vettore y ∈ R^n; scrivere il sistema Xw = y e dire se è sovradeterminato. Parametri randomizzabili: n in [3, 8], valori plausibili (superficie 40-200 m², stanze 1-6, prezzo 80-600 k€).",
+   "concepts": [
+    "c77",
+    "c78"
+   ]
+  },
+  {
+   "id": "es15",
+   "title": "Dal neurone al perceptron e alle reti profonde",
+   "type": "concettuale",
+   "description": "Descrivere le parti del neurone e come si traducono nel perceptron (ingressi, pesi eccitatori e inibitori, soglia come bias), disegnare lo schema del perceptron, spiegare cosa sa e cosa non sa rappresentare un perceptron, perché due strati bastano per ogni funzione booleana ma non sono efficienti, e cosa aggiungono le reti profonde.",
+   "concepts": [
+    "c31",
+    "c32",
+    "c33",
+    "c34",
+    "c35",
+    "c37",
+    "c41",
+    "c42",
+    "c43"
+   ]
+  },
+  {
+   "id": "es16",
+   "title": "Reti bayesiane: struttura predefinita e causalità",
+   "type": "concettuale",
+   "description": "Spiegare perché il model averaging sulle strutture è intrattabile, che struttura impone il Naive Bayes e perché funziona nonostante l'ipotesi sia quasi sempre falsa, e perché le direzioni causali non si ricavano dai soli dati osservazionali.",
+   "concepts": [
+    "c01",
+    "c02",
+    "c03",
+    "c04"
+   ]
+  },
+  {
+   "id": "es17",
+   "title": "Quando il lineare è la scelta giusta",
+   "type": "concettuale",
+   "description": "Spiegare perché la funzione discriminante lineare è spesso il primo modello da provare, in che senso fa da benchmark, perché dà buone prestazioni con dati linearmente separabili o scarsi e perché l'overfitting è meno grave; completare con i ruoli di f(x), wᵀx e w₀ e con la regola di assegnazione della classe.",
+   "concepts": [
+    "c15",
+    "c16",
+    "c17",
+    "c18",
+    "c20",
+    "c50",
+    "c47",
+    "c48",
+    "c49"
+   ]
+  },
+  {
+   "id": "es18",
+   "title": "Leggi l'illustrazione di pagina 40",
+   "type": "concettuale",
+   "description": "Per ciascuno dei quattro pannelli della figura di pagina 40 indicare quale esempio viene usato per l'aggiornamento, la sua etichetta y, il segno del contributo η y x, il verso di rotazione di w e del confine e quanti punti restano mal classificati (dal disegno: 6, 3, 1, 0). Spiegare perché il confine passa sempre per l'origine (b = 0) e resta perpendicolare a w. Domande finali: dopo il pannello 2 il cerchio usato è classificato bene? Un solo aggiornamento garantisce sempre di correggere il punto usato (vedi ex05, punto B)?",
+   "concepts": [
+    "c73",
+    "c74",
+    "c66",
+    "c22",
+    "c75"
+   ],
+   "addedBy": "revisore"
+  },
+  {
+   "id": "es19",
+   "title": "Il learning rate del perceptron partendo da zero",
+   "type": "dimostrazione",
+   "description": "Dimostrare per induzione che, partendo da w = 0 e visitando gli esempi nello stesso ordine, il perceptron stocastico con learning rate η produce w_t = η v_t, dove v_t è la sequenza ottenuta con η = 1; dedurne che confini, insiemi D_E e numero di aggiornamenti non dipendono da η. Ripetere per la regola batch w = w + η Σ_{D_E} y x. Poi mostrare con i dati di ex05 che da un w iniziale non nullo η cambia la sequenza: con w = (−1, 3) e η = 0,1 il primo aggiornamento su B dà w = (−1,1; 2,8) e B resta mal classificato alla seconda epoca, mentre con η = 1 si converge in due aggiornamenti.",
+   "concepts": [
+    "c79",
+    "c66",
+    "c61",
+    "c53"
+   ],
+   "addedBy": "revisore"
+  }
+ ],
+ "examQuestions": [
+  {
+   "text": "Linear functions for both classification and regression: discriminant functions, classification concept, functional/geometric margin, perceptron, loss function for classification, gradient descent, regression, matrix inversion problem, pseudoinverse, loss function for regression.",
+   "prof": "Passerini",
+   "concepts": [
+    "c14",
+    "c19",
+    "c21",
+    "c22",
+    "c23",
+    "c24",
+    "c29",
+    "c36",
+    "c49",
+    "c55",
+    "c58",
+    "c52",
+    "c77",
+    "c78"
+   ]
+  },
+  {
+   "text": "Perceptron for classification and regression: entire chapter with proofs, feature mapping and kernel perceptron",
+   "prof": "Passerini",
+   "concepts": [
+    "c36",
+    "c37",
+    "c22",
+    "c29",
+    "c44",
+    "c58",
+    "c60",
+    "c61",
+    "c66",
+    "c77"
+   ]
+  },
+  {
+   "text": "Learning Parameters  (ML with complete data, MAP), SVM (Hard Margin, Lagrangian, Soft Margin), NonLinear,  Kernel Machine, Perceptron)",
+   "prof": "Passerini",
+   "concepts": [
+    "c36",
+    "c58",
+    "c61",
+    "c66"
+   ]
+  },
+  {
+   "text": "He asked me to formulaize everything about linear regression for perceptron and linear classification for perceptron and svm. I wrote all the equations till i reached the soft case for svm so i stopped as i took too much time. He did not ask me any questions and that's all",
+   "prof": "Passerini",
+   "concepts": [
+    "c14",
+    "c19",
+    "c24",
+    "c29",
+    "c44",
+    "c58",
+    "c60",
+    "c61",
+    "c66",
+    "c77",
+    "c78"
+   ]
+  },
+  {
+   "text": "asked to talk about linear models and during the oral he asked me to explain what I wrote",
+   "prof": "Passerini",
+   "concepts": [
+    "c06",
+    "c14",
+    "c19",
+    "c21",
+    "c23",
+    "c24",
+    "c36"
+   ]
+  },
+  {
+   "text": "Linear Classifiers. Questions: (1) when do we use (and why) primal or dual (2) meaning of adapting learning rate",
+   "prof": "Passerini",
+   "concepts": [
+    "c19",
+    "c53",
+    "c54",
+    "c79"
+   ]
+  },
+  {
+   "text": "Unsupervised learning (everything I knew) + scheme of a perceptron and regression for perceptron",
+   "prof": "Passerini",
+   "concepts": [
+    "c37",
+    "c36",
+    "c77",
+    "c78"
+   ]
+  },
+  {
+   "text": "Perceptron (All) + Parameter estimation Questions: - Problem with analytical solution for perceptron regression - Example of estimation of Gaussian parameters: why do we obtain a Gaussian also as posterior? - How to use parameter estimation in Bayesian Networks - Why ML is fast in Bayesian Network (CDP independence)",
+   "prof": "Passerini",
+   "concepts": [
+    "c36",
+    "c37",
+    "c44",
+    "c58",
+    "c60",
+    "c61",
+    "c66",
+    "c77"
+   ]
+  },
+  {
+   "text": "Regression (perceptron + svm) + a tricky question on the pseudoinverse and in which topic it is used and how. He wanted me to talk about principal component analysis",
+   "prof": "Passerini",
+   "concepts": [
+    "c77",
+    "c78"
+   ]
+  },
+  {
+   "text": "Vanila Gradient descent and draw figure",
+   "prof": "Ricci",
+   "concepts": [
+    "c51",
+    "c52",
+    "c53"
+   ]
+  },
+  {
+   "text": "Difference between Momentum and gradient descent",
+   "prof": "Ricci",
+   "concepts": [
+    "c51",
+    "c52",
+    "c54"
+   ]
+  },
+  {
+   "text": "Adagrad, difference between adam and Adagrad",
+   "prof": "Ricci",
+   "concepts": [
+    "c54"
+   ]
+  },
+  {
+   "text": "Empirical loss formula and explanation",
+   "prof": "Ricci",
+   "concepts": [
+    "c48",
+    "c49"
+   ],
+   "addedBy": "revisore"
+  },
+  {
+   "text": "Activation function and their diagram along with explanation all which we studied",
+   "prof": "Ricci",
+   "concepts": [
+    "c37",
+    "c34"
+   ],
+   "addedBy": "revisore"
+  }
+ ],
+ "crossLinks": [
+  {
+   "moduleId": "p05-apprendimento-reti",
+   "why": "Pagina 31 chiude l'apprendimento della struttura delle reti bayesiane (model averaging intrattabile, Naive Bayes con struttura predefinita, direzioni causali) e p05 inventaria anche l'inizio di generativo contro discriminativo: possibili doppioni da deduplicare."
+  },
+  {
+   "moduleId": "p07-regressione-multiclasse",
+   "why": "Continuazione diretta: regressione con il perceptron (sistema Xw = y, pseudoinversa, loss quadratica), classificazione multiclasse con più funzioni discriminanti e classificatori lineari generativi, il contraltare del discriminativo di pagina 31."
+  },
+  {
+   "moduleId": "p08-svm-hard-margin",
+   "why": "Margine geometrico e invarianza alla scala di w portano all'iperpiano canonico e alla massimizzazione del margine dell'SVM; il perceptron trova un iperpiano separatore qualsiasi, l'SVM quello a margine massimo."
+  },
+  {
+   "moduleId": "p10-kernel-trick",
+   "why": "Feature mapping e kernel perceptron (domanda d'esame 'feature mapping and kernel perceptron'): la regola w = w + η y x rende w una combinazione degli esempi, da cui la forma duale con prodotti scalari."
+  },
+  {
+   "moduleId": "p11-kernel-machines",
+   "why": "Kernel machines come estensione non lineare dei classificatori lineari del modulo."
+  },
+  {
+   "moduleId": "m19-funzioni-discriminanti",
+   "why": "Funzioni discriminanti nella parte di Melgani: g_i(x), confini di decisione e casi gaussiani che producono discriminanti lineari (approccio generativo che porta a una forma wᵀx + w₀)."
+  },
+  {
+   "moduleId": "m15-lda",
+   "why": "Il discriminante lineare di Fisher cerca una direzione w di proiezione: stessa forma wᵀx con un criterio diverso (rapporto tra dispersioni)."
+  },
+  {
+   "moduleId": "m05-max-likelihood",
+   "why": "Le note paragonano la scelta di una funzione di errore da minimizzare alla massima verosimiglianza per le distribuzioni."
+  },
+  {
+   "moduleId": "m21-errore-generalizzazione",
+   "why": "Funzioni di loss, errore empirico e overfitting: il modulo minimizza solo l'errore di training e rimanda l'overfitting."
+  },
+  {
+   "moduleId": "d01-reti-feedforward",
+   "why": "Il perceptron è l'unità di base delle reti feedforward; strati intermedi, rappresentazioni gerarchiche e funzioni di attivazione (il gradino sign è l'antenato di sigmoide e ReLU)."
+  },
+  {
+   "moduleId": "d02-backpropagation",
+   "why": "Discesa del gradiente applicata alle reti profonde: stesso aggiornamento w = w − η∇E con il gradiente calcolato dalla backpropagation."
+  },
+  {
+   "moduleId": "d03-ottimizzazione",
+   "why": "SGD, mini-batch, learning rate adattivi (AdaGrad, Adam) e momentum: gli sviluppi delle note su η e sullo stocastico."
+  },
+  {
+   "moduleId": "p02-bernoulli-multinomiale",
+   "why": "Il Naive Bayes per lo spam usa distribuzioni di Bernoulli o multinomiali per parola, con stime a conteggi."
+  },
+  {
+   "moduleId": "p09-svm-soft-margin",
+   "why": "La loss del perceptron Σ_D max(0, −y f(x)) è la hinge loss max(0, 1 − y f(x)) dell'SVM soft margin senza il margine 1: l'SVM chiede non solo il lato giusto ma anche una distanza minima dal confine.",
+   "addedBy": "revisore"
+  }
+ ],
+ "emptyPages": [],
+ "gaps": [
+  "p31: la parte alta (model averaging intrattabile, Naive Bayes, causalità) appartiene alla sezione reti bayesiane (modulo p05); inventariata qui come c01-c04 per la regola delle pagine, possibile doppione.",
+  "p31-32: la sezione generativo/discriminativo compare anche nell'inventario p05 (c82-c85): doppione da deduplicare.",
+  "p32: la regola di assegnazione della classe non tratta il caso f(x) = 0 (punto esattamente sull'iperpiano); sign(0) non è definito nelle note.",
+  "p32-38: notazione sovraccarica: f(x) indica sia il punteggio lineare wᵀx + w₀ sia la decisione sign(wᵀx + w₀). Nel classificatore e nel perceptron f include il segno; nell'errore E = Σ −y f(x) e nel gradiente di pagina 38 f(x) è il punteggio lineare (−y f(x) = −y(wᵀx)). Con il segno la loss tornerebbe il conteggio degli errori (c63).",
+  "p33: il margine funzionale è definito come f(x); altrove (pagina 37, e nel capitolo SVM) la confidenza si legge in y f(x). Le due definizioni coincidono per i punti positivi e differiscono di segno per quelli negativi.",
+  "p33: r^x è descritto come 'Distance from x to the hyperplane, scaled by the unit vector in the direction of w': è una distanza con segno (negativa se x sta dal lato opposto a w), e a essere 'scalato dal versore' è il termine r^x w/||w||, non r^x.",
+  "p33: r^0 = w₀/||w|| è con segno; nella figura l'origine sta dal lato opposto a w, quindi w₀ < 0 e la distanza vera è |w₀|/||w||. La formula presuppone w ≠ 0.",
+  "p34: nel testo 'And, since √(wᵀw) = ||w||' il passaggio implicito è wᵀw/||w|| = ||w||²/||w|| = ||w||.",
+  "p35: 'any logical formula ... using DNF or CNF: First Layer: Learn conjunctions; Second Layer: Combines these conjunctions into disjunctions' descrive solo la DNF; per la CNF i ruoli dei due strati sono invertiti.",
+  "p35: la frase 'the number of required neurons grows exponentially' vale nel caso peggiore (per esempio la parità); molte funzioni booleane richiedono pochi neuroni.",
+  "p37: 'the gradient points toward the maximum' va inteso come direzione di massima crescita locale (steepest ascent), non verso il massimo globale.",
+  "p37-38: con l'inizializzazione suggerita w = 0 tutti gli esempi hanno y f(x) = 0 ≤ 0 e stanno in D_E, e l'errore vale E = 0 pur non classificando nulla: w = 0 è un minimo banale del criterio del perceptron. L'algoritmo non si ferma perché il gradiente −Σ_D y x è in genere diverso da zero; le note non commentano il caso.",
+  "p37-39: le note parlano di convergenza a un ottimo locale e di molti minimi locali; l'errore del perceptron è convesso e lineare a tratti (nessun minimo locale non globale), il discorso sui minimi locali riguarda i problemi non convessi come il deep learning.",
+  "p38-39: il criterio d'arresto 'until all training examples are correctly classified' termina solo con dati linearmente separabili (teorema di convergenza del perceptron, non citato nelle note); con dati non separabili serve un limite di epoche.",
+  "p38: 'The error is the sum of the functional margins of incorrectly classified examples': in senso stretto è la somma di −y f(x), cioè dei valori assoluti dei margini funzionali (che per i mal classificati sono ≤ 0 se moltiplicati per y).",
+  "p39: l'illustrazione chiama il bias b (b = 0) invece di w₀ come nel resto del capitolo; la figura di pagina 40 non ha didascalia: il ruolo dei colori (rosso positivo, blu negativo) e delle frecce è ricostruito dal disegno.",
+  "p40: X ∈ R^n × R^d è scritto come prodotto cartesiano invece di R^{n×d}; inoltre X = [x^1 ··· x^n] è scritto come una riga di vettori mentre il testo dice che le righe sono gli esempi (più precisamente X ha per righe (x^i)ᵀ). La sezione Perceptron Regression prosegue a pagina 41 (modulo p07).",
+  "p40 (figura): le frecce non sono in scala: nel pannello 2 il vettore w + x punterebbe in basso a sinistra, mentre il nuovo w disegnato punta in alto a sinistra, quindi la rotazione è qualitativa (come con un η piccolo). Nel pannello 1 il w iniziale punta esattamente verso un cerchio rosso, coerente con un primo aggiornamento da w = 0 (w = η x), ma le note non lo dicono. Sequenza degli errori ricostruita dal revisore misurando il disegno: 6 (2 cerchi, 4 quadrati), 3, 1, 0.",
+  "p37-38: l'inizializzazione è 'w = 0' per la discesa del gradiente generica (pagina 37) e 'randomly (e.g., small random values or zeros)' per il perceptron stocastico (pagina 38): 'casuale' e 'zeri' sono alternative, non la stessa cosa. Con w = 0 il learning rate del perceptron cambia solo la scala di w (c79, osservazione del revisore)."
+ ]
+}

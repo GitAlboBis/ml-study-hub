@@ -1,0 +1,3171 @@
+{
+  "moduleId": "p04-d-separazione",
+  "title": "d-separazione",
+  "stages": {
+    "inventario": "done",
+    "completezza": "done",
+    "formule": "done"
+  },
+  "pagesReviewed": [
+    {
+      "doc": "part2",
+      "from": 16,
+      "to": 24
+    }
+  ],
+  "overview": "Il modulo mostra come leggere le indipendenze (marginali e condizionali) direttamente dalla struttura di una rete bayesiana, senza fare i conti con le regole di somma e prodotto. Si parte dalle definizioni di indipendenza e indipendenza condizionale, si analizzano le tre configurazioni a tre nodi (tail-to-tail, head-to-tail, head-to-head) con le loro dimostrazioni, si vede l'effetto 'explaining away' sull'esempio numerico del sistema di carburante di un'auto, e si arriva al criterio generale di d-separazione tra insiemi di nodi (cammini bloccati, discendenti del collider). Seguono le indipendenze locali e globali (Markov), la I-equivalenza tra strutture, le I-map minimali e le perfect map (P-map), i consigli pratici per progettare una rete e l'introduzione all'apprendimento dei parametri. All'orale di Passerini la domanda tipica chiede proprio 'formalization (DAG, local independencies, various case of d-separation criterion, general d-separation criterion and global independencies)': bisogna saper scrivere le tre fattorizzazioni, dimostrare i sei risultati e applicare il criterio generale a un grafo.",
+  "concepts": [
+    {
+      "id": "c01",
+      "name": "Esempio: rete regolatoria giocattolo (geni A, B, C)",
+      "nameEn": "Example: toy regulatory network",
+      "kind": "esempio",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 16
+        }
+      ],
+      "detail": "In cima a p16, introdotta dalla frase 'An example of this is the following' (che si riferisce alle CPT della pagina precedente), c'è la slide 'Example: toy regulatory network'. I geni A e B hanno probabilità a priori indipendenti (independent prior probabilities); il gene C può essere potenziato (enhanced) sia da A sia da B, quindi la struttura è A → C ← B (una configurazione head-to-head). Tabelle: P(A=active)=0.3, P(A=inactive)=0.7; P(B=active)=0.3, P(B=inactive)=0.7. CPT di C, colonne per (A,B): (active,active) → C active 0.9 / inactive 0.1; (active,inactive) → 0.6 / 0.4; (inactive,active) → 0.7 / 0.3; (inactive,inactive) → 0.1 / 0.9. Ogni colonna della CPT somma a 1 e il nodo con 2 genitori binari richiede 2^2 = 4 colonne. È l'esempio concreto di CPT (Conditional Probability Table) che collega la definizione di rete bayesiana (modulo p03) alle indipendenze di questo modulo. Nota del verificatore: le prime tre righe LaTeX trascrivono le tabelle della slide; la quarta (fattorizzazione p(A,B,C)) è un'integrazione, la slide non la scrive.",
+      "latex": [
+        "P(A=\\text{active})=0.3,\\quad P(A=\\text{inactive})=0.7",
+        "P(B=\\text{active})=0.3,\\quad P(B=\\text{inactive})=0.7",
+        "P(C=\\text{active}\\mid A,B)=\\begin{cases}0.9 & A=\\text{act},B=\\text{act}\\\\ 0.6 & A=\\text{act},B=\\text{inact}\\\\ 0.7 & A=\\text{inact},B=\\text{act}\\\\ 0.1 & A=\\text{inact},B=\\text{inact}\\end{cases}",
+        "p(A,B,C)=P(A)\\,P(B)\\,P(C\\mid A,B)"
+      ],
+      "symbols": [
+        {
+          "s": "A,B",
+          "meaning": "geni regolatori, con prior indipendenti"
+        },
+        {
+          "s": "C",
+          "meaning": "gene potenziato da A e B (figlio di entrambi)"
+        }
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c02",
+      "name": "Indipendenza (marginale) di due variabili",
+      "nameEn": "Independence",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 16
+        }
+      ],
+      "detail": "Due variabili a e b sono indipendenti (independent), notazione a ⊥ b | ∅, se la probabilità congiunta di a e b è uguale al prodotto delle loro probabilità marginali (joint probability equals the product of their marginal probabilities). Il simbolo ∅ indica che l'insieme di condizionamento è vuoto: nessuna variabile è osservata. L'uguaglianza deve valere per tutti i valori di a e b; equivalentemente p(a|b) = p(a), cioè conoscere b non cambia la distribuzione di a.",
+      "latex": [
+        "a \\perp b \\mid \\emptyset",
+        "p(a,b) = p(a)\\cdot p(b)"
+      ],
+      "symbols": [
+        {
+          "s": "\\perp",
+          "meaning": "indipendenza"
+        },
+        {
+          "s": "\\emptyset",
+          "meaning": "insieme di condizionamento vuoto (nessuna evidenza)"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c03",
+      "name": "Indipendenza condizionale",
+      "nameEn": "Conditional independence",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 16
+        }
+      ],
+      "detail": "Due variabili a e b sono condizionatamente indipendenti dato c (conditionally independent given c), notazione a ⊥ b | c, se la probabilità congiunta condizionale di a e b dato c è uguale al prodotto delle singole probabilità condizionali (joint conditional probability equals the product of their individual conditional probabilities). Deve valere per ogni valore di c: una volta noto c, sapere b non aggiunge informazione su a. L'indipendenza condizionale e quella marginale sono proprietà distinte: una non implica l'altra (le tre configurazioni a tre nodi lo mostrano).",
+      "latex": [
+        "a \\perp b \\mid c",
+        "p(a,b\\mid c) = p(a\\mid c)\\cdot p(b\\mid c)"
+      ],
+      "symbols": [
+        {
+          "s": "c",
+          "meaning": "variabile condizionante (osservata)"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c04",
+      "name": "Verifica algebrica delle indipendenze con regole di somma e prodotto",
+      "nameEn": "Verification through sum and product rules",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 16
+        }
+      ],
+      "detail": "Le ipotesi di indipendenza si possono verificare matematicamente con applicazioni ripetute delle regole di somma e prodotto (repeated applications of the sum and product rules). Il processo però diventa sempre più macchinoso (increasingly cumbersome) per distribuzioni grandi o complesse: per ogni asserzione bisogna marginalizzare la congiunta su tutte le altre variabili, con un numero di termini che cresce esponenzialmente col numero di variabili. È la motivazione del criterio grafico. Le due regole (scritte qui come promemoria, la pagina le cita soltanto) sono la regola della somma (marginalizzazione) e la regola del prodotto.",
+      "latex": [
+        "p(a) = \\sum_{b} p(a,b)",
+        "p(a,b) = p(a\\mid b)\\,p(b)"
+      ],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c05",
+      "name": "I modelli grafici semplificano il ragionamento sulle indipendenze",
+      "nameEn": "Graphical models and the d-separation criterion",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 16
+        }
+      ],
+      "detail": "I modelli grafici (graphical models) come le reti bayesiane semplificano la verifica e il ragionamento sulle indipendenze grazie alla loro struttura. Il criterio di d-separazione (d-separation Criterion) fornisce un modo sistematico per dedurre le ipotesi di indipendenza: determina se due variabili sono indipendenti dato un insieme di condizioni esaminando i cammini nel grafo (by examining the paths in the graph). I modelli grafici combinano semplicità strutturale e principi probabilistici per codificare, visualizzare e verificare in modo efficiente le proprietà di indipendenza (efficiently encode, visualize, and verify independence properties), che sono centrali nel ragionamento e nel calcolo probabilistico.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c06",
+      "name": "d-separazione: definizione introduttiva",
+      "nameEn": "d-Separation",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 16
+        }
+      ],
+      "detail": "La d-separazione (d-Separation) è un criterio per stabilire se due variabili di una rete bayesiana sono indipendenti (independent) o condizionatamente indipendenti (conditionally independent) basandosi solo sulla struttura della rete (based on the structure of the network), senza guardare i numeri delle CPT. La 'd' sta per 'directed' (separazione nel grafo orientato). La versione formale, per insiemi di nodi A, B, C, arriva a p21 (concetti c39-c41).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c07",
+      "name": "Casi semplici: due variabili",
+      "nameEn": "Simple cases: two variables",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 17
+        }
+      ],
+      "detail": "Con due sole variabili: se sono direttamente connesse (directly connected) da un arco sono dipendenti (dependent); se non sono connesse sono indipendenti (independent). Più precisamente, un arco dice che la dipendenza è permessa dalla struttura (il grafo non afferma l'indipendenza), l'assenza dell'arco afferma p(a,b) = p(a)p(b). Nota del verificatore: la pagina non contiene formule per questo punto; le due fattorizzazioni in LaTeX sono un'integrazione didattica.",
+      "latex": [
+        "a \\rightarrow b:\\; p(a,b)=p(a)\\,p(b\\mid a)",
+        "a \\quad b:\\; p(a,b)=p(a)\\,p(b)"
+      ],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c08",
+      "name": "Casi banali con tre variabili",
+      "nameEn": "Trivial cases with three variables",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 17
+        }
+      ],
+      "detail": "Con tre variabili ci sono due casi banali: (1) se una variabile della rete è disconnessa dalle altre due, l'analisi è immediata e si riduce al caso di due variabili (two variables case); (2) se tutte le variabili sono completamente connesse (fully connected), non si può assumere alcuna indipendenza senza informazioni aggiuntive (independence cannot be assumed without additional information): il grafo completo non codifica indipendenze. Nota del verificatore: la fattorizzazione del grafo completo in LaTeX è un'integrazione (la pagina non ha formule qui); con variabili binarie richiede 1 + 2 + 4 = 7 parametri, cioè tutta la congiunta.",
+      "latex": [
+        "p(a,b,c)=p(a)\\,p(b\\mid a)\\,p(c\\mid a,b)"
+      ],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c09",
+      "name": "Il caso interessante: un arco mancante e le tre configurazioni del nodo centrale",
+      "nameEn": "One edge missing in a network of three variables",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 17
+        }
+      ],
+      "detail": "Lo scenario interessante nasce quando in una rete di tre variabili a, b, c manca un arco (one edge is missing), quello tra a e b. Si valuta se a e b sono indipendenti e se sono condizionatamente indipendenti dato c. La relazione tra a, b e c dipende da come il nodo centrale c si connette agli altri (how the middle node c connects to the others): ci sono tre configurazioni chiave (three key configurations), tail-to-tail, head-to-tail e head-to-head. 'Tail' è la coda di una freccia (il lato da cui parte), 'head' è la punta (il lato in cui arriva).",
+      "latex": [],
+      "symbols": [
+        {
+          "s": "c",
+          "meaning": "nodo centrale (middle node) del cammino a - c - b"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c10",
+      "name": "Configurazione tail-to-tail: struttura e fattorizzazione",
+      "nameEn": "Tail-to-Tail Configuration",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 17
+        }
+      ],
+      "detail": "Nella configurazione tail-to-tail il nodo c è genitore comune di a e b: c → a e c → b (figura a p17, c in alto con due frecce verso a e b). La fonte la intitola 'Tail-to-Tail Configuration (Converging on c)', ma le frecce partono da c (causa comune). La distribuzione congiunta si fattorizza secondo il grafo come prodotto delle CPT: p(a|c)p(b|c)p(c).",
+      "latex": [
+        "a \\leftarrow c \\rightarrow b",
+        "p(a,b,c) = p(a\\mid c)\\,p(b\\mid c)\\,p(c)"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c11",
+      "name": "Tail-to-tail: a e b non sono indipendenti",
+      "nameEn": "Tail-to-tail: a and b are not independent",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 17
+        }
+      ],
+      "detail": "Marginalizzando c si ottiene p(a,b) come somma su c di p(a|c)p(b|c)p(c), che in generale non si fattorizza in p(a)p(b): a e b non sono indipendenti (not independent). Intuitivamente la causa comune c, non osservata, fa variare insieme a e b: osservare a dà informazione su c e quindi su b.",
+      "latex": [
+        "p(a,b) = \\sum_{c} p(a\\mid c)\\,p(b\\mid c)\\,p(c) \\neq p(a)\\,p(b)"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c12",
+      "name": "Tail-to-tail: a e b sono condizionatamente indipendenti dato c",
+      "nameEn": "Tail-to-tail: a and b are conditionally independent given c",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 17
+        }
+      ],
+      "detail": "Condizionando su c: p(a,b|c) = p(a,b,c)/p(c) (definizione di probabilità condizionata); sostituendo la fattorizzazione, p(c) si semplifica e resta p(a|c)p(b|c). Quindi a ⊥ b | c (conditionally independent given c).",
+      "latex": [
+        "p(a,b\\mid c) = \\frac{p(a,b,c)}{p(c)} = p(a\\mid c)\\,p(b\\mid c)",
+        "a \\perp b \\mid c"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c13",
+      "name": "Tail-to-tail: spiegazione e origine del nome",
+      "nameEn": "Tail-to-tail: explanation",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 17
+        }
+      ],
+      "detail": "Spiegazione della fonte: osservare c blocca il cammino e 'spiega' a e b (observing c blocks the path and explains a and b): c è la causa comune che rende conto della correlazione tra a e b; una volta noto c non resta dipendenza. La configurazione si chiama tail-to-tail perché c si collega alle code (tails) delle due frecce. La fonte scrive letteralmente 'c connects to the tails of the arrows from a and b': la formulazione è imprecisa, le frecce partono da c e vanno verso a e b, ed è la loro coda (tail) a toccare c (vedi gaps).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c14",
+      "name": "Configurazione head-to-tail (catena): struttura e fattorizzazione",
+      "nameEn": "Head-to-Tail Configuration (chain)",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 17
+        },
+        {
+          "doc": "part2",
+          "page": 18
+        }
+      ],
+      "detail": "Nella configurazione head-to-tail (catena, chain) il nodo centrale c sta in mezzo a una catena causale a → c → b (figura in alto a p18). Il titolo è a fondo p17, la figura e le formule a p18. La congiunta si fattorizza come p(b|c)p(c|a)p(a).",
+      "latex": [
+        "a \\rightarrow c \\rightarrow b",
+        "p(a,b,c) = p(b\\mid c)\\,p(c\\mid a)\\,p(a)"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c15",
+      "name": "Head-to-tail: a e b non sono indipendenti",
+      "nameEn": "Head-to-tail: a and b are not independent",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 18
+        }
+      ],
+      "detail": "Marginalizzando c: p(a,b) = p(a) Σ_c p(b|c)p(c|a). La somma Σ_c p(b|c)p(c|a) vale p(b|a), che in generale dipende da a, quindi p(a,b) ≠ p(a)p(b): a e b non sono indipendenti. L'influenza di a si propaga a b attraverso c.",
+      "latex": [
+        "p(a,b) = p(a)\\sum_{c} p(b\\mid c)\\,p(c\\mid a) \\neq p(a)\\,p(b)"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c16",
+      "name": "Head-to-tail: a e b sono condizionatamente indipendenti dato c",
+      "nameEn": "Head-to-tail: a and b are conditionally independent given c",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 18
+        }
+      ],
+      "detail": "Dividendo la congiunta per p(c) si ottiene p(a,b|c) = [p(c|a)·p(a)/p(c)]·p(b|c); il fattore tra parentesi è, per il teorema di Bayes, p(a|c). Quindi p(a,b|c) = p(a|c)p(b|c) e a ⊥ b | c. È il passaggio chiave da saper giustificare all'orale: si usa Bayes per 'girare' p(c|a) in p(a|c).",
+      "latex": [
+        "p(a,b\\mid c) = \\frac{p(c\\mid a)\\cdot p(a)}{p(c)}\\,p(b\\mid c) = p(a\\mid c)\\,p(b\\mid c)",
+        "a \\perp b \\mid c"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c17",
+      "name": "Head-to-tail: spiegazione (mediatore) e origine del nome",
+      "nameEn": "Head-to-tail: explanation",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 18
+        }
+      ],
+      "detail": "c fa da mediatore in una catena causale che collega a e b (c serves as a mediator in a causal chain). Osservare c isola l'influenza di a su b (observing c isolates the influence of a on b), rendendoli condizionatamente indipendenti: tutto ciò che a può dire su b passa per c. La configurazione si chiama head-to-tail perché in c arriva la punta (head) di una freccia e parte la coda (tail) dell'altra.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c18",
+      "name": "Configurazione head-to-head (collider): struttura e fattorizzazione",
+      "nameEn": "Head-to-Head Configuration (collider)",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 18
+        }
+      ],
+      "detail": "Nella configurazione head-to-head (collider) a e b sono entrambi genitori di c: a → c ← b (figura al centro di p18, c in basso). La congiunta si fattorizza come p(c|a,b)p(a)p(b): a e b hanno prior separati e c dipende da entrambi.",
+      "latex": [
+        "a \\rightarrow c \\leftarrow b",
+        "p(a,b,c) = p(c\\mid a,b)\\,p(a)\\,p(b)"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c19",
+      "name": "Head-to-head: a e b sono indipendenti",
+      "nameEn": "Head-to-head: a and b are independent",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 18
+        }
+      ],
+      "detail": "Marginalizzando c: p(a,b) = Σ_c p(c|a,b)p(a)p(b) = p(a)p(b), perché p(a)p(b) esce dalla somma e Σ_c p(c|a,b) = 1 (la CPT di c è una distribuzione su c). Quindi a e b sono indipendenti (independent) finché c non è osservato: è il comportamento opposto alle altre due configurazioni.",
+      "latex": [
+        "p(a,b) = \\sum_{c} p(c\\mid a,b)\\,p(a)\\,p(b) = p(a)\\,p(b)",
+        "a \\perp b \\mid \\emptyset"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c20",
+      "name": "Head-to-head: a e b non sono condizionatamente indipendenti dato c",
+      "nameEn": "Head-to-head: a and b are not conditionally independent given c",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 18
+        }
+      ],
+      "detail": "Condizionando su c: p(a,b|c) = p(c|a,b)p(a)p(b)/p(c), che in generale non si fattorizza in p(a|c)p(b|c): a e b non sono condizionatamente indipendenti dato c (not conditionally independent given c). Il termine p(c|a,b) lega a e b e non si separa in un fattore solo di a per uno solo di b.",
+      "latex": [
+        "p(a,b\\mid c) = \\frac{p(c\\mid a,b)\\,p(a)\\,p(b)}{p(c)} \\neq p(a\\mid c)\\,p(b\\mid c)",
+        "a \\not\\perp b \\mid c"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c21",
+      "name": "Head-to-head: spiegazione (collider)",
+      "nameEn": "Head-to-head: explanation (collider)",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 18
+        }
+      ],
+      "detail": "c è un collider perché le frecce convergono su di esso (the arrows converge at it). Osservare c introduce una dipendenza tra a e b, perché entrambi influenzano congiuntamente c (they jointly influence c). La fonte afferma solo che nasce una dipendenza, senza dirne il verso. Nel caso tipico di cause alternative (CPT di tipo OR, come nel sistema del carburante), se so che l'effetto c si è verificato e scopro che una causa è presente, l'altra diventa meno necessaria (e viceversa): è il meccanismo che più avanti la fonte chiama explaining away (p20). Il verso dipende però dalla CPT: se servono entrambe le cause per produrre c (CPT di tipo AND), trovarne una rende l'altra più probabile. In entrambi i casi a e b non sono più indipendenti dato c.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c22",
+      "name": "Figura riassuntiva: tre configurazioni con e senza evidenza",
+      "nameEn": "Summary: tail to tail, head to tail, head to head, no evidence / evidence",
+      "kind": "figura",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 18
+        },
+        {
+          "doc": "part2",
+          "page": 19
+        }
+      ],
+      "detail": "Dopo 'Summary:' (fondo p18) la figura in cima a p19 è una griglia con tre colonne (tail to tail, head to tail, head to head) e due righe (no evidence, evidence); il nodo osservato c è colorato in blu. Legenda: giallo = independent, verde = dependent. Senza evidenza: tail-to-tail e head-to-tail sono verdi (a e b dipendenti), head-to-head è giallo (indipendenti). Con evidenza su c: tail-to-tail e head-to-tail diventano gialli (indipendenti), head-to-head diventa verde (dipendenti). Le ellissi verdi/gialle raggruppano tail-to-tail e head-to-tail insieme proprio perché si comportano allo stesso modo, mentre head-to-head è l'eccezione.",
+      "latex": [
+        "\\text{tail-to-tail, head-to-tail: } a \\not\\perp b \\mid \\emptyset,\\quad a \\perp b \\mid c",
+        "\\text{head-to-head: } a \\perp b \\mid \\emptyset,\\quad a \\not\\perp b \\mid c"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c23",
+      "name": "La struttura della rete informa le relazioni probabilistiche",
+      "nameEn": "Structure informs probabilistic relationships",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 19
+        }
+      ],
+      "detail": "Commento sotto la figura riassuntiva: questo schema mostra come la struttura di una rete bayesiana determini le relazioni probabilistiche tra le variabili (how the structure of a Bayesian network informs the probabilistic relationships), e ciò la rende preziosa per il ragionamento e l'inferenza (invaluable for reasoning and inference): guardando solo il grafo e l'insieme delle variabili osservate si sa quali variabili possono influenzarsi.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c24",
+      "name": "Esempio del sistema di carburante: impostazione",
+      "nameEn": "Example: fuel system in a car (setting)",
+      "kind": "esempio",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 19
+        }
+      ],
+      "detail": "Esempio di inferenza con una connessione head-to-head (collider). Setting: un sistema di carburante in un'auto (A fuel system in a car) con tre variabili binarie: batteria (battery) B, carica (B=1) o scarica (flat, B=0); serbatoio (fuel tank) F, pieno (F=1) o vuoto (F=0); indicatore elettrico del carburante (electric fuel gauge) G, che segna pieno (G=1) o vuoto (G=0). La struttura è B → G ← F: l'indicatore dipende sia dalla batteria sia dal serbatoio.",
+      "latex": [
+        "B \\rightarrow G \\leftarrow F",
+        "B,F,G \\in \\{0,1\\}"
+      ],
+      "symbols": [
+        {
+          "s": "B",
+          "meaning": "batteria: 1 carica, 0 scarica"
+        },
+        {
+          "s": "F",
+          "meaning": "serbatoio: 1 pieno, 0 vuoto"
+        },
+        {
+          "s": "G",
+          "meaning": "indicatore del carburante: 1 pieno, 0 vuoto"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c25",
+      "name": "CPT del sistema di carburante",
+      "nameEn": "Conditional probability tables (CPT) of the fuel system",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 19
+        }
+      ],
+      "detail": "Batteria e serbatoio hanno probabilità a priori indipendenti (independent prior probabilities): P(B=1) = 0.9 e P(F=1) = 0.9. L'indicatore è condizionato su entrambi ed è inaffidabile (the fuel gauge is conditioned on both (unreliable!)): P(G=1|B=1,F=1) = 0.8 (anche con tutto a posto segna vuoto il 20% delle volte), P(G=1|B=1,F=0) = 0.2, P(G=1|B=0,F=1) = 0.2, P(G=1|B=0,F=0) = 0.1. I complementi P(G=0|·) sono rispettivamente 0.2, 0.8, 0.8, 0.9. Nota del verificatore: le prime tre righe LaTeX sono trascritte dalla slide 'Conditional probability tables (CPT)'; la quarta (fattorizzazione) è un'integrazione.",
+      "latex": [
+        "P(B=1)=0.9 \\qquad P(F=1)=0.9",
+        "P(G=1\\mid B=1,F=1)=0.8 \\qquad P(G=1\\mid B=1,F=0)=0.2",
+        "P(G=1\\mid B=0,F=1)=0.2 \\qquad P(G=1\\mid B=0,F=0)=0.1",
+        "p(B,F,G)=P(B)\\,P(F)\\,P(G\\mid B,F)"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c26",
+      "name": "Probabilità a priori di serbatoio vuoto",
+      "nameEn": "Probability of empty tank: prior",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 20
+        }
+      ],
+      "detail": "Slide 'Probability of empty tank', prima parte: prima di osservare qualunque cosa la probabilità che il serbatoio sia vuoto è il prior P(F=0) = 1 - P(F=1) = 0.1. Nella figura nessun nodo è colorato.",
+      "latex": [
+        "P(F=0) = 1 - P(F=1) = 0.1"
+      ],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c27",
+      "name": "Posterior dopo aver osservato l'indicatore vuoto",
+      "nameEn": "Posterior after observing empty fuel gauge",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 20
+        }
+      ],
+      "detail": "Osservando che l'indicatore segna vuoto (G=0, nodo G colorato in blu nella figura), per il teorema di Bayes P(F=0|G=0) = P(G=0|F=0)P(F=0)/P(G=0) ≈ 0.257. I due termini P(G=0|F=0) = 0.81 e P(G=0) = 0.315 sono calcolati nella slide 'Derivation' (c29, c30); il valore di P(G=0) non è scritto nella slide ma si ricava: 0.081/0.315 ≈ 0.257.",
+      "latex": [
+        "P(F=0\\mid G=0) = \\frac{P(G=0\\mid F=0)\\,P(F=0)}{P(G=0)} \\simeq 0.257"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c28",
+      "name": "Nota: la probabilità di serbatoio vuoto aumenta, ma meno del previsto",
+      "nameEn": "Note: probability of empty tank increases",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 20
+        }
+      ],
+      "detail": "Nota della slide: la probabilità che il serbatoio sia vuoto aumenta (increases) osservando che l'indicatore segna vuoto, da 0.1 a circa 0.257, ma non quanto ci si aspetterebbe (not as much as expected) a causa del prior forte (strong prior, P(F=1)=0.9) e dell'indicatore inaffidabile (unreliable gauge): un indicatore che segna vuoto è spiegabile anche con una batteria scarica o con un errore dello strumento.",
+      "latex": [
+        "P(F=0)=0.1 \\;\\longrightarrow\\; P(F=0\\mid G=0)\\simeq 0.257"
+      ],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c29",
+      "name": "Derivazione di P(G=0|F=0) con marginalizzazione su B",
+      "nameEn": "Derivation of P(G=0|F=0)",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 20
+        }
+      ],
+      "detail": "Slide 'Derivation', prima parte: P(G=0|F=0) si ottiene marginalizzando la batteria: somma su B ∈ {0,1} di P(G=0,B|F=0); con la regola del prodotto diventa somma di P(G=0|B,F=0)P(B|F=0); poiché B e F sono indipendenti (head-to-head con G non osservato), P(B|F=0) = P(B). Numericamente 0.8·0.9 + 0.9·0.1 = 0.81.",
+      "latex": [
+        "P(G=0\\mid F=0) = \\sum_{B\\in\\{0,1\\}} P(G=0,B\\mid F=0)",
+        "= \\sum_{B\\in\\{0,1\\}} P(G=0\\mid B,F=0)\\,P(B\\mid F=0)",
+        "= \\sum_{B\\in\\{0,1\\}} P(G=0\\mid B,F=0)\\,P(B) = 0.81"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c30",
+      "name": "Derivazione di P(G=0) con doppia marginalizzazione",
+      "nameEn": "Derivation of P(G=0)",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 20
+        }
+      ],
+      "detail": "Slide 'Derivation', seconda parte: la probabilità marginale che l'indicatore segni vuoto si ottiene sommando la congiunta su B e F, e fattorizzandola secondo la rete: P(G=0) = Σ_B Σ_F P(G=0|B,F)P(B)P(F). La slide si ferma alla formula; il valore è 0.2·0.9·0.9 + 0.8·0.9·0.1 + 0.8·0.1·0.9 + 0.9·0.1·0.1 = 0.162 + 0.072 + 0.072 + 0.009 = 0.315. Nota del verificatore: la terza riga LaTeX (valori numerici 0.162 + 0.072 + 0.072 + 0.009) non è nella slide, che si ferma alla doppia somma.",
+      "latex": [
+        "P(G=0) = \\sum_{B\\in\\{0,1\\}}\\sum_{F\\in\\{0,1\\}} P(G=0,B,F)",
+        "= \\sum_{B\\in\\{0,1\\}}\\sum_{F\\in\\{0,1\\}} P(G=0\\mid B,F)\\,P(B)\\,P(F)",
+        "= 0.162+0.072+0.072+0.009 = 0.315"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c31",
+      "name": "Posterior dopo aver osservato anche la batteria scarica",
+      "nameEn": "Posterior after observing that the battery is also flat",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 20
+        }
+      ],
+      "detail": "Seconda slide 'Probability of empty tank': si osserva anche che la batteria è scarica (B=0; nella figura sia B sia G sono blu). P(F=0|G=0,B=0) = P(G=0|F=0,B=0)P(F=0|B=0)/P(G=0|B=0) ≈ 0.111. Con i numeri: P(G=0|F=0,B=0) = 0.9, P(F=0|B=0) = P(F=0) = 0.1 (B e F indipendenti a priori), P(G=0|B=0) = 0.8·0.9 + 0.9·0.1 = 0.81, quindi 0.09/0.81 ≈ 0.111.",
+      "latex": [
+        "P(F=0\\mid G=0,B=0) = \\frac{P(G=0\\mid F=0,B=0)\\,P(F=0\\mid B=0)}{P(G=0\\mid B=0)} \\simeq 0.111"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c32",
+      "name": "Nota: la probabilità di serbatoio vuoto diminuisce dopo la batteria scarica",
+      "nameEn": "Note: probability of empty tank decreases",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 20
+        }
+      ],
+      "detail": "La probabilità che il serbatoio sia vuoto diminuisce (decreases) dopo aver osservato che anche la batteria è scarica: da ≈ 0.257 a ≈ 0.111. Osservare B ha cambiato la credenza su F, mentre a priori B e F erano indipendenti: l'osservazione del collider G li ha resi dipendenti.",
+      "latex": [
+        "P(F=0\\mid G=0)\\simeq 0.257 \\;\\longrightarrow\\; P(F=0\\mid G=0,B=0)\\simeq 0.111"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c33",
+      "name": "Explaining away",
+      "nameEn": "Explaining away",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 20
+        }
+      ],
+      "detail": "La condizione della batteria 'spiega via' (explains away) l'osservazione che l'indicatore segna vuoto: tra le due cause possibili dell'effetto osservato G=0, trovarne una (batteria scarica) rende meno probabile l'altra (serbatoio vuoto). È la manifestazione concreta della dipendenza condizionale introdotta dal collider (c20, c21): B e F, indipendenti a priori, diventano dipendenti una volta osservato G.",
+      "latex": [
+        "B \\perp F \\mid \\emptyset \\quad\\text{ma}\\quad B \\not\\perp F \\mid G"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c34",
+      "name": "Il posterior resta comunque maggiore del prior",
+      "nameEn": "Posterior still greater than the prior",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 20
+        }
+      ],
+      "detail": "La probabilità ≈ 0.111 è ancora maggiore del prior 0.1 (still greater than the prior one), perché l'osservazione dell'indicatore fornisce comunque qualche evidenza a favore del serbatoio vuoto (still gives some evidence in favour of an empty tank): con la batteria scarica l'indicatore segna vuoto con probabilità 0.9 se il serbatoio è vuoto e 0.8 se è pieno, quindi resta un piccolo rapporto di verosimiglianza 0.9/0.8 a favore di F=0.",
+      "latex": [
+        "P(F=0)=0.1 < P(F=0\\mid G=0,B=0)\\simeq 0.111 < P(F=0\\mid G=0)\\simeq 0.257"
+      ],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c35",
+      "name": "Il nome 'rete bayesiana' viene dal teorema di Bayes",
+      "nameEn": "Bayesian Networks derive their name from Bayes' Theorem",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 21
+        }
+      ],
+      "detail": "Le reti bayesiane prendono il nome dal teorema di Bayes (Bayes' Theorem), centrale nel loro funzionamento: il teorema è alla base del ragionamento probabilistico e permette di aggiornare le credenze sulle variabili non note in base all'evidenza osservata (update our beliefs about unknown variables based on observed evidence), come nell'esempio del carburante (prior 0.1, posterior 0.257, poi 0.111). La formula del teorema è scritta qui come promemoria.",
+      "latex": [
+        "P(x\\mid e) = \\frac{P(e\\mid x)\\,P(x)}{P(e)}"
+      ],
+      "symbols": [
+        {
+          "s": "x",
+          "meaning": "variabile non nota (query)"
+        },
+        {
+          "s": "e",
+          "meaning": "evidenza osservata"
+        }
+      ],
+      "examRelevance": 1
+    },
+    {
+      "id": "c36",
+      "name": "Discendente di un nodo",
+      "nameEn": "Descendant",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 21
+        }
+      ],
+      "detail": "Un discendente (descendant) di un nodo x in una rete bayesiana è qualunque nodo raggiungibile da x seguendo un cammino orientato coerente con la direzione delle frecce del grafo (by following a directed path consistent with the direction of the arrows). Figli, figli dei figli e così via sono discendenti; i nodi non discendenti (non-descendants) compaiono nelle indipendenze locali (c47).",
+      "latex": [
+        "y \\in \\mathrm{Desc}(x) \\iff x \\rightarrow \\cdots \\rightarrow y"
+      ],
+      "symbols": [
+        {
+          "s": "\\mathrm{Desc}(x)",
+          "meaning": "insieme dei discendenti di x (notazione di comodo)"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c37",
+      "name": "Head-to-head: blocco e sblocco tramite il collider o i suoi discendenti",
+      "nameEn": "Head-to-head connection and its descendants",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 21
+        }
+      ],
+      "detail": "In una connessione head-to-head (collider) un nodo centrale c collega due genitori a e b come a → c ← b. In assenza di evidenza su c o sui suoi discendenti (in the absence of evidence about c or its descendants) il cammino tra a e b è bloccato (blocked) e a e b sono indipendenti. Quando invece c o uno qualunque dei suoi discendenti riceve evidenza (c or any of its descendants receives evidence) il cammino si sblocca (unblocked) e a e b diventano condizionatamente dipendenti (conditionally dependent). Osservare un effetto di c equivale a ricevere informazione indiretta su c. Nota del verificatore: la seconda riga LaTeX (con d nell'insieme {c} ∪ Desc(c)) è una formalizzazione di integrazione; la pagina scrive solo a → c ← b e il testo. La dipendenza con evidenza su un discendente vale in generale, non per ogni scelta delle CPT (vedi der11).",
+      "latex": [
+        "a \\rightarrow c \\leftarrow b",
+        "a \\perp b \\mid \\emptyset \\qquad a \\not\\perp b \\mid d,\\; d\\in \\{c\\}\\cup \\mathrm{Desc}(c)"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c38",
+      "name": "Flusso di informazione: le dipendenze emergono o svaniscono con l'evidenza",
+      "nameEn": "Information flow in a Bayesian network",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 21
+        }
+      ],
+      "detail": "La proprietà del collider con i discendenti permette di ragionare su come l'informazione fluisce (how information flows) in una rete bayesiana e su come le dipendenze emergono o svaniscono (how dependencies emerge or vanish) in base all'evidenza osservata: osservare un nodo tail-to-tail o head-to-tail interrompe il flusso, osservare un collider (o un suo discendente) lo apre.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c39",
+      "name": "d-separazione generale tra insiemi di nodi",
+      "nameEn": "d-separated by C, dsep(A;B|C)",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 21
+        }
+      ],
+      "detail": "In una rete bayesiana, dati tre insiemi di nodi A, B e C arbitrari e disgiunti (three arbitrary, non-intersecting sets of nodes), gli insiemi A e B sono d-separati da C (d-separated by C), notazione dsep(A;B|C), se tutti i cammini (all paths) tra qualunque nodo di A e qualunque nodo di B sono bloccati (blocked) da C. Basta un solo cammino aperto per perdere la d-separazione.",
+      "latex": [
+        "\\mathrm{dsep}(A;B\\mid C)",
+        "A\\cap B=\\emptyset,\\quad A\\cap C=\\emptyset,\\quad B\\cap C=\\emptyset"
+      ],
+      "symbols": [
+        {
+          "s": "A,B,C",
+          "meaning": "insiemi disgiunti di nodi; C è l'insieme osservato (evidenza)"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c40",
+      "name": "Quando un cammino è bloccato: le due regole",
+      "nameEn": "Blocked path",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 21
+        }
+      ],
+      "detail": "Un cammino è bloccato (blocked) se contiene almeno un nodo (at least one node) tale che: (1) connessione tail-to-tail o head-to-tail: le frecce lungo il cammino si incontrano tail-to-tail o head-to-tail nel nodo e il nodo appartiene a C (è osservato); oppure (2) connessione head-to-head: le frecce si incontrano head-to-head nel nodo e né il nodo né alcun suo discendente appartiene a C (the node is not in C and no descendant of this node is in C). Un cammino è aperto solo se nessun nodo lo blocca: tutti i nodi non-collider non osservati e tutti i collider osservati (o con un discendente osservato). Nota del verificatore: le due righe LaTeX sono una formalizzazione di integrazione del testo della pagina (che non usa simboli).",
+      "latex": [
+        "\\text{blocca se } (\\text{t2t o h2t}) \\wedge v\\in C",
+        "\\text{blocca se } \\text{h2h} \\wedge v\\notin C \\wedge \\mathrm{Desc}(v)\\cap C=\\emptyset"
+      ],
+      "symbols": [
+        {
+          "s": "v",
+          "meaning": "nodo intermedio del cammino"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c41",
+      "name": "d-separazione implica indipendenza condizionale",
+      "nameEn": "d-separation implies conditional independence",
+      "kind": "teorema",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 21
+        }
+      ],
+      "detail": "Se gli insiemi A e B sono d-separati da C, allora A e B sono condizionatamente indipendenti dato C (A ⊥ B | C). In altre parole, se A e B sono d-separati da C, conoscere i valori di C non fornisce alcuna informazione aggiuntiva sulla relazione tra A e B (knowing the values of C provides no additional information about the relationship between A and B). Vale per ogni distribuzione che si fattorizza secondo il grafo.",
+      "latex": [
+        "\\mathrm{dsep}(A;B\\mid C) \\Rightarrow A \\perp B \\mid C"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c42",
+      "name": "Riformulazione operativa: nessun flusso di informazione tra A e B dato C",
+      "nameEn": "So, a path between nodes in sets A and B is blocked if",
+      "kind": "procedura",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 21
+        }
+      ],
+      "detail": "La fonte ripete il criterio in forma operativa ('So, a path between nodes in sets A and B is blocked if'): c'è una connessione tail-to-tail o head-to-tail e il nodo centrale è in C (osservato); oppure c'è una connessione head-to-head e il nodo centrale (o uno qualunque dei suoi discendenti) non è in C (non osservato). La parentesi va letta come nella prima formulazione della stessa pagina: il collider blocca solo se né il nodo né alcuno dei suoi discendenti è in C; basta un discendente osservato per aprirlo (vedi gaps). Questa definizione garantisce che nessuna informazione fluisca tra gli insiemi A e B dato l'insieme di condizionamento C (no information flows between the sets A and B, given the conditioning set C). Procedura per verificare dsep(A;B|C): elencare tutti i cammini tra A e B, per ogni cammino esaminare ogni nodo intermedio e il tipo di connessione, dichiarare il cammino bloccato se almeno un nodo blocca; A e B sono d-separati se tutti i cammini sono bloccati. Nota del verificatore: la formula LaTeX è una formalizzazione di integrazione della procedura, non presente nella pagina.",
+      "latex": [
+        "\\mathrm{dsep}(A;B\\mid C) \\iff \\forall\\,\\pi: A \\leadsto B,\\; \\exists\\, v\\in\\pi \\text{ che blocca } \\pi"
+      ],
+      "symbols": [
+        {
+          "s": "\\pi",
+          "meaning": "cammino (non orientato) tra un nodo di A e uno di B"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c43",
+      "name": "I cammini si percorrono ignorando la direzione delle frecce",
+      "nameEn": "Paths (trails) ignore arrow direction",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 21
+        },
+        {
+          "doc": "part2",
+          "page": 22
+        }
+      ],
+      "detail": "Chiarimento implicito nella fonte: i 'paths' del criterio di d-separazione sono sequenze di nodi adiacenti percorse senza rispettare il verso delle frecce (a differenza dei cammini orientati che definiscono i discendenti, c36). Negli esempi di p22 il cammino tra a e b è a → e ← f → b: attraversa e contro-verso e f 'all'indietro'. È proprio la direzione delle frecce nei nodi intermedi (come si incontrano: tail-to-tail, head-to-tail, head-to-head) che decide il blocco.",
+      "latex": [
+        "a \\rightarrow e \\leftarrow f \\rightarrow b"
+      ],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c44",
+      "name": "Esempio generale: a e b non d-separati da c",
+      "nameEn": "Example: nodes a and b are not d-separated by c",
+      "kind": "esempio",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 21
+        },
+        {
+          "doc": "part2",
+          "page": 22
+        }
+      ],
+      "detail": "'Examples of general d-separation' (fine p21, slide a p22). Grafo: a → e, f → e, f → b, e → c. Slide 'a ⊥̸ b | c' con c osservato (blu): i nodi a e b non sono d-separati da c (not d-separated by c) perché il nodo f è tail-to-tail e non osservato (quindi non blocca) e il nodo e è head-to-head e il suo figlio c è osservato (quindi il collider è aperto). L'unico cammino a → e ← f → b è dunque aperto e a e b sono dipendenti dato c. Il titolo della slide scrive la non-indipendenza con un glifo reso male (sembra una 'π' o '╥'): va letto come a ⊥̸ b | c, cioè 'a non è indipendente da b dato c' (vedi gaps).",
+      "latex": [
+        "a \\not\\perp b \\mid c"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c45",
+      "name": "Esempio generale: a e b d-separati da f",
+      "nameEn": "Example: nodes a and b are d-separated by f",
+      "kind": "esempio",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 22
+        }
+      ],
+      "detail": "Stesso grafo (a → e ← f → b, e → c), slide 'a ⊥ b | f' con f osservato (blu): i nodi a e b sono d-separati da f (d-separated by f) perché il nodo f è tail-to-tail e osservato, quindi blocca il cammino. Osservazione aggiuntiva (non scritta nella slide): anche il nodo e bloccherebbe da solo, perché è head-to-head e né e né il suo discendente c sono osservati; basta un nodo che blocca, qui ce ne sono due.",
+      "latex": [
+        "a \\perp b \\mid f",
+        "\\mathrm{dsep}(a;b\\mid f)"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c46",
+      "name": "Convenzione grafica: i nodi osservati sono colorati",
+      "nameEn": "Observed (evidence) nodes are shaded",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 19
+        },
+        {
+          "doc": "part2",
+          "page": 20
+        },
+        {
+          "doc": "part2",
+          "page": 22
+        }
+      ],
+      "detail": "In tutte le figure del modulo i nodi osservati (evidenza, cioè appartenenti all'insieme C) sono riempiti di blu, quelli non osservati sono cerchi vuoti rossi: c nella riga 'evidence' della figura riassuntiva (p19), G e poi B e G nelle slide del carburante (p20), c e poi f negli esempi generali (p22). Saper leggere e disegnare questa convenzione è utile all'orale quando si disegna il grafo alla lavagna.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c47",
+      "name": "Indipendenze locali codificate da una rete",
+      "nameEn": "Local independence assumptions I_l(G)",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 22
+        }
+      ],
+      "detail": "Richiamo (già visto nel modulo p03): una struttura di rete bayesiana G codifica un insieme di ipotesi di indipendenza locali (local independence assumptions): ogni variabile x_i è indipendente dai suoi non-discendenti dati i suoi genitori (x_i ⊥ NonDescendants_{x_i} | Parents_{x_i}), per ogni i.",
+      "latex": [
+        "I_l(G) = \\left\\{ \\forall i,\\; x_i \\perp \\mathit{NonDescendants}_{x_i} \\mid \\mathit{Parents}_{x_i} \\right\\}"
+      ],
+      "symbols": [
+        {
+          "s": "I_l(G)",
+          "meaning": "insieme delle indipendenze locali codificate da G"
+        },
+        {
+          "s": "\\mathit{Parents}_{x_i}",
+          "meaning": "genitori di x_i nel grafo"
+        },
+        {
+          "s": "\\mathit{NonDescendants}_{x_i}",
+          "meaning": "nodi che non sono discendenti di x_i"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c48",
+      "name": "Indipendenze globali (di Markov) codificate da una rete",
+      "nameEn": "Global (Markov) independence assumptions I(G)",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 22
+        }
+      ],
+      "detail": "Grazie alla d-separazione si può dire che una struttura G codifica anche un insieme di ipotesi di indipendenza globali (di Markov) (global (Markov) independence assumptions): tutte le asserzioni A ⊥ B | C per cui A e B sono d-separati da C nel grafo. Include le indipendenze locali come caso particolare (i genitori d-separano un nodo dai suoi non-discendenti).",
+      "latex": [
+        "I(G) = \\{ (A \\perp B \\mid C) : \\mathrm{dsep}(A;B\\mid C) \\}"
+      ],
+      "symbols": [
+        {
+          "s": "I(G)",
+          "meaning": "insieme delle indipendenze globali (Markov) codificate da G"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c49",
+      "name": "Indipendenza condizionale se e solo se d-separazione",
+      "nameEn": "Conditionally independent if and only if d-separated",
+      "kind": "teorema",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 22
+        }
+      ],
+      "detail": "La definizione di I(G) implica che due insiemi A e B sono condizionatamente indipendenti dato un insieme C se e solo se (if and only if) A e B sono d-separati da C nella rete bayesiana. La lettura corretta è in termini di indipendenze codificate dal grafo: la d-separazione è corretta (ogni d-separazione vale in ogni distribuzione che si fattorizza su G) e completa (se A e B non sono d-separati esiste una distribuzione che si fattorizza su G in cui sono dipendenti); una specifica distribuzione può comunque avere indipendenze in più dovute ai numeri delle CPT (vedi I-map, c56).",
+      "latex": [
+        "(A \\perp B \\mid C) \\in I(G) \\iff \\mathrm{dsep}(A;B\\mid C)"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c50",
+      "name": "Strutture diverse possono codificare le stesse indipendenze",
+      "nameEn": "Different BN structures can encode the exact same set of independence assumptions",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 22
+        }
+      ],
+      "detail": "Strutture di rete bayesiana anche molto diverse (quite different) possono codificare esattamente lo stesso insieme (the exact same set) di ipotesi di indipendenza. Conseguenza: dai soli dati (che rivelano indipendenze) non si può in generale distinguere tra strutture equivalenti, né leggere la direzione causale di ogni arco.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c51",
+      "name": "I-equivalenza tra strutture",
+      "nameEn": "I-equivalent",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 22
+        }
+      ],
+      "detail": "Due strutture di rete bayesiana G e G' si dicono I-equivalenti (I-equivalent) se codificano lo stesso insieme di ipotesi di indipendenza, cioè I(G) = I(G').",
+      "latex": [
+        "I(G) = I(G')"
+      ],
+      "symbols": [
+        {
+          "s": "G,G'",
+          "meaning": "due strutture (DAG) sulle stesse variabili"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c52",
+      "name": "Partizione dello spazio delle strutture in classi di I-equivalenza",
+      "nameEn": "I-equivalence classes",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 22
+        }
+      ],
+      "detail": "Di conseguenza lo spazio di tutte le possibili strutture di rete bayesiana su un insieme di variabili X è partizionato in classi di I-equivalenza mutuamente esclusive ed esaustive (mutually exclusive and exhaustive I-equivalence classes) in base alle ipotesi di indipendenza che codificano. Ogni classe di equivalenza è un insieme di strutture che codificano le stesse relazioni di indipendenza. L'I-equivalenza è una relazione di equivalenza (riflessiva, simmetrica, transitiva), per questo induce una partizione. Esempio numerico (non nella fonte): su 3 variabili ci sono 25 DAG raggruppati in 11 classi. Nota del verificatore: la notazione G ∼ G' in LaTeX è di comodo, la pagina scrive solo I(G) = I(G').",
+      "latex": [
+        "G \\sim G' \\iff I(G)=I(G')"
+      ],
+      "symbols": [
+        {
+          "s": "X",
+          "meaning": "insieme delle variabili"
+        }
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c53",
+      "name": "Tail-to-tail e head-to-tail sono I-equivalenti",
+      "nameEn": "Tail-to-Tail and Head-to-Tail structures are independence equivalent",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 22
+        },
+        {
+          "doc": "part2",
+          "page": 23
+        }
+      ],
+      "detail": "Sezione 'Independence Equivalence of Structures': le strutture tail-to-tail e head-to-tail (considerate in entrambe le direzioni, in both directions) sono equivalenti rispetto alle indipendenze (independence equivalent): codificano le stesse relazioni di indipendenza condizionale, cioè a ⊥̸ b e a ⊥ b | c. Nella figura di p23 le tre strutture A → C → B, A ← C ← B e A ← C → B sono raggruppate nello stesso riquadro. Le tre fattorizzazioni si trasformano l'una nell'altra con il teorema di Bayes (derivazione der10).",
+      "latex": [
+        "A\\rightarrow C\\rightarrow B \\;\\sim\\; A\\leftarrow C\\leftarrow B \\;\\sim\\; A\\leftarrow C\\rightarrow B"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c54",
+      "name": "Head-to-head non è I-equivalente alle altre",
+      "nameEn": "Head-to-Head connections are not independence equivalent",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 22
+        },
+        {
+          "doc": "part2",
+          "page": 23
+        }
+      ],
+      "detail": "Al contrario, le connessioni head-to-head non sono equivalenti rispetto alle indipendenze a quelle tail-to-tail o head-to-tail, perché codificano insiemi diversi di indipendenze condizionali (a ⊥ b ma a ⊥̸ b | c). Nella figura di p23 la struttura A → C ← B sta da sola nel riquadro di destra: è l'unica della sua classe.",
+      "latex": [
+        "A\\rightarrow C\\leftarrow B \\;\\not\\sim\\; A\\rightarrow C\\rightarrow B"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c55",
+      "name": "Figura: le quattro strutture a tre nodi e le loro classi",
+      "nameEn": "Figure: I-equivalent structures",
+      "kind": "figura",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 23
+        }
+      ],
+      "detail": "Figura in cima a p23: nel riquadro di sinistra tre strutture con nodi A, C, B: la catena A → C → B (verticale), la catena inversa B → C → A (verticale, frecce verso l'alto) e la struttura tail-to-tail A ← C → B; nel riquadro di destra, separato, la struttura head-to-head A → C ← B. La separazione visiva in due riquadri rappresenta le due classi di I-equivalenza.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c56",
+      "name": "I-map: non serve codificare tutte le indipendenze",
+      "nameEn": "I-map",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 23
+        },
+        {
+          "doc": "part2",
+          "page": 13
+        }
+      ],
+      "detail": "Perché una struttura G sia una I-map per una distribuzione p non è necessario che codifichi tutte le indipendenze di p (it does not need to encode all of the independencies in p): basta che ogni indipendenza codificata da G valga in p (definizione del modulo p03, p13: I_l(G) ⊆ I(p)). Per esempio un grafo completamente connesso (fully connected graph) può essere una I-map per qualunque distribuzione p definita sulle sue variabili, perché non codifica alcuna indipendenza.",
+      "latex": [
+        "I_l(G) \\subseteq I(p)"
+      ],
+      "symbols": [
+        {
+          "s": "I(p)",
+          "meaning": "insieme di tutte le indipendenze che valgono in p"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c57",
+      "name": "I-map minimale",
+      "nameEn": "Minimal I-map",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 23
+        }
+      ],
+      "detail": "Una I-map minimale (minimal I-map) per p è una I-map G che non può essere 'ridotta' (reduced) a una struttura più piccola G' ⊆ G (rimuovendo archi, by removing edges) restando una I-map per p. Significa che una I-map minimale contiene solo gli archi essenziali (only the essential edges) per codificare le indipendenze della distribuzione: togliere qualunque arco introdurrebbe un'indipendenza falsa per p. Formule: la prima riga (G' ⊆ G, 'smaller structure') è trascritta dalla pagina ed è stata aggiunta dal verificatore; la seconda è una formalizzazione di integrazione. Il simbolo ⊆ della fonte va inteso come sottografo proprio (almeno un arco in meno), perché G stesso non è 'più piccolo' di G.",
+      "latex": [
+        "G' \\subseteq G",
+        "\\nexists\\, G' \\subsetneq G : G' \\text{ è I-map per } p"
+      ],
+      "symbols": [
+        {
+          "s": "G' \\subseteq G",
+          "meaning": "G' ottenuto da G togliendo archi"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c58",
+      "name": "Problema: una I-map minimale non cattura tutte le indipendenze",
+      "nameEn": "Problem: a minimal I-map does not necessarily capture all the independencies",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 23
+        }
+      ],
+      "detail": "Problema (Problem): una I-map minimale per p non cattura necessariamente tutte le indipendenze di p. Codifica solo un sottoinsieme delle dipendenze e indipendenze che formano una I-map valida (it only encodes a subset). Per esempio la I-map minimale dipende dall'ordine in cui si aggiungono le variabili: nel sistema del carburante con ordine G, B, F si ottiene un grafo completo (minimale per quell'ordine) che perde l'indipendenza B ⊥ F. Nota del verificatore: la formula LaTeX è un'integrazione che rende esplicito il 'subset' del testo.",
+      "latex": [
+        "I(G_{\\min}) \\subseteq I(p),\\quad \\text{possibilmente } I(G_{\\min}) \\neq I(p)"
+      ],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c59",
+      "name": "Perfect map (P-map)",
+      "nameEn": "Perfect map (P-map)",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 23
+        }
+      ],
+      "detail": "Una perfect map (P-map) per una distribuzione p è una struttura G che cattura tutte e sole le indipendenze di p (captures all and only the independencies of p), cioè I(G) = I(p). Questo implica che G modella completamente e con precisione le indipendenze condizionali di p (fully and precisely models) e nessuna indipendenza in più (no extra independencies).",
+      "latex": [
+        "I(G) = I(p)"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c60",
+      "name": "Una I-map minimale non è necessariamente una perfect map",
+      "nameEn": "A minimal I-map is not necessarily a perfect map",
+      "kind": "confronto",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 23
+        }
+      ],
+      "detail": "Una I-map minimale non è necessariamente una perfect map: pur codificando alcune indipendenze, può non catturare tutte quelle rilevanti (may not capture all the relevant ones) o non evitare di codificarne di extra (or avoid encoding extra ones). Gerarchia: ogni P-map è una I-map minimale (per un ordine opportuno), ma non vale il viceversa; il grafo completo è sempre I-map ma quasi mai minimale. Nota del verificatore: la riga LaTeX è un riassunto di integrazione, la pagina non contiene simboli per questo punto.",
+      "latex": [
+        "\\text{P-map} \\Rightarrow \\text{I-map}, \\qquad \\text{I-map minimale} \\not\\Rightarrow \\text{P-map}"
+      ],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c61",
+      "name": "Algoritmo per trovare una P-map: esponenziale e restituisce una classe",
+      "nameEn": "Algorithm for finding a P-map",
+      "kind": "algoritmo",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 23
+        }
+      ],
+      "detail": "Esiste un algoritmo per trovare una P-map di una distribuzione, ma è esponenziale (exponential) nell'in-degree (numero massimo di genitori di un nodo) della P-map, quindi computazionalmente costoso per reti grandi. Inoltre l'algoritmo restituisce tipicamente una classe di equivalenza di reti (an equivalence class of networks, cioè un insieme di strutture equivalenti) invece di una singola struttura: coerente con c50-c52, dalle sole indipendenze non si distinguono strutture I-equivalenti. La fonte non nomina l'algoritmo.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c62",
+      "name": "Non tutte le distribuzioni hanno una P-map",
+      "nameEn": "Not all distributions have a P-map",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 23
+        }
+      ],
+      "detail": "Problema (Problem): non tutte le distribuzioni hanno una P-map. Alcune distribuzioni non possono essere modellate esattamente dal formalismo delle reti bayesiane (cannot be exactly modeled by the BN formalism): le perfect map non esistono necessariamente, e certe indipendenze della distribuzione possono essere intrinsecamente non codificabili (inherently unencodable) nel framework BN. Esempio classico (non nella fonte): A e B bit casuali indipendenti e C = A XOR B; le tre coppie sono indipendenti ma nessun DAG le codifica tutte e tre senza affermare anche A ⊥ B | C, che è falsa. Nota del verificatore: la formula LaTeX è un'integrazione che formalizza 'perfect maps do not necessarily exist'.",
+      "latex": [
+        "\\exists\\, p : \\nexists\\, G \\text{ con } I(G)=I(p)"
+      ],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c63",
+      "name": "Formula isolata x = 1 + x/2 a p23",
+      "nameEn": "Stray equation x = 1 + (1/2)x",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 23
+        }
+      ],
+      "detail": "Sotto la definizione di perfect map, a p23, compare isolata la formula x = 1 + (1/2)x, senza testo intorno e senza legame con l'argomento (la soluzione sarebbe x = 2). È con ogni probabilità un residuo di editing delle note. Viene inventariata per completezza e segnalata nei gaps.",
+      "latex": [
+        "x = 1 + \\frac{1}{2}x"
+      ],
+      "symbols": [],
+      "examRelevance": 0,
+      "noWidgetReason": "Artefatto editoriale delle note senza contenuto didattico: non c'è un concetto da rendere interattivo."
+    },
+    {
+      "id": "c64",
+      "name": "Consiglio pratico: collaborare con esperti di dominio",
+      "nameEn": "Collaborate with Domain Experts",
+      "kind": "procedura",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 23
+        },
+        {
+          "doc": "part2",
+          "page": 24
+        }
+      ],
+      "detail": "Suggerimenti pratici per costruire/progettare una rete bayesiana per l'inferenza (Practical Suggestions for Building/Designing a Bayesian Network for Inference), titolo a fondo p23. Primo: lavorare a stretto contatto con un esperto di dominio (domain expert) per assicurarsi che struttura e variabili scelte siano significative e rilevanti per il problema. La conoscenza dell'esperto è cruciale per definire le variabili chiave e capire le relazioni tra loro.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c65",
+      "name": "Consiglio pratico: definire le variabili (anche latenti)",
+      "nameEn": "Define Variables",
+      "kind": "procedura",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 24
+        }
+      ],
+      "detail": "Identificare e definire variabili per tutte le entità che possono essere osservate o che interessa predire (can be observed or those you're interested in predicting). Concentrarsi sulle variabili osservate è essenziale, ma conviene considerare variabili latenti (latent variables) dove opportuno: le variabili latenti possono migliorare il potere rappresentativo della rete e dare un migliore adattamento ai dati (improve the representational power of the network and provide a better fit for the data), per esempio una causa comune nascosta che rende condizionatamente indipendenti molti sintomi.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c66",
+      "name": "Consiglio pratico: la causalità come guida per gli archi",
+      "nameEn": "Use Causality as a Guideline for Adding Edges",
+      "kind": "procedura",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 24
+        }
+      ],
+      "detail": "Seguire il ragionamento causale nell'aggiungere archi alla rete (follow causal reasoning). Questo rende la struttura più interpretabile per gli esseri umani e produce reti più sparse (sparser networks), più facili da capire e analizzare. Le relazioni causali rispecchiano anche il funzionamento dei sistemi reali, migliorando le capacità predittive della rete. Collegamento con c58: l'ordine causale B, F, G nel sistema del carburante dà 2 archi, quello anti-causale G, B, F ne dà 3.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c67",
+      "name": "Consiglio pratico: evitare probabilità nulle",
+      "nameEn": "Assign Probabilities Carefully",
+      "kind": "procedura",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 24
+        }
+      ],
+      "detail": "Nello specificare le probabilità per le diverse configurazioni evitare di assegnare probabilità zero (avoid assigning zero probabilities). Le probabilità nulle possono causare problemi nell'inferenza: divisioni per zero (divisions by zero) o violazioni delle ipotesi dei modelli probabilistici. Meglio assegnare probabilità molto piccole ma non nulle (very small, non-zero probabilities), salvo forte evidenza contraria (unless strong evidence indicates otherwise). Nel teorema di Bayes un prior nullo resta nullo qualunque sia l'evidenza, e un'evidenza con probabilità nulla rende il denominatore zero. Nota del verificatore: la formula LaTeX è un'integrazione che illustra il problema con il teorema di Bayes; la pagina non ha formule.",
+      "latex": [
+        "P(x)=0 \\Rightarrow P(x\\mid e)=\\frac{P(e\\mid x)\\cdot 0}{P(e)}=0 \\quad \\forall e"
+      ],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c68",
+      "name": "Consiglio pratico: sfruttare i dati disponibili",
+      "nameEn": "Leverage Available Data",
+      "kind": "procedura",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 24
+        }
+      ],
+      "detail": "Se i dati sono disponibili, usarli per aiutare sia l'apprendimento della struttura sia la stima dei parametri della rete bayesiana (learning the structure and estimating the parameters). Gli approcci guidati dai dati aiutano a raffinare l'accuratezza della rete e a mantenerla ancorata a informazioni reali. I metodi per apprendere parametri e struttura dai dati sono trattati dopo (modulo p05).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c69",
+      "name": "Apprendimento nei modelli grafici: struttura data, si stimano i parametri",
+      "nameEn": "Learning in Graphical Models",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 24
+        }
+      ],
+      "detail": "Sezione 'Learning in Graphical Models' (inizia a p24, prosegue nel modulo p05). Quando si apprendono modelli grafici si assume spesso che la struttura del modello (il grafo) sia già fornita; il compito si concentra allora sulla stima dei parametri (estimating the parameters) del modello a partire dai dati disponibili.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c70",
+      "name": "Dataset di esempi: dati completi e incompleti",
+      "nameEn": "Complete Data / Incomplete Data",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 24
+        }
+      ],
+      "detail": "È dato un dataset di esempi D = {x(1), ..., x(N)}, dove N è il numero totale di esempi. Ogni esempio x(i) rientra in una di due categorie: dati completi (Complete Data), che contengono valori per tutte le variabili del modello; dati incompleti (Incomplete Data), che contengono valori solo per un sottoinsieme delle variabili, con valori mancanti per alcune (missing values). Il caso incompleto richiede EM (modulo p05, collegato a m10).",
+      "latex": [
+        "D = \\{\\mathbf{x}(1), \\dots, \\mathbf{x}(N)\\}"
+      ],
+      "symbols": [
+        {
+          "s": "\\mathbf{x}(i)",
+          "meaning": "i-esimo esempio (vettore dei valori delle variabili)"
+        },
+        {
+          "s": "N",
+          "meaning": "numero totale di esempi"
+        }
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c71",
+      "name": "Obiettivo: stimare i parametri delle CPD",
+      "nameEn": "Estimate the parameters of the conditional probability distributions (CPDs)",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 24
+        }
+      ],
+      "detail": "L'obiettivo è stimare i parametri delle distribuzioni di probabilità condizionate (CPD) del modello usando il dataset. Questi parametri descrivono le relazioni probabilistiche tra le variabili della rete; il compito di stima consiste nel determinare i valori dei parametri che meglio rappresentano i dati osservati (best represent the observed data). Nel modulo p05 si vedrà che con dati completi la verosimiglianza si scompone nodo per nodo (una stima separata per ogni CPD). Nota del verificatore: la fattorizzazione parametrica in LaTeX è un'integrazione (anticipa p05), non è scritta a p24.",
+      "latex": [
+        "p(\\mathbf{x}\\mid\\theta)=\\prod_{i} p(x_i\\mid \\mathit{Pa}_{x_i},\\theta_{i})"
+      ],
+      "symbols": [
+        {
+          "s": "\\theta_i",
+          "meaning": "parametri della CPD del nodo x_i"
+        }
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c72",
+      "name": "Criterio pratico di I-equivalenza: stesso scheletro e stesse v-strutture (integrazione)",
+      "nameEn": "Same skeleton and same v-structures (immoralities)",
+      "kind": "teorema",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 22
+        },
+        {
+          "doc": "part2",
+          "page": 23
+        }
+      ],
+      "detail": "Integrazione NON presente nella fonte, che generalizza la sezione 'Independence Equivalence of Structures' (p22) e la figura di p23. Due DAG sono I-equivalenti se e solo se hanno lo stesso scheletro (skeleton: il grafo non orientato ottenuto togliendo il verso agli archi) e le stesse v-strutture (v-structures, dette anche immoralities: configurazioni head-to-head a → c ← b in cui a e b NON sono adiacenti). Nel caso a tre nodi della fonte: A → C → B, A ← C ← B e A ← C → B hanno lo stesso scheletro A - C - B e nessuna v-struttura, quindi sono I-equivalenti; A → C ← B ha lo stesso scheletro ma una v-struttura, quindi forma una classe a sé. Il criterio spiega anche perché l'algoritmo per la P-map (p23) restituisce una classe di equivalenza: dalle indipendenze si ricavano scheletro e v-strutture, non il verso degli altri archi. Attenzione al caso limite: se a e b sono adiacenti (grafo completo) la configurazione a → c ← b non è una v-struttura, e tutti e 6 i DAG completi su tre nodi sono I-equivalenti.",
+      "latex": [
+        "G \\sim G' \\iff \\mathrm{skel}(G)=\\mathrm{skel}(G') \\;\\wedge\\; \\mathcal{V}(G)=\\mathcal{V}(G')",
+        "\\mathcal{V}(G)=\\{(a,c,b): a\\rightarrow c\\leftarrow b \\in G,\\; a,b \\text{ non adiacenti}\\}"
+      ],
+      "symbols": [
+        {
+          "s": "\\mathrm{skel}(G)",
+          "meaning": "scheletro: grafo non orientato sottostante a G"
+        },
+        {
+          "s": "\\mathcal{V}(G)",
+          "meaning": "insieme delle v-strutture (collider con genitori non adiacenti) di G"
+        }
+      ],
+      "examRelevance": 2,
+      "addedBy": "revisore"
+    }
+  ],
+  "derivations": [
+    {
+      "id": "der01",
+      "title": "Tail-to-tail: dipendenza marginale e indipendenza condizionale",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 17
+        }
+      ],
+      "goal": "Mostrare che nella struttura a ← c → b le variabili a e b non sono indipendenti ma sono condizionatamente indipendenti dato c.",
+      "steps": [
+        "p(a,b,c) = p(a\\mid c)\\,p(b\\mid c)\\,p(c)",
+        "p(a,b) = \\sum_{c} p(a,b,c) = \\sum_{c} p(a\\mid c)\\,p(b\\mid c)\\,p(c)",
+        "\\sum_{c} p(a\\mid c)\\,p(b\\mid c)\\,p(c) \\neq p(a)\\,p(b) \\quad \\text{(in generale)}",
+        "p(a,b\\mid c) = \\frac{p(a,b,c)}{p(c)}",
+        "= \\frac{p(a\\mid c)\\,p(b\\mid c)\\,p(c)}{p(c)} = p(a\\mid c)\\,p(b\\mid c) \\;\\Rightarrow\\; a \\perp b \\mid c"
+      ],
+      "stepWhy": [
+        "Fattorizzazione della rete: ogni nodo condizionato ai suoi genitori; c non ha genitori, a e b hanno c come unico genitore.",
+        "Regola della somma: la marginale di (a,b) si ottiene sommando la congiunta su tutti i valori di c.",
+        "La somma di prodotti non si separa in un fattore che dipende solo da a per uno che dipende solo da b: c accoppia a e b. Basta un controesempio numerico (per esempio quello del widget spam) per mostrare la disuguaglianza.",
+        "Definizione di probabilità condizionata.",
+        "Sostituendo la fattorizzazione, p(c) al numeratore e al denominatore si semplifica: resta il prodotto delle condizionali, che è la definizione di indipendenza condizionale."
+      ],
+      "concepts": [
+        "c10",
+        "c11",
+        "c12"
+      ]
+    },
+    {
+      "id": "der02",
+      "title": "Head-to-tail: dipendenza marginale e indipendenza condizionale",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 18
+        }
+      ],
+      "goal": "Mostrare che nella catena a → c → b le variabili a e b non sono indipendenti ma sono condizionatamente indipendenti dato c.",
+      "steps": [
+        "p(a,b,c) = p(b\\mid c)\\,p(c\\mid a)\\,p(a)",
+        "p(a,b) = \\sum_{c} p(b\\mid c)\\,p(c\\mid a)\\,p(a) = p(a)\\sum_{c} p(b\\mid c)\\,p(c\\mid a)",
+        "\\sum_{c} p(b\\mid c)\\,p(c\\mid a) = p(b\\mid a) \\neq p(b) \\;\\Rightarrow\\; p(a,b) \\neq p(a)\\,p(b)",
+        "p(a,b\\mid c) = \\frac{p(a,b,c)}{p(c)} = \\frac{p(b\\mid c)\\,p(c\\mid a)\\,p(a)}{p(c)}",
+        "= \\frac{p(c\\mid a)\\cdot p(a)}{p(c)}\\,p(b\\mid c)",
+        "= p(a\\mid c)\\,p(b\\mid c) \\;\\Rightarrow\\; a \\perp b \\mid c"
+      ],
+      "stepWhy": [
+        "Fattorizzazione secondo la catena: a senza genitori, c figlio di a, b figlio di c.",
+        "Regola della somma su c; p(a) non dipende da c e si porta fuori dalla somma.",
+        "La somma è la probabilità di b dato a (marginalizzando il mediatore c): in generale dipende da a, quindi la congiunta non è il prodotto delle marginali. Passaggio esplicitato per chiarezza, la slide scrive direttamente il ≠.",
+        "Definizione di probabilità condizionata con la fattorizzazione sostituita.",
+        "Si riordinano i fattori isolando p(c|a)p(a)/p(c), come nella slide.",
+        "Teorema di Bayes: p(c|a)p(a)/p(c) = p(a|c). Resta il prodotto delle condizionali: indipendenza condizionale."
+      ],
+      "concepts": [
+        "c14",
+        "c15",
+        "c16"
+      ]
+    },
+    {
+      "id": "der03",
+      "title": "Head-to-head: indipendenza marginale e dipendenza condizionale",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 18
+        }
+      ],
+      "goal": "Mostrare che nel collider a → c ← b le variabili a e b sono indipendenti ma diventano dipendenti quando c è osservato.",
+      "steps": [
+        "p(a,b,c) = p(c\\mid a,b)\\,p(a)\\,p(b)",
+        "p(a,b) = \\sum_{c} p(c\\mid a,b)\\,p(a)\\,p(b) = p(a)\\,p(b)\\sum_{c} p(c\\mid a,b)",
+        "\\sum_{c} p(c\\mid a,b) = 1 \\;\\Rightarrow\\; p(a,b) = p(a)\\,p(b)",
+        "p(a,b\\mid c) = \\frac{p(a,b,c)}{p(c)} = \\frac{p(c\\mid a,b)\\,p(a)\\,p(b)}{p(c)}",
+        "\\frac{p(c\\mid a,b)\\,p(a)\\,p(b)}{p(c)} \\neq p(a\\mid c)\\,p(b\\mid c) \\quad \\text{(in generale)}"
+      ],
+      "stepWhy": [
+        "Fattorizzazione: a e b senza genitori, c con genitori a e b.",
+        "Regola della somma su c; p(a)p(b) non dipende da c ed esce dalla somma.",
+        "La CPT di c, per ogni coppia (a,b) fissata, è una distribuzione su c e somma a 1: resta il prodotto delle marginali, cioè a ⊥ b.",
+        "Definizione di probabilità condizionata.",
+        "p(c|a,b) dipende congiuntamente da a e b e non si scompone in f(a,c)g(b,c): nessun fattore si semplifica. Controesempio numerico: nel sistema del carburante P(B=0,F=0|G=0) ≈ 0.029 mentre P(B=0|G=0)P(F=0|G=0) ≈ 0.066 (der08)."
+      ],
+      "concepts": [
+        "c18",
+        "c19",
+        "c20"
+      ]
+    },
+    {
+      "id": "der04",
+      "title": "Sistema di carburante: calcolo di P(G=0|F=0)",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 20
+        }
+      ],
+      "goal": "Calcolare la probabilità che l'indicatore segni vuoto sapendo che il serbatoio è vuoto, marginalizzando la batteria.",
+      "steps": [
+        "P(G=0\\mid F=0) = \\sum_{B\\in\\{0,1\\}} P(G=0,B\\mid F=0)",
+        "= \\sum_{B\\in\\{0,1\\}} P(G=0\\mid B,F=0)\\,P(B\\mid F=0)",
+        "= \\sum_{B\\in\\{0,1\\}} P(G=0\\mid B,F=0)\\,P(B)",
+        "= P(G=0\\mid B=1,F=0)\\,P(B=1) + P(G=0\\mid B=0,F=0)\\,P(B=0) = 0.8\\cdot 0.9 + 0.9\\cdot 0.1",
+        "= 0.72 + 0.09 = 0.81"
+      ],
+      "stepWhy": [
+        "Regola della somma sulla variabile non osservata B (tutto condizionato a F=0).",
+        "Regola del prodotto: P(G,B|F) = P(G|B,F)P(B|F).",
+        "B e F sono genitori del collider G non osservato: sono indipendenti, quindi P(B|F=0) = P(B).",
+        "Si esplicitano i due termini con i valori della CPT: P(G=0|B=1,F=0) = 1 - 0.2 = 0.8 e P(G=0|B=0,F=0) = 1 - 0.1 = 0.9. Passaggio numerico non scritto nella slide.",
+        "Risultato riportato nella slide."
+      ],
+      "concepts": [
+        "c29",
+        "c25"
+      ]
+    },
+    {
+      "id": "der05",
+      "title": "Sistema di carburante: calcolo di P(G=0)",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 20
+        }
+      ],
+      "goal": "Calcolare la probabilità marginale che l'indicatore segni vuoto.",
+      "steps": [
+        "P(G=0) = \\sum_{B\\in\\{0,1\\}}\\sum_{F\\in\\{0,1\\}} P(G=0,B,F)",
+        "= \\sum_{B\\in\\{0,1\\}}\\sum_{F\\in\\{0,1\\}} P(G=0\\mid B,F)\\,P(B)\\,P(F)",
+        "= 0.2\\cdot 0.9\\cdot 0.9 + 0.8\\cdot 0.9\\cdot 0.1 + 0.8\\cdot 0.1\\cdot 0.9 + 0.9\\cdot 0.1\\cdot 0.1",
+        "= 0.162 + 0.072 + 0.072 + 0.009 = 0.315"
+      ],
+      "stepWhy": [
+        "Regola della somma su entrambe le variabili non osservate.",
+        "Fattorizzazione della rete B → G ← F: P(G,B,F) = P(G|B,F)P(B)P(F).",
+        "Termini nell'ordine (B,F) = (1,1), (1,0), (0,1), (0,0) con P(G=0|·) = 0.2, 0.8, 0.8, 0.9. Passaggio numerico non scritto nella slide.",
+        "Somma: valore necessario per il posterior 0.257 (non riportato nella slide)."
+      ],
+      "concepts": [
+        "c30",
+        "c25"
+      ]
+    },
+    {
+      "id": "der06",
+      "title": "Sistema di carburante: posterior P(F=0|G=0)",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 20
+        }
+      ],
+      "goal": "Ottenere la probabilità di serbatoio vuoto dopo aver visto l'indicatore segnare vuoto.",
+      "steps": [
+        "P(F=0\\mid G=0) = \\frac{P(G=0\\mid F=0)\\,P(F=0)}{P(G=0)}",
+        "= \\frac{0.81\\cdot 0.1}{0.315} = \\frac{0.081}{0.315}",
+        "\\simeq 0.257 > P(F=0) = 0.1"
+      ],
+      "stepWhy": [
+        "Teorema di Bayes con F come query e G come evidenza.",
+        "Sostituzione di P(G=0|F=0) = 0.81 (der04), P(F=0) = 0.1 (prior) e P(G=0) = 0.315 (der05).",
+        "Il posterior sale rispetto al prior ma resta basso: prior forte e indicatore inaffidabile (nota della slide)."
+      ],
+      "concepts": [
+        "c26",
+        "c27",
+        "c28"
+      ]
+    },
+    {
+      "id": "der07",
+      "title": "Sistema di carburante: posterior P(F=0|G=0,B=0) ed explaining away",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 20
+        }
+      ],
+      "goal": "Calcolare la probabilità di serbatoio vuoto quando si osserva anche la batteria scarica e confrontarla con i valori precedenti.",
+      "steps": [
+        "P(F=0\\mid G=0,B=0) = \\frac{P(G=0\\mid F=0,B=0)\\,P(F=0\\mid B=0)}{P(G=0\\mid B=0)}",
+        "P(F=0\\mid B=0) = P(F=0) = 0.1",
+        "P(G=0\\mid B=0) = \\sum_{F\\in\\{0,1\\}} P(G=0\\mid B=0,F)\\,P(F) = 0.8\\cdot 0.9 + 0.9\\cdot 0.1 = 0.81",
+        "P(F=0\\mid G=0,B=0) = \\frac{0.9\\cdot 0.1}{0.81} = \\frac{0.09}{0.81} \\simeq 0.111",
+        "P(F=0)=0.1 < P(F=0\\mid G=0,B=0)\\simeq 0.111 < P(F=0\\mid G=0)\\simeq 0.257"
+      ],
+      "stepWhy": [
+        "Teorema di Bayes applicato dentro il contesto B=0 (tutte le probabilità condizionate anche a B=0).",
+        "B e F sono indipendenti a priori (collider G): sapere la batteria non cambia il prior del serbatoio.",
+        "Marginalizzazione di F nel contesto B=0, usando P(F|B=0) = P(F). Con B=0 l'indicatore segna vuoto con 0.8 se F=1 e 0.9 se F=0. Passaggio non scritto nella slide.",
+        "Sostituzione: P(G=0|F=0,B=0) = 1 - 0.1 = 0.9. Risultato ≈ 0.111 come nella slide.",
+        "Confronto delle tre note della slide: la probabilità scende rispetto a 0.257 (la batteria spiega via l'indicatore) ma resta sopra il prior 0.1 (l'indicatore dà ancora un po' di evidenza)."
+      ],
+      "concepts": [
+        "c31",
+        "c32",
+        "c33",
+        "c34"
+      ]
+    },
+    {
+      "id": "der08",
+      "title": "Verifica numerica della dipendenza condizionale nel collider del carburante",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 20
+        }
+      ],
+      "goal": "Controllare con i numeri dell'esempio che B e F, indipendenti a priori, non sono indipendenti dato G=0 (integrazione, non presente nella fonte).",
+      "steps": [
+        "P(B=0,F=0) = P(B=0)\\,P(F=0) = 0.1\\cdot 0.1 = 0.01",
+        "P(B=0,F=0\\mid G=0) = \\frac{P(G=0\\mid B=0,F=0)\\,P(B=0)\\,P(F=0)}{P(G=0)} = \\frac{0.009}{0.315} \\simeq 0.0286",
+        "P(B=0\\mid G=0) = \\frac{P(G=0\\mid B=0)\\,P(B=0)}{P(G=0)} = \\frac{0.81\\cdot 0.1}{0.315} \\simeq 0.257",
+        "P(B=0\\mid G=0)\\,P(F=0\\mid G=0) \\simeq 0.257\\cdot 0.257 \\simeq 0.066 \\neq 0.0286"
+      ],
+      "stepWhy": [
+        "A priori la congiunta si fattorizza: indipendenza marginale del collider.",
+        "Bayes sulla coppia (B,F) con la fattorizzazione della rete.",
+        "Per simmetria delle CPT (P(B=1) = P(F=1) = 0.9 e P(G=1|B=1,F=0) = P(G=1|B=0,F=1)) il calcolo è identico a quello di P(F=0|G=0).",
+        "Il prodotto delle condizionali non coincide con la congiunta condizionale: B ⊥̸ F | G. Il valore congiunto è più basso del prodotto perché due guasti insieme sono 'ridondanti' come spiegazione (explaining away)."
+      ],
+      "concepts": [
+        "c20",
+        "c33"
+      ]
+    },
+    {
+      "id": "der09",
+      "title": "Applicazione del criterio generale agli esempi di p22",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 22
+        }
+      ],
+      "goal": "Verificare con le regole di blocco che a ⊥̸ b | c e a ⊥ b | f nel grafo a → e ← f → b, e → c.",
+      "steps": [
+        "\\pi:\\; a \\rightarrow e \\leftarrow f \\rightarrow b \\quad \\text{(unico cammino tra } a \\text{ e } b)",
+        "C=\\{c\\}:\\; e \\text{ head-to-head},\\; e\\notin C,\\; c\\in \\mathrm{Desc}(e)\\cap C \\Rightarrow e \\text{ non blocca}",
+        "C=\\{c\\}:\\; f \\text{ tail-to-tail},\\; f\\notin C \\Rightarrow f \\text{ non blocca} \\Rightarrow \\pi \\text{ aperto} \\Rightarrow a \\not\\perp b \\mid c",
+        "C=\\{f\\}:\\; f \\text{ tail-to-tail},\\; f\\in C \\Rightarrow \\pi \\text{ bloccato} \\Rightarrow \\mathrm{dsep}(a;b\\mid f) \\Rightarrow a \\perp b \\mid f"
+      ],
+      "stepWhy": [
+        "Si elencano tutti i cammini (ignorando il verso delle frecce): c'è un solo cammino, perché c è una foglia raggiungibile solo da e.",
+        "Regola head-to-head: il collider e blocca solo se né e né i suoi discendenti sono osservati; qui il figlio c è osservato, quindi e è aperto.",
+        "Regola tail-to-tail: f blocca solo se osservato; non lo è. Nessun nodo blocca: il cammino è aperto e la d-separazione fallisce (slide 'a ⊥̸ b | c').",
+        "Con f osservato la regola tail-to-tail blocca il cammino; tutti i cammini (uno solo) sono bloccati, quindi d-separazione e indipendenza condizionale (slide 'a ⊥ b | f'). Anche e bloccherebbe, essendo un collider senza evidenza."
+      ],
+      "concepts": [
+        "c40",
+        "c41",
+        "c44",
+        "c45"
+      ]
+    },
+    {
+      "id": "der10",
+      "title": "Perché catena e tail-to-tail sono I-equivalenti (fattorizzazioni riscritte con Bayes)",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 22
+        },
+        {
+          "doc": "part2",
+          "page": 23
+        }
+      ],
+      "goal": "Giustificare l'affermazione di p22 che tail-to-tail e head-to-tail (in entrambe le direzioni) codificano le stesse indipendenze, mostrando che rappresentano la stessa famiglia di distribuzioni (integrazione didattica).",
+      "steps": [
+        "a\\rightarrow c\\rightarrow b:\\; p(a)\\,p(c\\mid a)\\,p(b\\mid c)",
+        "p(a)\\,p(c\\mid a) = p(c)\\,p(a\\mid c) \\;\\Rightarrow\\; p(a)\\,p(c\\mid a)\\,p(b\\mid c) = p(c)\\,p(a\\mid c)\\,p(b\\mid c) \\quad (a\\leftarrow c\\rightarrow b)",
+        "p(c)\\,p(b\\mid c) = p(b)\\,p(c\\mid b) \\;\\Rightarrow\\; p(c)\\,p(a\\mid c)\\,p(b\\mid c) = p(b)\\,p(c\\mid b)\\,p(a\\mid c) \\quad (b\\rightarrow c\\rightarrow a)",
+        "a\\rightarrow c\\leftarrow b:\\; p(a)\\,p(b)\\,p(c\\mid a,b) \\Rightarrow a\\perp b \\text{ imposto, non ottenibile dalle altre tre}"
+      ],
+      "stepWhy": [
+        "Fattorizzazione della catena.",
+        "Regola del prodotto applicata in due modi a p(a,c): la stessa congiunta si scrive con c radice, cioè come struttura tail-to-tail.",
+        "Di nuovo la regola del prodotto su p(b,c): si ottiene la catena nel verso opposto. Le tre strutture descrivono le stesse distribuzioni, quindi le stesse indipendenze (a ⊥̸ b, a ⊥ b | c).",
+        "Il collider impone l'indipendenza marginale di a e b, che le altre tre non impongono: codifica un insieme diverso di indipendenze, quindi non è I-equivalente (p22, figura p23)."
+      ],
+      "concepts": [
+        "c53",
+        "c54",
+        "c51"
+      ]
+    },
+    {
+      "id": "der11",
+      "title": "Collider con discendente osservato: perché il cammino si apre (integrazione)",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 21
+        }
+      ],
+      "goal": "Giustificare la regola di p21 ('when c or any of its descendants receives evidence, the path between a and b becomes unblocked'): nella struttura a → c ← b con c → d, osservare il solo discendente d rende a e b dipendenti, mentre senza evidenza restano indipendenti. La fonte enuncia la regola senza dimostrarla.",
+      "steps": [
+        "p(a,b,c,d) = p(a)\\,p(b)\\,p(c\\mid a,b)\\,p(d\\mid c)",
+        "p(a,b) = p(a)\\,p(b)\\sum_{c} p(c\\mid a,b)\\sum_{d} p(d\\mid c) = p(a)\\,p(b)",
+        "p(a,b\\mid d) = \\frac{\\sum_{c} p(a)\\,p(b)\\,p(c\\mid a,b)\\,p(d\\mid c)}{p(d)} = \\frac{p(a)\\,p(b)\\,p(d\\mid a,b)}{p(d)}",
+        "p(d\\mid a,b) = \\sum_{c} p(d\\mid c)\\,p(c\\mid a,b)",
+        "\\frac{p(a)\\,p(b)\\,p(d\\mid a,b)}{p(d)} \\neq p(a\\mid d)\\,p(b\\mid d) \\quad \\text{(in generale)} \\;\\Rightarrow\\; a \\not\\perp b \\mid d",
+        "P(I\\mid D)\\simeq 0.070,\\quad P(I\\mid D,T)\\simeq 0.016,\\quad P(I\\mid D,\\neg T)\\simeq 0.46"
+      ],
+      "stepWhy": [
+        "Fattorizzazione della rete: a e b sono radici, c ha genitori a e b, d ha come unico genitore c.",
+        "Senza evidenza si marginalizzano c e d: Σ_d p(d|c) = 1 e Σ_c p(c|a,b) = 1, resta il prodotto delle marginali. Il collider non osservato blocca anche se ha discendenti, purché nessuno sia osservato.",
+        "Condizionando sul solo d, c resta non osservato e va marginalizzato: la somma su c di p(c|a,b)p(d|c) è la probabilità di d data la coppia (a,b).",
+        "d dipende da a e b solo attraverso c: si comporta come una versione rumorosa del collider.",
+        "p(d|a,b) lega congiuntamente a e b come p(c|a,b) nel collider osservato (der03): in generale non si scompone in un fattore che dipende solo da a per uno che dipende solo da b, quindi a e b diventano dipendenti dato d. Caso limite: se p(d|c) non dipende da c, d non porta informazione su c e il cammino resta bloccato (la d-separazione garantisce le indipendenze, non obbliga le dipendenze).",
+        "Verifica numerica con i dati sintetici del widget p04-discendenti-collider (incendio I, toast T, allarme, chiamata ai vigili D): osservare la sola chiamata rende la probabilità di incendio sensibile al toast. Senza evidenza invece P(I|T) = P(I) = 0.01."
+      ],
+      "concepts": [
+        "c36",
+        "c37",
+        "c38"
+      ],
+      "addedBy": "revisore"
+    },
+    {
+      "id": "der12",
+      "title": "Le indipendenze locali sono d-separazioni: I_l(G) ⊆ I(G) (integrazione)",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 22
+        }
+      ],
+      "goal": "Mostrare che ogni indipendenza locale x_i ⊥ NonDescendants_{x_i} | Parents_{x_i} è anche una d-separazione, quindi appartiene alle indipendenze globali I(G). La fonte lo sottintende quando introduce le globali ('also encodes') dopo le locali; il passaggio è utile all'orale sulla 'formalization'.",
+      "steps": [
+        "C = \\mathit{Parents}_{x_i},\\qquad B = \\mathit{NonDescendants}_{x_i}\\setminus \\mathit{Parents}_{x_i}",
+        "\\pi = x_i \\leftarrow p \\cdots y:\\quad p\\in C,\\; p \\text{ tail-to-tail o head-to-tail su } \\pi \\;\\Rightarrow\\; \\pi \\text{ bloccato}",
+        "\\pi = x_i \\rightarrow ch \\cdots y,\\; y\\notin \\mathrm{Desc}(x_i) \\;\\Rightarrow\\; \\exists\\, v\\in\\pi \\text{ head-to-head},\\; v\\in \\mathrm{Desc}(x_i)",
+        "\\mathrm{Desc}(v)\\subseteq \\mathrm{Desc}(x_i),\\quad C\\cap \\mathrm{Desc}(x_i)=\\emptyset \\;\\Rightarrow\\; v \\text{ blocca } \\pi",
+        "\\mathrm{dsep}(x_i;\\, B \\mid C) \\;\\Rightarrow\\; I_l(G)\\subseteq I(G)"
+      ],
+      "stepWhy": [
+        "Si fissa un nodo x_i: l'insieme condizionante sono i suoi genitori, l'insieme da separare i non-discendenti che non sono genitori (la definizione di p21 vuole insiemi disgiunti).",
+        "Primo tipo di cammino: lascia x_i salendo verso un genitore p. In p la freccia p → x_i ha la coda, quindi p non può essere head-to-head: è tail-to-tail o head-to-tail sul cammino. Essendo in C (osservato), blocca.",
+        "Secondo tipo: lascia x_i verso un figlio. Finché le frecce del cammino vanno in avanti si resta tra i discendenti di x_i; poiché l'estremo y non è un discendente, prima o poi il verso si inverte, e il primo nodo in cui si inverte è un collider v che è discendente di x_i.",
+        "I discendenti di v sono anche discendenti di x_i, e nessun genitore di x_i è suo discendente (il grafo è aciclico): né v né i suoi discendenti sono in C, quindi il collider v blocca il cammino (seconda regola di p21).",
+        "Tutti i cammini sono bloccati, quindi ogni asserzione locale è una d-separazione e sta in I(G). Il viceversa non vale: I(G) contiene anche asserzioni non locali, per esempio a ⊥ b | {c, f} nel grafo degli esempi di p22."
+      ],
+      "concepts": [
+        "c47",
+        "c48",
+        "c36",
+        "c40"
+      ],
+      "addedBy": "revisore"
+    }
+  ],
+  "workedExamples": [
+    {
+      "id": "ex01",
+      "title": "Rete regolatoria giocattolo con tre geni",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 16
+        }
+      ],
+      "description": "Slide 'Example: toy regulatory network'. Geni A e B con probabilità a priori indipendenti, gene C che può essere potenziato sia da A sia da B (struttura A → C ← B). Tabelle: P(A=active)=0.3, P(A=inactive)=0.7; P(B=active)=0.3, P(B=inactive)=0.7. CPT di C per le configurazioni di (A,B): (active,active): C active 0.9, inactive 0.1; (active,inactive): 0.6, 0.4; (inactive,active): 0.7, 0.3; (inactive,inactive): 0.1, 0.9. La fonte si limita a presentare le tabelle come esempio di CPT. Calcoli derivabili (non nella fonte): P(C=active) = 0.3·0.3·0.9 + 0.3·0.7·0.6 + 0.7·0.3·0.7 + 0.7·0.7·0.1 = 0.081 + 0.126 + 0.147 + 0.049 = 0.403; P(A=active|C=active) = 0.207/0.403 ≈ 0.514; P(B=active|C=active) = (0.081 + 0.147)/0.403 = 0.228/0.403 ≈ 0.566 (diverso da quello di A perché la CPT non è simmetrica: 0.6 per A attivo da solo, 0.7 per B attivo da solo); P(A=active|C=active,B=active) = 0.27/0.76 ≈ 0.355 (explaining away: B attivo spiega C attivo). Controllo del collider senza evidenza: P(A=active|B=active) = P(A=active) = 0.3.",
+      "concepts": [
+        "c01"
+      ]
+    },
+    {
+      "id": "ex02",
+      "title": "Sistema di carburante dell'auto: explaining away",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 19
+        },
+        {
+          "doc": "part2",
+          "page": 20
+        }
+      ],
+      "description": "Setting: batteria B (1 carica, 0 scarica), serbatoio F (1 pieno, 0 vuoto), indicatore elettrico G (1 pieno, 0 vuoto), struttura B → G ← F. Prior indipendenti P(B=1)=0.9, P(F=1)=0.9. Indicatore inaffidabile: P(G=1|B=1,F=1)=0.8, P(G=1|B=1,F=0)=0.2, P(G=1|B=0,F=1)=0.2, P(G=1|B=0,F=0)=0.1. (1) Prior: P(F=0) = 1 - P(F=1) = 0.1. (2) Osservo G=0: P(F=0|G=0) = P(G=0|F=0)P(F=0)/P(G=0) ≈ 0.257, con P(G=0|F=0) = Σ_B P(G=0|B,F=0)P(B) = 0.81 e P(G=0) = Σ_B Σ_F P(G=0|B,F)P(B)P(F) (= 0.315). Nota: la probabilità aumenta ma non quanto atteso per il prior forte e l'indicatore inaffidabile. (3) Osservo anche B=0: P(F=0|G=0,B=0) = P(G=0|F=0,B=0)P(F=0|B=0)/P(G=0|B=0) ≈ 0.111. Note: la probabilità diminuisce dopo aver visto la batteria scarica; la batteria 'explains away' l'indicatore vuoto; resta comunque maggiore del prior perché l'indicatore dà ancora qualche evidenza di serbatoio vuoto.",
+      "concepts": [
+        "c24",
+        "c25",
+        "c26",
+        "c27",
+        "c28",
+        "c29",
+        "c30",
+        "c31",
+        "c32",
+        "c33",
+        "c34"
+      ]
+    },
+    {
+      "id": "ex03",
+      "title": "Esempi di d-separazione generale",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 21
+        },
+        {
+          "doc": "part2",
+          "page": 22
+        }
+      ],
+      "description": "Grafo con cinque nodi: a → e, f → e, f → b, e → c. Caso 1 (slide 'a ⊥̸ b | c', c osservato): a e b non sono d-separati da c perché f è tail-to-tail e non osservato, ed e è head-to-head con il figlio c osservato. Caso 2 (slide 'a ⊥ b | f', f osservato): a e b sono d-separati da f perché f è tail-to-tail e osservato.",
+      "concepts": [
+        "c44",
+        "c45",
+        "c40"
+      ]
+    }
+  ],
+  "figures": [
+    {
+      "id": "fig01",
+      "doc": "part2",
+      "page": 16,
+      "description": "Slide 'Example: toy regulatory network': tabelle dei prior dei geni A e B, CPT di C dato (A,B) e grafo A → C ← B con nodi rossi.",
+      "region": "metà superiore della pagina",
+      "concepts": [
+        "c01"
+      ],
+      "importance": 2
+    },
+    {
+      "id": "fig02",
+      "doc": "part2",
+      "page": 17,
+      "description": "Grafo tail-to-tail: nodo c in alto con frecce verso a (sinistra) e b (destra), sfondo lilla.",
+      "region": "centro pagina, sotto il titolo 'Tail-to-Tail Configuration'",
+      "concepts": [
+        "c10"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig03",
+      "doc": "part2",
+      "page": 18,
+      "description": "Grafo head-to-tail (catena) orizzontale a → c → b.",
+      "region": "in alto al centro",
+      "concepts": [
+        "c14"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig04",
+      "doc": "part2",
+      "page": 18,
+      "description": "Grafo head-to-head (collider): a e b in alto con frecce che convergono su c in basso.",
+      "region": "metà pagina, sotto 'Head-to-Head Configuration (collider)'",
+      "concepts": [
+        "c18"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig05",
+      "doc": "part2",
+      "page": 19,
+      "description": "Figura riassuntiva: colonne tail to tail / head to tail / head to head, righe no evidence / evidence; nodo osservato in blu; ellissi gialle = independent, verdi = dependent. Tail-to-tail e head-to-tail verdi senza evidenza e gialli con evidenza; head-to-head giallo senza evidenza e verde con evidenza.",
+      "region": "terzo superiore della pagina",
+      "concepts": [
+        "c22",
+        "c46"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig06",
+      "doc": "part2",
+      "page": 19,
+      "description": "Slide 'Setting' e 'Conditional probability tables (CPT)' del sistema di carburante: definizione di B, F, G, grafo B → G ← F, prior P(B=1)=P(F=1)=0.9 e CPT dell'indicatore inaffidabile.",
+      "region": "metà inferiore della pagina",
+      "concepts": [
+        "c24",
+        "c25"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig07",
+      "doc": "part2",
+      "page": 20,
+      "description": "Slide 'Probability of empty tank' con prior P(F=0)=0.1 e posterior P(F=0|G=0) ≈ 0.257 (G blu), più la nota verde sull'aumento limitato.",
+      "region": "primo quarto della pagina",
+      "concepts": [
+        "c26",
+        "c27",
+        "c28"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig08",
+      "doc": "part2",
+      "page": 20,
+      "description": "Slide 'Derivation': passaggi per P(G=0|F=0) = 0.81 e per P(G=0) come doppia somma.",
+      "region": "metà centrale della pagina",
+      "concepts": [
+        "c29",
+        "c30"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig09",
+      "doc": "part2",
+      "page": 20,
+      "description": "Slide 'Probability of empty tank' con B e G blu: posterior P(F=0|G=0,B=0) ≈ 0.111 e nota con le tre osservazioni (diminuisce, explaining away, resta sopra il prior).",
+      "region": "quarto inferiore della pagina",
+      "concepts": [
+        "c31",
+        "c32",
+        "c33",
+        "c34"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig10",
+      "doc": "part2",
+      "page": 22,
+      "description": "Due slide di esempio sul grafo a → e ← f → b, e → c: sopra c osservato (a ⊥̸ b | c), sotto f osservato (a ⊥ b | f).",
+      "region": "terzo superiore della pagina",
+      "concepts": [
+        "c44",
+        "c45",
+        "c43"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig11",
+      "doc": "part2",
+      "page": 23,
+      "description": "Strutture a tre nodi A, C, B: riquadro sinistro con A → C → B, B → C → A e A ← C → B (I-equivalenti); riquadro destro con A → C ← B (v-struttura, classe a sé).",
+      "region": "in alto, larghezza intera",
+      "concepts": [
+        "c55",
+        "c53",
+        "c54"
+      ],
+      "importance": 3
+    }
+  ],
+  "widgets": [
+    {
+      "id": "p04-rete-regolatoria-geni",
+      "title": "Tre geni e una tabella: leggere una CPT",
+      "concepts": [
+        "c01"
+      ],
+      "scenario": "fonte",
+      "realExample": "Rete regolatoria giocattolo della fonte: i geni A e B (fattori di trascrizione) attivano il gene C. In bioinformatica reti di questo tipo si stimano da dati di espressione genica (microarray, RNA-seq) per capire quali geni regolano quali altri. I numeri sono quelli della slide.",
+      "storyboard": [
+        "Ingresso (0-600 ms): i nodi A, B, C compaiono con fade-in sfalsato di 120 ms; le frecce A → C e B → C si disegnano in 400 ms (stroke-dashoffset); a fianco appaiono le tabelle dei prior (active 0.3 / inactive 0.7) e la CPT di C con le 4 colonne (A,B) = (act,act), (act,inact), (inact,act), (inact,inact), identiche alla slide.",
+        "Stato 'nessuna evidenza': accanto a ogni nodo una barra verticale 'active' riempita secondo la marginale: A 0.300, B 0.300, C 0.403. Sotto il grafo la somma P(C=act) = 0.081 + 0.126 + 0.147 + 0.049 si srotola termine per termine (250 ms ciascuno), ogni termine colorato come la colonna della CPT da cui viene.",
+        "Trigger clic su A (cicla non osservato → active → inactive): il nodo si riempie di blu; nella CPT le due colonne compatibili restano accese e le altre scendono al 30% di opacità in 250 ms; la barra di C si aggiorna con una molla (~500 ms) a P(C=act|A=act) = 0.3·0.9 + 0.7·0.6 = 0.69.",
+        "Fissando anche B resta accesa una sola colonna: la barra di C salta al valore della cella (0.9, 0.6, 0.7 o 0.1) e la formula mostra la cella letta direttamente dalla CPT.",
+        "Trigger clic su C = active con A e B non osservati (ragionamento diagnostico): le barre di A e B salgono in 600 ms a 0.514 e 0.566; un cartellino spiega l'asimmetria (C attivo con 0.6 se c'è solo A, con 0.7 se c'è solo B). Poi clic su B = active: la barra di A scende a 0.355 (= 0.27/0.76) con un lampo arancione sull'etichetta 'explaining away, lo vedrai con l'auto'.",
+        "Controllo del collider: con B osservato e C non osservato la barra di A non si muove (resta 0.300) e compare il cartellino 'A e B indipendenti finché C non è osservato'."
+      ],
+      "interactions": [
+        "clic su A, B, C: cicla non osservato / active / inactive",
+        "slider P(A=active) e P(B=active) da 0.05 a 0.95, passo 0.05",
+        "trascinamento verticale delle celle 'C active' della CPT da 0.01 a 0.99 (passo 0.01); la cella 'inactive' della stessa colonna si aggiorna a 1 − valore",
+        "pulsante Nessuna evidenza (azzera le osservazioni) e pulsante Valori della slide (ripristina i numeri originali)"
+      ],
+      "visual": "Grafo SVG a V con nodi rossi come nella slide (blu se osservati); tabelle dei prior e CPT 2×4 con le celle attive evidenziate; barre di probabilità verdi accanto ai nodi con valore a 3 decimali; formula della marginale o del posterior con i numeri sostituiti che si ricompone a ogni cambio.",
+      "aha": "Una CPT ha una colonna per ogni combinazione dei genitori e ogni colonna somma a 1; la rete intera è il prodotto di prior e CPT, e da lì si calcola qualunque probabilità.",
+      "formulasShown": [
+        "p(A,B,C)=P(A)\\,P(B)\\,P(C\\mid A,B)",
+        "P(C=\\text{act})=\\sum_{A,B}P(A)\\,P(B)\\,P(C=\\text{act}\\mid A,B)=0.081+0.126+0.147+0.049=0.403",
+        "P(A=\\text{act}\\mid C=\\text{act})=\\frac{0.3\\,(0.3\\cdot 0.9+0.7\\cdot 0.6)}{0.403}=\\frac{0.207}{0.403}\\simeq 0.514",
+        "P(A=\\text{act}\\mid C=\\text{act},B=\\text{act})=\\frac{0.3\\cdot 0.9}{0.3\\cdot 0.9+0.7\\cdot 0.7}=\\frac{0.27}{0.76}\\simeq 0.355"
+      ],
+      "challenge": "(1) Quante colonne servirebbero alla CPT di C se A e B avessero 3 stati ciascuno? (risposta: 3·3 = 9 colonne, ognuna con 2 valori che sommano a 1). (2) Modifica la CPT in modo che osservare C = active non cambi P(A=active): il widget premia quando |P(A=act|C=act) − P(A=act)| < 0.005 (soluzione: a parità di B le colonne con A=active e A=inactive devono avere la stessa probabilità di C=active, per esempio 0.9, 0.6, 0.9, 0.6).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-tabella-indipendenza",
+      "title": "Indipendenti o no? Il test del prodotto",
+      "concepts": [
+        "c02",
+        "c03"
+      ],
+      "scenario": "sensori",
+      "realExample": "Due sensori IoT di temperatura in due stanze di un edificio segnalano 'caldo' (a = stanza 1 calda, b = stanza 2 calda); la caldaia centralizzata c può essere accesa o spenta. Un sistema di rilevamento anomalie deve sapere se le due letture sono informative l'una sull'altra: marginalmente lo sono (dipendono dalla caldaia), ma a caldaia nota no. Dati sintetici dichiarati: P(c=accesa)=0.5, P(a|accesa)=0.8, P(a|spenta)=0.2, P(b|accesa)=0.7, P(b|spenta)=0.1.",
+      "storyboard": [
+        "Ingresso (500 ms): mosaico 2×2 della congiunta p(a,b) calcolata dai dati sintetici; area di ogni cella proporzionale alla probabilità, numero al centro; ai margini due barre p(a)=0.50 e p(b)=0.40.",
+        "Dopo 300 ms a destra si disegna il mosaico 'se fossero indipendenti' p(a)p(b); le celle con |p(a,b) − p(a)p(b)| > 0.01 pulsano in arancione (2 cicli da 400 ms); indicatore in alto 'a ⊥ b | ∅ ? NO' (cella caldo-caldo: 0.29 contro 0.50·0.40 = 0.20).",
+        "Trigger toggle 'Condiziona su c (caldaia)': il mosaico si divide in due fette con uno split orizzontale di 600 ms, c = accesa e c = spenta; ogni fetta si riscala per sommare a 1 e si ripete il confronto con p(a|c)p(b|c): tutte le celle diventano verdi, indicatore 'a ⊥ b | c ? SÌ' (fetta accesa: 0.56 = 0.8·0.7).",
+        "Menu preset (morph delle aree in 500 ms): 'Caldaia comune' (sopra); 'Collider' (a, b = due stufette indipendenti con P = 0.5, c = contatore che scatta se almeno una è accesa: marginale verde, fette arancioni); 'Indipendenti sempre'; 'Dipendenti sempre'.",
+        "Un contatore in alto mostra max|p(a,b) − p(a)p(b)| nella vista marginale e max su c di |p(a,b|c) − p(a|c)p(b|c)| nella vista condizionata, aggiornati a ogni trascinamento."
+      ],
+      "interactions": [
+        "trascinamento dei bordi tra celle adiacenti per spostare massa di probabilità (passo 0.01, la somma resta 1)",
+        "slider P(c=accesa) da 0.05 a 0.95; slider P(a|c) e P(b|c) per ciascun valore di c da 0.01 a 0.99",
+        "toggle Condiziona su c",
+        "menu dei 4 preset",
+        "hover su una cella: tooltip con p(a,b), p(a)p(b) e differenza a 3 decimali"
+      ],
+      "visual": "Due mosaici 2×2 (o 2×2×2 in condizionamento) con area proporzionale alla probabilità, colori verde per uguaglianza e arancione per differenza, numeri al centro delle celle, formule con i valori sostituiti in basso.",
+      "aha": "L'indipendenza è una proprietà dei numeri che si controlla cella per cella; l'indipendenza condizionale va controllata dentro ogni fetta di c e non implica né è implicata da quella marginale.",
+      "formulasShown": [
+        "p(a,b) \\overset{?}{=} p(a)\\cdot p(b):\\quad 0.29 \\neq 0.50\\cdot 0.40 = 0.20",
+        "p(a,b\\mid c) \\overset{?}{=} p(a\\mid c)\\cdot p(b\\mid c):\\quad 0.56 = 0.8\\cdot 0.7"
+      ],
+      "challenge": "Nella modalità libera 2×2×2 costruisci una tabella con a ⊥ b ma non a ⊥ b | c: il widget segnala 'riuscito' quando il contatore marginale è sotto 0.005 e quello condizionato sopra 0.05 (suggerimento: un contatore che scatta con due cause indipendenti, cioè il preset collider).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-dal-calcolo-al-grafo",
+      "title": "Somme infinite o un'occhiata al grafo",
+      "concepts": [
+        "c04",
+        "c05",
+        "c06",
+        "c23"
+      ],
+      "scenario": "medicina",
+      "realExample": "Una rete diagnostica per l'ambulatorio di pneumologia (fumo, bronchite, tumore, radiografia, dispnea...) con m variabili binarie. Il medico vuole sapere se, nota la radiografia, il fumo è ancora informativo sulla dispnea. Con le regole di somma e prodotto servono migliaia di termini; con la d-separazione basta guardare i cammini.",
+      "storyboard": [
+        "Layout diviso. A sinistra 'algebra': la tabella della congiunta con 2^m righe scorre come un nastro (40 righe/s in Play); ogni riga sommata incrementa il contatore di moltiplicazioni (m − 1 prodotti di fattori delle CPT per riga).",
+        "A destra 'grafo': la stessa rete (preset iniziale: rete pneumologica a 8 nodi); scelti a, b e l'insieme osservato C, i cammini tra a e b si accendono in giallo uno alla volta (300 ms ciascuno) e sul primo nodo che blocca compare un lucchetto (scala 0 → 1 in 200 ms).",
+        "Trigger pulsante Verifica: i due metodi partono insieme; il grafo risponde in meno di un secondo mentre il nastro algebrico continua; quando termina (o con 'Salta alla fine') le due risposte si affiancano con una spunta verde se coincidono (con CPT generiche coincidono sempre).",
+        "Slider m da 3 a 20 (rete generata con in-degree ≤ 2): il grafico in scala log mostra 2^m righe (da 8 a 1 048 576) contro il costo della visita sul grafo, lineare in nodi + archi (algoritmo di raggiungibilità 'Bayes ball', integrazione non presente nella fonte): le due curve si separano a vista.",
+        "Dopo la prima verifica, sovrimpressione (fade 400 ms) con la definizione della fonte: 'd-separazione: decidere indipendenza o indipendenza condizionale solo dalla struttura della rete', e la frase 'la struttura informa le relazioni probabilistiche'."
+      ],
+      "interactions": [
+        "slider m (numero di variabili binarie) da 3 a 20",
+        "clic sui nodi per scegliere a (verde), b (viola) e alternare l'appartenenza all'insieme osservato C (blu)",
+        "pulsante Verifica (lancia i due metodi), pulsante Passo (una riga del nastro alla volta), pulsante Salta alla fine"
+      ],
+      "visual": "Pannello diviso: a sinistra tabella congiunta scorrevole con contatore numerico e grafico log della crescita 2^m; a destra grafo SVG con cammini evidenziati in giallo e nodi bloccanti con icona lucchetto; in basso le due risposte affiancate.",
+      "aha": "Le regole di somma e prodotto bastano in teoria ma costano in modo esponenziale; il grafo codifica le stesse indipendenze e si legge in un attimo.",
+      "formulasShown": [
+        "p(a,b\\mid c)=\\frac{\\sum_{\\mathbf{x}_{\\text{resto}}} p(a,b,c,\\mathbf{x}_{\\text{resto}})}{\\sum_{a',b',\\mathbf{x}_{\\text{resto}}} p(a',b',c,\\mathbf{x}_{\\text{resto}})}",
+        "\\#\\text{righe della congiunta}=2^{m}=2^{8}=256",
+        "p(a,b\\mid c)\\overset{?}{=}p(a\\mid c)\\,p(b\\mid c)\\quad \\forall a,b,c"
+      ],
+      "challenge": "Modalità gara: 8 query casuali sulla rete a 8 nodi; rispondi 'indipendenti' o 'dipendenti' guardando il grafo prima che il nastro algebrico finisca (circa 6 s per query): +1 punto per risposta corretta, +1 bonus se data entro 3 s.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-casi-semplici",
+      "title": "Due nodi, tre nodi e l'arco che manca",
+      "concepts": [
+        "c07",
+        "c08",
+        "c09"
+      ],
+      "scenario": "medicina",
+      "realExample": "Tre variabili di un triage: influenza, febbre, tosse. Il sistema di supporto alla diagnosi deve sapere quali variabili sono collegate. Dati sintetici dichiarati: P(influenza)=0.1, P(febbre|influenza)=0.8, P(febbre|no influenza)=0.05, quindi P(febbre)=0.125. Con archi tra tutte non si può dire nulla; togliendo un arco nasce la domanda su come il nodo centrale colleghi gli altri due.",
+      "storyboard": [
+        "Fase 1, due nodi (influenza → febbre): clic su 'influenza = sì' e un impulso colorato viaggia lungo l'arco in 500 ms; la barra di P(febbre) passa da 0.125 a 0.80 ('dipendenti').",
+        "Clic sull'arco per rimuoverlo (dissolvenza 300 ms): ripetendo l'osservazione l'impulso si ferma a metà e la barra resta a 0.125; etichetta 'non connessi: indipendenti, p(a,b) = p(a)p(b)'.",
+        "Fase 2 (pulsante Avanti), tre nodi influenza, febbre, tosse: si scollega la tosse (archi grigi tratteggiati, 300 ms), che scivola di lato; il riquadro dice 'un nodo disconnesso: si torna al caso a due variabili'.",
+        "Pulsante Collega tutto (archi disegnati in 400 ms): etichetta 'grafo completo: nessuna indipendenza assumibile senza informazioni aggiuntive' e fattorizzazione p(a)p(b|a)p(c|a,b) con il contatore 1 + 2 + 4 = 7 parametri (tutta la congiunta).",
+        "Trigger clic sull'arco a–b per rimuoverlo: il nodo c scivola al centro (400 ms) e compaiono tre schede tail-to-tail, head-to-tail, head-to-head; cliccando una scheda le punte delle frecce ruotano (250 ms) nell'orientazione corrispondente.",
+        "Ogni scheda mostra le due domande 'a ⊥ b ?' e 'a ⊥ b | c ?' con un punto interrogativo pulsante e un collegamento al widget dedicato (spam, catena clinica, allarme)."
+      ],
+      "interactions": [
+        "clic su un arco: aggiunge / rimuove / inverte (ciclo di 3 clic)",
+        "slider P(febbre|influenza) e P(febbre|no influenza) da 0.01 a 0.99 (fase 1)",
+        "clic sulle tre schede di configurazione",
+        "toggle etichette mediche / lettere astratte a, b, c"
+      ],
+      "visual": "Grafo SVG con nodi circolari rossi come nelle note, archi con punta animata, pannello laterale con la fattorizzazione corrente e le domande di indipendenza.",
+      "aha": "I casi con due nodi o con grafo completo sono banali; tutto l'interesse sta nel nodo centrale di un cammino a tre e nel verso delle sue frecce.",
+      "formulasShown": [
+        "a\\rightarrow b:\\; p(a,b)=p(a)\\,p(b\\mid a),\\quad P(\\text{febbre}\\mid\\text{infl.})=0.80\\neq P(\\text{febbre})=0.125",
+        "a\\quad b:\\; p(a,b)=p(a)\\,p(b)",
+        "p(a,b,c)=p(a)\\,p(b\\mid a)\\,p(c\\mid a,b)"
+      ],
+      "challenge": "Quante orientazioni senza cicli ha il cammino a − c − b? (risposta: 4). Trascinale nelle due colonne 'osservare c blocca' e 'osservare c apre' (3 contro 1: le due catene e la forca contro il collider).",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-tail-to-tail-spam",
+      "title": "Tail-to-tail: il naive Bayes dello spam",
+      "concepts": [
+        "c10",
+        "c11",
+        "c12",
+        "c13"
+      ],
+      "scenario": "spam",
+      "realExample": "Filtro antispam naive Bayes: la classe c (spam/ham) è la causa comune delle parole 'gratis' (a) e 'offerta' (b). L'ipotesi del naive Bayes è esattamente la struttura tail-to-tail: parole indipendenti data la classe, ma correlate se la classe non è nota. Dati sintetici: P(spam)=0.4, P(gratis|spam)=0.6, P(gratis|ham)=0.05, P(offerta|spam)=0.5, P(offerta|ham)=0.1.",
+      "storyboard": [
+        "Ingresso: grafo a V rovesciata c → a, c → b (500 ms); 200 email sintetiche cadono in 1 s (sfalsate di 5 ms) in due mucchi, spam (rosso, circa 80) e ham (blu, circa 120), ognuna con le icone delle parole 'gratis' e 'offerta' presenti.",
+        "Nessuna evidenza: pannello a barre affiancate p(a,b) = 0.123 contro p(a)p(b) = 0.27·0.26 = 0.070; le email con entrambe le parole lampeggiano (400 ms); etichetta 'dipendenti'.",
+        "Trigger clic su c = spam: nodo c blu, le buste ham scivolano fuori scena (500 ms); le barre diventano p(a,b|spam) = 0.30 e p(a|spam)p(b|spam) = 0.6·0.5 = 0.30 e si allineano con uno scatto; con c = ham: 0.005 = 0.05·0.1.",
+        "Animazione 'tubo' sul cammino a − c − b: senza evidenza particelle scorrono da a a b attraverso c (ciclo di 1.5 s); con c osservato una valvola ruota di 90° su c in 300 ms e le particelle rimbalzano.",
+        "Pulsante Passo (5 passi, der01): la derivazione si srotola una riga per clic; nell'ultimo passo p(c) si barra al numeratore e al denominatore; accanto l'etichetta 'tail-to-tail: c tocca le code di entrambe le frecce' (e la nota che la fonte scrive 'arrows from a and b')."
+      ],
+      "interactions": [
+        "clic su c: non osservato / spam / ham",
+        "slider P(spam) da 0.05 a 0.95; P(gratis|spam), P(gratis|ham), P(offerta|spam), P(offerta|ham) da 0.01 a 0.99, passo 0.01",
+        "pulsante Nuovo campione (rigenera le 200 email: le frequenze empiriche oscillano attorno ai valori esatti)",
+        "pulsante Passo per la derivazione"
+      ],
+      "visual": "Grafo SVG a V rovesciata con c in alto; mucchi di email animati; barre affiancate congiunta vs prodotto con valori live; formule con i numeri sostituiti.",
+      "aha": "Una causa comune crea correlazione tra i suoi effetti; conoscere la causa la spiega tutta e gli effetti diventano indipendenti: è l'ipotesi del naive Bayes.",
+      "formulasShown": [
+        "p(a,b,c)=p(a\\mid c)\\,p(b\\mid c)\\,p(c)",
+        "p(a,b)=\\sum_c p(a\\mid c)\\,p(b\\mid c)\\,p(c)=0.4\\cdot 0.6\\cdot 0.5+0.6\\cdot 0.05\\cdot 0.1=0.123\\neq p(a)\\,p(b)=0.27\\cdot 0.26\\simeq 0.070",
+        "p(a,b\\mid c)=\\frac{p(a,b,c)}{p(c)}=p(a\\mid c)\\,p(b\\mid c)=0.6\\cdot 0.5=0.30",
+        "p(a,b)-p(a)\\,p(b)=\\pi(1-\\pi)(p_1-q_1)(p_2-q_2)=0.4\\cdot 0.6\\cdot 0.55\\cdot 0.4\\simeq 0.053"
+      ],
+      "challenge": "Trova valori degli slider per cui a e b sono marginalmente indipendenti anche senza osservare c: il widget premia quando |p(a,b) − p(a)p(b)| < 0.001 (soluzioni: P(gratis|spam) = P(gratis|ham) oppure P(offerta|spam) = P(offerta|ham), cioè la causa comune non influenza una delle due parole; lo si legge dalla formula π(1−π)(p₁−q₁)(p₂−q₂)).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-head-to-tail-catena",
+      "title": "Head-to-tail: COVID, polmonite e radiografia",
+      "concepts": [
+        "c14",
+        "c15",
+        "c16",
+        "c17"
+      ],
+      "scenario": "medicina",
+      "realExample": "Catena clinica: infezione da COVID-19 (a) → polmonite (c) → radiografia del torace anomala (b). Un classificatore di radiografie deve capire che, se la polmonite è già accertata, sapere del COVID non aggiunge nulla sulla radiografia. Dati sintetici: P(COVID)=0.1, P(polm.|COVID)=0.6, P(polm.|no COVID)=0.05, P(RX anomala|polm.)=0.9, P(RX anomala|no polm.)=0.1.",
+      "storyboard": [
+        "Ingresso: catena orizzontale COVID (a) → polmonite (c) → RX anomala (b) come nella figura di p18 (400 ms); 1000 pazienti sintetici partono da sinistra come pallini (2 s in totale) e si dividono ai bivi secondo le CPT: 100 con COVID, 105 con polmonite (60 + 45), 184 con RX anomala.",
+        "Nessuna evidenza: la tabella di contingenza a×b mostra p(a,b) = 0.058 contro p(a)p(b) = 0.1·0.184 = 0.018. Clic su a = COVID sì: la barra di P(RX anomala) cresce in 500 ms da 0.184 a 0.58 e un flusso luminoso percorre a → c → b.",
+        "Trigger clic su c = polmonite sì: nodo c blu, i pallini senza polmonite escono di scena (500 ms); alternando a tra COVID sì/no la barra di P(RX anomala | a, c) resta ferma a 0.90 (nessun movimento, cartellino 'c isola l'influenza di a su b'); con c = no resta ferma a 0.10.",
+        "Pulsante Passo (6 passi, der02): la frazione p(c|a)·p(a)/p(c) viene cerchiata e poi trasformata per morph (600 ms) in p(a|c) con l'etichetta 'teorema di Bayes'; resta p(a|c)p(b|c).",
+        "Le etichette 'head' (punta che entra in c) e 'tail' (coda che esce da c) compaiono sulle due frecce con fade di 300 ms: da qui il nome head-to-tail."
+      ],
+      "interactions": [
+        "clic su c: non osservato / polmonite sì / polmonite no",
+        "clic su a: non osservato / COVID sì / COVID no",
+        "slider P(COVID) da 0.01 a 0.5; P(polm.|COVID), P(polm.|no COVID), P(RX|polm.), P(RX|no polm.) da 0.01 a 0.99",
+        "pulsante Passo per la derivazione con Bayes",
+        "pulsante Aggiungi arco COVID → RX (per la sfida)"
+      ],
+      "visual": "Catena SVG con flusso di particelle; tabella di contingenza a×b aggiornata live, in versione marginale e condizionata a c; formule con i valori sostituiti.",
+      "aha": "In una catena il mediatore porta tutta l'informazione: osservato lui, l'estremo iniziale non dice più nulla su quello finale.",
+      "formulasShown": [
+        "p(a,b,c)=p(b\\mid c)\\,p(c\\mid a)\\,p(a)",
+        "p(a,b)=p(a)\\sum_c p(b\\mid c)\\,p(c\\mid a)=0.1\\,(0.9\\cdot 0.6+0.1\\cdot 0.4)=0.058\\neq p(a)\\,p(b)=0.1\\cdot 0.184\\simeq 0.018",
+        "p(a,b\\mid c)=\\frac{p(c\\mid a)\\cdot p(a)}{p(c)}\\,p(b\\mid c)=p(a\\mid c)\\,p(b\\mid c)",
+        "P(b\\mid a,c)=P(b\\mid c)=0.90"
+      ],
+      "challenge": "Aggiungi l'arco diretto COVID → RX (danno polmonare diretto; P(RX|COVID, no polm.) regolabile da 0.1 a 0.9): prima di premere Verifica prevedi se a ⊥ b | c regge ancora (risposta: no, il nuovo cammino a → b non passa per c; il widget mostra P(RX|COVID, polm.) ≠ P(RX|no COVID, polm.)).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-head-to-head-allarme",
+      "title": "Head-to-head: incendio, toast bruciato e allarme",
+      "concepts": [
+        "c18",
+        "c19",
+        "c20",
+        "c21"
+      ],
+      "scenario": "incendio",
+      "realExample": "Allarme antincendio di un appartamento: suona (c) se c'è un incendio (a) o se in cucina si brucia il toast (b). Il sistema che decide se chiamare i vigili del fuoco deve ragionare sulle due cause: indipendenti tra loro, ma legate appena l'allarme suona. Dati sintetici: P(incendio)=0.01, P(toast)=0.2, P(allarme|I,T)=0.99, P(allarme|I,no T)=0.95, P(allarme|no I,T)=0.6, P(allarme|no I,no T)=0.01.",
+      "storyboard": [
+        "Ingresso: grafo a V con incendio (a) e toast bruciato (b) in alto e allarme (c) in basso (400 ms), icone fiamma, toast, sirena; barre P(incendio) = 0.010, P(toast) = 0.20, P(allarme) = 0.136.",
+        "Nessuna evidenza su c: clic su toast = sì → la barra di P(incendio) non si muove (resta 0.010) e il cartellino 'indipendenti' fa un breve scuotimento; sotto, Σ_c p(c|a,b) = 1 si evidenzia.",
+        "Trigger clic su allarme = suona: nodo blu, sirena animata (ciclo 800 ms); P(incendio|allarme) sale da 0.010 a 0.070 con una molla (~600 ms).",
+        "Poi clic su toast = sì: P(incendio|allarme, toast) crolla a 0.016 (il toast spiega l'allarme); toast = no: sale a 0.49. Un grafico a barre in basso conserva i quattro valori 0.010, 0.070, 0.016, 0.49 come segni permanenti.",
+        "Toggle preset 'AND' (didattico: l'allarme scatta quasi solo con entrambe le cause, P(allarme|I,T) = 0.99, altrimenti 0.01): con allarme osservato P(incendio|allarme) = 0.172, con toast = sì sale a 0.50, con toast = no scende a 0.010. Cartellino: la dipendenza nasce sempre, il verso dipende dalla CPT.",
+        "Pulsante Passo (5 passi, der03): la Σ_c p(c|a,b) si evidenzia e collassa in 1 (400 ms); nel caso condizionato p(c|a,b) resta al numeratore dentro un riquadro rosso che impedisce la fattorizzazione."
+      ],
+      "interactions": [
+        "clic su allarme: non osservato / suona / non suona",
+        "clic su toast: non osservato / sì / no; clic su incendio per il ragionamento inverso",
+        "slider P(incendio) da 0.001 a 0.2 (scala log), P(toast) da 0.01 a 0.5, quattro celle P(allarme|I,T) da 0.001 a 0.999",
+        "toggle preset OR (dati del widget) / AND (didattico)",
+        "pulsante Passo per la derivazione"
+      ],
+      "visual": "Grafo SVG con icone (fiamma, toast, sirena), barre di probabilità live sui nodi, grafico a barre di confronto, formule con i numeri sostituiti; nodo osservato blu come nelle note.",
+      "aha": "Due cause indipendenti diventano dipendenti quando si osserva il loro effetto comune: con cause alternative come incendio e toast, trovarne una rende meno probabile l'altra (il verso della dipendenza dipende dalla CPT, la dipendenza nasce sempre).",
+      "formulasShown": [
+        "p(a,b,c)=p(c\\mid a,b)\\,p(a)\\,p(b)",
+        "p(a,b)=\\sum_c p(c\\mid a,b)\\,p(a)\\,p(b)=p(a)\\,p(b)",
+        "p(a,b\\mid c)=\\frac{p(c\\mid a,b)\\,p(a)\\,p(b)}{p(c)}\\neq p(a\\mid c)\\,p(b\\mid c)",
+        "P(I\\mid A,T)=\\frac{P(A\\mid I,T)\\,P(I)}{\\sum_{i}P(A\\mid i,T)\\,P(i)}=\\frac{0.99\\cdot 0.01}{0.99\\cdot 0.01+0.6\\cdot 0.99}\\simeq 0.016"
+      ],
+      "challenge": "Regola la CPT dell'allarme in modo che osservare il toast non cambi P(incendio|allarme): il widget verifica live |P(I|A,T) − P(I|A,¬T)| < 0.005. Soluzione: il rapporto P(A|I,T)/P(A|¬I,T) deve essere uguale a P(A|I,¬T)/P(A|¬I,¬T), cioè p(c=1|a,b) di forma prodotto f(a)g(b) (per esempio una CPT che non dipende dal toast).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-griglia-evidenza",
+      "title": "La griglia riassuntiva: chi blocca e chi apre",
+      "concepts": [
+        "c22",
+        "c46"
+      ],
+      "scenario": "medicina",
+      "realExample": "Ripasso per la diagnosi: le tre strutture a tre nodi ricorrono in ogni rete clinica (causa comune, catena di eventi, due cause di un sintomo). Lo studente deve riprodurre a memoria la figura di p19, come all'orale.",
+      "storyboard": [
+        "La griglia 2×3 della figura di p19 parte vuota: colonne tail to tail, head to tail, head to head; righe no evidence, evidence; in ogni cella il grafetto a tre nodi con c rosso vuoto (riga 1) o blu pieno (riga 2).",
+        "Trigger trascinamento di una cella su uno dei due secchielli (giallo = independent, verde = dependent): se giusta la cella si colora (fill 250 ms) e si fonde con la vicina dello stesso colore; se sbagliata trema (3 oscillazioni da 60 ms) e torna al posto.",
+        "Dopo una risposta giusta la cella mostra il numero di controllo preso dai widget precedenti: t2t senza evidenza 0.123 ≠ 0.070 (spam); h2t senza evidenza 0.058 ≠ 0.018 (COVID); h2h senza evidenza P(incendio|toast) = P(incendio) = 0.010; con evidenza t2t 0.30 = 0.6·0.5, h2t P(RX|COVID, polm.) = P(RX|polm.) = 0.90, h2h 0.070 → 0.016.",
+        "Clic su una cella: una particella parte da a verso b (800 ms): nelle celle verdi attraversa c e arriva a b, nelle gialle rimbalza su c.",
+        "Completata la griglia (6/6) le ellissi si ridisegnano come nella figura originale (morph 700 ms): un'ellisse orizzontale unisce t2t e h2t in ciascuna riga, head-to-head resta isolato con colori invertiti; ellissi tratteggiate verticali per le colonne.",
+        "Legenda della convenzione: nodo pieno blu = osservato (in C), cerchio rosso vuoto = non osservato; il pulsante 'Mostra la figura originale' sovrappone l'immagine di p19 al 50% di opacità."
+      ],
+      "interactions": [
+        "trascinamento delle 6 celle sui secchielli giallo / verde",
+        "clic su una cella per lanciare la particella; doppio clic per osservare o no c",
+        "pulsante Mostra la figura originale",
+        "pulsante Sfida (modalità a tempo)"
+      ],
+      "visual": "Griglia SVG con ellissi gialle e verdi come nella figura, nodi rossi e blu, particella animata lungo i cammini, legenda independent/dependent.",
+      "aha": "Due configurazioni si comportano allo stesso modo (osservare il centro blocca), la terza è l'opposto (osservare il centro apre).",
+      "formulasShown": [
+        "a \\not\\perp b \\mid \\emptyset,\\; a\\perp b\\mid c \\quad \\text{(t2t, h2t)}",
+        "a \\perp b \\mid \\emptyset,\\; a\\not\\perp b\\mid c \\quad \\text{(h2h)}",
+        "\\text{h2h: } P(I\\mid T)=P(I)=0.010,\\quad P(I\\mid A)\\simeq 0.070\\neq P(I\\mid A,T)\\simeq 0.016"
+      ],
+      "challenge": "Modalità a tempo: 12 cammini a tre nodi casuali (orientazione casuale, nodo centrale osservato o no, a volte con un discendente del collider osservato); rispondi dipendenti/indipendenti entro 3 s ciascuno; punteggio su 12 e ripasso degli errori con la regola corretta.",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-carburante-cpt",
+      "title": "L'auto che non parte: batteria, serbatoio, indicatore",
+      "concepts": [
+        "c24",
+        "c25",
+        "c26"
+      ],
+      "scenario": "fonte",
+      "realExample": "Esempio della fonte: diagnostica di bordo di un'auto. La centralina vede solo l'indicatore del carburante (inaffidabile) e deve ragionare su due guasti possibili, serbatoio vuoto o batteria scarica. I numeri sono quelli delle slide.",
+      "storyboard": [
+        "Ingresso: cruscotto stilizzato (batteria, serbatoio, lancetta del carburante) e sotto il grafo B → G ← F della slide (400 ms); le tabelle P(B=1) = 0.9, P(F=1) = 0.9 e la CPT P(G=1|B,F) = 0.8, 0.2, 0.2, 0.1 con le etichette della slide ('unreliable!').",
+        "Trigger Rigenera flotta: 1000 auto (pallini) compaiono in 1.5 s; ognuna estrae batteria (90% carica) e serbatoio (90% pieno) e si sistema in una griglia 2×2 (B,F): circa 810 in (1,1), 90 in (1,0), 90 in (0,1), 10 in (0,0).",
+        "Poi ogni pallino si colora secondo G (verde = segna pieno, grigio = segna vuoto) con uno sweep di 800 ms: anche nella cella (1,1) circa il 20% (≈ 162 auto) segna vuoto; cartellino 'indicatore inaffidabile'.",
+        "Le quattro barre della CPT accanto alle celle confrontano la frequenza empirica di G=1 con il valore vero (0.8, 0.2, 0.2, 0.1); rigenerando con 10 000 auto le barre d'errore si restringono.",
+        "Contatore 'serbatoi vuoti': prima di qualunque osservazione P(F=0) = 1 − P(F=1) = 0.1 (circa 100 auto su 1000); clic su una cella della griglia mostra la sua probabilità congiunta con la fattorizzazione e i numeri sostituiti."
+      ],
+      "interactions": [
+        "slider P(B=1) e P(F=1) da 0.5 a 0.99",
+        "slider delle quattro probabilità P(G=1|B,F) da 0.01 a 0.99",
+        "pulsante Rigenera flotta (1000 o 10 000 auto)",
+        "clic su una cella della griglia (B,F) per vedere il calcolo della congiunta"
+      ],
+      "visual": "Cruscotto SVG stilizzato, grafo con nodi rossi, griglia di 1000 punti colorati per G, barre della CPT con valori numerici.",
+      "aha": "Una rete bayesiana è un generatore di dati: prior indipendenti per le cause e una CPT per l'effetto bastano a simulare tutta la flotta.",
+      "formulasShown": [
+        "P(B=1)=0.9,\\; P(F=1)=0.9",
+        "P(F=0)=1-P(F=1)=0.1",
+        "p(B,F,G)=P(B)\\,P(F)\\,P(G\\mid B,F):\\quad P(B=1,F=1,G=0)=0.9\\cdot 0.9\\cdot 0.2=0.162"
+      ],
+      "challenge": "Prima di premere Rigenera stima la percentuale della flotta con l'indicatore sul vuoto: il widget confronta la tua stima con il valore esatto P(G=0) = 0.315 (31.5%) e con quello simulato.",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-carburante-indicatore",
+      "title": "L'indicatore segna vuoto: aggiornare la credenza con Bayes",
+      "concepts": [
+        "c27",
+        "c28",
+        "c35"
+      ],
+      "scenario": "fonte",
+      "realExample": "Stessa auto della slide: la spia del carburante segna vuoto. Quanto è probabile che il serbatoio sia davvero vuoto? È il ragionamento bayesiano che dà il nome alle reti.",
+      "storyboard": [
+        "Trigger clic su G = vuoto: la lancetta scende su E (500 ms) e il nodo G diventa blu; nella griglia delle 1000 auto le 685 con G=1 sfumano al 10% di opacità (600 ms): restano 315 auto.",
+        "Tra le rimaste si evidenziano in rosso quelle con serbatoio vuoto: 81 su 315; la barra P(F=0) cresce da 0.10 a 0.257 (molla, 700 ms) lasciando un segno fisso sul prior.",
+        "La formula di Bayes si compone pezzo per pezzo (un termine ogni 400 ms): verosimiglianza P(G=0|F=0) = 0.81, prior P(F=0) = 0.1, evidenza P(G=0) = 0.315, risultato 0.081/0.315 ≃ 0.257; didascalia 'da qui il nome rete bayesiana: aggiornare le credenze sulle variabili ignote in base all'evidenza'.",
+        "Riquadro 'perché non di più?': le 234 auto con serbatoio pieno che segnano vuoto si dividono in 162 (batteria carica, errore dell'indicatore) e 72 (batteria scarica); cartellino con la nota della slide: prior forte e indicatore inaffidabile.",
+        "Slider k (fattore d'errore a serbatoio pieno): k scala le due probabilità di 'falso vuoto', P(G=0|B=1,F=1) = 0.2k e P(G=0|B=0,F=1) = 0.8k; a k = 1 i valori della slide, per k → 0 il posterior sale verso 1 e dalla griglia spariscono le auto grigie con serbatoio pieno."
+      ],
+      "interactions": [
+        "clic su G: non osservato / vuoto / pieno",
+        "slider k (fattore d'errore dell'indicatore a serbatoio pieno) da 0 a 1, passo 0.01",
+        "slider prior P(F=1) da 0.5 a 0.99"
+      ],
+      "visual": "Griglia di punti filtrata, barra prior contro posterior, formula di Bayes con i numeri sostituiti live, grafo con G blu.",
+      "aha": "Il posterior combina prior e verosimiglianza: un indizio debole su un evento raro sposta la credenza, ma poco.",
+      "formulasShown": [
+        "P(F=0\\mid G=0)=\\frac{P(G=0\\mid F=0)\\,P(F=0)}{P(G=0)}=\\frac{0.81\\cdot 0.1}{0.315}\\simeq 0.257",
+        "P(G=0)=P(G=0\\mid F=0)\\,P(F=0)+P(G=0\\mid F=1)\\,P(F=1)=0.081+0.26k\\cdot 0.9",
+        "P(x\\mid e)=\\frac{P(e\\mid x)\\,P(x)}{P(e)}"
+      ],
+      "challenge": "Trova il fattore d'errore k massimo per cui P(F=0|G=0) supera 0.5 (risposta: 0.081/(0.081 + 0.234k) > 0.5 per k < 0.081/0.234 ≃ 0.346, cioè i falsi 'vuoto' vanno ridotti a circa un terzo).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-carburante-derivazione",
+      "title": "Albero delle somme: P(G=0|F=0) e P(G=0)",
+      "concepts": [
+        "c29",
+        "c30"
+      ],
+      "scenario": "fonte",
+      "realExample": "Il calcolo che la centralina dell'auto esegue davvero: marginalizzare le variabili non osservate. Stessi numeri della slide 'Derivation'.",
+      "storyboard": [
+        "Albero orizzontale disegnato in 600 ms: radice → rami B=1 (0.9) / B=0 (0.1) → rami F=1 (0.9) / F=0 (0.1) → foglie con P(G=0|B,F) = 0.2, 0.8, 0.8, 0.9; spessore dei rami proporzionale alla probabilità.",
+        "Quantità 'P(G=0|F=0)': i rami F=1 si spengono (opacità 15%, 300 ms); con Passo il percorso B=1 si illumina e mostra 0.9·0.8 = 0.72, poi il percorso B=0 mostra 0.1·0.9 = 0.09; i due valori volano nel totale 0.81 (400 ms ciascuno).",
+        "Riquadro sul passaggio P(B|F=0) = P(B): il grafo B → G ← F appare in miniatura con G non osservato e il cartellino 'collider non osservato: B e F indipendenti'.",
+        "Quantità 'P(G=0)': i quattro percorsi si illuminano in sequenza (0.162, 0.072, 0.072, 0.009) e confluiscono in 0.315.",
+        "Le righe della derivazione della slide compaiono a lato, sincronizzate con i rami: la riga corrente è evidenziata; le righe numeriche assenti nella slide sono marcate 'calcolo aggiuntivo'."
+      ],
+      "interactions": [
+        "pulsanti Passo / Play (un percorso ogni 800 ms) / Reset",
+        "menu della quantità: P(G=0|F=0), P(G=0), P(G=0|B=0)",
+        "hover su un ramo o una foglia: tooltip con il fattore e la sua origine (prior o CPT)",
+        "slider P(B=1) e P(F=1) da 0.5 a 0.99 per rifare i conti con altri prior"
+      ],
+      "visual": "Albero SVG orizzontale con spessore dei rami proporzionale alla probabilità, foglie con valori, derivazione LaTeX a lato con il termine corrente evidenziato.",
+      "aha": "Marginalizzare è sommare sui percorsi dell'albero; la fattorizzazione della rete dice quali fattori moltiplicare lungo ogni percorso.",
+      "formulasShown": [
+        "P(G=0\\mid F=0)=\\sum_{B\\in\\{0,1\\}}P(G=0\\mid B,F=0)\\,P(B)=0.8\\cdot 0.9+0.9\\cdot 0.1=0.81",
+        "P(G=0)=\\sum_{B\\in\\{0,1\\}}\\sum_{F\\in\\{0,1\\}}P(G=0\\mid B,F)\\,P(B)\\,P(F)=0.162+0.072+0.072+0.009=0.315"
+      ],
+      "challenge": "Calcola P(G=0|B=0) sull'albero prima che il widget lo mostri e inseriscilo nel campo (tolleranza 0.005): risposta 0.8·0.9 + 0.9·0.1 = 0.81.",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-explaining-away",
+      "title": "Explaining away: la batteria scarica scagiona il serbatoio",
+      "concepts": [
+        "c31",
+        "c32",
+        "c33",
+        "c34"
+      ],
+      "scenario": "fonte",
+      "realExample": "Dopo l'indicatore vuoto il meccanico scopre che la batteria è scarica. Il serbatoio è ancora sospettato? È lo stesso ragionamento di un sistema diagnostico che, trovata una causa, riduce la probabilità delle altre.",
+      "storyboard": [
+        "Stato iniziale: G = 0 osservato (nodo blu); barra orizzontale di P(F=0) a 0.257 con un segno fisso sul prior 0.1.",
+        "Trigger clic su B = scarica: nodo B blu; nella griglia delle 1000 auto restano solo le 81 con batteria scarica e indicatore vuoto (le altre sfumano in 600 ms); di queste 9 hanno il serbatoio vuoto e si evidenziano in rosso.",
+        "La barra di P(F=0) scende da 0.257 a 0.111 (molla, 700 ms); una freccia curva da B verso G porta l'etichetta 'explains away'.",
+        "Restano tre segni sulla barra: prior 0.1, dopo G 0.257, dopo G e B 0.111; cartellino: 0.111 > 0.1 perché l'indicatore dà ancora evidenza (rapporto di verosimiglianza 0.9/0.8 = 1.125 a favore del serbatoio vuoto).",
+        "Toggle B = carica: la barra sale a 0.308 (= 0.8·0.1/(0.8·0.1 + 0.2·0.9)): scoprire che la batteria funziona rafforza il sospetto sul serbatoio.",
+        "Pulsante Mostra i conti: der07 passo per passo con i numeri sostituiti e un riquadro con la verifica di der08 (P(B=0,F=0|G=0) ≃ 0.029 contro P(B=0|G=0)·P(F=0|G=0) ≃ 0.066: B e F non sono più indipendenti dato G)."
+      ],
+      "interactions": [
+        "clic su B: non osservata / scarica / carica",
+        "slider P(G=0|B=0,F=1) da 0.5 a 0.99 (quanto la batteria scarica basta da sola a far segnare vuoto)",
+        "pulsante Mostra i conti"
+      ],
+      "visual": "Barra orizzontale di P(F=0) con i tre segni storici, grafo con B e G blu, griglia filtrata di auto, formula con i valori sostituiti.",
+      "aha": "Due cause indipendenti di uno stesso effetto competono: confermarne una scagiona l'altra, ma non del tutto se l'effetto contiene ancora informazione.",
+      "formulasShown": [
+        "P(F=0\\mid G=0,B=0)=\\frac{P(G=0\\mid F=0,B=0)\\,P(F=0\\mid B=0)}{P(G=0\\mid B=0)}=\\frac{0.9\\cdot 0.1}{0.81}\\simeq 0.111",
+        "P(F=0\\mid G=0,B=1)=\\frac{0.8\\cdot 0.1}{0.8\\cdot 0.1+0.2\\cdot 0.9}\\simeq 0.308",
+        "B\\perp F\\mid\\emptyset,\\quad B\\not\\perp F\\mid G"
+      ],
+      "challenge": "Con quale valore di P(G=0|B=0,F=1) la batteria scarica spiegherebbe completamente l'indicatore, riportando P(F=0|G=0,B=0) esattamente al prior 0.1? (risposta: 0.9, cioè uguale a P(G=0|B=0,F=0): con la batteria scarica l'indicatore non distingue più il pieno dal vuoto).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-discendenti-collider",
+      "title": "La telefonata ai vigili: basta osservare un discendente",
+      "concepts": [
+        "c36",
+        "c37",
+        "c38"
+      ],
+      "scenario": "incendio",
+      "realExample": "Estensione dell'allarme antincendio: se l'allarme suona, il sistema domotico chiama i vigili del fuoco (d). La centrale dei vigili vede solo la chiamata, un discendente del collider 'allarme'. Dati sintetici: P(chiamata|allarme)=0.9, P(chiamata|no allarme)=0.001.",
+      "storyboard": [
+        "Ingresso: grafo incendio → allarme ← toast, allarme → chiamata ai vigili (500 ms). In modalità Discendenti un clic su un nodo accende a cascata i nodi raggiungibili seguendo le frecce (150 ms per livello): per 'incendio' si accendono allarme e chiamata, per 'chiamata' nessuno.",
+        "Nessuna evidenza: pulsante Impulso → una particella parte da incendio verso toast (800 ms) e si ferma sull'allarme, dove compare un lucchetto chiuso: P(incendio|toast) = P(incendio) = 0.010.",
+        "Trigger clic su chiamata = sì (nodo blu; l'allarme resta NON osservato): il lucchetto sull'allarme si apre (rotazione 200 ms) con il cartellino 'un discendente del collider è osservato'; l'impulso ora arriva a toast.",
+        "Numeri live: P(incendio|chiamata) = 0.070; aggiungendo toast = sì scende a 0.016, con toast = no sale a 0.46 (barre con molla, 600 ms).",
+        "Pannello 'flusso di informazione': per ogni nodo intermedio un rubinetto aperto/chiuso aggiornato a ogni cambio di evidenza (chiuso sui collider senza evidenza su di sé e sui discendenti, chiuso sui nodi t2t/h2t osservati).",
+        "Slider di affidabilità della chiamata: portando P(chiamata|allarme) = P(chiamata|no allarme) la chiamata non dice più nulla sull'allarme e le tre barre tornano a 0.010 (caso limite di der11)."
+      ],
+      "interactions": [
+        "modalità Discendenti: clic su un nodo per evidenziarne i discendenti",
+        "modalità Evidenza: clic su un nodo per osservarlo (sì / no / non osservato)",
+        "slider P(chiamata|allarme) da 0.5 a 0.99 e P(chiamata|no allarme) da 0 a 0.5",
+        "pulsante Aggiungi discendente ('arrivo dei vigili', figlio di chiamata) e pulsante Aggiungi 'odore di fumo' (figlio del solo incendio)"
+      ],
+      "visual": "Grafo SVG con cascata luminosa sui discendenti, lucchetti animati sui collider, barre di probabilità live, pannello dei rubinetti.",
+      "aha": "Osservare un effetto del collider è osservare il collider in forma indiretta: apre il cammino e fa emergere la dipendenza tra le cause.",
+      "formulasShown": [
+        "a\\rightarrow c\\leftarrow b,\\; c\\rightarrow d",
+        "a\\perp b\\mid\\emptyset,\\quad a\\not\\perp b\\mid d",
+        "p(a,b\\mid d)=\\frac{p(a)\\,p(b)\\sum_{c}p(c\\mid a,b)\\,p(d\\mid c)}{p(d)}",
+        "P(I\\mid D)\\simeq 0.070,\\quad P(I\\mid D,T)\\simeq 0.016,\\quad P(I\\mid D,\\neg T)\\simeq 0.46"
+      ],
+      "challenge": "Aggiungi il nodo 'odore di fumo' figlio del solo incendio e osservalo: il cammino tra incendio e toast si apre? (risposta: no, non è un discendente del collider allarme; P(toast) resta 0.20). Poi osserva 'arrivo dei vigili', discendente della chiamata: si apre? (sì, è un discendente dell'allarme).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-cammini-bloccati",
+      "title": "Il cacciatore di cammini: d-separazione su una rete clinica",
+      "concepts": [
+        "c39",
+        "c40",
+        "c42",
+        "c43"
+      ],
+      "scenario": "medicina",
+      "realExample": "La rete 'chest clinic' (Asia) usata come esempio classico nei corsi di modelli grafici (integrazione, non nella fonte): visita in Asia → tubercolosi; fumo → tumore al polmone, fumo → bronchite; tubercolosi e tumore → 'tubercolosi o tumore' (E); E → radiografia; E e bronchite → dispnea. Un sistema esperto per pneumologia deve sapere quali variabili restano informative dopo certi esami.",
+      "storyboard": [
+        "La rete a 8 nodi si disegna per livelli (sfalsamento 100 ms); lo studente assegna i nodi ad A (verde), B (viola) e C (blu, osservati).",
+        "Trigger Elenca tutti i cammini: il widget enumera i cammini semplici tra A e B ignorando il verso delle frecce; ogni cammino diventa una riga di un elenco e, al passaggio del mouse, si evidenzia in giallo sul grafo; cartellino 'cammino ≠ cammino orientato: le frecce si attraversano anche contro verso'.",
+        "Pulsante Passo: un segnalino percorre il cammino corrente un nodo ogni 600 ms; su ogni nodo intermedio compare l'etichetta t2t, h2t o h2h (in base a come si incontrano le due frecce del cammino) e il pannello laterale evidenzia la regola applicata.",
+        "Se il nodo blocca (t2t/h2t osservato, oppure h2h con né il nodo né alcun suo discendente in C) il segnalino si ferma su un lucchetto rosso (200 ms) e il cammino diventa grigio; per un collider lampeggiano i suoi discendenti e, se uno è blu, il lucchetto si apre.",
+        "Verdetto dopo l'ultimo cammino: banner verde 'dsep(A;B|C): tutti i cammini bloccati ⇒ A ⊥ B | C' oppure banner arancione 'cammino aperto trovato' con il cammino colpevole in giallo pulsante."
+      ],
+      "interactions": [
+        "clic sui nodi per ciclare tra nessuno / A / B / C",
+        "pulsante Elenca tutti i cammini; pulsante Passo (un nodo alla volta) e Play (600 ms per nodo)",
+        "modalità editor: clic su coppie di nodi per aggiungere, togliere o invertire archi (gli archi che creano cicli vengono rifiutati con un tremolio)",
+        "preset: rete clinica, grafo degli esempi di p22, catena lunga, doppio collider"
+      ],
+      "visual": "Grafo SVG con colori per ruolo (A verde, B viola, C blu), cammini evidenziati uno per volta, etichette del tipo di connessione su ogni nodo, lucchetti e pannello con le due regole di blocco.",
+      "aha": "La d-separazione è una procedura meccanica: per ogni cammino basta trovare un nodo che blocca; un solo cammino aperto rompe l'indipendenza.",
+      "formulasShown": [
+        "\\mathrm{dsep}(A;B\\mid C)",
+        "\\text{t2t/h2t}: v\\in C \\Rightarrow \\text{bloccato}",
+        "\\text{h2h}: v\\notin C \\wedge \\mathrm{Desc}(v)\\cap C=\\emptyset \\Rightarrow \\text{bloccato}",
+        "\\pi=T\\rightarrow E\\leftarrow L:\\; E \\text{ h2h},\\; E\\notin C,\\; \\mathrm{Desc}(E)\\cap C=\\{X\\} \\Rightarrow \\pi \\text{ aperto}"
+      ],
+      "challenge": "Rispondi prima di lanciare la verifica: tubercolosi ⊥ tumore? (sì: il collider E non ha evidenza né su di sé né sui discendenti). E dato la radiografia? (no: la radiografia è discendente di E). Bronchite ⊥ tumore dato fumo? (sì: il fumo osservato blocca, la dispnea è un collider non osservato). E dato fumo e dispnea? (no: la dispnea osservata apre il cammino bronchite → dispnea ← E ← tumore).",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-esempi-dsep",
+      "title": "Gli esempi della slide: osservo c oppure f",
+      "concepts": [
+        "c41",
+        "c44",
+        "c45"
+      ],
+      "scenario": "medicina",
+      "realExample": "Il grafo degli esempi di p22 con etichette cliniche: a = fumo, f = esposizione allo smog, e = bronchite, b = congiuntivite (irritazione da smog), c = tosse. Il medico si chiede se il fumo dice qualcosa sulla congiuntivite. CPT sintetiche dichiarate: P(fumo)=0.3, P(smog)=0.4, P(bronchite|fumo,smog)=0.7, (fumo, no smog)=0.5, (no fumo, smog)=0.4, (no, no)=0.02, P(congiuntivite|smog)=0.7, P(congiuntivite|no smog)=0.05, P(tosse|bronchite)=0.9, P(tosse|no bronchite)=0.1.",
+      "storyboard": [
+        "Il grafo a → e ← f → b, e → c appare identico alla slide (nodi rossi, 500 ms), con sotto ogni lettera l'etichetta clinica.",
+        "Trigger clic su c (tosse osservata, blu): il segnalino percorre a → e ← f → b (600 ms per nodo); in e compare 'h2h, il figlio c è osservato: aperto', in f 't2t, non osservato: aperto'; banner 'a ⊥̸ b | c' come nel titolo della slide.",
+        "Numeri live dalle CPT sintetiche: due barre affiancate P(congiuntivite|tosse) = 0.431 e P(congiuntivite|tosse, fumo) = 0.354 (con 'no fumo' 0.510): il fumo spiega la bronchite, quindi rende lo smog meno probabile.",
+        "Trigger clic su f (smog osservato, c torna non osservato): il segnalino si ferma in f con un lucchetto (t2t osservato); banner 'a ⊥ b | f'; le barre P(congiuntivite|smog) e P(congiuntivite|smog, fumo) si allineano a 0.70 con uno scatto (400 ms). Un cartellino nota che anche e bloccherebbe da solo (collider senza evidenza).",
+        "Pulsante CPT casuali (ripetibile): nuove CPT estratte a caso, i numeri ruotano in 300 ms; con f osservato le barre restano sempre allineate, con c osservato sono quasi sempre diverse: la d-separazione vale per ogni parametrizzazione."
+      ],
+      "interactions": [
+        "clic sui nodi a, b, c, e, f per osservarli (sì / no / non osservato), anche più di uno insieme",
+        "pulsante CPT casuali (ogni probabilità estratta uniforme in [0.05, 0.95])",
+        "toggle lettere / etichette cliniche"
+      ],
+      "visual": "Grafo SVG identico alla slide (nodi rossi, osservati blu), segnalino animato, due barre di probabilità affiancate che si allineano quando c'è d-separazione.",
+      "aha": "La d-separazione è una garanzia strutturale: se il grafo dice indipendenti, lo sono per ogni scelta dei numeri nelle CPT.",
+      "formulasShown": [
+        "a\\not\\perp b\\mid c:\\quad P(b\\mid c)\\simeq 0.431\\neq P(b\\mid c,a)\\simeq 0.354",
+        "a\\perp b\\mid f:\\quad P(b\\mid f)=P(b\\mid f,a)=0.70",
+        "\\mathrm{dsep}(A;B\\mid C)\\Rightarrow A\\perp B\\mid C"
+      ],
+      "challenge": "Trova tutti gli insiemi di evidenza C ⊆ {c, e, f} che d-separano a da b; il widget verifica ogni tentativo (risposta: ∅, {f}, {c,f}, {e,f}, {c,e,f}; non funzionano {c}, {e}, {c,e}).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-locali-globali",
+      "title": "Dalle indipendenze locali a quelle globali",
+      "concepts": [
+        "c47",
+        "c48",
+        "c49"
+      ],
+      "scenario": "medicina",
+      "realExample": "Stessa rete clinica degli esempi (fumo, smog, bronchite, congiuntivite, tosse). Chi costruisce la rete dichiara solo le indipendenze locali (ogni nodo dai suoi genitori); la d-separazione le estende a tutte le indipendenze globali che un sistema di inferenza può sfruttare.",
+      "storyboard": [
+        "Grafo degli esempi di p22 (a → e ← f → b, e → c) con etichette cliniche. Trigger clic su un nodo x_i: genitori in blu (condizionamento), non-discendenti in giallo, discendenti in grigio, x_i bordato; sotto compare l'asserzione locale (es. e ⊥ b | {a, f}) con fade di 300 ms.",
+        "Pulsante Tutte le locali: l'elenco I_l(G) si compone con cinque righe, una ogni 250 ms: a ⊥ {f, b}; f ⊥ a; e ⊥ b | {a, f}; b ⊥ {a, e, c} | f; c ⊥ {a, f, b} | e.",
+        "Pulsante Globali: il widget enumera tutte le triple di insiemi disgiunti (A, B, C) sui 5 nodi (contatore che scorre) ed esegue il controllo dsep per ciascuna; le asserzioni vere scorrono nella lista I(G), quelle che coincidono con una locale (o sono ottenute togliendo variabili da una locale) hanno un bollino.",
+        "Diagramma di Venn animato I_l(G) ⊆ I(G) con i conteggi; clic su un'asserzione globale non locale (es. a ⊥ b | {c, f}) → sul grafo si mostrano i cammini bloccati che la giustificano.",
+        "Riga finale 'se e solo se': clic su una tripla qualunque → spunta verde o croce rossa contemporaneamente nelle colonne 'dsep' e 'in I(G)'; con il pulsante 'CPT generiche' il widget calcola anche l'indipendenza numerica e mostra che coincide."
+      ],
+      "interactions": [
+        "clic sui nodi per vedere genitori, discendenti e non-discendenti",
+        "pulsanti Locali / Globali",
+        "filtro per dimensione dell'insieme condizionante |C| da 0 a 3",
+        "modalità editor per modificare il grafo e vedere come cambiano i due elenchi"
+      ],
+      "visual": "Grafo SVG a sinistra con colori per ruolo; a destra due liste scorrevoli di asserzioni in notazione ⊥; Venn animato con i conteggi.",
+      "aha": "Le indipendenze locali sono il punto di partenza; la d-separazione ricava da esse tutte le indipendenze globali codificate dal grafo.",
+      "formulasShown": [
+        "I_l(G)=\\left\\{\\forall i,\\; x_i\\perp \\mathit{NonDescendants}_{x_i}\\mid \\mathit{Parents}_{x_i}\\right\\}",
+        "I(G)=\\{(A\\perp B\\mid C):\\mathrm{dsep}(A;B\\mid C)\\}",
+        "(A\\perp B\\mid C)\\in I(G)\\iff \\mathrm{dsep}(A;B\\mid C)",
+        "e\\perp b\\mid\\{a,f\\}"
+      ],
+      "challenge": "Trova un'asserzione di I(G) che condiziona su un discendente di un collider (per esempio a ⊥ b | {c, f}) e spiega perché nessuna indipendenza locale la contiene (le locali condizionano solo sui genitori del nodo).",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-classi-equivalenza",
+      "title": "25 grafi, 11 classi: la I-equivalenza su tre variabili",
+      "concepts": [
+        "c50",
+        "c51",
+        "c52",
+        "c55",
+        "c72"
+      ],
+      "scenario": "medicina",
+      "realExample": "Tre variabili cliniche (fumo, bronchite, tosse). Un algoritmo che impara la struttura dai dati di pazienti vede solo le indipendenze: non può distinguere tra grafi I-equivalenti. Il widget mostra tutto lo spazio dei DAG su tre nodi.",
+      "storyboard": [
+        "Compaiono in una griglia 5×5 tutti i 25 DAG su tre nodi, ciascuno in una piccola scheda (fade sfalsato di 40 ms).",
+        "Pulsante Calcola I(G): per ogni scheda si elencano, tra le 6 asserzioni possibili (a⊥b, a⊥c, b⊥c, a⊥b|c, a⊥c|b, b⊥c|a), quelle codificate dal grafo; le schede si riempiono una dopo l'altra (60 ms ciascuna).",
+        "Pulsante Raggruppa: le schede con lo stesso insieme I(G) volano insieme (layout animato, 800 ms) in 11 gruppi: grafo vuoto (1), un arco (3 classi da 2), catene e forche (3 classi da 3), collider (3 classi da 1), grafi completi (1 classe da 6).",
+        "Evidenziazione della figura di p23: la classe {A→C→B, B→C→A, A←C→B} con bordo verde e il collider A→C←B da solo con bordo rosso.",
+        "Contatori 25 DAG, 11 classi; 'mutuamente esclusive ed esaustive' mostrato come colorazione che copre tutte le schede senza sovrapposizioni.",
+        "Toggle 'scheletro e v-strutture' (integrazione, c72): ogni scheda mostra lo scheletro in grigio e le v-strutture in rosso; due schede stanno nello stesso gruppo esattamente quando hanno stesso scheletro e stesse v-strutture. Caso limite evidenziato: nei 6 grafi completi il collider non è una v-struttura (genitori adiacenti) e infatti formano una sola classe."
+      ],
+      "interactions": [
+        "pulsanti Calcola I(G) e Raggruppa",
+        "toggle scheletro / v-strutture",
+        "clic su una scheda per vedere il suo insieme I(G) e le schede equivalenti",
+        "toggle etichette cliniche (fumo, bronchite, tosse) / lettere"
+      ],
+      "visual": "Griglia di mini grafi SVG che si riorganizzano con animazioni di layout; ogni classe ha un colore; pannello laterale con le indipendenze della classe selezionata.",
+      "aha": "Molti grafi diversi dicono esattamente le stesse indipendenze: lo spazio dei DAG si divide in classi di equivalenza.",
+      "formulasShown": [
+        "I(G)=I(G')",
+        "25\\ \\text{DAG} \\rightarrow 11\\ \\text{classi}",
+        "G \\sim G' \\iff \\mathrm{skel}(G)=\\mathrm{skel}(G') \\;\\wedge\\; \\mathcal{V}(G)=\\mathcal{V}(G')"
+      ],
+      "challenge": "Prima di premere Raggruppa indovina quanti gruppi ci saranno e quale classe è la più numerosa (risposta: 11 classi; la più numerosa è quella dei 6 grafi completi, che non codificano alcuna indipendenza).",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-catena-vs-collider",
+      "title": "Gira le frecce: quando cambia qualcosa?",
+      "concepts": [
+        "c53",
+        "c54",
+        "c72"
+      ],
+      "scenario": "medicina",
+      "realExample": "Tre variabili: fumo (A), bronchite (C), tosse (B). Qualunque verso si scelga nella catena o nella forca le indipendenze non cambiano; solo il collider (due cause indipendenti di un sintomo) racconta una storia diversa. Utile per capire perché dai dati osservazionali non si ricava il verso di ogni arco. CPT sintetiche della catena: P(fumo)=0.3, P(bronchite|fumo)=0.4, P(bronchite|no fumo)=0.1, P(tosse|bronchite)=0.8, P(tosse|no bronchite)=0.2.",
+      "storyboard": [
+        "Si parte dalla catena A → C → B; sotto, due spie: 'A ⊥ B?' (rossa: no, p(a,b) = 0.132 contro p(a)p(b) = 0.3·0.314 = 0.094) e 'A ⊥ B | C?' (verde: sì).",
+        "Trigger clic su una freccia: ruota di 180° in 300 ms; con B → C → A o A ← C → B le due spie restano identiche e un bollino 'stessa classe' lampeggia due volte.",
+        "Se l'orientazione produce A → C ← B le spie si invertono (A ⊥ B: sì; A ⊥ B | C: no) con un flip di 300 ms e il bollino diventa 'classe diversa'.",
+        "Pulsante Genera dati e testa: 5000 pazienti sintetici generati dalla struttura corrente; una tabella mostra il test chi quadro di A contro B, marginale e dentro ciascuna fetta di C, con statistiche e p-value che confermano le spie.",
+        "Pulsante Mostra la riscrittura con Bayes: la fattorizzazione p(a)p(c|a)p(b|c) si trasforma per morph (600 ms per passo) in p(c)p(a|c)p(b|c) e poi in p(b)p(c|b)p(a|c) (der10), mentre p(a)p(b)p(c|a,b) resta isolata."
+      ],
+      "interactions": [
+        "clic sulle frecce per invertirle",
+        "pulsante Genera dati e testa (N da 500 a 20 000)",
+        "pulsante Mostra la riscrittura con Bayes"
+      ],
+      "visual": "Tre nodi SVG con frecce che ruotano, due spie di indipendenza, tabella del test statistico con p-value, formula della riscrittura.",
+      "aha": "Il verso delle frecce di catene e forche è invisibile nei dati; solo le v-strutture (collider) lasciano un'impronta.",
+      "formulasShown": [
+        "p(a)\\,p(c\\mid a)\\,p(b\\mid c)=p(c)\\,p(a\\mid c)\\,p(b\\mid c)=p(b)\\,p(c\\mid b)\\,p(a\\mid c)",
+        "p(a)\\,p(b)\\,p(c\\mid a,b)",
+        "p(a,b)=0.132\\neq p(a)\\,p(b)=0.3\\cdot 0.314\\simeq 0.094"
+      ],
+      "challenge": "Quale delle quattro orientazioni si potrebbe identificare con certezza dai soli dati? (risposta: solo il collider A → C ← B, unico nella sua classe; le due catene e la forca sono indistinguibili).",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-imap-minimale",
+      "title": "Pota gli archi: I-map e I-map minimali",
+      "concepts": [
+        "c56",
+        "c57",
+        "c58"
+      ],
+      "scenario": "fonte",
+      "realExample": "Il sistema di carburante dell'auto con i numeri della fonte. Un ingegnere costruisce la rete aggiungendo le variabili in un certo ordine; secondo l'ordine ottiene una rete snella (2 archi) o completa (3 archi), entrambe I-map minimali ma non ugualmente fedeli.",
+      "storyboard": [
+        "Si parte dal grafo completo su B, F, G (G → B, G → F, B → F); etichetta verde 'I-map: non codifica indipendenze, quindi è sempre valida'.",
+        "Trigger clic su un arco per rimuoverlo: il widget mostra l'indipendenza che il nuovo grafo affermerebbe e la controlla con i numeri della distribuzione del carburante; se vale l'arco si dissolve (400 ms), se non vale torna al suo posto con un rimbalzo (300 ms) e il messaggio 'non più I-map' con il controesempio (es. togliendo B → F si afferma B ⊥ F | G, ma P(B=0,F=0|G=0) ≃ 0.029 ≠ 0.066).",
+        "Quando nessun arco è più rimovibile compare il bollino 'I-map minimale' (scala 0 → 1, 300 ms).",
+        "Modalità 'ordine delle variabili': trascinando i tre gettoni si sceglie l'ordine; pulsante Costruisci aggiunge le variabili una alla volta (700 ms ciascuna), scegliendo per ognuna il più piccolo insieme di genitori tra le precedenti: con B, F, G si ottiene B → G ← F (2 archi); con G, B, F si ottiene G → B, G → F, B → F (3 archi) perché B e F sono dipendenti dato G.",
+        "Le due I-map minimali si affiancano con i loro insiemi I(G) e I(p): la seconda perde B ⊥ F. Messaggio 'minimale non vuol dire completa'."
+      ],
+      "interactions": [
+        "clic sugli archi per tentare di rimuoverli (modalità potatura)",
+        "trascinamento dei gettoni B, F, G per scegliere l'ordine",
+        "pulsante Costruisci con l'ordine scelto e pulsante Reset al grafo completo"
+      ],
+      "visual": "Grafo SVG con archi che si dissolvono o rimbalzano, pannello I(G) contro I(p) con segni di spunta, confronto affiancato delle due reti ottenute.",
+      "aha": "Una I-map minimale non ha archi superflui ma può comunque perdere indipendenze vere: dipende dall'ordine con cui si costruisce.",
+      "formulasShown": [
+        "I_l(G)\\subseteq I(p)",
+        "G'\\subseteq G",
+        "B\\perp F\\mid G \\text{ ?}\\quad P(B=0,F=0\\mid G=0)\\simeq 0.029\\neq 0.257\\cdot 0.257\\simeq 0.066"
+      ],
+      "challenge": "Trova tutti gli ordini delle tre variabili che producono la rete a 2 archi (risposta: B, F, G e F, B, G, cioè quelli con l'indicatore G per ultimo; gli altri quattro ordini danno 3 archi).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-perfect-map",
+      "title": "La mappa perfetta: I(G) = I(p)",
+      "concepts": [
+        "c59",
+        "c60",
+        "c61"
+      ],
+      "scenario": "medicina",
+      "realExample": "Una distribuzione di pazienti sintetici generata da una rete clinica nascosta a 5 variabili (la struttura del grafo di p22: fumo → bronchite ← smog → congiuntivite, bronchite → tosse, con le CPT del widget p04-esempi-dsep). Lo studente prova strutture candidate e confronta le indipendenze del grafo con quelle vere della distribuzione, cercando la P-map come farebbe un algoritmo di structure learning.",
+      "storyboard": [
+        "Due nuvole di asserzioni come chip: I(p), calcolata esattamente dalla distribuzione nascosta (test numerici con tolleranza 1e-9), e I(G), calcolata con la d-separazione sul grafo candidato.",
+        "Grafo completo (stato iniziale): I(G) vuoto dentro I(p), etichetta 'I-map'. Ogni arco tolto (dissolvenza 300 ms) fa entrare nuovi chip in I(G); finché restano tutti dentro I(p) il grafo è ancora I-map.",
+        "Se si toglie un arco di troppo un chip di I(G) esce da I(p) e diventa rosso (shake 200 ms): 'indipendenza extra, non più I-map'.",
+        "Quando I(G) coincide con I(p) le due nuvole si sovrappongono (morph 600 ms) e appare 'P-map'; se il grafo è diverso dall'originale ma equivalente compare 'stessa classe di equivalenza'.",
+        "Pulsante 'Algoritmo P-map' (illustrativo, la fonte non nomina l'algoritmo): un contatore dei test di indipendenza cresce con l'in-degree massimo k e il risultato viene disegnato come classe di equivalenza, con archi non orientati dove il verso non è determinato."
+      ],
+      "interactions": [
+        "clic sugli archi per aggiungerli, toglierli o invertirli",
+        "pulsante Algoritmo P-map",
+        "slider in-degree massimo k da 1 a 4 e selettore del numero di variabili n (5, 10, 20) per il grafico dei costi"
+      ],
+      "visual": "Diagramma di Venn animato I(G) / I(p) con asserzioni come chip; grafo candidato; grafico del numero di test contro k in scala log; classe di equivalenza disegnata con archi non orientati.",
+      "aha": "Una P-map dice tutte e sole le indipendenze vere; una I-map minimale può dirne meno, e trovare la P-map costa caro e restituisce una classe, non un grafo.",
+      "formulasShown": [
+        "I(G)=I(p)",
+        "I(G)\\subseteq I(p)",
+        "\\#\\text{test}\\approx\\binom{n}{2}\\sum_{j=0}^{k}\\binom{n-2}{j}:\\quad n=20,\\;k=3 \\Rightarrow 190\\cdot 988=187\\,720"
+      ],
+      "challenge": "Partendo dal grafo completo trova una P-map della rete nascosta con il minor numero di modifiche; punteggio = 100 − 10 per ogni indipendenza extra affermata − 5 per ogni indipendenza vera persa − 1 per modifica. Qualunque grafo della classe di equivalenza vale come soluzione: qui la classe contiene due grafi, l'originale e quello con l'arco smog → congiuntivite invertito (nessuna v-struttura nuova), mentre la v-struttura fumo → bronchite ← smog e l'arco bronchite → tosse hanno il verso fissato (invertire bronchite → tosse creerebbe due v-strutture nuove).",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-xor-senza-pmap",
+      "title": "Il sensore di parità: una distribuzione senza P-map",
+      "concepts": [
+        "c62"
+      ],
+      "scenario": "sensori",
+      "realExample": "Due interruttori IoT indipendenti (A, B) e una spia di parità C che si accende se esattamente uno dei due è acceso (C = A XOR B, con un piccolo rumore). Le coppie sono a due a due indipendenti ma le tre variabili insieme no: nessuna rete bayesiana su A, B, C le rappresenta esattamente.",
+      "storyboard": [
+        "Tre mosaici 2×2 mostrano le coppie (A,B), (A,C), (B,C) calcolate da 2000 letture sintetiche (500 ms ciascuno): tutti uniformi (≈ 0.25 per cella), quindi indipendenti a coppie.",
+        "Trigger toggle 'condiziona su C = 1': il mosaico di A e B si svuota delle celle (0,0) e (1,1) (dissolvenza 400 ms) e restano solo (0,1) e (1,0): A ⊥̸ B | C.",
+        "Editor del DAG: per ogni grafo disegnato il widget elenca le indipendenze codificate con spunta verde (vere in p) o croce rossa (false in p), più le indipendenze vere di p non catturate in grigio.",
+        "Esempi guidati: il collider A → C ← B cattura A ⊥ B ma perde A ⊥ C e B ⊥ C; il grafo vuoto le cattura tutte e tre ma afferma anche A ⊥ B | C, che è falsa (croce rossa lampeggiante).",
+        "Pulsante Prova tutti i DAG: barra di avanzamento sui 25 grafi (80 ms ciascuno); verdetto 'nessun DAG ha I(G) = I(p): la distribuzione non ha una P-map'."
+      ],
+      "interactions": [
+        "editor di archi su tre nodi",
+        "slider ε (probabilità che la spia sbagli) da 0 a 0.2: per ε < 0.5 le conclusioni non cambiano",
+        "toggle condiziona su C = 0 / 1",
+        "pulsante Prova tutti i DAG"
+      ],
+      "visual": "Tre mosaici 2×2 con aree proporzionali, grafo editabile, lista di indipendenze con spunte verdi e croci rosse, barra di avanzamento sui 25 DAG.",
+      "aha": "Le reti bayesiane non sanno esprimere ogni insieme di indipendenze: alcune distribuzioni non hanno una mappa perfetta.",
+      "formulasShown": [
+        "C=A\\oplus B",
+        "A\\perp B,\\; A\\perp C,\\; B\\perp C,\\; A\\not\\perp B\\mid C",
+        "P(A=1,B=1\\mid C=1)=\\frac{\\varepsilon}{2}\\neq P(A=1\\mid C=1)\\,P(B=1\\mid C=1)=\\frac{1}{4}"
+      ],
+      "challenge": "Quali sono le I-map minimali di questa distribuzione e quante indipendenze vere perdono? (risposta: le tre v-strutture, una per ogni scelta del nodo figlio, per esempio A → C ← B; ognuna cattura una sola delle tre indipendenze a coppie e ne perde due).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-progettare-rete",
+      "title": "Progetta una rete diagnostica con l'esperto",
+      "concepts": [
+        "c64",
+        "c65",
+        "c66",
+        "c68"
+      ],
+      "scenario": "medicina",
+      "realExample": "Progetto di una rete bayesiana per la diagnosi di patologie cardiache da ECG e anamnesi, costruita insieme a un cardiologo (esperto di dominio) e poi raffinata con i dati di un registro ospedaliero sintetico. Variabili binarie: età avanzata (E), fumo (F), ipertensione (P), ischemia (I, latente), dolore toracico (D), alterazioni ECG (Q).",
+      "storyboard": [
+        "Un assistente 'cardiologo' propone le variabili candidate come carte (entrata sfalsata di 100 ms); lo studente le trascina nella tela marcandole come osservabili (bordo pieno) o da predire (bordo doppio).",
+        "Senza nodo latente e con archi causali, dolore toracico e alterazioni ECG dipendono entrambi da E, F, P e tra loro: il contatore dei parametri segna 1 + 1 + 1 + 8 + 16 = 27 (contro 2^6 − 1 = 63 della congiunta completa).",
+        "Trigger 'Aggiungi variabile latente ischemia' (nodo tratteggiato, 400 ms): E, F, P → I → D, Q; i sintomi diventano condizionatamente indipendenti dato I, gli archi si riducono e il contatore scende a 1 + 1 + 1 + 8 + 2 + 2 = 15 con un'animazione numerica di 600 ms.",
+        "Toggle modalità 'anti-causale' (archi dai sintomi alle cause, ordine D, Q, P, F, E): il widget ricostruisce la I-map minimale per quell'ordine e mostra quanti archi e parametri in più servono, evidenziando in arancione gli archi aggiunti.",
+        "Pulsante Usa i dati: un registro sintetico di 500 pazienti riempie le CPT (barre che convergono ai valori veri) e segnala in giallo gli archi con effetto debole da riconsiderare; un cartellino ricorda di evitare probabilità esattamente zero.",
+        "Checklist laterale con i cinque consigli della fonte (esperto, variabili, causalità, probabilità non nulle, dati) che si spuntano man mano (spunta animata 200 ms)."
+      ],
+      "interactions": [
+        "trascinamento delle carte variabile nella tela e scelta osservabile / da predire",
+        "pulsante Aggiungi variabile latente",
+        "toggle modalità causale / anti-causale",
+        "pulsante Usa i dati (N da 100 a 5000)"
+      ],
+      "visual": "Canvas del grafo con nodi colorati per tipo (osservato, da predire, latente tratteggiato), contatore di archi e parametri, checklist laterale.",
+      "aha": "Esperto, causalità e variabili latenti producono reti sparse e interpretabili; i dati servono poi a stimarne i numeri.",
+      "formulasShown": [
+        "\\#\\text{parametri}=\\sum_i (v_i-1)\\prod_{j\\in \\mathit{Pa}_i} v_j",
+        "\\text{con latente: } 1+1+1+8+2+2=15,\\quad \\text{senza: } 1+1+1+8+16=27,\\quad 2^{6}-1=63"
+      ],
+      "challenge": "Costruisci la rete con il minor numero di parametri che rispetti le indipendenze indicate dal cardiologo (età, fumo e ipertensione indipendenti a priori; dolore toracico e alterazioni ECG indipendenti data l'ischemia): soluzione con il nodo latente, 15 parametri.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-probabilita-zero",
+      "title": "Mai dire mai: le probabilità zero bloccano Bayes",
+      "concepts": [
+        "c67"
+      ],
+      "scenario": "fonte",
+      "realExample": "Di nuovo il sistema di carburante: se il progettista scrive P(F=0) = 0 ('il serbatoio non è mai vuoto'), nessuna evidenza potrà mai far sospettare un serbatoio vuoto; se in più la CPT contiene uno zero, certe osservazioni diventano impossibili e l'inferenza divide per zero. Per le osservazioni ripetute si assumono più letture dell'indicatore condizionatamente indipendenti dati B e F (estensione didattica).",
+      "storyboard": [
+        "Slider ε = P(F=0) su scala log (da 10^-4 a 0.1, più un pulsante '0'); con B = carica osservata, ogni lettura 'vuoto' moltiplica gli odds del serbatoio vuoto per 0.8/0.2 = 4. A ε = 0.1 una lettura dà P(F=0|G=0,B=1) ≃ 0.308.",
+        "Trigger pulsante 'Osserva ancora indicatore vuoto': una nuova lettura entra nella pila (300 ms) e la barra del posterior si aggiorna con una molla; il contatore n di letture sale.",
+        "Con ε = 0 le barre sono inchiodate a zero: anche con 100 letture 'vuoto' (pulsante ×10) la credenza non si muove e ogni nuova lettura rimbalza sulla barra con un'icona di divieto.",
+        "Secondo scenario (toggle 'CPT con zeri'): P(F=0) = 0 e P(G=0|B=1,F=1) = 0; si osserva batteria carica e indicatore vuoto: il denominatore P(G=0,B=1) = 0.9·(1·0 + 0·0.8) = 0 si colora di rosso e appare l'errore 'divisione per zero: evidenza impossibile per il modello'.",
+        "Con ε piccolo ma positivo (0.001) le letture ripetute fanno salire la credenza: 0.004, 0.016, 0.060, 0.204, 0.506 dopo 1-5 letture; cartellino con il consiglio della fonte: valori piccoli ma non nulli."
+      ],
+      "interactions": [
+        "slider ε su scala log da 10^-4 a 0.1 e pulsante ε = 0",
+        "pulsante Osserva ancora indicatore vuoto (×1 e ×10)",
+        "toggle CPT con zeri",
+        "pulsante Reset letture"
+      ],
+      "visual": "Barre di probabilità con scala log, contatore di osservazioni, formula di Bayes con i valori e il denominatore evidenziato in rosso quando si annulla.",
+      "aha": "Una probabilità nulla è una certezza che nessun dato può smentire: meglio valori piccoli ma positivi.",
+      "formulasShown": [
+        "P(F=0\\mid e)=\\frac{P(e\\mid F=0)\\,P(F=0)}{P(e)}",
+        "\\frac{P(F=0\\mid n\\text{ letture})}{P(F=1\\mid n\\text{ letture})}=\\frac{\\varepsilon}{1-\\varepsilon}\\cdot 4^{n}=\\frac{0.001}{0.999}\\cdot 4^{5}\\simeq 1.03",
+        "P(G=0,B=1)=0.9\\,(1\\cdot 0+0\\cdot 0.8)=0"
+      ],
+      "challenge": "Con ε = 0.001, quante letture indipendenti di indicatore vuoto (con batteria carica) servono per superare 0.5? (risposta: 5, perché 4^4·0.001/0.999 ≃ 0.26 < 1 mentre 4^5·0.001/0.999 ≃ 1.03 > 1, cioè P ≃ 0.506).",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p04-dati-completi-incompleti",
+      "title": "Dal grafo ai numeri: dati completi e incompleti",
+      "concepts": [
+        "c69",
+        "c70",
+        "c71"
+      ],
+      "scenario": "fonte",
+      "realExample": "Una flotta di auto invia la telemetria di batteria, serbatoio e indicatore (struttura B → G ← F già data). Alcuni record hanno valori mancanti (sensore della batteria offline). Obiettivo: stimare le CPT dai record, anticipando il modulo p05.",
+      "storyboard": [
+        "Il grafo B → G ← F è fisso in alto con le CPT vuote (punti interrogativi); cartellino 'struttura data: si stimano solo i parametri'.",
+        "Trigger Nuovo dataset: la tabella D = {x(1), ..., x(N)} si riempie riga per riga (20 righe/s, poi salto alla fine) con record sintetici generati dalle CPT vere della fonte; con il toggle 'incompleti' una percentuale di celle della colonna B diventa '?' (sensore della batteria offline).",
+        "Ogni riga completa incrementa i contatori delle CPT (piccola particella che vola dalla riga alla cella, 200 ms): le stime per frequenza relativa si avvicinano ai valori veri 0.9, 0.9 e alla CPT dell'indicatore man mano che N cresce.",
+        "Le righe con '?' restano in grigio con l'etichetta 'serve un metodo per i dati mancanti (EM, modulo p05)' e il contatore 'righe inutilizzate' cresce con la percentuale di mancanti.",
+        "Grafico dell'errore assoluto delle stime in funzione di N (scala log): la stima della configurazione rara P(G=1|B=0,F=0) (1% delle auto) converge molto più lentamente delle altre."
+      ],
+      "interactions": [
+        "slider N da 10 a 5000 (scala log)",
+        "toggle dati incompleti e slider percentuale di valori mancanti da 0 a 50%",
+        "pulsante Nuovo dataset"
+      ],
+      "visual": "Tabella scorrevole con celle mancanti, contatori sulle CPT, barre stimate contro vere, curva dell'errore contro N.",
+      "aha": "Con la struttura data, apprendere una rete significa stimare i parametri delle CPD; i dati completi si contano, quelli incompleti richiedono altro.",
+      "formulasShown": [
+        "D=\\{\\mathbf{x}(1),\\dots,\\mathbf{x}(N)\\}",
+        "\\hat{P}(B=1)=\\frac{N_{B=1}}{N}=\\frac{452}{500}=0.904",
+        "\\hat{P}(G=1\\mid B=0,F=0)=\\frac{N_{G=1,B=0,F=0}}{N_{B=0,F=0}}",
+        "p(\\mathbf{x}\\mid\\theta)=\\prod_{i} p(x_i\\mid \\mathit{Pa}_{x_i},\\theta_{i})"
+      ],
+      "challenge": "Quanti record completi servono perché la stima di P(G=1|B=0,F=0) (configurazione rara, 1% delle auto, valore vero 0.1) abbia errore standard sotto 0.05? (risposta: servono circa 36 esempi nella configurazione, perché √(0.1·0.9/n) < 0.05 per n > 36, cioè N ≈ 3600 record).",
+      "size": "M",
+      "tech": "svg+motion"
+    }
+  ],
+  "exercises": [
+    {
+      "id": "es01",
+      "title": "Explaining away nel sistema di carburante con parametri casuali",
+      "type": "numerico",
+      "description": "Data la rete B → G ← F con prior P(B=1)=β e P(F=1)=φ e CPT P(G=1|B,F) = (g11, g10, g01, g00), calcolare P(F=0|G=0) e P(F=0|G=0,B=0). Parametri randomizzabili: β, φ in [0.6, 0.99], g11 in [0.7, 0.99], g10 e g01 in [0.05, 0.4], g00 in [0.01, 0.2]. Soluzione: P(G=0|F=0) = (1-g10)β + (1-g00)(1-β); P(G=0) = Σ_B Σ_F (1-g_BF)P(B)P(F); P(F=0|G=0) = P(G=0|F=0)(1-φ)/P(G=0); P(F=0|G=0,B=0) = (1-g00)(1-φ)/[(1-g01)φ + (1-g00)(1-φ)]. Con i valori della fonte (0.9, 0.9, 0.8, 0.2, 0.2, 0.1) si ottengono 0.257 e 0.111. Chiedere anche di commentare se il secondo valore è sotto o sopra il prior.",
+      "concepts": [
+        "c27",
+        "c29",
+        "c30",
+        "c31",
+        "c33"
+      ]
+    },
+    {
+      "id": "es02",
+      "title": "Rete regolatoria: marginale ed explaining away",
+      "type": "numerico",
+      "description": "Con i dati della rete regolatoria di p16 calcolare P(C=active), P(A=active|C=active), P(B=active|C=active) e P(A=active|C=active,B=active). Soluzione: 0.081+0.126+0.147+0.049 = 0.403; (0.081+0.126)/0.403 ≈ 0.514; (0.081+0.147)/0.403 ≈ 0.566; 0.3·0.9/(0.3·0.9+0.7·0.7) = 0.27/0.76 ≈ 0.355. Randomizzabili i prior di A e B e le quattro celle della CPT. Domanda finale: perché il terzo valore è minore del secondo?",
+      "concepts": [
+        "c01",
+        "c21",
+        "c33"
+      ]
+    },
+    {
+      "id": "es03",
+      "title": "Dimostrare i sei risultati delle tre configurazioni",
+      "type": "dimostrazione",
+      "description": "Per ciascuna delle configurazioni tail-to-tail, head-to-tail e head-to-head scrivere la fattorizzazione e dimostrare se a ⊥ b e se a ⊥ b | c, giustificando ogni passaggio (regola della somma, definizione di condizionata, teorema di Bayes, normalizzazione della CPT). Per i casi di dipendenza fornire un controesempio numerico. Soluzione: der01, der02, der03.",
+      "concepts": [
+        "c10",
+        "c11",
+        "c12",
+        "c14",
+        "c15",
+        "c16",
+        "c18",
+        "c19",
+        "c20"
+      ]
+    },
+    {
+      "id": "es04",
+      "title": "Verifica numerica di una tail-to-tail",
+      "type": "numerico",
+      "description": "Filtro spam: P(spam)=π, P(gratis|spam)=p1, P(gratis|ham)=q1, P(offerta|spam)=p2, P(offerta|ham)=q2. Calcolare p(a,b) e p(a)p(b) e verificare che differiscono; poi verificare p(a,b|spam) = p1·p2. Randomizzabili π in [0.2, 0.6] e le probabilità in [0.02, 0.8]. Soluzione: p(a)=πp1+(1-π)q1, p(b)=πp2+(1-π)q2, p(a,b)=πp1p2+(1-π)q1q2; con π=0.4, p1=0.6, q1=0.05, p2=0.5, q2=0.1 si ha 0.123 contro 0.0702. Domanda: per quali valori p(a,b)=p(a)p(b)? (quando p1=q1 oppure p2=q2, cioè una delle due parole non dipende dalla classe, oppure nel caso degenere π=0 o π=1, classe certa; infatti p(a,b)-p(a)p(b) = π(1-π)(p1-q1)(p2-q2)).",
+      "concepts": [
+        "c11",
+        "c12"
+      ]
+    },
+    {
+      "id": "es05",
+      "title": "d-separazione su un grafo casuale",
+      "type": "concettuale",
+      "description": "Viene generato un DAG casuale con 6-8 nodi e una query (A, B, C). Lo studente deve elencare i cammini tra A e B, classificare ogni nodo intermedio (t2t, h2t, h2h), applicare le regole di blocco (incluso il caso dei discendenti dei collider) e concludere se dsep(A;B|C). La soluzione è calcolata automaticamente con l'algoritmo di raggiungibilità (Bayes ball). Esempio fisso: nel grafo a → e ← f → b, e → c rispondere per C = ∅, {c}, {f}, {e}, {c,f}: risposte indipendenti, dipendenti, indipendenti, dipendenti, indipendenti.",
+      "concepts": [
+        "c39",
+        "c40",
+        "c42",
+        "c43",
+        "c44",
+        "c45"
+      ]
+    },
+    {
+      "id": "es06",
+      "title": "Indipendenze locali di un grafo",
+      "type": "concettuale",
+      "description": "Per il grafo a → e ← f → b, e → c scrivere I_l(G). Soluzione: a ⊥ {f, b}; f ⊥ a; e ⊥ b | {a, f}; b ⊥ {a, e, c} | f; c ⊥ {a, f, b} | e. Poi trovare un'indipendenza globale in I(G) che non compare direttamente in I_l(G) (per esempio a ⊥ b | {c, f}).",
+      "concepts": [
+        "c47",
+        "c48",
+        "c36"
+      ]
+    },
+    {
+      "id": "es07",
+      "title": "Riconoscere strutture I-equivalenti",
+      "type": "concettuale",
+      "description": "Dati quattro DAG su tre o quattro nodi, raggrupparli per I-equivalenza e giustificare usando le indipendenze codificate. Esempio: A → C → B, A ← C → B, A → C ← B, B → C → A: il primo, il secondo e il quarto sono equivalenti, il terzo (collider) no. Domanda aggiuntiva: quanti DAG ci sono su tre nodi e quante classi? (25 e 11).",
+      "concepts": [
+        "c51",
+        "c52",
+        "c53",
+        "c54"
+      ]
+    },
+    {
+      "id": "es08",
+      "title": "I-map minimali dipendenti dall'ordine",
+      "type": "concettuale",
+      "description": "Per la distribuzione del sistema di carburante costruire la I-map minimale aggiungendo le variabili nell'ordine B, F, G e poi nell'ordine G, B, F (per ogni nuova variabile scegliere il più piccolo insieme di genitori tra le precedenti che la rende indipendente dalle altre precedenti). Soluzione: B → G ← F (2 archi, è anche P-map); G → B, G → F, B → F (3 archi). Spiegare quale indipendenza perde la seconda rete (B ⊥ F) e perché è comunque minimale.",
+      "concepts": [
+        "c56",
+        "c57",
+        "c58",
+        "c60"
+      ]
+    },
+    {
+      "id": "es09",
+      "title": "Una distribuzione senza P-map",
+      "type": "dimostrazione",
+      "description": "A e B bit indipendenti uniformi, C = A XOR B. Dimostrare che A ⊥ B, A ⊥ C, B ⊥ C ma A ⊥̸ B | C, e che nessun DAG su {A, B, C} ha I(G) = I(p). Traccia: tre indipendenze marginali a coppie richiedono che nessuna coppia sia adiacente, quindi il grafo vuoto, che però afferma anche A ⊥ B | C.",
+      "concepts": [
+        "c62",
+        "c59"
+      ]
+    },
+    {
+      "id": "es10",
+      "title": "Domanda d'orale simulata: la formalizzazione delle reti bayesiane",
+      "type": "concettuale",
+      "description": "Esporre in 5 minuti: DAG e fattorizzazione, indipendenze locali, i tre casi della d-separazione con formule, criterio generale con i discendenti del collider, indipendenze globali e il loro rapporto con quelle locali, I-equivalenza, I-map minimale e P-map. Il widget di autovalutazione spunta gli elementi citati e mostra quelli mancanti.",
+      "concepts": [
+        "c22",
+        "c39",
+        "c40",
+        "c47",
+        "c48",
+        "c51",
+        "c57",
+        "c59"
+      ]
+    },
+    {
+      "id": "es11",
+      "title": "Collider con discendente: la chiamata ai vigili del fuoco",
+      "type": "numerico",
+      "description": "Rete I → A ← T, A → D (incendio, toast bruciato, allarme, chiamata automatica ai vigili). Dati P(I)=ι, P(T)=τ, CPT dell'allarme P(A=1|I,T) = (a11, a10, a01, a00) e P(D=1|A=1)=δ1, P(D=1|A=0)=δ0. Calcolare P(I|T) e P(I) (devono coincidere: nessuna evidenza, collider bloccato), poi P(I|D=1), P(I|D=1,T=1) e P(I|D=1,T=0). Soluzione: P(D=1|I,T) = δ1·a_IT + δ0·(1-a_IT); P(I=1|D=1,T=t) = ι·P(D=1|1,t) / [ι·P(D=1|1,t) + (1-ι)·P(D=1|0,t)]; P(I=1|D=1) = ι·Σ_t P(D=1|1,t)P(t) / Σ_i Σ_t P(i)P(t)P(D=1|i,t). Con i valori del widget (ι=0.01, τ=0.2, a = 0.99, 0.95, 0.6, 0.01, δ1=0.9, δ0=0.001) si ottengono 0.070, 0.016 e 0.46: osservare solo il discendente D rende I e T dipendenti. Parametri randomizzabili: ι in [0.005, 0.05], τ in [0.05, 0.4], a11 e a10 in [0.8, 0.99], a01 in [0.2, 0.7], a00 in [0.001, 0.05], δ1 in [0.7, 0.99], δ0 in [0, 0.01]. Domanda finale: che cosa succede se δ1 = δ0? (D non dice nulla su A: il cammino resta bloccato e i tre valori coincidono con ι).",
+      "concepts": [
+        "c36",
+        "c37",
+        "c38"
+      ],
+      "addedBy": "revisore"
+    },
+    {
+      "id": "es12",
+      "title": "Dimostrare che le indipendenze locali sono d-separazioni",
+      "type": "dimostrazione",
+      "description": "Dimostrare che per ogni nodo x_i di un DAG vale dsep(x_i; NonDescendants_{x_i} ∖ Parents_{x_i} | Parents_{x_i}), e dedurne I_l(G) ⊆ I(G). Traccia: distinguere i cammini che lasciano x_i verso un genitore (il genitore è tail-to-tail o head-to-tail e osservato, quindi blocca) da quelli che lasciano x_i verso un figlio (il primo nodo in cui il verso delle frecce si inverte è un collider discendente di x_i; per aciclicità né lui né i suoi discendenti sono genitori di x_i, quindi blocca). Poi dare un controesempio al viceversa sul grafo di p22 (a ⊥ b | {c, f} è in I(G) ma non è un'asserzione locale). Soluzione: der12.",
+      "concepts": [
+        "c47",
+        "c48",
+        "c36",
+        "c40"
+      ],
+      "addedBy": "revisore"
+    },
+    {
+      "id": "es13",
+      "title": "I-map, I-map minimale o P-map? Classificare sei grafi",
+      "type": "concettuale",
+      "description": "Sia p la distribuzione del sistema di carburante (p19): le sue sole indipendenze sono B ⊥ F (mentre B ⊥̸ G, F ⊥̸ G e B ⊥̸ F | G, der08). Per ciascun grafo su {B, F, G} dire se è una I-map, una I-map minimale, una P-map o nessuna delle tre: (1) G → B, G → F, B → F; (2) B → G ← F; (3) B → G, F → G, B → F; (4) grafo vuoto; (5) B → G con F isolato; (6) G → B, G → F. Soluzione: (1) grafo completo, quindi I-map; è minimale perché togliere B → F afferma B ⊥ F | G (falso), togliere G → B afferma B ⊥ G (falso), togliere G → F afferma F ⊥ G | B (falso); non è P-map perché perde B ⊥ F. (2) P-map, quindi anche I-map minimale. (3) grafo completo, I-map ma non minimale: togliendo B → F si ottiene (2), ancora I-map. (4) non è I-map: afferma B ⊥ G. (5) non è I-map: afferma F ⊥ G. (6) non è I-map: afferma B ⊥ F | G, falsa per l'explaining away. Variante randomizzabile: altre distribuzioni a tre variabili generate da una struttura nascosta.",
+      "concepts": [
+        "c56",
+        "c57",
+        "c58",
+        "c59",
+        "c60"
+      ],
+      "addedBy": "revisore"
+    }
+  ],
+  "examQuestions": [
+    {
+      "text": "Bayesian networks: formalization (DAG, local independencies, various case of d-separation criterion, general d-separation criterion and global independencies) and learning of the parameters (ML with complete data, MAP with prior knowledge, EM with incomplete data)",
+      "prof": "Passerini",
+      "concepts": [
+        "c10",
+        "c11",
+        "c12",
+        "c14",
+        "c15",
+        "c16",
+        "c18",
+        "c19",
+        "c20",
+        "c22",
+        "c36",
+        "c37",
+        "c39",
+        "c40",
+        "c41",
+        "c42",
+        "c47",
+        "c48",
+        "c49",
+        "c69",
+        "c70"
+      ]
+    },
+    {
+      "text": "Kernel machines + Bayesian networks",
+      "prof": "Passerini",
+      "concepts": [
+        "c22",
+        "c39",
+        "c48",
+        "c51",
+        "c59"
+      ]
+    },
+    {
+      "text": "Hard or soft margin svm (choose one) + Learning bayesian network. Questions afterwards: canonical hyperplane, why do we use kkt, why solution of dual is equal to primal, disjoint cpd in BN, explain E-M in BN",
+      "prof": "Passerini",
+      "concepts": [
+        "c69",
+        "c70",
+        "c71"
+      ]
+    },
+    {
+      "text": "How to use parameter estimation in Bayesian Networks",
+      "prof": "Passerini",
+      "concepts": [
+        "c69",
+        "c71"
+      ]
+    },
+    {
+      "text": "Why ML is fast in Bayesian Network (CDP independence)",
+      "prof": "Passerini",
+      "concepts": [
+        "c71",
+        "c47"
+      ]
+    },
+    {
+      "text": "Problem of missing data in Bayesian Networks",
+      "prof": "Passerini",
+      "concepts": [
+        "c70"
+      ]
+    },
+    {
+      "text": "Learning Parameters  (ML with complete data, MAP), SVM (Hard Margin, Lagrangian, Soft Margin), NonLinear,  Kernel Machine, Perceptron)",
+      "prof": "Passerini",
+      "concepts": [
+        "c69",
+        "c70",
+        "c71"
+      ],
+      "addedBy": "revisore"
+    }
+  ],
+  "crossLinks": [
+    {
+      "moduleId": "p03-reti-bayesiane",
+      "why": "Definizione di rete bayesiana (DAG + CPD), fattorizzazione, indipendenze locali I_l(G) e definizione di I-map (I_l(G) ⊆ I(p), p13), richiamate a p22-23."
+    },
+    {
+      "moduleId": "p05-apprendimento-reti",
+      "why": "La sezione 'Learning in Graphical Models' iniziata a p24 prosegue lì con ML, MAP ed EM per le CPD; i consigli pratici rimandano all'apprendimento di parametri e struttura."
+    },
+    {
+      "moduleId": "p02-bernoulli-multinomiale",
+      "why": "Il naive Bayes per lo spam usato nel widget tail-to-tail è un'applicazione della struttura con causa comune (classe → parole)."
+    },
+    {
+      "moduleId": "m17-bayes-map-ml",
+      "why": "Il teorema di Bayes che dà il nome alle reti e che si usa nell'esempio del carburante (prior, verosimiglianza, posterior)."
+    },
+    {
+      "moduleId": "m10-em-dati-incompleti",
+      "why": "I dati incompleti introdotti a p24 richiedono l'algoritmo EM, già visto nel corso di Melgani."
+    },
+    {
+      "moduleId": "p12-clustering",
+      "why": "Le variabili latenti consigliate a p24 sono le stesse dei modelli a mistura (GMM) trattati con EM."
+    }
+  ],
+  "emptyPages": [],
+  "gaps": [
+    "p17: il titolo 'Tail-to-Tail Configuration (Converging on c)' è fuorviante: nella struttura tail-to-tail le frecce partono da c (causa comune), sono le frecce del collider head-to-head a convergere. L'inventario segue la figura.",
+    "p17: la frase 'Observing c blocks the path and explains a and b' è ellittica; interpretata come: c, causa comune, spiega la correlazione tra a e b.",
+    "p16: la frase 'An example of this is the following' introduce la slide della rete regolatoria come esempio delle CPT di p15 (modulo p03), non della d-separazione; la slide è inventariata qui perché sta a p16 (possibile doppione con p03).",
+    "p20: il valore numerico di P(G=0) (0.315) e di P(G=0|B=0) (0.81) non è scritto nelle slide; è stato ricalcolato dalle CPT ed è coerente con i risultati 0.257 e 0.111 riportati.",
+    "p22: la frase 'two sets A and B are conditionally independent given a set C, if and only if A and B are d-separated by C' va letta per le indipendenze codificate dal grafo (I(G)): la d-separazione implica l'indipendenza per ogni distribuzione che si fattorizza su G, ma una specifica distribuzione può avere indipendenze extra non d-separate (dovute ai numeri delle CPT).",
+    "p22: nell'esempio 'a ⊥ b | f' la slide cita solo il nodo f; anche il nodo e blocca il cammino (collider senza evidenza su e né sul discendente c). Aggiunto come osservazione.",
+    "p23: formula isolata 'x = 1 + ½x' sotto la definizione di P-map, senza collegamento al testo; probabilmente un residuo di editing (inventariata come c63).",
+    "p23: l'algoritmo per trovare una P-map non è nominato né descritto; la fonte ne dà solo la complessità (esponenziale nell'in-degree) e il fatto che restituisce una classe di equivalenza.",
+    "p23: 'It only encodes a subset of the dependencies and independencies that form a valid I-map' è formulato in modo impreciso; il senso è che I(G_min) ⊆ I(p) può essere un sottoinsieme proprio.",
+    "p23: la figura con le strutture I-equivalenti non ha didascalia; l'interpretazione (riquadro sinistro = una classe, riquadro destro = v-struttura) è dedotta dal testo di p22.",
+    "p19: i colori della figura riassuntiva (giallo = independent, verde = dependent) sono letti dalla legenda dell'immagine; il testo estratto non li riporta.",
+    "Esempi e numeri dei widget (spam, COVID, allarme, chest clinic, XOR) sono integrazioni didattiche con dati sintetici, non presenti nella fonte; i numeri della fonte sono solo quelli della rete regolatoria e del sistema di carburante.",
+    "p18: 'Observing c introduces a dependence between a and b, as they jointly influence c' non dice il verso della dipendenza; l'explaining away di p20 (trovata una causa, l'altra diventa meno probabile) è il caso tipico delle cause alternative (CPT di tipo OR), non una legge generale: con cause congiunte (CPT di tipo AND) il verso si inverte. Precisato in c21 e nel widget p04-head-to-head-allarme.",
+    "p21: la regola sui discendenti del collider è enunciata senza dimostrazione; il revisore ha aggiunto la derivazione der11 (integrazione). Allo stesso modo la fonte non mostra che le indipendenze locali sono casi particolari di quelle globali: aggiunta der12 (integrazione).",
+    "p22-23: il criterio 'stesso scheletro e stesse v-strutture' (c72) non è nella fonte, che si limita al caso a tre nodi; è aggiunto dal revisore come generalizzazione per spiegare la figura di p23 e il fatto che l'algoritmo P-map restituisce una classe di equivalenza.",
+    "Banca domande: 'Learning Parameters (ML with complete data, MAP), SVM (...)' non nomina esplicitamente le reti bayesiane; è attribuita a Passerini e collegata all'apprendimento dei parametri delle CPD (p24, che prosegue nel modulo p05), perché 'ML with complete data, MAP' ricalca la domanda sulla formalizzazione delle BN.",
+    "p17: 'This configuration is referred to as tail-to-tail because c connects to the tails of the arrows from a and b' è impreciso: le frecce partono da c verso a e b (c è la causa comune); è la loro coda a toccare c. L'inventario (c13) segue la figura. (verificatore)",
+    "p21: nella riformulazione 'the middle node (or any of its descendants) is not in C (unobserved)' la parentesi è ambigua; va letta come nella prima formulazione della stessa pagina ('The node is not in C and no descendant of this node is in C'): il collider blocca solo se né lui né alcun discendente è osservato. Precisato in c42. (verificatore)",
+    "p22: nel titolo della prima slide di esempio il simbolo di non-indipendenza è reso con un glifo difettoso (simile a 'π' o '╥' tra a e b|c); va letto a ⊥̸ b | c, coerentemente con il testo 'not d-separated'. (verificatore)",
+    "p23: 'a smaller structure G' ⊆ G' usa ⊆, ma il senso ('smaller', 'by removing edges') è quello di sottografo proprio G' ⊊ G; trascritto come nella fonte in c57 con la precisazione. (verificatore)",
+    "Verificatore: tutte le formule delle pagine 16-24 sono state confrontate simbolo per simbolo con le immagini e coincidono; le righe LaTeX che non compaiono nelle pagine (fattorizzazioni riassuntive, formalizzazioni delle regole di blocco, valori numerici intermedi) sono ora marcate come integrazioni nei rispettivi 'detail'."
+  ]
+}

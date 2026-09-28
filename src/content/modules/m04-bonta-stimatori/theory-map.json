@@ -1,0 +1,526 @@
+{
+  "c01": [
+    "#il-modello-parametrico",
+    "#il-punto-di-partenza-modello-parametrico-e-likelihood",
+    "formula:f-c01",
+    "formula:f-c01-2",
+    "formula:f-c01-3",
+    "widget:m04-likelihood-come-prodotto"
+  ],
+  "c02": [
+    "#la-funzione-di-verosimiglianza",
+    "#perché-la-likelihood-è-un-prodotto",
+    "formula:f-c02",
+    "derivation:der06",
+    "derivation:der19",
+    "example:ex01",
+    "widget:m04-likelihood-come-prodotto",
+    "figure:fig01",
+    "quiz:chk-01"
+  ],
+  "c03": [
+    "#perché-la-likelihood-è-un-prodotto",
+    "formula:f-c03",
+    "derivation:der19",
+    "widget:m04-likelihood-come-prodotto",
+    "quiz:chk-01"
+  ],
+  "c04": [
+    "#che-cosa-misura-la-likelihood",
+    "example:ex01",
+    "widget:m04-likelihood-come-prodotto",
+    "figure:fig01"
+  ],
+  "c05": [
+    "#la-figura-a-tre-pannelli",
+    "formula:f-c05",
+    "formula:f-c05-2",
+    "derivation:der17",
+    "example:ex01",
+    "widget:m04-tre-pannelli-likelihood",
+    "figure:fig01"
+  ],
+  "c06": [
+    "#due-procedure-di-stima-mle-e-stima-bayesiana",
+    "widget:m04-ml-contro-bayes-parametro",
+    "quiz:chk-02"
+  ],
+  "c07": [
+    "#due-procedure-di-stima-mle-e-stima-bayesiana",
+    "widget:m04-ml-contro-bayes-parametro",
+    "quiz:chk-02"
+  ],
+  "c08": [
+    "#le-due-differenze-chiave",
+    "widget:m04-ml-contro-bayes-parametro",
+    "quiz:chk-02"
+  ],
+  "c09": [
+    "#le-due-differenze-chiave",
+    "widget:m04-ml-contro-bayes-parametro",
+    "quiz:chk-02"
+  ],
+  "c10": [
+    "#la-stima-è-un-vettore-aleatorio",
+    "formula:f-c10",
+    "widget:m04-la-stima-e-aleatoria"
+  ],
+  "c11": [
+    "#la-stima-è-un-vettore-aleatorio",
+    "widget:m04-la-stima-e-aleatoria",
+    "quiz:chk-03"
+  ],
+  "c12": [
+    "#lerrore-di-stima",
+    "formula:f-c12",
+    "derivation:der01",
+    "widget:m04-la-stima-e-aleatoria",
+    "quiz:chk-04"
+  ],
+  "c13": [
+    "#la-stima-ideale",
+    "#errore-quadratico-medio-varianza-più-bias-al-quadrato",
+    "formula:f-c13",
+    "derivation:der03",
+    "widget:m04-bersaglio-bias-varianza",
+    "quiz:chk-07"
+  ],
+  "c14": [
+    "#la-stima-ideale",
+    "widget:m04-bersaglio-bias-varianza"
+  ],
+  "c15": [
+    "#bias-e-stima-non-polarizzata",
+    "formula:f-c15",
+    "derivation:der01",
+    "widget:m04-bersaglio-bias-varianza",
+    "quiz:chk-05"
+  ],
+  "c16": [
+    "#bias-e-stima-non-polarizzata",
+    "formula:f-c16",
+    "derivation:der01",
+    "widget:m04-bersaglio-bias-varianza",
+    "figure:fig04",
+    "quiz:chk-05"
+  ],
+  "c17": [
+    "#la-varianza-dellerrore",
+    "formula:f-c17",
+    "derivation:der02",
+    "widget:m04-varianza-attorno-alla-media",
+    "quiz:chk-06"
+  ],
+  "c18": [
+    "#varianza-attorno-alla-media-della-stima",
+    "formula:f-c18",
+    "formula:f-c18-2",
+    "derivation:der02",
+    "widget:m04-varianza-attorno-alla-media",
+    "quiz:chk-06"
+  ],
+  "c19": [
+    "#errore-quadratico-medio-varianza-più-bias-al-quadrato",
+    "formula:f-c19",
+    "derivation:der03",
+    "derivation:der18",
+    "example:ex04",
+    "example:ex08",
+    "widget:m04-varianza-attorno-alla-media",
+    "quiz:chk-07"
+  ],
+  "c20": [
+    "#perché-serve-un-riferimento",
+    "widget:m04-pavimento-di-cramer-rao"
+  ],
+  "c21": [
+    "#la-disuguaglianza-di-cramér-rao",
+    "widget:m04-pavimento-di-cramer-rao"
+  ],
+  "c22": [
+    "#la-disuguaglianza-di-cramér-rao",
+    "formula:f-c22",
+    "derivation:der05",
+    "derivation:der09",
+    "derivation:der12",
+    "derivation:der14",
+    "derivation:der20",
+    "derivation:der22",
+    "example:ex03",
+    "example:ex07",
+    "example:ex09",
+    "widget:m04-pavimento-di-cramer-rao",
+    "widget:m04-diagonale-dell-inversa",
+    "quiz:chk-11",
+    "quiz:chk-12"
+  ],
+  "c23": [
+    "#solo-per-stimatori-unbiased",
+    "derivation:der09",
+    "derivation:der11",
+    "derivation:der18",
+    "example:ex04",
+    "example:ex08",
+    "widget:m04-sotto-il-pavimento",
+    "quiz:chk-08"
+  ],
+  "c24": [
+    "#linformazione-di-fisher",
+    "formula:f-c24",
+    "derivation:der05",
+    "derivation:der06",
+    "derivation:der13",
+    "derivation:der17",
+    "widget:m04-fisher-pendenza-e-curvatura",
+    "widget:m04-score-e-curvatura-spam",
+    "quiz:chk-11"
+  ],
+  "c25": [
+    "#la-matrice-di-informazione-di-fisher",
+    "formula:f-c25",
+    "derivation:der04",
+    "derivation:der12",
+    "widget:m04-matrice-di-fisher-2x2"
+  ],
+  "c26": [
+    "#la-matrice-di-informazione-di-fisher",
+    "formula:f-c26",
+    "derivation:der04",
+    "derivation:der12",
+    "derivation:der14",
+    "example:ex07",
+    "widget:m04-matrice-di-fisher-2x2",
+    "quiz:chk-09"
+  ],
+  "c27": [
+    "#diagonale-dellinversa-non-inverso-della-diagonale",
+    "formula:f-c27",
+    "formula:f-c27-2",
+    "formula:f-c27-3",
+    "derivation:der04",
+    "derivation:der12",
+    "derivation:der14",
+    "derivation:der22",
+    "example:ex07",
+    "widget:m04-matrice-di-fisher-2x2",
+    "widget:m04-diagonale-dell-inversa",
+    "quiz:chk-09"
+  ],
+  "c28": [
+    "#lo-stimatore-efficiente",
+    "formula:f-c28",
+    "derivation:der05",
+    "derivation:der09",
+    "example:ex03",
+    "widget:m04-pavimento-di-cramer-rao",
+    "figure:fig03",
+    "quiz:chk-10"
+  ],
+  "c29": [
+    "#un-esempio-completo-la-media-di-una-gaussiana",
+    "formula:f-c29",
+    "formula:f-c29-2",
+    "formula:f-c29-3",
+    "derivation:der05",
+    "derivation:der06",
+    "example:ex03",
+    "widget:m04-fisher-pendenza-e-curvatura",
+    "quiz:chk-11"
+  ],
+  "c30": [
+    "#gli-stimatori-reali-sono-biased-e-inefficienti",
+    "#solo-per-stimatori-unbiased",
+    "derivation:der11",
+    "derivation:der18",
+    "example:ex04",
+    "example:ex08",
+    "widget:m04-sotto-il-pavimento",
+    "quiz:chk-08"
+  ],
+  "c31": [
+    "#quanti-campioni-e-quanto-buoni",
+    "widget:m04-quantita-e-qualita-dei-campioni"
+  ],
+  "c32": [
+    "#quanti-campioni-e-quanto-buoni",
+    "formula:f-c32",
+    "widget:m04-quantita-e-qualita-dei-campioni"
+  ],
+  "c33": [
+    "#buono-significa-buone-proprietà-asintotiche",
+    "widget:m04-corsa-verso-infinito"
+  ],
+  "c34": [
+    "#stima-asintoticamente-non-polarizzata",
+    "formula:f-c34",
+    "derivation:der11",
+    "example:ex04",
+    "widget:m04-corsa-verso-infinito",
+    "figure:fig04",
+    "figure:fig05",
+    "quiz:chk-13"
+  ],
+  "c35": [
+    "#stima-asintoticamente-efficiente",
+    "formula:f-c35",
+    "derivation:der11",
+    "example:ex03",
+    "example:ex04",
+    "widget:m04-corsa-verso-infinito",
+    "figure:fig05",
+    "quiz:chk-14"
+  ],
+  "c36": [
+    "#la-definizione-e-come-si-legge",
+    "formula:f-c36",
+    "derivation:der07",
+    "derivation:der11",
+    "example:ex05",
+    "example:ex09",
+    "widget:m04-imbuto-della-consistenza",
+    "quiz:chk-15"
+  ],
+  "c37": [
+    "#la-definizione-e-come-si-legge",
+    "formula:f-c37",
+    "derivation:der07",
+    "example:ex05",
+    "widget:m04-imbuto-della-consistenza",
+    "quiz:chk-15"
+  ],
+  "c38": [
+    "#la-condizione-per-la-consistenza",
+    "formula:f-c38",
+    "derivation:der07",
+    "derivation:der16",
+    "example:ex05",
+    "widget:m04-imbuto-della-consistenza",
+    "quiz:chk-16"
+  ],
+  "c39": [
+    "#fiducia-sui-grandi-dataset",
+    "widget:m04-pagella-dello-stimatore"
+  ],
+  "c40": [
+    "#cinque-proprietà-a-confronto",
+    "#schema-della-risposta-come-si-descrive-la-bontà-di-una-stima",
+    "derivation:der16",
+    "widget:m04-pagella-dello-stimatore",
+    "widget:m04-simulatore-orale-bonta"
+  ],
+  "c41": [
+    "#la-definizione-di-stima-ml",
+    "formula:f-c41",
+    "derivation:der08",
+    "example:ex02",
+    "widget:m04-ricerca-ml-singola-osservazione"
+  ],
+  "c42": [
+    "#la-definizione-di-stima-ml",
+    "#una-sola-osservazione-la-ml-search",
+    "example:ex02",
+    "widget:m04-ricerca-ml-singola-osservazione",
+    "figure:fig02",
+    "quiz:chk-18"
+  ],
+  "c43": [
+    "#il-logaritmo-della-likelihood",
+    "formula:f-c43",
+    "derivation:der08",
+    "derivation:der10",
+    "derivation:der17",
+    "example:ex01",
+    "widget:m04-tre-pannelli-likelihood",
+    "figure:fig01",
+    "quiz:chk-17"
+  ],
+  "c44": [
+    "#il-logaritmo-della-likelihood",
+    "formula:f-c44",
+    "derivation:der10",
+    "derivation:der17",
+    "derivation:der19",
+    "widget:m04-tre-pannelli-likelihood",
+    "quiz:chk-17"
+  ],
+  "c45": [
+    "#una-sola-osservazione-la-ml-search",
+    "formula:f-c45",
+    "derivation:der08",
+    "example:ex02",
+    "widget:m04-ricerca-ml-singola-osservazione",
+    "figure:fig02",
+    "quiz:chk-18"
+  ],
+  "c46": [
+    "#ml-ed-efficienza",
+    "derivation:der05",
+    "derivation:der08",
+    "derivation:der09",
+    "derivation:der15",
+    "example:ex06",
+    "widget:m04-ricerca-ml-singola-osservazione",
+    "widget:m04-ml-raggiunge-il-bound",
+    "quiz:chk-19"
+  ],
+  "c47": [
+    "#le-tre-proprietà-asintotiche-della-ml",
+    "derivation:der15",
+    "derivation:der21",
+    "example:ex06",
+    "widget:m04-ml-raggiunge-il-bound",
+    "quiz:chk-19"
+  ],
+  "c48": [
+    "#le-tre-proprietà-asintotiche-della-ml",
+    "formula:f-c48",
+    "derivation:der11",
+    "derivation:der15",
+    "derivation:der21",
+    "example:ex04",
+    "example:ex06",
+    "widget:m04-ml-tre-proprieta-asintotiche",
+    "quiz:chk-19"
+  ],
+  "c49": [
+    "#le-tre-proprietà-asintotiche-della-ml",
+    "formula:f-c49",
+    "derivation:der11",
+    "derivation:der15",
+    "derivation:der21",
+    "example:ex04",
+    "example:ex06",
+    "widget:m04-ml-tre-proprieta-asintotiche",
+    "quiz:chk-19"
+  ],
+  "c50": [
+    "#le-tre-proprietà-asintotiche-della-ml",
+    "formula:f-c50",
+    "derivation:der11",
+    "derivation:der15",
+    "derivation:der21",
+    "example:ex06",
+    "widget:m04-ml-tre-proprieta-asintotiche",
+    "quiz:chk-19"
+  ],
+  "c51": [
+    "#perché-la-ml-è-così-usata",
+    "widget:m04-ml-raggiunge-il-bound"
+  ],
+  "c52": [
+    "#tre-aspetti-da-considerare",
+    "widget:m04-scelta-del-modello-statistico",
+    "quiz:chk-20"
+  ],
+  "c53": [
+    "#tre-aspetti-da-considerare",
+    "widget:m04-scelta-del-modello-statistico",
+    "quiz:chk-20"
+  ],
+  "c54": [
+    "#tre-aspetti-da-considerare",
+    "widget:m04-scelta-del-modello-statistico",
+    "quiz:chk-20"
+  ],
+  "c55": [
+    "#tre-aspetti-da-considerare",
+    "widget:m04-scelta-del-modello-statistico"
+  ],
+  "c56": [
+    "#i-modelli-più-usati",
+    "widget:m04-galleria-modelli-simmetrici",
+    "quiz:chk-20"
+  ],
+  "c57": [
+    "#i-modelli-più-usati",
+    "widget:m04-galleria-modelli-simmetrici"
+  ],
+  "c58": [
+    "#i-modelli-più-usati",
+    "widget:m04-galleria-modelli-simmetrici"
+  ],
+  "c59": [
+    "#i-modelli-più-usati",
+    "widget:m04-galleria-modelli-positivi"
+  ],
+  "c60": [
+    "#i-modelli-più-usati",
+    "widget:m04-galleria-modelli-positivi",
+    "quiz:chk-20"
+  ],
+  "c61": [
+    "#i-modelli-più-usati",
+    "widget:m04-galleria-modelli-positivi"
+  ],
+  "c62": [
+    "#i-modelli-più-usati",
+    "widget:m04-galleria-modelli-positivi"
+  ],
+  "c63": [
+    "#linformazione-di-fisher",
+    "formula:f-c63",
+    "formula:f-c63-2",
+    "formula:f-c63-3",
+    "formula:f-c63-4",
+    "derivation:der13",
+    "derivation:der17",
+    "derivation:der20",
+    "widget:m04-fisher-pendenza-e-curvatura",
+    "widget:m04-score-e-curvatura-spam"
+  ],
+  "c64": [
+    "#lesempio-del-corso-la-covarianza-ml",
+    "formula:f-c64",
+    "formula:f-c64-2",
+    "formula:f-c64-3",
+    "widget:m04-corsa-verso-infinito",
+    "quiz:chk-13"
+  ],
+  "c65": [
+    "#stima-e-stimatore",
+    "widget:m04-trabocchetti-di-terminologia"
+  ],
+  "c66": [
+    "#due-significati-di-estimation-error",
+    "#errore-di-generalizzazione",
+    "formula:f-c66",
+    "widget:m04-trabocchetti-di-terminologia",
+    "quiz:chk-04"
+  ],
+  "c67": [
+    "#chi-implica-chi",
+    "formula:f-c67",
+    "formula:f-c67-2",
+    "derivation:der16",
+    "example:ex03",
+    "widget:m04-pagella-dello-stimatore",
+    "widget:m04-simulatore-orale-bonta",
+    "quiz:chk-16"
+  ],
+  "c68": [
+    "#rispetto-a-che-cosa-si-fa-la-media",
+    "formula:f-c68",
+    "formula:f-c68-2",
+    "formula:f-c68-3",
+    "widget:m04-la-stima-e-aleatoria",
+    "quiz:chk-03"
+  ],
+  "c69": [
+    "#le-ipotesi-di-ogni-risultato",
+    "#la-disuguaglianza-di-cramér-rao",
+    "derivation:der20",
+    "example:ex09",
+    "widget:m04-ipotesi-del-bound",
+    "quiz:chk-12"
+  ],
+  "c70": [
+    "#quando-il-bound-non-vale",
+    "formula:f-c70",
+    "formula:f-c70-2",
+    "formula:f-c70-3",
+    "derivation:der20",
+    "example:ex09",
+    "widget:m04-ipotesi-del-bound",
+    "quiz:chk-12"
+  ]
+}

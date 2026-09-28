@@ -1,0 +1,1 @@
+integrazione m04-bonta-stimatori: data.ts scritto; validate-module PASS (70 concetti, 56 formule, 22 derivazioni, 25 widget, 69 flashcard, 85 quiz, 15 domande, 21 esercizi); formula-coverage 198/199, l'unica mancante (c05 latex[1], f-c05-2) controllata a mano e annotata in data.ts; tsc senza errori nei file del foglio; teoria e riassunto visti con snap.mjs, nessuna formula rotta.

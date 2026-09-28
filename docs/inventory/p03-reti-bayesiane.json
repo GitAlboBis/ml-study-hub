@@ -1,0 +1,1493 @@
+{
+  "moduleId": "p03-reti-bayesiane",
+  "title": "Reti bayesiane: definizione e indipendenze",
+  "stages": {"inventario": "done", "completezza": "done", "formule": "done"},
+  "pagesReviewed": [{"doc": "part2", "from": 11, "to": 16}],
+  "overview": "Il modulo apre la parte di Passerini sui modelli grafici probabilistici (probabilistic graphical models, PGM). Dopo la chiusura dell'esempio multinomiale-Dirichlet (metà superiore di p.11, condivisa con p02), le note definiscono la rete bayesiana (Bayesian network, BN) come modello grafico orientato su un DAG, le indipendenze locali I_l(G) (ogni variabile è indipendente dai suoi non-discendenti dati i genitori), la nozione di I-map (I_l(G) ⊆ I(p)), la fattorizzazione p(x_1,…,x_m) = ∏ p(x_i|Pa_{x_i}) e il teorema di equivalenza I-map ⟺ fattorizzazione con entrambe le dimostrazioni (regola della catena + ordinamento topologico in un verso, regole di somma e prodotto nell'altro). Chiudono la definizione formale BN = (G, p) con CPD/CPT (tabella con v^k righe), l'esempio della rete regolatoria giocattolo (geni A, B, C) e l'introduzione alla d-separazione (indipendenza marginale e condizionata). All'orale Passerini chiede esplicitamente la 'formalization (DAG, local independencies …)': definizioni, I-map, fattorizzazione e dimostrazioni sono il nucleo della risposta.",
+  "concepts": [
+    {
+      "id": "c01",
+      "name": "Posterior della multinomiale con prior di Dirichlet: sostituzione",
+      "nameEn": "Substituting the multinomial likelihood and the Dirichlet prior",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 11}, {"doc": "part2", "page": 10}],
+      "detail": "Prima riga di p.11: chiusura dell'esempio di stima bayesiana (Bayesian estimation: example) iniziato in fondo a p.10, dove la posterior è scritta come P(θ|D,ψ) ∝ P(D|θ)P(θ|ψ). Si sostituiscono la verosimiglianza multinomiale (multinomial likelihood) p(D|θ) = ∏_{k=1}^{r} θ_k^{N_k} (p.10: N_k = numero di occorrenze dell'esito x^k nei dati) e la prior di Dirichlet (Dirichlet prior), il cui nucleo è ∏ θ_k^{α_k−1}. Per ogni k compaiono quindi due potenze della stessa base θ_k. Il simbolo ∝ (proporzionale) omette la costante di normalizzazione (l'evidenza e la costante della Dirichlet), che non dipende da θ. Materiale del modulo adiacente p02, incluso perché sta sulla pagina 11.",
+      "latex": ["P(\\boldsymbol{\\theta}|D,\\psi)\\propto P(D|\\boldsymbol{\\theta})\\,P(\\boldsymbol{\\theta}|\\psi)", "P(\\boldsymbol{\\theta}|D,\\psi)\\propto\\prod_{k=1}^{r}\\theta_k^{N_k}\\,\\theta_k^{\\alpha_k-1}"],
+      "symbols": [
+        {"s": "\\boldsymbol{\\theta}=(\\theta_1,\\dots,\\theta_r)", "meaning": "probabilità dei r esiti della multinomiale, con somma 1"},
+        {"s": "N_k", "meaning": "numero di volte in cui l'esito x^k compare nei dati D"},
+        {"s": "\\alpha_k", "meaning": "iperparametro della Dirichlet per l'esito k"},
+        {"s": "\\psi", "meaning": "informazione a priori (gli iperparametri)"},
+        {"s": "D", "meaning": "dataset osservato"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c02",
+      "name": "Coniugazione: la posterior è ancora una Dirichlet con parametri N_k + α_k",
+      "nameEn": "Dirichlet distribution with updated parameters N_k + α_k",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 11}],
+      "detail": "'Simplifying': gli esponenti della stessa base si sommano e la posterior diventa ∏ θ_k^{N_k+α_k−1}. Le note (in grassetto) osservano che 'This is a Dirichlet distribution with updated parameters N_k + α_k with k = 1, …, r'. È la proprietà di prior coniugata (conjugate prior, vista in p01): la posterior ha la stessa forma funzionale della prior e l'aggiornamento bayesiano si riduce a sommare i conteggi osservati agli iperparametri. La notazione compatta Dir(·) nella seconda formula non compare nella fonte: è un modo equivalente di scrivere lo stesso risultato.",
+      "latex": ["P(\\boldsymbol{\\theta}|D,\\psi)\\propto\\prod_{k=1}^{r}\\theta_k^{N_k+\\alpha_k-1}", "N_k+\\alpha_k\\quad\\text{with}\\quad k=1,\\dots,r", "\\boldsymbol{\\theta}\\,|\\,D,\\psi\\sim\\mathrm{Dir}(\\alpha_1+N_1,\\dots,\\alpha_r+N_r)"],
+      "symbols": [
+        {"s": "N_k+\\alpha_k", "meaning": "parametri aggiornati della Dirichlet a posteriori"},
+        {"s": "r", "meaning": "numero di esiti possibili"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c03",
+      "name": "Predizione di un nuovo evento come valore atteso sotto la posterior",
+      "nameEn": "Prediction for a new event x_k: expected value of θ_k under the posterior Dirichlet distribution",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 11}],
+      "detail": "La probabilità predittiva (prediction) che il prossimo evento sia x_k si ottiene integrando su tutti i valori dei parametri pesati dalla posterior: P(x_k|D) = ∫ θ_k P(θ|D,ψ) dθ. Poiché nella multinomiale P(x_k|θ) = θ_k, l'integrale coincide con il valore atteso (expected value) di θ_k sotto la Dirichlet a posteriori. È la differenza con la stima ML: non si inserisce un singolo θ stimato, si media su tutta l'incertezza. La fonte scrive P(x_k|D) senza ψ a sinistra, ma ψ è implicito.",
+      "latex": ["P(x_k|D)=\\int\\theta_k\\,P(\\boldsymbol{\\theta}|D,\\psi)\\,d\\boldsymbol{\\theta}=E_{P(\\boldsymbol{\\theta}|D,\\psi)}[\\theta_k]"],
+      "symbols": [
+        {"s": "P(x_k|D)", "meaning": "probabilità predittiva che il nuovo evento sia l'esito k"},
+        {"s": "E_{P(\\boldsymbol{\\theta}|D,\\psi)}[\\theta_k]", "meaning": "media di θ_k sotto la posterior"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c04",
+      "name": "Media della Dirichlet a posteriori: (N_k + α_k)/(N + α)",
+      "nameEn": "Expected value of θ_k; total number of observations N; total prior concentration α",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 11}],
+      "detail": "Il valore atteso di θ_k sotto la posterior vale (N_k + α_k)/(N + α), dove N = Σ_k N_k è il numero totale di osservazioni (total number of observations) e α = Σ_k α_k è la concentrazione totale della prior (total prior concentration). Deriva dalla proprietà generale della Dirichlet (la media della componente k è il suo parametro diviso la somma dei parametri) applicata ai parametri aggiornati N_k + α_k. È una frequenza relativa 'corretta': al conteggio reale si aggiunge α_k, al totale si aggiunge α. Garantisce probabilità strettamente positive anche per esiti mai osservati (N_k = 0), utile ad esempio nel naive Bayes per lo spam.",
+      "latex": ["E_{P(\\boldsymbol{\\theta}|D,\\psi)}[\\theta_k]=\\frac{N_k+\\alpha_k}{N+\\alpha}", "N=\\sum_{k=1}^{r}N_k,\\qquad \\alpha=\\sum_{k=1}^{r}\\alpha_k"],
+      "symbols": [
+        {"s": "N", "meaning": "numero totale di osservazioni"},
+        {"s": "\\alpha", "meaning": "concentrazione totale della prior (equivalent sample size)"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c05",
+      "name": "Iperparametri α_k come osservazioni 'immaginarie' (pseudo-conteggi)",
+      "nameEn": "Interpreting priors: α_1,…,α_r as the number of 'imaginary' observations for each outcome",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 11}],
+      "detail": "'Interpreting Priors': la conoscenza a priori su θ è codificata nei parametri α_1, …, α_r della Dirichlet, che si interpretano come numero di osservazioni 'immaginarie' ('imaginary' observations) per ciascun esito, cioè esiti che si fingono già visti prima dei dati. Sotto-punto: α_k rappresenta la convinzione a priori (prior belief) sull'occorrenza dell'esito x^k (la fonte qui scrive x^k con apice, altrove x_k con pedice). Nella formula della predittiva α_k si somma infatti a N_k come se fossero conteggi reali. Lo stesso concetto torna nell'apprendimento MAP delle CPT delle reti bayesiane (pseudo-counts α_{x|u}, modulo p05).",
+      "latex": ["\\alpha_1,\\dots,\\alpha_r", "\\frac{\\overbrace{N_k}^{\\text{reali}}+\\overbrace{\\alpha_k}^{\\text{immaginarie}}}{N+\\alpha}"],
+      "symbols": [
+        {"s": "\\alpha_1,\\dots,\\alpha_r", "meaning": "parametri della Dirichlet in cui è codificata la conoscenza a priori su θ (scritto θ non in grassetto nella fonte)"},
+        {"s": "\\alpha_k", "meaning": "pseudo-conteggio: quante volte si immagina di aver già visto l'esito k"},
+        {"s": "x^k", "meaning": "k-esimo esito (la fonte usa qui l'apice, come a p.10 per N_k; altrove x_k)"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c06",
+      "name": "Dimensione campionaria equivalente α = Σ α_k",
+      "nameEn": "Equivalent sample size",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 11}],
+      "detail": "L'informazione a priori totale (total prior information) è data da α = Σ_{k=1}^{r} α_k, detta dimensione campionaria equivalente (equivalent sample size): è il numero complessivo di osservazioni immaginarie, e va confrontato con il numero N di osservazioni reali. Se α ≪ N contano i dati, se α ≫ N conta la prior. Il rapporto α_k/α è la media a priori di θ_k (proprietà della Dirichlet, non scritta nella fonte).",
+      "latex": ["\\alpha=\\sum_{k=1}^{r}\\alpha_k"],
+      "symbols": [
+        {"s": "\\alpha", "meaning": "equivalent sample size: numero totale di osservazioni immaginarie"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c07",
+      "name": "Limite α → 0: prior non informativa e ritorno alla MLE; α grande: prior forte",
+      "nameEn": "As α → 0 the prior becomes non-informative and Bayesian estimation converges to MLE",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 11}, {"doc": "part2", "page": 10}],
+      "detail": "Per α → 0 la prior diventa non informativa (non-informative) e la stima bayesiana converge all'approccio classico di massima verosimiglianza (classical maximum likelihood estimation, MLE): (N_k + α_k)/(N + α) → N_k/N, che è proprio θ*_i = N_i/N ricavato a p.10. Al contrario, per α grande la prior ha un'influenza più forte sulla posterior (stronger influence). La scomposizione come media pesata tra frequenza osservata e media a priori, con pesi N/(N+α) e α/(N+α), non è nella fonte ma rende esplicito il compromesso; ne segue anche che, a α fissato, per N → ∞ i dati dominano.",
+      "latex": ["\\lim_{\\alpha\\to0}\\frac{N_k+\\alpha_k}{N+\\alpha}=\\frac{N_k}{N}=\\theta_k^{*}", "\\frac{N_k+\\alpha_k}{N+\\alpha}=\\frac{N}{N+\\alpha}\\cdot\\frac{N_k}{N}+\\frac{\\alpha}{N+\\alpha}\\cdot\\frac{\\alpha_k}{\\alpha}"],
+      "symbols": [
+        {"s": "\\theta_k^{*}", "meaning": "stima di massima verosimiglianza N_k/N (p.10)"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c08",
+      "name": "Inferenza e apprendimento = applicazioni ripetute delle regole di somma e prodotto",
+      "nameEn": "Probabilistic inference and learning are based on repeated applications of the sum and product rules of probability",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 11}, {"doc": "part2", "page": 14}],
+      "detail": "Frase d'apertura della sezione 'Bayesian networks': inferenza probabilistica (probabilistic inference) e apprendimento (learning) si basano fondamentalmente su applicazioni ripetute della regola della somma (sum rule, marginalizzazione) e della regola del prodotto (product rule, fattorizzazione di una congiunta in condizionata per marginale). Le due regole non sono scritte a p.11; sono riportate qui nella forma standard perché vengono usate esplicitamente nella dimostrazione 'Factorization ⇒ I-map' di p.14 ('Using the product rule and the sum') e nella verifica delle indipendenze di p.16.",
+      "latex": ["p(x)=\\sum_{y}p(x,y)", "p(x,y)=p(x|y)\\,p(y)"],
+      "symbols": [
+        {"s": "\\sum_{y}", "meaning": "marginalizzazione (sum rule); per variabili continue diventa un integrale"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c09",
+      "name": "Modelli grafici probabilistici (PGM): rappresentazione grafica degli aspetti qualitativi",
+      "nameEn": "Probabilistic graphical models (PGMs)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 11}],
+      "detail": "I modelli grafici probabilistici (probabilistic graphical models, PGMs, in grassetto nella fonte) forniscono una rappresentazione grafica degli aspetti qualitativi (qualitative aspects) delle distribuzioni di probabilità: quali variabili dipendono direttamente da quali, non i valori numerici. La parte quantitativa (le tabelle o le densità condizionate) viene associata al grafo in un secondo momento (CPD, p.15). Seguono quattro vantaggi elencati in grassetto (c10-c13).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c10",
+      "name": "Vantaggio 1: visualizzare e capire la struttura del modello",
+      "nameEn": "Visualize and understand the structure of a probabilistic model in an intuitive and concise manner",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 11}],
+      "detail": "Primo punto dell'elenco: i PGM permettono di visualizzare e capire (visualize and understand, in grassetto) la struttura di un modello probabilistico in modo intuitivo e conciso (intuitive and concise). Un disegno con m nodi e poche frecce sostituisce una tabella congiunta con un numero esponenziale di righe.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c11",
+      "name": "Vantaggio 2: identificare proprietà come le indipendenze condizionate analizzando il grafo",
+      "nameEn": "Identify properties of the model, such as conditional independencies, by analyzing the graph",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 12}],
+      "detail": "Secondo punto (inizio di p.12): identificare proprietà del modello (identify properties), come le indipendenze condizionate (conditional independencies), analizzando il grafo invece di fare conti sulla distribuzione. È ciò che rendono possibile le indipendenze locali (p.12) e il criterio di d-separazione (p.16 e modulo p04).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c12",
+      "name": "Vantaggio 3: facilitare calcoli complessi di inferenza e apprendimento con manipolazioni grafiche",
+      "nameEn": "Facilitate complex computations for inference and learning through graphical manipulations",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 12}],
+      "detail": "Terzo punto: facilitare calcoli complessi (facilitate complex computations) per l'inferenza e l'apprendimento tramite manipolazioni grafiche (graphical manipulations). La struttura del grafo indica come spezzare somme e prodotti in pezzi piccoli; nell'apprendimento, la fattorizzazione rende separabile la stima di ciascuna CPD (è il motivo per cui 'ML is fast in Bayesian Network', domanda d'esame, modulo p05).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c13",
+      "name": "Vantaggio 4: lo stesso grafo rappresenta distribuzioni diverse (discrete o continue)",
+      "nameEn": "Represent diverse probability distributions using the same graph, abstracting away from specific quantitative details",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 12}],
+      "detail": "Quarto punto: rappresentare distribuzioni di probabilità diverse (represent diverse probability distributions) con lo stesso grafo, astraendo dai dettagli quantitativi specifici, per esempio dal fatto che le distribuzioni siano discrete o continue (discrete or continuous). Il grafo fissa solo le indipendenze; qualunque famiglia di CPD compatibile (tabelle, gaussiane condizionate, …) produce una distribuzione con quelle indipendenze.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c14",
+      "name": "Idea chiave: dalla struttura del grafo alle indipendenze, e da queste ad algoritmi efficienti",
+      "nameEn": "Graphical models enable us to inspect the structure of a model and derive insights about independencies and dependencies",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 12}],
+      "detail": "L'idea chiave (key idea) è che i modelli grafici permettono di ispezionare la struttura di un modello e ricavarne indipendenze e dipendenze (independencies and dependencies, in grassetto) tra le variabili. Questa comprensione strutturale sostiene direttamente il progetto di algoritmi di inferenza efficienti (efficient inference algorithms) che sfruttano la struttura intrinseca del modello. Catena logica: grafo → indipendenze → fattorizzazione → calcolo efficiente.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c15",
+      "name": "Rete bayesiana: modello grafico orientato su un DAG",
+      "nameEn": "Bayesian Network (BN): a directed graphical model whose structure is a directed acyclic graph (DAG)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 12}],
+      "detail": "Paragrafo 'Definition': una rete bayesiana (Bayesian Network, BN) è un tipo di modello grafico orientato (directed graphical model) la cui struttura è rappresentata da un grafo orientato aciclico (directed acyclic graph, DAG). Orientato: gli archi hanno una direzione; aciclico: seguendo le frecce non si torna mai al nodo di partenza. È la prima delle due definizioni (quella strutturale); la definizione formale come coppia (G, p) arriva a p.15 (c44). La notazione G = (V, E) non è nella fonte.",
+      "latex": ["G=(V,E)\\ \\text{DAG},\\qquad V=\\{x_1,\\dots,x_m\\}"],
+      "symbols": [
+        {"s": "G", "meaning": "grafo orientato aciclico della rete"},
+        {"s": "m", "meaning": "numero di variabili (nodi)"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c16",
+      "name": "Ogni nodo è una variabile aleatoria x_i",
+      "nameEn": "Each node in the graph corresponds to a random variable x_i",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 12}],
+      "detail": "Ogni nodo (node, in grassetto) del grafo corrisponde a una variabile aleatoria (random variable) x_i. Nella figura di p.12 i nodi sono cerchi rossi etichettati x_1, …, x_7. Le variabili possono essere discrete (e allora le CPD sono tabelle, p.15) o continue.",
+      "latex": ["x_i,\\quad i=1,\\dots,m"],
+      "symbols": [
+        {"s": "x_i", "meaning": "variabile aleatoria associata al nodo i"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c17",
+      "name": "Ogni arco orientato è una dipendenza diretta tra due variabili",
+      "nameEn": "Each directed edge represents a direct dependency between two variables",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 12}],
+      "detail": "Ogni arco orientato (directed edge, in grassetto) rappresenta una dipendenza diretta (direct dependency) tra due variabili: x_i → x_j significa che x_i compare tra le variabili condizionanti della distribuzione di x_j. L'assenza di un arco non vuol dire indipendenza marginale, ma assenza di dipendenza diretta: due variabili non collegate possono comunque dipendere tramite percorsi (p04). La formula x_i → x_j ⟺ x_i ∈ Pa_{x_j} è un'integrazione: la fonte lo dice solo a parole, combinando questo punto con la definizione di genitori.",
+      "latex": ["x_i\\to x_j\\;\\Leftrightarrow\\;x_i\\in Pa_{x_j}"],
+      "symbols": [
+        {"s": "Pa_{x_j}", "meaning": "insieme dei genitori di x_j"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c18",
+      "name": "Figura: il DAG di esempio a 7 nodi",
+      "nameEn": "Example DAG with nodes x_1,…,x_7",
+      "kind": "figura",
+      "sourcePages": [{"doc": "part2", "page": 12}, {"doc": "part2", "page": 14}],
+      "detail": "Figura su sfondo lilla, al centro di p.12 e ripetuta in alto a p.14: sette nodi rossi x_1, …, x_7 su tre livelli. Archi letti dall'immagine: x_1 → x_4, x_1 → x_5, x_2 → x_4, x_3 → x_4, x_3 → x_5, x_4 → x_6, x_4 → x_7, x_5 → x_7 (8 archi). Quindi x_1, x_2, x_3 sono radici senza genitori, x_4 ha tre genitori, x_5 due, x_6 uno, x_7 due; x_6 e x_7 sono foglie. È la rete di cui p.14 dà la fattorizzazione (c35).",
+      "latex": ["E=\\{x_1\\to x_4,\\ x_1\\to x_5,\\ x_2\\to x_4,\\ x_3\\to x_4,\\ x_3\\to x_5,\\ x_4\\to x_6,\\ x_4\\to x_7,\\ x_5\\to x_7\\}"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c19",
+      "name": "La struttura di una BN codifica assunzioni di indipendenza sulla congiunta",
+      "nameEn": "The structure of a BN encodes a set of independence assumptions about the joint probability distribution",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 12}],
+      "detail": "La struttura di una BN codifica un insieme di assunzioni di indipendenza (independence assumptions, in grassetto) sulla distribuzione congiunta che rappresenta. Il grafo non è solo un disegno: ogni arco mancante è un'affermazione verificabile sulla distribuzione. In particolare le proprietà di indipendenza locale (local independence properties) sono quelle di c20; le indipendenze globali, ricavate con la d-separazione, sono nel modulo p04.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c20",
+      "name": "Indipendenze locali I_l(G)",
+      "nameEn": "Local independence properties encoded by the graph",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 12}, {"doc": "part2", "page": 14}],
+      "detail": "Le indipendenze locali (local independencies) codificate dal grafo G sono l'insieme I_l(G) = {∀i, x_i ⊥ NonDescendants_{x_i} | Parents_{x_i}}: una affermazione per ciascun nodo. La stessa formula riappare come punto 1 della dimostrazione 'I-map ⇒ Factorization' a p.14. Il pedice l sta per 'local'. Nell'enunciato i genitori compaiono sia tra i non-discendenti sia nell'insieme condizionante: la parte informativa è l'indipendenza dai non-discendenti che non sono genitori (vedi gaps).",
+      "latex": ["I_l(G)=\\left\\{\\forall i,\\; x_i\\perp \\mathit{NonDescendants}_{x_i}\\mid \\mathit{Parents}_{x_i}\\right\\}"],
+      "symbols": [
+        {"s": "I_l(G)", "meaning": "insieme delle indipendenze locali codificate da G"},
+        {"s": "\\perp", "meaning": "indipendenza (condizionata)"},
+        {"s": "\\mathit{NonDescendants}_{x_i}", "meaning": "nodi non raggiungibili da x_i seguendo le frecce"},
+        {"s": "\\mathit{Parents}_{x_i}", "meaning": "genitori di x_i, indicati anche Pa_{x_i}"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c21",
+      "name": "Significato: ogni variabile è condizionatamente indipendente dai non-discendenti dati i genitori",
+      "nameEn": "Each variable x_i is conditionally independent of its non-descendants in the graph, given its parents",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 12}],
+      "detail": "Lettura della formula: ogni variabile x_i è condizionatamente indipendente (conditionally independent) dai suoi non-discendenti nel grafo, dati i suoi genitori. Una volta noti i genitori, conoscere le altre variabili 'a monte' o 'di lato' non cambia la distribuzione di x_i; i discendenti invece possono ancora portare informazione (un effetto osservato informa sulla causa). La forma equivalente con le condizionate non è nella fonte e si ottiene dalla definizione di indipendenza condizionata di p.16.",
+      "latex": ["p(x_i\\mid \\mathit{NonDescendants}_{x_i})=p(x_i\\mid \\mathit{Parents}_{x_i})"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c22",
+      "name": "Genitori di un nodo",
+      "nameEn": "Parents of a node",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 12}],
+      "detail": "Genitori di un nodo (parents of a node, in grassetto): i nodi che hanno archi orientati che puntano verso x_i. Notazione Pa_{x_i} (usata da p.13 in poi). Nel DAG a 7 nodi: Pa_{x_1} = Pa_{x_2} = Pa_{x_3} = ∅, Pa_{x_4} = {x_1, x_2, x_3}, Pa_{x_5} = {x_1, x_3}, Pa_{x_6} = {x_4}, Pa_{x_7} = {x_4, x_5} (letti dalla figura).",
+      "latex": ["Pa_{x_4}=\\{x_1,x_2,x_3\\},\\quad Pa_{x_5}=\\{x_1,x_3\\},\\quad Pa_{x_6}=\\{x_4\\},\\quad Pa_{x_7}=\\{x_4,x_5\\}"],
+      "symbols": [
+        {"s": "Pa_{x_i}", "meaning": "genitori di x_i"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c23",
+      "name": "Non-discendenti di un nodo",
+      "nameEn": "Non-descendants of a node",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 12}],
+      "detail": "Non-discendenti di un nodo (non-descendants of a node, in grassetto): i nodi che non si possono raggiungere da x_i seguendo gli archi orientati (following the directed edges). I discendenti sono quindi quelli raggiungibili (figli, figli dei figli, …); x_i stesso va escluso da entrambi gli insiemi. Nel DAG a 7 nodi: i discendenti di x_5 sono {x_7}, quindi NonDescendants_{x_5} = {x_1, x_2, x_3, x_4, x_6}; x_4 è non-discendente di x_5 pur stando allo stesso livello, perché non c'è un percorso orientato da x_5 a x_4.",
+      "latex": ["\\mathit{NonDescendants}_{x_5}=\\{x_1,x_2,x_3,x_4,x_6\\}"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c24",
+      "name": "Codifica compatta della congiunta grazie all'indipendenza condizionata",
+      "nameEn": "BNs compactly encode the joint probability distribution by leveraging conditional independence",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 12}],
+      "detail": "Frase conclusiva di p.12: questa proprietà strutturale permette alle BN di codificare in modo compatto (compactly encode) la distribuzione congiunta sfruttando l'indipendenza condizionata, riducendo la complessità di rappresentazione e di calcolo (representation and computation). Anticipa la fattorizzazione di p.13 e il conteggio dei parametri (c30, c33).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c25",
+      "name": "Notazione: distribuzione congiunta p su X e insieme I(p) delle indipendenze che valgono in p",
+      "nameEn": "Joint probability distribution p over X; I(p): set of all independence assertions that hold in p",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 13}],
+      "detail": "Apertura di p.13: le BN sono un framework per rappresentare distribuzioni di probabilità su un insieme di variabili aleatorie (a framework for representing probability distributions). Sia p una distribuzione congiunta (joint probability distribution, in grassetto) sull'insieme di variabili X, e sia I(p) l'insieme di tutte le asserzioni di indipendenza (independence assertions) che valgono in p. I(p) è una proprietà della distribuzione, indipendente da qualunque grafo; I_l(G) è una proprietà del grafo. La scrittura esplicita di I(p) come insieme di triple è un'integrazione.",
+      "latex": ["I(p)=\\{(A\\perp B\\mid C)\\;:\\;\\text{l'indipendenza vale in }p\\}"],
+      "symbols": [
+        {"s": "X", "meaning": "insieme delle variabili aleatorie"},
+        {"s": "I(p)", "meaning": "tutte le indipendenze (condizionate) vere nella distribuzione p"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c26",
+      "name": "Mappa di indipendenza (I-map): I_l(G) ⊆ I(p)",
+      "nameEn": "Independency map (I-map)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 13}],
+      "detail": "Un grafo G è una mappa di indipendenza (independency map, I-map, in grassetto) per p se la distribuzione p soddisfa tutte le indipendenze locali codificate da G, cioè I_l(G) ⊆ I(p). Condizione unidirezionale: tutto ciò che il grafo afferma deve essere vero nella distribuzione. È il ponte tra struttura (grafo) e numeri (distribuzione) su cui si basa il teorema di fattorizzazione.",
+      "latex": ["I_l(G)\\subseteq I(p)"],
+      "symbols": [
+        {"s": "\\subseteq", "meaning": "inclusione: ogni indipendenza del grafo vale in p"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c27",
+      "name": "Conseguenza: ogni assunzione di indipendenza del grafo è vera nella distribuzione",
+      "nameEn": "Every independence assumption encoded by the structure of G is also true in the distribution p",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 13}],
+      "detail": "La definizione implica che ogni assunzione di indipendenza codificata dalla struttura di G è vera anche nella distribuzione p. Un I-map non 'mente' mai: non dichiara indipendenze che p non ha. Può però tacere indipendenze che p ha (c28). La formula è la traduzione simbolica della frase della fonte (integrazione).",
+      "latex": ["(A\\perp B\\mid C)\\in I_l(G)\\;\\Rightarrow\\;(A\\perp B\\mid C)\\in I(p)"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c28",
+      "name": "Il viceversa non vale: p può avere indipendenze che G non rappresenta",
+      "nameEn": "The converse does not necessarily hold",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 13}],
+      "detail": "Il viceversa non vale necessariamente (the converse does not necessarily hold): in p possono esserci indipendenze non rappresentate dalla struttura di G, quindi il grafo G potrebbe non catturare tutte le proprietà di indipendenza condizionata di p. Essere I-map è una garanzia di correttezza, non di completezza; la questione di mappe minime e perfette (minimal I-map, perfect map) è ripresa nel modulo p04. Formula di integrazione: l'inclusione I_l(G) ⊆ I(p) non implica quella opposta (non significa che l'inclusione opposta sia sempre falsa: vale per le perfect map).",
+      "latex": ["I_l(G)\\subseteq I(p)\\;\\not\\Rightarrow\\;I(p)\\subseteq I_l(G)"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c29",
+      "name": "Il grafo completamente connesso è sempre un I-map, ma inutile",
+      "nameEn": "A fully connected graph is always a valid I-map",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 13}],
+      "detail": "Un grafo completamente connesso (fully connected graph, ogni nodo collegato a ogni altro) è sempre un I-map valido, perché non codifica alcuna relazione di indipendenza: l'insieme vuoto è contenuto in qualunque I(p). È però inefficiente e poco informativo (inefficient and uninformative), perché non sfrutta le indipendenze condizionate per semplificare la rappresentazione di p: la sua fattorizzazione coincide con la regola della catena e ha tanti parametri quanti la congiunta piena. Nel DAG completo con ordine x_1, …, x_m ogni nodo ha per genitori tutti i precedenti: le sue indipendenze locali sono solo banali (x_i ⊥ ∅ | Pa_{x_i}). La formula è un'integrazione: la fonte dice 'it does not encode any independence relationships', cioè I_l(G) contiene solo affermazioni banali, vere in qualunque p.",
+      "latex": ["G_{\\text{completo}}:\\quad I_l(G)=\\{\\,x_i\\perp\\emptyset\\mid Pa_{x_i}\\,\\}_{i=1}^{m}\\ (\\text{banali})\\subseteq I(p)\\qquad\\forall p"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c30",
+      "name": "La congiunta piena di m variabili binarie richiede 2^m parametri",
+      "nameEn": "A full joint distribution over m binary variables requires 2^m parameters",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 13}],
+      "detail": "Motivo per cui conviene codificare le indipendenze: una distribuzione congiunta piena (full joint distribution) su m variabili binarie richiede 2^m parametri (per variabili discrete), il che diventa impraticabile (infeasible) per m grande. Con m = 30 servono già più di un miliardo di numeri. Precisazione non nella fonte: le configurazioni sono 2^m, i parametri liberi 2^m − 1 perché le probabilità sommano a 1; con v stati per variabile diventano v^m.",
+      "latex": ["x_i\\in\\{0,1\\},\\ i=1,\\dots,m\\;\\Rightarrow\\;2^m\\ \\text{configurazioni}\\ (2^m-1\\ \\text{parametri liberi})"],
+      "symbols": [
+        {"s": "m", "meaning": "numero di variabili binarie"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c31",
+      "name": "Fattorizzare la congiunta per evitare un numero esponenziale di parametri",
+      "nameEn": "Factorize the joint distribution into a product of simpler factors",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 13}],
+      "detail": "Per evitare un numero esponenziale di parametri o di configurazioni, si fattorizza (factorize, in grassetto) la distribuzione congiunta in un prodotto di fattori più semplici, sfruttando le indipendenze codificate nella distribuzione. Una BN fornisce proprio un modo di fattorizzare la congiunta nel prodotto delle probabilità condizionate di ciascuna variabile dati i suoi genitori nel grafo.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c32",
+      "name": "p fattorizza secondo G: p(x_1,…,x_m) = ∏ p(x_i | Pa_{x_i})",
+      "nameEn": "p factorizes according to G",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 13}, {"doc": "part2", "page": 15}],
+      "detail": "Si dice che p fattorizza secondo G (p factorizes according to G) se la probabilità congiunta si può scrivere come prodotto, su tutte le m variabili, della probabilità di x_i dati i suoi genitori Pa_{x_i} nel grafo. Un fattore per nodo; le radici (Pa = ∅) contribuiscono con la marginale p(x_i). La stessa formula riappare a p.15 nella definizione formale di BN.",
+      "latex": ["p(x_1,\\dots,x_m)=\\prod_{i=1}^{m}p(x_i|Pa_{x_i})"],
+      "symbols": [
+        {"s": "p(x_i|Pa_{x_i})", "meaning": "distribuzione condizionata locale (CPD) del nodo i"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c33",
+      "name": "Numero di parametri di una BN: somma dei fattori locali, dominata dal più grande",
+      "nameEn": "Number of parameters: determined by the local conditional distributions",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 13}, {"doc": "part2", "page": 15}],
+      "detail": "Numero di parametri (number of parameters, in grassetto): in una BN il totale è determinato dalle distribuzioni condizionate locali, e la complessità si riduce in modo significativo. Il totale è tipicamente dominato dal fattore condizionato più grande (largest conditional factor), a meno che il grafo non sia completamente connesso. La formula esatta è un'integrazione: ogni nodo con v_i stati ha una CPT con ∏_{Pa} v_j righe (v^k per k genitori a v stati, p.15) e v_i − 1 parametri liberi per riga; con grado entrante massimo k il totale cresce come m·v^k, lineare in m.",
+      "latex": ["\\#\\text{parametri}=\\sum_{i=1}^{m}(v_i-1)\\prod_{x_j\\in Pa_{x_i}}v_j", "\\text{binario, }|Pa_{x_i}|\\le k:\\quad \\#\\text{parametri}\\le m\\,2^{k}\\ \\ll\\ 2^m-1"],
+      "symbols": [
+        {"s": "v_i", "meaning": "numero di stati della variabile x_i"},
+        {"s": "k", "meaning": "numero massimo di genitori di un nodo"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c34",
+      "name": "Relazione fattorizzazione-struttura: G è I-map per p ⟺ p fattorizza secondo G",
+      "nameEn": "Factorization-structure relationship",
+      "kind": "teorema",
+      "sourcePages": [{"doc": "part2", "page": 13}, {"doc": "part2", "page": 14}],
+      "detail": "Relazione fattorizzazione-struttura (factorization-structure relationship, in grassetto): se il grafo G è un I-map per la distribuzione p, allora p fattorizza secondo G; viceversa, se p fattorizza secondo G, allora G è un I-map per p. Le due nozioni (proprietà di indipendenza e forma della congiunta) sono equivalenti. Entrambe le direzioni sono dimostrate a p.14-15 (der01, der02).",
+      "latex": ["G\\ \\text{I-map per }p\\;\\Longleftrightarrow\\;p(x_1,\\dots,x_m)=\\prod_{i=1}^{m}p(x_i|Pa_{x_i})"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c35",
+      "name": "Esempio: fattorizzazione del DAG a 7 nodi",
+      "nameEn": "Example: factorization of p(x_1,…,x_7)",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "part2", "page": 13}, {"doc": "part2", "page": 14}],
+      "detail": "'For the following Bayesian Network' (fondo di p.13) → figura del DAG a 7 nodi in cima a p.14 → 'the factorization is the following', riquadro verde 'Example': p(x_1,…,x_7) = p(x_1)p(x_2)p(x_3)p(x_4|x_1,x_2,x_3)p(x_5|x_1,x_3)p(x_6|x_4)p(x_7|x_4,x_5). Ogni fattore si legge dagli archi entranti: tre radici con marginali, x_4 condizionato ai tre genitori, x_5 a x_1 e x_3, x_6 a x_4, x_7 a x_4 e x_5.",
+      "latex": ["p(x_1,\\dots,x_7)=p(x_1)p(x_2)p(x_3)p(x_4|x_1,x_2,x_3)\\,p(x_5|x_1,x_3)p(x_6|x_4)p(x_7|x_4,x_5)"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c36",
+      "name": "Ordinamento topologico",
+      "nameEn": "Topological order relative to G",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 14}],
+      "detail": "Passo 2 della dimostrazione 'I-map ⇒ Factorization': si dispongono le variabili in un ordine topologico (topological order) rispetto a G, cioè tale che se x_i → x_j in G allora i < j: ogni genitore viene prima dei suoi figli. Conseguenza usata al passo 4: tutti i predecessori x_1, …, x_{i−1} di x_i nell'ordine sono non-discendenti di x_i (un discendente dovrebbe venire dopo) e tra essi ci sono tutti i genitori. Nel DAG a 7 nodi l'ordine x_1, …, x_7 è topologico, ma non è l'unico (es. x_3, x_2, x_1, x_5, x_4, x_7, x_6).",
+      "latex": ["x_i\\to x_j\\ \\text{in}\\ G\\;\\Rightarrow\\;i<j"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c37",
+      "name": "Regola della catena per la congiunta",
+      "nameEn": "Chain rule",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 14}],
+      "detail": "Passo 3: la regola della catena (chain rule) decompone qualunque congiunta, senza ipotesi, nel prodotto p(x_1,…,x_m) = ∏_{i=1}^{m} p(x_i | x_1,…,x_{i−1}); per i = 1 il fattore è la marginale p(x_1). Si ottiene applicando ripetutamente la regola del prodotto. Vale per ogni ordine delle variabili; nella dimostrazione si usa l'ordine topologico. Senza indipendenze l'ultimo fattore ha 2^{m−1} righe: è la congiunta piena.",
+      "latex": ["p(x_1,\\dots,x_m)=\\prod_{i=1}^{m}p(x_i|x_1,\\dots,x_{i-1})"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c38",
+      "name": "Per indipendenza locale p(x_i | x_1,…,x_{i−1}) = p(x_i | Pa_{x_i})",
+      "nameEn": "By local independence assumptions, for each x_i",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 14}],
+      "detail": "Passo 4: per le assunzioni di indipendenza locale, per ogni x_i vale p(x_i | x_1,…,x_{i−1}) = p(x_i | Pa_{x_i}); sostituendo nella regola della catena si ottiene la forma fattorizzata ('Substituting back gives the factorized form'). Il perché, lasciato implicito nella fonte: nell'ordine topologico {x_1,…,x_{i−1}} contiene Pa_{x_i} e il resto è formato da non-discendenti di x_i; poiché x_i ⊥ NonDescendants | Parents, condizionare anche sugli altri predecessori non cambia nulla.",
+      "latex": ["p(x_i|x_1,\\dots,x_{i-1})=p(x_i|Pa_{x_i})", "Pa_{x_i}\\subseteq\\{x_1,\\dots,x_{i-1}\\}\\subseteq \\mathit{NonDescendants}_{x_i}"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c39",
+      "name": "Condizionata dell'ultima variabile con regola del prodotto e della somma",
+      "nameEn": "Consider the last variable x_m: using the product rule and the sum",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 14}],
+      "detail": "Dimostrazione 'Factorization ⇒ I-map', passi 1-2. Si parte dall'ipotesi che p fattorizzi secondo G ('This factorization must hold for the full probability distribution') e si considera l'ultima variabile x_m (ultima in un ordine topologico). Con la regola del prodotto la condizionata è il rapporto p(x_1,…,x_m)/p(x_1,…,x_{m−1}); con la regola della somma il denominatore è la congiunta marginalizzata su x_m.",
+      "latex": ["p(x_m|x_1,\\dots,x_{m-1})=\\frac{p(x_1,\\dots,x_m)}{p(x_1,\\dots,x_{m-1})}=\\frac{p(x_1,\\dots,x_m)}{\\sum_{x_m}p(x_1,\\dots,x_m)}"],
+      "symbols": [
+        {"s": "x_m", "meaning": "ultima variabile nell'ordine topologico (nessun'altra variabile ne è discendente)"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c40",
+      "name": "Sostituzione della fattorizzazione e isolamento del termine di x_m",
+      "nameEn": "Substitute the factorization for p(x_1,…,x_m); isolating the term for x_m",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 15}],
+      "detail": "Passo 3 (inizio di p.15): si sostituisce la fattorizzazione al numeratore e al denominatore. Poi si isola il termine di x_m (isolating the term for x_m): nel prodotto, solo il fattore p(x_m|Pa_{x_m}) contiene x_m (x_m è ultima, quindi non è genitore di nessuno); gli altri m−1 fattori escono dalla somma su x_m e si semplificano tra numeratore e denominatore, lasciando p(x_m|Pa_{x_m}) / Σ_{x_m} p(x_m|Pa_{x_m}).",
+      "latex": ["p(x_m|x_1,\\dots,x_{m-1})=\\frac{\\prod_{i=1}^{m}p(x_i|Pa_{x_i})}{\\sum_{x_m}\\prod_{i=1}^{m}p(x_i|Pa_{x_i})}", "p(x_m|x_1,\\dots,x_{m-1})=\\frac{p(x_m|Pa_{x_m})\\prod_{i=1}^{m-1}p(x_i|Pa_{x_i})}{\\prod_{i=1}^{m-1}p(x_i|Pa_{x_i})\\sum_{x_m}p(x_m|Pa_{x_m})}=\\frac{p(x_m|Pa_{x_m})}{\\sum_{x_m}p(x_m|Pa_{x_m})}"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c41",
+      "name": "Normalizzazione della CPD: Σ_{x_m} p(x_m | Pa_{x_m}) = 1",
+      "nameEn": "Since Σ_{x_m} p(x_m|Pa_{x_m}) = 1",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 15}],
+      "detail": "'And since Σ_{x_m} p(x_m|Pa_{x_m}) = 1 we have p(x_m|x_1,…,x_{m−1}) = p(x_m|Pa_{x_m})': una distribuzione condizionata somma a 1 sui valori della sua variabile, per ogni configurazione dei genitori, quindi il denominatore sparisce. Il risultato dice che, data la configurazione dei genitori, le altre variabili precedenti (tutte non-discendenti di x_m) non modificano la distribuzione di x_m: è l'indipendenza locale di x_m.",
+      "latex": ["\\sum_{x_m}p(x_m|Pa_{x_m})=1", "p(x_m|x_1,\\dots,x_{m-1})=p(x_m|Pa_{x_m})"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c42",
+      "name": "Ripetere per tutte le variabili: G codifica tutte le indipendenze locali, quindi è un I-map",
+      "nameEn": "Repeat this process for all variables to show that G encodes all the local independencies in p",
+      "kind": "procedura",
+      "sourcePages": [{"doc": "part2", "page": 15}],
+      "detail": "Passo 4: si ripete il procedimento per tutte le variabili, mostrando che G codifica tutte le indipendenze locali in p (encodes all the local independencies), e quindi che G è un I-map. Il passo di ricorsione non è dettagliato nella fonte: marginalizzando x_m la somma Σ_{x_m} p(x_m|Pa_{x_m}) = 1 fa sparire il suo fattore, quindi p(x_1,…,x_{m−1}) fattorizza secondo il grafo senza x_m e il ragionamento si riapplica. Per un nodo x_i qualunque si sceglie un ordine topologico in cui x_i viene dopo tutti i suoi non-discendenti e si marginalizzano prima i discendenti (vedi gaps). Precisazione del revisore sulla formulazione: la frase 'G encodes all the local independencies in p' va letta come 'p soddisfa tutte le indipendenze locali codificate da G', cioè I_l(G) ⊆ I(p); non significa che G catturi tutte le indipendenze di p, cosa che la fonte stessa esclude a p.13 (c28).",
+      "latex": ["x_m\\perp\\{x_1,\\dots,x_{m-1}\\}\\setminus Pa_{x_m}\\mid Pa_{x_m}", "p(x_1,\\dots,x_{m-1})=\\sum_{x_m}\\prod_{i=1}^{m}p(x_i|Pa_{x_i})=\\prod_{i=1}^{m-1}p(x_i|Pa_{x_i})"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c43",
+      "name": "Sintesi: indipendenza e fattorizzazione danno calcolo efficiente e interpretabilità",
+      "nameEn": "The interplay between independence and factorization ensures both efficient computation and interpretability",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 15}],
+      "detail": "Dopo le dimostrazioni: le reti bayesiane consentono una rappresentazione compatta (compact representation) delle congiunte fattorizzandole in base alle dipendenze codificate in un grafo. L'interazione tra indipendenza e fattorizzazione (interplay between independence and factorization) garantisce sia efficienza di calcolo (efficient computation) sia interpretabilità (interpretability).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c44",
+      "name": "Definizione formale: una rete bayesiana è una coppia (G, p)",
+      "nameEn": "A Bayesian Network is defined as a pair (G, p)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 15}],
+      "detail": "Paragrafo 'Definition' di p.15: una rete bayesiana (Bayesian Network) è definita come coppia (G, p), dove G è un grafo orientato aciclico (DAG) che codifica la struttura di dipendenza tra le variabili (dependency structure), e p è una distribuzione di probabilità congiunta che fattorizza secondo G. La definizione unisce la parte qualitativa (G) e quella quantitativa (p, tramite le CPD); per il teorema c34 equivale a chiedere che G sia un I-map per p.",
+      "latex": ["\\text{BN}=(G,p),\\qquad p(x_1,\\dots,x_m)=\\prod_{i=1}^{m}p(x_i|Pa_{x_i})"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c45",
+      "name": "Distribuzioni di probabilità condizionate (CPD) associate ai nodi",
+      "nameEn": "Conditional probability distributions (CPDs)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 15}],
+      "detail": "La congiunta p è rappresentata come insieme di distribuzioni di probabilità condizionate (conditional probability distributions, CPDs, in grassetto) associate ai nodi di G: ogni CPD specifica la distribuzione di una variabile x_i dati i suoi genitori Pa_{x_i}. La fattorizzazione riduce in modo significativo la complessità di rappresentazione di p, spezzandola in componenti più semplici che riflettono le dipendenze tra variabili. Le CPD sono separate (una per nodo): è ciò che permette di stimarle in modo indipendente nell'apprendimento (domanda d'esame 'disjoint cpd in BN', modulo p05).",
+      "latex": ["\\{\\,p(x_i|Pa_{x_i})\\,\\}_{i=1}^{m}"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c46",
+      "name": "Tabelle di probabilità condizionata (CPT) per variabili discrete",
+      "nameEn": "Conditional Probability Tables (CPTs)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 15}, {"doc": "part2", "page": 16}],
+      "detail": "Se le variabili della rete sono discrete, le CPD sono rappresentate come tabelle di probabilità condizionata (Conditional Probability Tables, CPTs, in grassetto). Ogni CPT fornisce la probabilità di una variabile x_i per ogni possibile configurazione dei suoi genitori Pa_{x_i}. Ogni configurazione dei genitori individua una distribuzione su x_i, che somma a 1. Esempio concreto a p.16: la CPT di C con quattro configurazioni di (A, B), disposte come colonne. Le formule sono un'integrazione (la fonte descrive la CPT solo a parole): u indica una configurazione dei genitori, s un valore di x_i.",
+      "latex": ["P(x_i=s\\mid Pa_{x_i}=\\mathbf{u})\\quad\\forall s,\\ \\forall\\mathbf{u},\\qquad \\sum_{s}P(x_i=s\\mid Pa_{x_i}=\\mathbf{u})=1"],
+      "symbols": [
+        {"s": "\\mathbf{u}", "meaning": "una configurazione dei valori dei genitori"},
+        {"s": "s", "meaning": "un valore (stato) della variabile x_i"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c47",
+      "name": "Dimensione della CPT: k genitori a v stati danno v^k righe",
+      "nameEn": "A node with k parents, each having v states, requires a table with v^k rows",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 15}, {"doc": "part2", "page": 16}],
+      "detail": "Esempio della fonte: un nodo con k genitori, ciascuno con v stati, richiede una tabella con v^k righe per specificare completamente la CPD (una riga per configurazione dei genitori). La crescita è esponenziale nel numero di genitori, non nel numero totale di variabili: per questo il fattore più grande domina il conteggio (c33). Nella rete giocattolo di p.16, C ha k = 2 genitori binari: 2^2 = 4 configurazioni, riportate come colonne. Precisazione: ogni riga contiene la distribuzione di x_i (v_i valori, v_i − 1 liberi).",
+      "latex": ["\\#\\text{righe}=v^{k}", "\\text{rete giocattolo: }C\\ \\text{con}\\ k=2,\\ v=2\\;\\Rightarrow\\;2^2=4\\ \\text{configurazioni di }(A,B)"],
+      "symbols": [
+        {"s": "k", "meaning": "numero di genitori del nodo"},
+        {"s": "v", "meaning": "numero di stati di ciascun genitore"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c48",
+      "name": "Esempio: rete regolatoria giocattolo (geni A, B, C)",
+      "nameEn": "Example: toy regulatory network",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "part2", "page": 16}],
+      "detail": "'An example of this is the following': riquadro verde 'Example: toy regulatory network'. Due affermazioni: i geni A e B hanno probabilità a priori indipendenti (genes A and B have independent prior probabilities); il gene C può essere potenziato (enhanced) sia da A sia da B. Grafo: A → C ← B (A e B radici, C figlio comune, struttura a V detta head-to-head, studiata nel modulo p04). Fattorizzazione implicita: p(A, B, C) = p(A)p(B)p(C|A, B).",
+      "latex": ["p(A,B,C)=p(A)\\,p(B)\\,p(C|A,B)"],
+      "symbols": [
+        {"s": "A,B,C", "meaning": "geni, ciascuno con stato active o inactive"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c49",
+      "name": "Rete giocattolo: le tabelle numeriche (prior di A e B, CPT di C)",
+      "nameEn": "Toy regulatory network: P(value) tables and CPT of C given A and B",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "part2", "page": 16}],
+      "detail": "Tabelle lette dall'immagine: gene A: active 0.3, inactive 0.7; gene B: active 0.3, inactive 0.7. CPT di C, colonne indicizzate da A e poi da B: A active, B active → C active 0.9, inactive 0.1; A active, B inactive → 0.6 / 0.4; A inactive, B active → 0.7 / 0.3; A inactive, B inactive → 0.1 / 0.9. Ogni colonna somma a 1. Lettura: con entrambi gli attivatori accesi C è quasi sempre attivo (0.9), senza nessuno quasi mai (0.1); B da solo potenzia un po' più di A da solo (0.7 contro 0.6). Servono 1 + 1 + 4 = 6 parametri liberi contro i 2^3 − 1 = 7 della congiunta piena (conteggio non nella fonte).",
+      "latex": ["P(A=\\text{active})=0.3,\\quad P(A=\\text{inactive})=0.7", "P(B=\\text{active})=0.3,\\quad P(B=\\text{inactive})=0.7", "P(C=\\text{act}\\,|\\,A,B):\\quad (\\text{a},\\text{a})\\to0.9,\\ \\ (\\text{a},\\text{i})\\to0.6,\\ \\ (\\text{i},\\text{a})\\to0.7,\\ \\ (\\text{i},\\text{i})\\to0.1"],
+      "symbols": [
+        {"s": "\\text{a},\\text{i}", "meaning": "active, inactive"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c50",
+      "name": "Indipendenza (marginale): a ⊥ b | ∅",
+      "nameEn": "Two variables a and b are independent, denoted a ⊥ b | ∅",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 16}],
+      "detail": "Inizio della sezione 'd-separation': due variabili a e b sono indipendenti (independent, in grassetto), in simboli a ⊥ b | ∅ (insieme condizionante vuoto), se la probabilità congiunta di a e b è uguale al prodotto delle marginali: p(a, b) = p(a)·p(b), per tutti i valori di a e b. Equivale a p(a|b) = p(a): osservare b non cambia la distribuzione di a.",
+      "latex": ["a\\perp b\\mid\\emptyset\\;\\Leftrightarrow\\;p(a,b)=p(a)\\cdot p(b)"],
+      "symbols": [
+        {"s": "\\emptyset", "meaning": "insieme condizionante vuoto (indipendenza marginale)"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c51",
+      "name": "Indipendenza condizionata: a ⊥ b | c",
+      "nameEn": "Two variables a and b are conditionally independent given c, denoted a ⊥ b | c",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 16}],
+      "detail": "Due variabili a e b sono condizionatamente indipendenti (conditionally independent, in grassetto) dato c, in simboli a ⊥ b | c, se la probabilità congiunta condizionata di a e b dato c è il prodotto delle singole condizionate: p(a, b|c) = p(a|c)·p(b|c), per ogni valore di c. Indipendenza marginale e condizionata non si implicano a vicenda: due sintomi con causa comune sono dipendenti ma indipendenti data la causa; due cause di un effetto comune sono indipendenti ma diventano dipendenti osservando l'effetto (p04).",
+      "latex": ["a\\perp b\\mid c\\;\\Leftrightarrow\\;p(a,b|c)=p(a|c)\\cdot p(b|c)"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c52",
+      "name": "Verificare le indipendenze con somma e prodotto è laborioso",
+      "nameEn": "Independence assumptions can be verified through repeated applications of the sum and product rules, but this becomes cumbersome",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 16}],
+      "detail": "Le assunzioni di indipendenza si possono verificare matematicamente con applicazioni ripetute delle regole di somma e prodotto, ma il procedimento diventa sempre più laborioso (increasingly cumbersome) per distribuzioni grandi o complesse: per controllare a ⊥ b | c bisogna marginalizzare la congiunta su tutte le altre variabili e confrontare p(a, b|c) con p(a|c)p(b|c) per ogni configurazione, con un numero di termini esponenziale nel numero di variabili.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c53",
+      "name": "I modelli grafici semplificano il ragionamento: il criterio di d-separazione esamina i percorsi",
+      "nameEn": "d-separation criterion: examining the paths in the graph",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 16}],
+      "detail": "I modelli grafici (graphical models, in grassetto), come le reti bayesiane, semplificano la verifica e il ragionamento sull'indipendenza tramite la loro struttura. Il criterio di d-separazione (d-separation criterion, in grassetto) fornisce un modo sistematico per dedurre le assunzioni di indipendenza: stabilisce se due variabili sono indipendenti dato un insieme di condizioni esaminando i percorsi (paths) nel grafo. Le regole per ciascun tipo di percorso sono nel modulo p04.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c54",
+      "name": "Semplicità strutturale e principi probabilistici insieme",
+      "nameEn": "Graphical models combine structural simplicity with probabilistic principles",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 16}],
+      "detail": "I modelli grafici uniscono semplicità strutturale e principi probabilistici per codificare, visualizzare e verificare in modo efficiente (efficiently encode, visualize, and verify) le proprietà di indipendenza, centrali nel ragionamento e nel calcolo probabilistico. Riprende i vantaggi dei PGM di p.11-12.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c55",
+      "name": "d-separazione: criterio strutturale per l'indipendenza (condizionata)",
+      "nameEn": "d-Separation",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 16}],
+      "detail": "Ultima frase di p.16: la d-separazione (d-Separation, in grassetto) è un criterio per determinare se due variabili di una rete bayesiana sono indipendenti (independent) o condizionatamente indipendenti (conditionally independent) in base alla sola struttura della rete, senza guardare i numeri delle CPT. Il contenuto (casi tail-to-tail, head-to-tail, head-to-head, criterio generale, indipendenze globali) è nel modulo p04, che inizia da questa stessa pagina. La formula non è a p.16: usa la notazione dsep(A;B|C) che la fonte introduce più avanti (p.21, modulo p04) e ne anticipa il significato.",
+      "latex": ["\\mathrm{dsep}(A;B\\mid C)\\;\\Rightarrow\\;A\\perp B\\mid C"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c56",
+      "name": "Perché aciclico: il DAG ammette sempre un ordinamento topologico",
+      "nameEn": "Acyclicity guarantees the existence of a topological order",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 12}, {"doc": "part2", "page": 14}],
+      "detail": "Integrazione che collega la definizione (p.12) alla dimostrazione (p.14): un grafo orientato ammette un ordinamento topologico se e solo se è aciclico. Con un ciclo x_i → … → x_i ogni nodo del ciclo dovrebbe venire prima di sé stesso. Senza ordinamento topologico non si potrebbe applicare la regola della catena togliendo solo non-discendenti, e il prodotto ∏ p(x_i|Pa_{x_i}) potrebbe non definire una distribuzione normalizzata. È il motivo per cui una BN richiede un DAG.",
+      "latex": ["G\\ \\text{aciclico}\\;\\Leftrightarrow\\;\\exists\\,\\pi:\\ x_i\\to x_j\\Rightarrow\\pi(i)<\\pi(j)"],
+      "symbols": [
+        {"s": "\\pi", "meaning": "permutazione che dà la posizione di ogni nodo nell'ordinamento"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c57",
+      "name": "Le 7 indipendenze locali del DAG di esempio",
+      "nameEn": "Local independencies I_l(G) of the 7-node example network",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "part2", "page": 12}, {"doc": "part2", "page": 14}],
+      "detail": "Esempio derivato (non scritto nella fonte) applicando la definizione di p.12 alla figura: per ciascun nodo si tolgono dai nodi del grafo il nodo stesso, i suoi discendenti e i suoi genitori. x_1 ⊥ {x_2, x_3}; x_2 ⊥ {x_1, x_3, x_5}; x_3 ⊥ {x_1, x_2}; x_4 ⊥ {x_5} | {x_1, x_2, x_3}; x_5 ⊥ {x_2, x_4, x_6} | {x_1, x_3}; x_6 ⊥ {x_1, x_2, x_3, x_5, x_7} | {x_4}; x_7 ⊥ {x_1, x_2, x_3, x_6} | {x_4, x_5}. Sono esattamente le semplificazioni usate per passare dalla regola della catena alla fattorizzazione del riquadro 'Example' (der03).",
+      "latex": ["x_1\\perp\\{x_2,x_3\\}\\mid\\emptyset,\\qquad x_2\\perp\\{x_1,x_3,x_5\\}\\mid\\emptyset,\\qquad x_3\\perp\\{x_1,x_2\\}\\mid\\emptyset", "x_4\\perp\\{x_5\\}\\mid\\{x_1,x_2,x_3\\},\\qquad x_5\\perp\\{x_2,x_4,x_6\\}\\mid\\{x_1,x_3\\}", "x_6\\perp\\{x_1,x_2,x_3,x_5,x_7\\}\\mid\\{x_4\\},\\qquad x_7\\perp\\{x_1,x_2,x_3,x_6\\}\\mid\\{x_4,x_5\\}"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c58",
+      "name": "Conteggio dei parametri del DAG a 7 nodi (variabili binarie): 21 contro 127",
+      "nameEn": "Parameter count of the 7-node example with binary variables",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "part2", "page": 13}, {"doc": "part2", "page": 14}],
+      "detail": "Esempio derivato che rende concreto il punto 'Number of parameters' di p.13: con variabili binarie, le tre radici richiedono 1 parametro ciascuna; x_4 (3 genitori) 2^3 = 8; x_5 (2 genitori) 4; x_6 (1 genitore) 2; x_7 (2 genitori) 4. Totale 21 parametri liberi, contro 2^7 − 1 = 127 della congiunta piena (128 configurazioni, il '2^m' della fonte). Il fattore più grande, p(x_4|x_1, x_2, x_3), vale da solo 8 dei 21 parametri: è il senso di 'dominated by the largest conditional factor'.",
+      "latex": ["\\underbrace{1+1+1}_{x_1,x_2,x_3}+\\underbrace{8}_{x_4}+\\underbrace{4}_{x_5}+\\underbrace{2}_{x_6}+\\underbrace{4}_{x_7}=21\\ \\ll\\ 2^7-1=127"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c59",
+      "name": "Rete giocattolo: congiunta, marginale di C e indipendenza di A e B dalla fattorizzazione",
+      "nameEn": "Toy regulatory network: joint, marginal of C and marginal independence of A and B",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "part2", "page": 16}],
+      "detail": "Calcoli derivati dalle tabelle di p.16 (non presenti nella fonte). Congiunta = prodotto dei tre fattori, ad esempio P(A=a, B=i, C=a) = 0.3·0.7·0.6 = 0.126; le 8 righe sommano a 1. Marginale P(C=active) = 0.081 + 0.126 + 0.147 + 0.049 = 0.403. Sommando su C, la fattorizzazione dà p(A, B) = p(A)p(B): A e B sono marginalmente indipendenti, come dice la frase 'independent prior probabilities' e come richiede la definizione di p.16. Anticipo per p04: osservando C=active, P(A=active|C=active) = 0.207/0.403 ≈ 0.514; se si osserva anche B=active scende a 0.081/0.228 ≈ 0.355 (spiegazione alternativa, explaining away).",
+      "latex": ["p(A,B)=\\sum_{C}p(A)\\,p(B)\\,p(C|A,B)=p(A)\\,p(B)\\sum_{C}p(C|A,B)=p(A)\\,p(B)", "P(C=\\text{act})=0.3\\cdot0.3\\cdot0.9+0.3\\cdot0.7\\cdot0.6+0.7\\cdot0.3\\cdot0.7+0.7\\cdot0.7\\cdot0.1=0.403"],
+      "symbols": [],
+      "examRelevance": 2
+    }
+  ],
+  "derivations": [
+    {
+      "id": "der01",
+      "title": "Dimostrazione: I-map ⇒ fattorizzazione",
+      "sourcePages": [{"doc": "part2", "page": 14}],
+      "goal": "Se G è un I-map per p, allora p(x_1,…,x_m) = ∏ p(x_i|Pa_{x_i}).",
+      "steps": [
+        "\\left\\{\\forall i,\\; x_i\\perp \\mathit{NonDescendants}_{x_i}\\mid \\mathit{Parents}_{x_i}\\right\\}",
+        "x_i\\to x_j\\ \\text{in}\\ G\\;\\Rightarrow\\;i<j",
+        "p(x_1,\\dots,x_m)=\\prod_{i=1}^{m}p(x_i|x_1,\\dots,x_{i-1})",
+        "Pa_{x_i}\\subseteq\\{x_1,\\dots,x_{i-1}\\}\\subseteq \\mathit{NonDescendants}_{x_i}",
+        "p(x_i|x_1,\\dots,x_{i-1})=p(x_i|Pa_{x_i})",
+        "p(x_1,\\dots,x_m)=\\prod_{i=1}^{m}p(x_i|Pa_{x_i})"
+      ],
+      "stepWhy": [
+        "Passo 1 della fonte: poiché G è un I-map, I_l(G) ⊆ I(p), quindi p soddisfa (almeno) tutte le indipendenze locali di G.",
+        "Passo 2: si numerano le variabili in un ordine topologico, che esiste perché G è aciclico; ogni genitore precede i suoi figli.",
+        "Passo 3: regola della catena, valida per qualunque distribuzione e qualunque ordine; è la regola del prodotto applicata ripetutamente.",
+        "Passaggio implicito nella fonte: nell'ordine topologico tutti i genitori di x_i hanno indice minore; nessun predecessore può essere un discendente di x_i, perché un discendente viene dopo x_i.",
+        "Passo 4: per l'indipendenza locale del passo 1, condizionare sui predecessori non-genitori (tutti non-discendenti) non cambia la distribuzione di x_i una volta noti i genitori.",
+        "Si sostituisce ogni fattore della regola della catena ('Substituting back gives the factorized form'): p fattorizza secondo G."
+      ],
+      "concepts": ["c20", "c34", "c36", "c37", "c38", "c56"]
+    },
+    {
+      "id": "der02",
+      "title": "Dimostrazione: fattorizzazione ⇒ I-map",
+      "sourcePages": [{"doc": "part2", "page": 14}, {"doc": "part2", "page": 15}],
+      "goal": "Se p fattorizza secondo G, allora G è un I-map per p (p soddisfa tutte le indipendenze locali di G).",
+      "steps": [
+        "p(x_1,\\dots,x_m)=\\prod_{i=1}^{m}p(x_i|Pa_{x_i})",
+        "p(x_m|x_1,\\dots,x_{m-1})=\\frac{p(x_1,\\dots,x_m)}{p(x_1,\\dots,x_{m-1})}=\\frac{p(x_1,\\dots,x_m)}{\\sum_{x_m}p(x_1,\\dots,x_m)}",
+        "p(x_m|x_1,\\dots,x_{m-1})=\\frac{\\prod_{i=1}^{m}p(x_i|Pa_{x_i})}{\\sum_{x_m}\\prod_{i=1}^{m}p(x_i|Pa_{x_i})}",
+        "p(x_m|x_1,\\dots,x_{m-1})=\\frac{p(x_m|Pa_{x_m})\\prod_{i=1}^{m-1}p(x_i|Pa_{x_i})}{\\prod_{i=1}^{m-1}p(x_i|Pa_{x_i})\\sum_{x_m}p(x_m|Pa_{x_m})}=\\frac{p(x_m|Pa_{x_m})}{\\sum_{x_m}p(x_m|Pa_{x_m})}",
+        "\\sum_{x_m}p(x_m|Pa_{x_m})=1",
+        "p(x_m|x_1,\\dots,x_{m-1})=p(x_m|Pa_{x_m})",
+        "x_m\\perp\\{x_1,\\dots,x_{m-1}\\}\\setminus Pa_{x_m}\\mid Pa_{x_m}",
+        "p(x_1,\\dots,x_{m-1})=\\prod_{i=1}^{m-1}p(x_i|Pa_{x_i})\\sum_{x_m}p(x_m|Pa_{x_m})=\\prod_{i=1}^{m-1}p(x_i|Pa_{x_i})"
+      ],
+      "stepWhy": [
+        "Passo 1 della fonte: ipotesi; la fattorizzazione vale per la distribuzione completa ('must hold for the full probability distribution').",
+        "Passo 2: si considera l'ultima variabile x_m di un ordine topologico. Regola del prodotto: condizionata = congiunta / marginale; regola della somma: la marginale delle prime m−1 variabili si ottiene sommando la congiunta su x_m.",
+        "Passo 3: si sostituisce la fattorizzazione sia al numeratore sia dentro la somma del denominatore.",
+        "Isolamento del termine di x_m: poiché x_m è ultima, non è genitore di nessun nodo, quindi l'unico fattore che contiene x_m è p(x_m|Pa_{x_m}); gli altri m−1 fattori sono costanti rispetto alla somma su x_m, escono dalla somma e si semplificano con quelli del numeratore.",
+        "Proprietà di normalizzazione di una distribuzione condizionata: per ogni configurazione dei genitori, la CPD somma a 1 sui valori di x_m.",
+        "Il denominatore vale 1: la distribuzione di x_m dati tutti gli altri predecessori dipende solo dai genitori (risultato della fonte).",
+        "Interpretazione (implicita nella fonte): essendo x_m ultima, tutti gli altri nodi sono suoi non-discendenti; l'uguaglianza precedente è la definizione di indipendenza condizionata, cioè l'indipendenza locale di x_m.",
+        "Passo di ripetizione ('Repeat this process for all variables'), esplicitato: sommando su x_m il suo fattore sparisce, quindi la marginale delle prime m−1 variabili fattorizza secondo il grafo privato di x_m e il ragionamento si riapplica a x_{m−1}. Per un nodo generico si usa un ordine topologico che lo metta dopo tutti i suoi non-discendenti. Ottenute tutte le indipendenze locali, I_l(G) ⊆ I(p): G è un I-map."
+      ],
+      "concepts": ["c08", "c34", "c39", "c40", "c41", "c42"]
+    },
+    {
+      "id": "der03",
+      "title": "Dalla regola della catena alla fattorizzazione del DAG a 7 nodi",
+      "sourcePages": [{"doc": "part2", "page": 14}],
+      "goal": "Ricavare la fattorizzazione del riquadro 'Example' di p.14 applicando la dimostrazione I-map ⇒ fattorizzazione al DAG della figura (passaggi non scritti nella fonte).",
+      "steps": [
+        "p(x_1,\\dots,x_7)=p(x_1)\\,p(x_2|x_1)\\,p(x_3|x_1,x_2)\\,p(x_4|x_1,x_2,x_3)\\,p(x_5|x_1,\\dots,x_4)\\,p(x_6|x_1,\\dots,x_5)\\,p(x_7|x_1,\\dots,x_6)",
+        "p(x_2|x_1)=p(x_2),\\qquad p(x_3|x_1,x_2)=p(x_3)",
+        "p(x_4|x_1,x_2,x_3)\\ \\text{resta invariato}",
+        "p(x_5|x_1,x_2,x_3,x_4)=p(x_5|x_1,x_3)",
+        "p(x_6|x_1,\\dots,x_5)=p(x_6|x_4)",
+        "p(x_7|x_1,\\dots,x_6)=p(x_7|x_4,x_5)",
+        "p(x_1,\\dots,x_7)=p(x_1)p(x_2)p(x_3)p(x_4|x_1,x_2,x_3)\\,p(x_5|x_1,x_3)p(x_6|x_4)p(x_7|x_4,x_5)"
+      ],
+      "stepWhy": [
+        "L'ordine x_1, …, x_7 è topologico (ogni arco va da indice minore a indice maggiore); si applica la regola della catena.",
+        "x_2 e x_3 sono radici: nessun genitore, e x_1 (e x_2) sono loro non-discendenti; per l'indipendenza locale x_2 ⊥ {x_1, x_3, x_5} e x_3 ⊥ {x_1, x_2} i condizionamenti spariscono.",
+        "Tutti i predecessori di x_4 sono suoi genitori: nulla da togliere.",
+        "x_2 e x_4 sono non-discendenti di x_5 e non genitori: x_5 ⊥ {x_2, x_4, x_6} | {x_1, x_3}.",
+        "x_6 ⊥ {x_1, x_2, x_3, x_5, x_7} | {x_4}: resta solo il genitore x_4.",
+        "x_6 non è raggiungibile da x_7, quindi è un non-discendente: x_7 ⊥ {x_1, x_2, x_3, x_6} | {x_4, x_5}.",
+        "Si rimettono insieme i fattori semplificati: è la formula del riquadro verde di p.14."
+      ],
+      "concepts": ["c35", "c37", "c38", "c57"]
+    },
+    {
+      "id": "der04",
+      "title": "Posterior Dirichlet e probabilità predittiva della multinomiale",
+      "sourcePages": [{"doc": "part2", "page": 10}, {"doc": "part2", "page": 11}],
+      "goal": "Mostrare che la posterior è Dir(N_k + α_k) e che la predittiva vale (N_k + α_k)/(N + α), con limite MLE per α → 0.",
+      "steps": [
+        "P(\\boldsymbol{\\theta}|D,\\psi)\\propto P(D|\\boldsymbol{\\theta})\\,P(\\boldsymbol{\\theta}|\\psi)",
+        "p(D|\\boldsymbol{\\theta})=\\prod_{k=1}^{r}\\theta_k^{N_k},\\qquad P(\\boldsymbol{\\theta}|\\psi)\\propto\\prod_{k=1}^{r}\\theta_k^{\\alpha_k-1}",
+        "P(\\boldsymbol{\\theta}|D,\\psi)\\propto\\prod_{k=1}^{r}\\theta_k^{N_k}\\,\\theta_k^{\\alpha_k-1}",
+        "P(\\boldsymbol{\\theta}|D,\\psi)\\propto\\prod_{k=1}^{r}\\theta_k^{N_k+\\alpha_k-1}",
+        "P(x_k|D)=\\int\\theta_k\\,P(\\boldsymbol{\\theta}|D,\\psi)\\,d\\boldsymbol{\\theta}=E_{P(\\boldsymbol{\\theta}|D,\\psi)}[\\theta_k]",
+        "E_{\\mathrm{Dir}(\\beta_1,\\dots,\\beta_r)}[\\theta_k]=\\frac{\\beta_k}{\\sum_{j=1}^{r}\\beta_j}",
+        "E_{P(\\boldsymbol{\\theta}|D,\\psi)}[\\theta_k]=\\frac{N_k+\\alpha_k}{\\sum_{j}(N_j+\\alpha_j)}=\\frac{N_k+\\alpha_k}{N+\\alpha}",
+        "\\frac{N_k+\\alpha_k}{N+\\alpha}=\\frac{N}{N+\\alpha}\\cdot\\frac{N_k}{N}+\\frac{\\alpha}{N+\\alpha}\\cdot\\frac{\\alpha_k}{\\alpha}",
+        "\\lim_{\\alpha\\to0}\\frac{N_k+\\alpha_k}{N+\\alpha}=\\frac{N_k}{N}"
+      ],
+      "stepWhy": [
+        "Teorema di Bayes per i parametri (p.10): posterior ∝ verosimiglianza × prior; l'evidenza non dipende da θ.",
+        "Verosimiglianza multinomiale di p.10 (N_k conteggi dell'esito k) e nucleo della densità di Dirichlet.",
+        "Sostituzione (prima formula di p.11).",
+        "Prodotto di potenze con la stessa base: gli esponenti si sommano ('Simplifying'). È il nucleo di una Dirichlet con parametri N_k + α_k: prior coniugata.",
+        "Predittiva bayesiana: si marginalizza θ; nella multinomiale P(x_k|θ) = θ_k, quindi l'integrale è la media a posteriori di θ_k.",
+        "Proprietà nota della Dirichlet (non dimostrata nella fonte): la media di una componente è il suo parametro diviso la somma dei parametri.",
+        "Con β_k = N_k + α_k la somma dei parametri è N + α: risultato di p.11.",
+        "Riscrittura algebrica (non nella fonte): media pesata tra la frequenza osservata (MLE) e la media a priori α_k/α, con peso dei dati N/(N+α).",
+        "Per α → 0 (e quindi ogni α_k → 0) il peso della prior si annulla: si ritrova la stima ML θ*_k = N_k/N di p.10. Per α grande pesa di più la prior."
+      ],
+      "concepts": ["c01", "c02", "c03", "c04", "c07"]
+    },
+    {
+      "id": "der05",
+      "title": "Conteggio dei parametri: congiunta piena contro rete bayesiana",
+      "sourcePages": [{"doc": "part2", "page": 13}, {"doc": "part2", "page": 15}],
+      "goal": "Giustificare i due punti della fonte ('2^m parameters' e 'v^k rows') e il conteggio complessivo di una BN (integrazione).",
+      "steps": [
+        "|\\{0,1\\}^m|=2^m\\ \\text{configurazioni}\\;\\Rightarrow\\;2^m-1\\ \\text{parametri liberi}",
+        "\\text{CPT di }x_i\\text{ con }k\\text{ genitori a }v\\text{ stati: }v^{k}\\ \\text{righe}",
+        "\\text{parametri liberi della CPT}=(v_i-1)\\,v^{k}",
+        "\\#\\text{parametri BN}=\\sum_{i=1}^{m}(v_i-1)\\prod_{x_j\\in Pa_{x_i}}v_j",
+        "\\text{binario, }|Pa_{x_i}|\\le k:\\ \\#\\text{parametri}\\le m\\,2^{k}",
+        "\\text{DAG a 7 nodi: }1+1+1+8+4+2+4=21\\ \\ \\text{contro}\\ \\ 2^7-1=127"
+      ],
+      "stepWhy": [
+        "Una tabella congiunta ha una probabilità per ogni combinazione di valori; il vincolo di somma 1 ne rende una ridondante. La fonte dice '2^m parameters' contando le configurazioni.",
+        "Una riga per ogni combinazione di valori dei k genitori (p.15).",
+        "Ogni riga è una distribuzione su v_i valori che somma a 1: v_i − 1 numeri liberi per riga.",
+        "Somma sui nodi delle CPT (le CPD sono disgiunte): il totale è determinato dalle distribuzioni condizionate locali (p.13).",
+        "Se nessun nodo ha più di k genitori il totale cresce linearmente in m, non esponenzialmente; il termine più grande domina ('dominated by the largest conditional factor').",
+        "Applicazione alla figura di p.12/14 (c58): il fattore di x_4 da solo vale 8."
+      ],
+      "concepts": ["c30", "c33", "c47", "c58"]
+    },
+    {
+      "id": "der06",
+      "title": "Rete giocattolo: indipendenza marginale di A e B e marginale di C",
+      "sourcePages": [{"doc": "part2", "page": 16}],
+      "goal": "Usare la fattorizzazione della rete A → C ← B per verificare A ⊥ B | ∅ (definizione di p.16) e calcolare P(C=active) con i numeri della fonte (calcoli non presenti nella fonte).",
+      "steps": [
+        "p(A,B,C)=p(A)\\,p(B)\\,p(C|A,B)",
+        "p(A,B)=\\sum_{C}p(A,B,C)=p(A)\\,p(B)\\sum_{C}p(C|A,B)",
+        "\\sum_{C}p(C|A,B)=1\\;\\Rightarrow\\;p(A,B)=p(A)\\,p(B)\\;\\Rightarrow\\;A\\perp B\\mid\\emptyset",
+        "P(C=\\text{act})=\\sum_{A,B}P(A)\\,P(B)\\,P(C=\\text{act}|A,B)",
+        "P(C=\\text{act})=0.3\\cdot0.3\\cdot0.9+0.3\\cdot0.7\\cdot0.6+0.7\\cdot0.3\\cdot0.7+0.7\\cdot0.7\\cdot0.1",
+        "P(C=\\text{act})=0.081+0.126+0.147+0.049=0.403",
+        "P(A=\\text{act}|C=\\text{act})=\\frac{0.081+0.126}{0.403}\\approx0.514"
+      ],
+      "stepWhy": [
+        "Fattorizzazione secondo il grafo A → C ← B: un fattore per nodo, radici con la loro prior.",
+        "Regola della somma: si marginalizza C; p(A)p(B) non dipende da C ed esce dalla somma.",
+        "Normalizzazione della CPT (ogni colonna somma a 1); si ottiene la definizione di indipendenza marginale di p.16, coerente con 'independent prior probabilities'.",
+        "Regola della somma sulla congiunta fattorizzata, sommando sulle quattro configurazioni dei genitori.",
+        "Valori letti dalle tabelle di p.16.",
+        "Somma dei quattro termini: C è attivo nel 40.3% dei casi.",
+        "Regola di Bayes: numeratore = righe con A attivo e C attivo (0.081 + 0.126 = 0.207). Osservare C alza la probabilità di A da 0.3 a circa 0.514: anticipo dell'inferenza nel collider (p04)."
+      ],
+      "concepts": ["c48", "c49", "c50", "c59"]
+    }
+  ],
+  "workedExamples": [
+    {
+      "id": "ex01",
+      "title": "Fattorizzazione della rete a 7 nodi",
+      "sourcePages": [{"doc": "part2", "page": 12}, {"doc": "part2", "page": 13}, {"doc": "part2", "page": 14}],
+      "description": "Rete della figura (p.12, ripetuta a p.14) con archi x_1 → x_4, x_1 → x_5, x_2 → x_4, x_3 → x_4, x_3 → x_5, x_4 → x_6, x_4 → x_7, x_5 → x_7. 'For the following Bayesian Network the factorization is the following': p(x_1,…,x_7) = p(x_1)p(x_2)p(x_3)p(x_4|x_1,x_2,x_3)p(x_5|x_1,x_3)p(x_6|x_4)p(x_7|x_4,x_5). Integrazioni coerenti con la fonte: le 7 indipendenze locali (c57) e, con variabili binarie, 21 parametri liberi contro 127 della congiunta piena (c58).",
+      "concepts": ["c18", "c35", "c57", "c58"]
+    },
+    {
+      "id": "ex02",
+      "title": "Rete regolatoria giocattolo",
+      "sourcePages": [{"doc": "part2", "page": 16}],
+      "description": "Geni A e B con probabilità a priori indipendenti, gene C potenziato da entrambi; grafo A → C ← B. Tabelle: P(A=active) = 0.3, P(A=inactive) = 0.7; P(B=active) = 0.3, P(B=inactive) = 0.7; CPT di C: (A active, B active) → C active 0.9 / inactive 0.1; (active, inactive) → 0.6 / 0.4; (inactive, active) → 0.7 / 0.3; (inactive, inactive) → 0.1 / 0.9. Calcoli derivati (non nella fonte): congiunta di 8 righe 0.081, 0.009, 0.126, 0.084, 0.147, 0.063, 0.049, 0.441 (somma 1); P(C=active) = 0.403; A ⊥ B marginalmente; P(A=active|C=active) ≈ 0.514, P(A=active|C=active, B=active) ≈ 0.355, P(A=active|C=active, B=inactive) = 0.72; parametri liberi 6 contro 7 della congiunta piena.",
+      "concepts": ["c46", "c47", "c48", "c49", "c59"]
+    },
+    {
+      "id": "ex03",
+      "title": "Dimensione di una CPT",
+      "sourcePages": [{"doc": "part2", "page": 15}, {"doc": "part2", "page": 16}],
+      "description": "Esempio generale della fonte: un nodo con k genitori, ciascuno con v stati, richiede una tabella con v^k righe. Istanza nella rete giocattolo: C ha k = 2 genitori binari, quindi 2^2 = 4 configurazioni di (A, B), che nella slide sono le 4 colonne; ogni colonna ha 2 valori (active, inactive) che sommano a 1, quindi 4 parametri liberi. Istanza nel DAG a 7 nodi (binario): x_4 con 3 genitori ha 2^3 = 8 righe.",
+      "concepts": ["c46", "c47"]
+    }
+  ],
+  "figures": [
+    {
+      "id": "fig01",
+      "doc": "part2",
+      "page": 12,
+      "description": "DAG di esempio a 7 nodi (cerchi rossi su sfondo lilla, x_1 in alto, x_2 e x_3 ai lati, x_4 e x_5 al centro, x_6 e x_7 in basso) con gli 8 archi x_1→x_4, x_1→x_5, x_2→x_4, x_3→x_4, x_3→x_5, x_4→x_6, x_4→x_7, x_5→x_7. Illustra la definizione di BN: nodi = variabili aleatorie, archi = dipendenze dirette.",
+      "region": "centro della pagina, sotto l'elenco 'Each node… / Each directed edge…'",
+      "concepts": ["c15", "c16", "c17", "c18", "c22", "c23"],
+      "importance": 3
+    },
+    {
+      "id": "fig02",
+      "doc": "part2",
+      "page": 14,
+      "description": "Lo stesso DAG a 7 nodi di p.12, ripetuto per l'esempio di fattorizzazione.",
+      "region": "in alto al centro",
+      "concepts": ["c18", "c35"],
+      "importance": 2
+    },
+    {
+      "id": "fig03",
+      "doc": "part2",
+      "page": 14,
+      "description": "Riquadro verde 'Example' con la fattorizzazione p(x_1,…,x_7) = p(x_1)p(x_2)p(x_3)p(x_4|x_1,x_2,x_3)p(x_5|x_1,x_3)p(x_6|x_4)p(x_7|x_4,x_5).",
+      "region": "sotto il grafo, prima del paragrafo 'Proofs'",
+      "concepts": ["c32", "c35"],
+      "importance": 3
+    },
+    {
+      "id": "fig04",
+      "doc": "part2",
+      "page": 16,
+      "description": "Riquadro verde 'Example: toy regulatory network': a sinistra le tabelle P(value) dei geni A e B (active 0.3, inactive 0.7), a destra il grafo A → C ← B, in basso la CPT di C con colonne indicizzate da A (active/inactive) e B (active/inactive): C active 0.9, 0.6, 0.7, 0.1; C inactive 0.1, 0.4, 0.3, 0.9.",
+      "region": "metà superiore della pagina",
+      "concepts": ["c46", "c47", "c48", "c49"],
+      "importance": 3
+    }
+  ],
+  "widgets": [
+    {
+      "id": "p03-dirichlet-aggiorna-i-conteggi",
+      "title": "Email dopo email: la Dirichlet si aggiorna sommando i conteggi",
+      "concepts": ["c01", "c02", "c03", "c04"],
+      "scenario": "spam",
+      "realExample": "Filtro antispam: si stima la probabilità θ_k che la parola chiave di un'email di spam sia la k-esima tra r = 6 parole ('gratis', 'offerta', 'vinci', 'clicca', 'fattura', 'bonifico'). Dati sintetici: 20 email di spam con conteggi N = (7, 5, 4, 3, 1, 0). Prior di Dirichlet con α_k = 1 (smoothing di Laplace). La stima serve a predire la parola della prossima email e a non assegnare probabilità zero a 'bonifico', mai vista, che altrimenti azzererebbe il punteggio di un'email nel naive Bayes.",
+      "storyboard": [
+        "Stato iniziale: sei barre verticali, una per parola, alte quanto i pseudo-conteggi α_k = 1 (blocchetti grigi tratteggiati). A destra la formula P(θ|D,ψ) ∝ ∏ θ_k^{N_k} θ_k^{α_k−1} con tutti gli N_k = 0.",
+        "Play: le 20 email cadono una alla volta nella casella in alto (circa 250 ms ciascuna); ogni email evidenzia la sua parola e un blocchetto colorato si impila sulla barra corrispondente, sopra i blocchi grigi della prior.",
+        "A ogni email gli esponenti nella formula si aggiornano; poi l'animazione 'Simplifying' fa scivolare l'esponente N_k accanto a α_k − 1 e li fonde in N_k + α_k − 1. Appare il badge 'ancora una Dirichlet: Dir(α_1+N_1, …, α_6+N_6)' con i numeri correnti (8, 6, 5, 4, 2, 1 alla fine).",
+        "Pannello 'posterior': per la parola selezionata si disegna la densità marginale Beta(N_k + α_k, N + α − N_k − α_k), che si restringe man mano che arrivano email; una linea verticale segna la media.",
+        "Pannello 'predizione': barre orizzontali P(x_k|D) = (N_k + α_k)/(N + α) accanto al valore ML N_k/N (tratteggiato). Alla fine: 0.308, 0.231, 0.192, 0.154, 0.077, 0.038 contro 0.35, 0.25, 0.20, 0.15, 0.05, 0. La riga di 'bonifico' lampeggia in rosso: ML dà 0, Bayes 1/26.",
+        "Modalità libera: cliccando una parola si aggiunge un'email con quella parola; barre, formula e predizione si aggiornano con transizioni di 300 ms."
+      ],
+      "interactions": ["Play, Pausa, Passo per far arrivare le email", "clic su una parola per aggiungere un'email (N_k + 1)", "slider α_k per ciascuna parola da 0.01 a 20", "selettore della parola di cui vedere la densità marginale", "pulsante Reset"],
+      "visual": "Barre impilate (grigio = pseudo-conteggi α_k, colore = conteggi reali N_k), curva Beta marginale con media, formula con esponenti che si fondono, tabella Bayes contro ML con i valori numerici live; etichetta 'dati sintetici ispirati a un filtro antispam'.",
+      "aha": "Aggiornare una Dirichlet vuol dire solo sommare i conteggi osservati agli iperparametri: la posterior ha la stessa forma della prior e la predizione è una frequenza corretta dai pseudo-conteggi, mai nulla.",
+      "formulasShown": ["P(\\boldsymbol{\\theta}|D,\\psi)\\propto\\prod_{k=1}^{r}\\theta_k^{N_k}\\,\\theta_k^{\\alpha_k-1}=\\prod_{k=1}^{r}\\theta_k^{N_k+\\alpha_k-1}", "P(x_k|D)=E_{P(\\boldsymbol{\\theta}|D,\\psi)}[\\theta_k]=\\frac{N_k+\\alpha_k}{N+\\alpha}"],
+      "challenge": "Prima di premere Play prevedi P('bonifico'|D) dopo le 20 email con α_k = 1 (risposta 1/26 ≈ 0.038). Poi trova quante email con 'gratis' vanno aggiunte perché P('gratis'|D) superi 0.40 (con N_1 = 7 + n: (8 + n)/(26 + n) > 0.4 per n ≥ 5).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p03-pseudoconteggi-dimensione-equivalente",
+      "title": "Quanto pesa la prior? Email immaginarie ed equivalent sample size",
+      "concepts": ["c05", "c06", "c07"],
+      "scenario": "spam",
+      "realExample": "Lo stesso filtro antispam riceve la prior dalle statistiche dell'anno scorso: media a priori m = (0.2, 0.2, 0.2, 0.2, 0.1, 0.1) sulle 6 parole, tradotta in α_k = α·m_k. Il progettista deve decidere quanta fiducia dare alla prior (α = equivalent sample size) rispetto alle N email nuove, tenendo conto che lo spam cambia nel tempo.",
+      "storyboard": [
+        "Una bilancia: sul piatto sinistro N = 20 icone di buste reali, sul destro α buste semitrasparenti ('email immaginarie'); sotto il fulcro compaiono i pesi N/(N+α) e α/(N+α).",
+        "Muovendo lo slider α (scala logaritmica da 0.01 a 1000) le buste immaginarie compaiono o spariscono a gruppi; la bilancia si inclina con una molla (circa 400 ms).",
+        "Per ciascuna parola una barra di stima scorre tra due marcatori: la frequenza osservata N_k/N (blu) e la media a priori α_k/α (arancio). La formula della media pesata mostra i numeri sostituiti.",
+        "Con α sotto 0.1 le barre si appoggiano ai marcatori blu e compare il badge 'prior non informativa: stima bayesiana = MLE'. Con α sopra 500 si appoggiano agli arancio: 'la prior domina'.",
+        "Slider N (0-500 email generate con seed dalla distribuzione vera sintetica θ_vera = (0.34, 0.25, 0.19, 0.14, 0.05, 0.03); per N = 20 si usano i conteggi fissi (7, 5, 4, 3, 1, 0)): a α fisso, aumentando N le barre tornano verso le frequenze osservate (transizione 300 ms), perché i dati sommergono le email immaginarie; il peso dei dati N/(N+α) è mostrato come percentuale live.",
+        "In basso un grafico della stima di 'gratis' in funzione di log α: curva a S tra 0.35 (MLE) e 0.20 (prior); un punto mobile segue lo slider."
+      ],
+      "interactions": ["slider α (equivalent sample size) in scala logaritmica 0.01-1000", "slider N delle email osservate 0-500", "trascinamento delle barre arancio per cambiare la media a priori m_k", "interruttore 'α_k uniformi' (m_k = 1/r)"],
+      "visual": "Bilancia con icone di buste reali e immaginarie, barre di stima tra marcatori MLE (blu) e prior (arancio), curva della stima in funzione di log α, formula con i pesi numerici live.",
+      "aha": "Gli α_k si leggono come email già viste prima dei dati e α come il loro numero totale: con poche email immaginarie la prior sparisce (MLE), con molte i dati faticano a spostarla.",
+      "formulasShown": ["\\alpha=\\sum_{k=1}^{r}\\alpha_k", "\\frac{N_k+\\alpha_k}{N+\\alpha}=\\frac{N}{N+\\alpha}\\cdot\\frac{N_k}{N}+\\frac{\\alpha}{N+\\alpha}\\cdot\\frac{\\alpha_k}{\\alpha}", "\\lim_{\\alpha\\to0}\\frac{N_k+\\alpha_k}{N+\\alpha}=\\frac{N_k}{N}"],
+      "challenge": "Trova il valore di α per cui la stima di 'gratis' sta esattamente a metà tra frequenza osservata e prior (risposta: α = N = 20). Poi prevedi se raddoppiando N la stessa α pesa di più o di meno.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p03-somma-e-prodotto-a-mano",
+      "title": "128 righe a mano: perché servono i modelli grafici",
+      "concepts": ["c08", "c09", "c52"],
+      "scenario": "medicina",
+      "realExample": "Ambulatorio di cardiologia con 7 variabili binarie per paziente: età avanzata, fumo, familiarità, cardiopatia ischemica, ipertensione, alterazione del tratto ST all'ECG, dispnea da sforzo. Il medico vuole P(cardiopatia | ST alterato) e sapere se l'ipertensione è indipendente dalla cardiopatia date età, fumo e familiarità. Senza grafo l'unico strumento è la tabella congiunta di 2^7 = 128 righe (dati sintetici) con regole di somma e prodotto.",
+      "storyboard": [
+        "Una tabella di 128 righe scorre in verticale; in alto la domanda 'P(cardiopatia = 1 | ST = 1)?'.",
+        "Passo 'regola del prodotto': la domanda si trasforma in p(x_4 = 1, x_6 = 1) / p(x_6 = 1); la frazione si apre in numeratore e denominatore.",
+        "Passo 'regola della somma' (circa 2 s): le 32 righe con x_4 = 1 e x_6 = 1 si accendono in verde e scorrono in un sommatore (contatore: 31 addizioni, risultato 0.1253); poi le 64 righe con x_6 = 1 in blu (63 addizioni, risultato 0.2074); compare il risultato P(x_4 = 1 | x_6 = 1) = 0.1253 / 0.2074 ≈ 0.604 (CPT sintetiche dichiarate in p03-teorema-imap-fattorizzazione).",
+        "Seconda domanda 'x_5 ⊥ x_4 | x_1, x_2, x_3?': il widget marginalizza x_6 e x_7 (32 valori × 3 addizioni = 96), calcola p(x_1, x_2, x_3) (8 × 3 = 24 addizioni), p(x_4|·) e p(x_5|·) (32 addizioni, 64 divisioni), i 32 prodotti p(x_4|·)p(x_5|·) e i 32 confronti; il contatore sale a 248 operazioni più 32 confronti e lampeggia 'cumbersome'. Verdetto: vero (è l'indipendenza locale di x_4).",
+        "Transizione finale: le 128 righe si comprimono (morph di 800 ms) in 7 cerchi collegati da 8 frecce. Didascalia: 'PGM: rappresentazione grafica degli aspetti qualitativi'; nessun numero è visibile, solo chi influenza direttamente chi."
+      ],
+      "interactions": ["pulsante Passo avanti/indietro", "menu della domanda: marginale, condizionata, verifica di indipendenza", "slider del numero di variabili m da 3 a 20 per vedere crescere le righe da sommare", "interruttore 'mostra solo la struttura'"],
+      "visual": "Tabella congiunta scorrevole con righe evidenziate per ruolo (verde numeratore, blu denominatore), contatori di addizioni e moltiplicazioni, formula della regola usata al passo corrente, grafo a 7 nodi alla fine.",
+      "aha": "Somma e prodotto bastano per qualunque domanda, ma sulla tabella piena il lavoro esplode; il grafo cattura la parte qualitativa e rende visibile ciò che la tabella nasconde.",
+      "formulasShown": ["p(x)=\\sum_{y}p(x,y)", "p(x,y)=p(x|y)\\,p(y)", "P(x_4=1|x_6=1)=\\frac{\\sum_{x_1,x_2,x_3,x_5,x_7}p(x_1,\\dots,x_7)\\big|_{x_4=1,x_6=1}}{\\sum_{x_1,\\dots,x_5,x_7}p(x_1,\\dots,x_7)\\big|_{x_6=1}}", "P(x_4=1|x_6=1)=\\frac{0.1253}{0.2074}\\approx0.604"],
+      "challenge": "Quante righe della tabella piena vanno sommate per ottenere P(x_7 = 1) con 7 variabili? E con m = 20? (2^6 = 64; 2^19 = 524288).",
+      "size": "M",
+      "tech": "html+motion"
+    },
+    {
+      "id": "p03-quattro-superpoteri-dei-pgm",
+      "title": "Quattro superpoteri di un grafo probabilistico",
+      "concepts": ["c10", "c11", "c12", "c13"],
+      "scenario": "medicina",
+      "realExample": "La stessa rete cardiologica a 7 nodi (età, fumo, familiarità → cardiopatia; età, familiarità → ipertensione; cardiopatia → ST all'ECG; cardiopatia, ipertensione → dispnea) usata come supporto decisionale: il clinico deve leggerla, sapere quali variabili sono irrilevanti per una domanda, calcolare velocemente e poter passare da variabili binarie a misure continue (pressione in mmHg, età in anni).",
+      "storyboard": [
+        "Scheda 'Visualizza': il grafo si disegna nodo per nodo (150 ms per nodo, poi 200 ms per arco); passando sopra un arco compare la frase 'il fumo influenza direttamente la cardiopatia'; un contatore confronta '7 nodi, 8 frecce, 21 parametri' con '128 righe, 127 parametri'.",
+        "Scheda 'Identifica': pulsante 'mostra indipendenze'; per il nodo scelto i non-discendenti non genitori si colorano di verde (fade 300 ms) con l'etichetta '⊥ dati i genitori' (anticipo di c20), ad esempio per l'ipertensione x_5: fumo, cardiopatia, ST.",
+        "Scheda 'Calcola' (Play, circa 3 s): due contatori affiancati per P(dispnea = 1): forza bruta 64 termini da 7 fattori (384 moltiplicazioni + 63 addizioni = 447 operazioni) contro calcolo guidato dal grafo (il fattore di ST sparisce perché somma a 1, le somme entrano nei fattori: 68 moltiplicazioni + 23 addizioni = 91 operazioni); il secondo contatore si ferma prima ed entrambi mostrano P(dispnea = 1) ≈ 0.180 con le CPT sintetiche dichiarate in p03-teorema-imap-fattorizzazione.",
+        "Scheda 'Astrai': interruttore 'discreto ↔ continuo'; le mini-tabelle sui nodi si trasformano (morph 600 ms) in curve gaussiane condizionate (pressione sistolica in mmHg con media che dipende da età e familiarità, età in anni) mentre il grafo resta identico, con il badge 'stesse indipendenze'."
+      ],
+      "interactions": ["quattro schede", "hover sugli archi", "clic su un nodo per le indipendenze", "interruttore discreto/continuo", "pulsante 'calcola' con animazione dei contatori"],
+      "visual": "Grafo a 7 nodi con etichette cliniche; mini-CPT o mini-gaussiane incollate ai nodi; contatori di operazioni; colori per ruolo (genitori blu, non-discendenti verdi).",
+      "aha": "Il grafo è un linguaggio comune: lo stesso disegno si legge a colpo d'occhio, rivela indipendenze, accorcia i calcoli e vale sia per tabelle sia per densità continue.",
+      "formulasShown": ["p(x_1,\\dots,x_7)=\\prod_{i=1}^{7}p(x_i|Pa_{x_i})", "447\\ \\text{operazioni (forza bruta)}\\ \\text{contro}\\ 91\\ \\text{(con la struttura)}:\\quad P(x_7=1)\\approx0.180"],
+      "challenge": "Abbina ciascuna delle quattro frasi della fonte (visualize, identify, facilitate, represent) alla scheda che la dimostra; poi, prima di premere Play nella scheda 'Calcola', prevedi di quante volte il calcolo guidato dal grafo è più corto (447/91 ≈ 4.9).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p03-struttura-calcolo-efficiente",
+      "title": "Dalla struttura all'algoritmo: sommare meno grazie alla fattorizzazione",
+      "concepts": ["c14", "c24", "c43"],
+      "scenario": "medicina",
+      "realExample": "Calcolo di P(dispnea da sforzo = 1) nella rete cardiologica a 7 nodi con CPT sintetiche: a forza bruta sulla congiunta oppure sfruttando la fattorizzazione per portare le somme dentro il prodotto (anticipo di come gli algoritmi di inferenza sfruttano la struttura).",
+      "storyboard": [
+        "Colonna sinistra 'forza bruta' (Play, 64 termini a 40 ms l'uno): i termini, ciascuno prodotto di 7 fattori, si accumulano; contatori di moltiplicazioni (6 per termine, 384) e addizioni (63): 447 operazioni.",
+        "Colonna destra 'con la struttura', in parallelo: il fattore p(x_6|x_4) sfuma (400 ms) con l'etichetta 'Σ_{x_6} p(x_6|x_4) = 1'; poi la somma su x_2 entra in p(x_2)p(x_4|x_1,x_2,x_3) e produce una tabellina τ(x_1, x_3, x_4) di 8 valori (16 moltiplicazioni, 8 addizioni); segue la somma su x_1, x_3 che produce σ(x_4, x_5) di 4 valori (48 moltiplicazioni, 12 addizioni); infine la somma su x_4, x_5 con p(x_7=1|x_4,x_5) (4 moltiplicazioni, 3 addizioni). Il contatore si ferma a 91 operazioni; entrambe le colonne mostrano P(x_7 = 1) ≈ 0.180 con le CPT sintetiche dichiarate in p03-teorema-imap-fattorizzazione.",
+        "Slider m (catena x_1 → x_2 → … → x_m di 5-30 variabili cliniche binarie): due barre in scala logaritmica per P(x_m = 1), forza bruta 2^{m−1}·(m−1) moltiplicazioni + 2^{m−1} − 1 addizioni contro somme annidate lungo la catena 6(m−1) operazioni circa, con i numeri esatti.",
+        "Chiusura: la frase della fonte 'the interplay between independence and factorization ensures both efficient computation and interpretability' compare accanto al grafo, con gli archi che si illuminano quando il loro fattore viene usato."
+      ],
+      "interactions": ["pulsante Play dell'animazione in parallelo", "slider m", "selettore della variabile da marginalizzare"],
+      "visual": "Due colonne di calcolo con fattori che si combinano, contatori numerici, grafico delle operazioni in funzione di m, grafo con archi attivi.",
+      "aha": "Le indipendenze non sono solo eleganti: dicono dove spezzare somme e prodotti, e trasformano un conto esponenziale in uno quasi lineare.",
+      "formulasShown": ["P(x_7)=\\sum_{x_4,x_5}p(x_7|x_4,x_5)\\sum_{x_1,x_3}p(x_1)p(x_3)p(x_5|x_1,x_3)\\sum_{x_2}p(x_2)p(x_4|x_1,x_2,x_3)", "\\sum_{x_6}p(x_6|x_4)=1", "447\\ \\text{operazioni}\\ \\to\\ 91\\ \\text{operazioni},\\qquad P(x_7=1)\\approx0.180"],
+      "challenge": "Quale variabile si può eliminare subito, senza alcun conto, per calcolare P(x_7)? (x_6: è una foglia che non è interrogata e la sua CPD somma a 1).",
+      "size": "M",
+      "tech": "html+motion"
+    },
+    {
+      "id": "p03-anatomia-del-dag",
+      "title": "Anatomia di un DAG: nodi, frecce e divieto di cicli",
+      "concepts": ["c15", "c16", "c17", "c56", "c36"],
+      "scenario": "medicina",
+      "realExample": "Il cardiologo costruisce la rete a 7 variabili del reparto: ogni nodo è una variabile aleatoria del paziente, ogni freccia una dipendenza diretta causa → effetto. Se prova a disegnare 'dispnea → età' crea un ciclo: la rete non è più un DAG e non è una rete bayesiana valida.",
+      "storyboard": [
+        "Compaiono sette cerchi vuoti con etichetta x_i e nome clinico; al passaggio del mouse 'variabile aleatoria binaria, valori 0/1'.",
+        "Gli 8 archi della figura di p.12 si disegnano uno alla volta (stroke-dashoffset, 300 ms ciascuno), ognuno con una frase: 'fumo → cardiopatia: dipendenza diretta'.",
+        "L'utente trascina da un nodo all'altro per aggiungere un arco. Se l'arco chiude un ciclo (es. x_7 → x_1), il ciclo x_1 → x_4 → x_7 → x_1 lampeggia in rosso e l'arco viene rifiutato: 'ciclo: il grafo non è più aciclico'.",
+        "Pulsante 'ordina topologicamente': i nodi scivolano su una riga in modo che tutte le frecce puntino a destra (es. x_1, x_2, x_3, x_4, x_5, x_6, x_7); il pulsante 'altro ordine' mostra un ordinamento alternativo valido.",
+        "Con la modalità 'permetti cicli' attiva, l'ordinamento fallisce e le frecce che puntano all'indietro diventano rosse.",
+        "Aggiunta del revisore: pulsante 'tutti gli ordini' che scorre come un mazzo di carte i 34 ordinamenti topologici della rete della fonte (contatore 1/34 … 34/34); ogni nuovo arco aggiunto riduce il mazzo in tempo reale (col DAG completo resta un solo ordine), ogni arco tolto lo allarga."
+      ],
+      "interactions": ["trascinamento da nodo a nodo per aggiungere un arco", "clic su un arco per rimuoverlo", "pulsante 'ordina topologicamente' e 'altro ordine'", "pulsante 'tutti gli ordini' con contatore degli ordinamenti topologici validi (34 per la rete della fonte)", "interruttore etichette x_i / nomi clinici", "interruttore 'permetti cicli' (didattico)"],
+      "visual": "Grafo SVG con nodi rossi su sfondo lilla come la figura della fonte, archi animati, ciclo evidenziato in rosso, riga dell'ordinamento topologico con frecce tutte verso destra.",
+      "aha": "Nodi = variabili, frecce = dipendenze dirette; l'aciclicità è ciò che permette di mettere le variabili in fila (ordinamento topologico), passo chiave della dimostrazione di fattorizzazione.",
+      "formulasShown": ["x_i\\to x_j\\ \\text{in}\\ G\\;\\Rightarrow\\;i<j"],
+      "challenge": "Aggiungi il massimo numero di archi possibile senza creare cicli partendo dalla rete della fonte: quanti archi ha un DAG completo su 7 nodi? (7·6/2 = 21).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p03-fattorizzazione-del-dag",
+      "title": "Leggi la fattorizzazione dalle frecce",
+      "concepts": ["c18", "c32", "c35"],
+      "scenario": "medicina",
+      "realExample": "La rete a 7 nodi della fonte con etichette cliniche: per scrivere la probabilità congiunta di un paziente basta un fattore per nodo, condizionato ai suoi genitori. È ciò che un sistema di supporto alla diagnosi memorizza al posto della tabella congiunta.",
+      "storyboard": [
+        "La figura di p.12 è ricostruita (sfondo lilla, nodi rossi); sotto, la formula vuota 'p(x_1,…,x_7) = …'.",
+        "L'utente clicca i nodi in qualsiasi ordine: il nodo pulsa (200 ms), i suoi archi entranti si ispessiscono e il fattore p(x_i|Pa_{x_i}) vola nella formula (400 ms) nella posizione del suo indice.",
+        "Dopo il settimo clic la formula coincide con il riquadro verde 'Example' di p.14; compare il badge 'uguale alla fonte'. Sotto ogni fattore appare il suo valore per il paziente selezionato; per il paziente di default (anziano, fumatore, senza familiarità, cardiopatia, iperteso, ST alterato, dispnea = 1,1,0,1,1,1,1) il prodotto live è 0.4 · 0.3 · 0.8 · 0.40 · 0.40 · 0.70 · 0.75 ≈ 0.00806 (CPT sintetiche dichiarate in p03-teorema-imap-fattorizzazione).",
+        "Modalità 'modifica': rimuovendo o aggiungendo un arco il fattore corrispondente cambia in tempo reale (es. togliendo x_3 → x_5: p(x_5|x_1, x_3) diventa p(x_5|x_1)) e un contatore aggiorna il numero di parametri (21 → 19); un arco che chiuderebbe un ciclo viene rifiutato.",
+        "Modalità 'quiz inverso': viene mostrata una fattorizzazione e l'utente deve disegnare il grafo; gli archi giusti diventano verdi, quelli sbagliati rossi."
+      ],
+      "interactions": ["clic sui nodi per costruire la formula", "aggiunta e rimozione di archi", "passaggio alla modalità quiz inverso", "valori numerici dei fattori per una configurazione di paziente selezionabile"],
+      "visual": "Grafo della fonte, formula che si compone fattore per fattore con i colori dei nodi, contatore dei parametri, per un paziente scelto il valore numerico di ogni fattore e del prodotto.",
+      "aha": "Il grafo e la fattorizzazione sono la stessa informazione: le frecce entranti in un nodo dicono esattamente da cosa dipende il suo fattore.",
+      "formulasShown": ["p(x_1,\\dots,x_m)=\\prod_{i=1}^{m}p(x_i|Pa_{x_i})", "p(x_1,\\dots,x_7)=p(x_1)p(x_2)p(x_3)p(x_4|x_1,x_2,x_3)\\,p(x_5|x_1,x_3)p(x_6|x_4)p(x_7|x_4,x_5)", "p(1,1,0,1,1,1,1)=0.4\\cdot0.3\\cdot0.8\\cdot0.40\\cdot0.40\\cdot0.70\\cdot0.75\\approx0.00806"],
+      "challenge": "Da formula a grafo: disegna il DAG di p(x_1)p(x_2|x_1)p(x_3|x_1)p(x_4|x_2,x_3) e dì quante frecce servono (4).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p03-genitori-e-non-discendenti",
+      "title": "Clicca un nodo: genitori, discendenti e indipendenza locale",
+      "concepts": ["c20", "c21", "c22", "c23"],
+      "scenario": "medicina",
+      "realExample": "Nella rete cardiologica: se conosco età e familiarità (genitori dell'ipertensione), sapere se il paziente fuma o ha il tratto ST alterato non cambia la probabilità di ipertensione; sapere che ha dispnea (un discendente) invece la cambia. Le CPT sono sintetiche ma plausibili.",
+      "storyboard": [
+        "Clic su un nodo, ad esempio x_5 (ipertensione): il nodo diventa giallo; i genitori x_1, x_3 si colorano di blu con gli archi entranti ispessiti.",
+        "Parte un'onda (flood fill di 400 ms) lungo le frecce uscenti: i nodi raggiunti (x_7) diventano arancio, 'discendenti'.",
+        "Tutti i nodi non raggiunti si colorano di verde, 'non-discendenti' (x_2, x_4, x_6); i genitori restano blu con bordo verde, perché sono anche non-discendenti.",
+        "Sotto il grafo si compone la formula con i colori corrispondenti: x_5 ⊥ {x_2, x_4, x_6} | {x_1, x_3}.",
+        "Pannello di verifica numerica (CPT sintetiche dichiarate in p03-teorema-imap-fattorizzazione): per la configurazione di default x_1 = 1, x_3 = 0, x_2 = 1, x_4 = 1, x_6 = 1 mostra P(x_5 = 1 | x_1, x_3) = 0.40 e P(x_5 = 1 | x_1, x_3, x_2, x_4, x_6) = 0.40, identici, con una spunta verde; il pulsante 'configurazione casuale' ripete il confronto (i due numeri restano sempre uguali).",
+        "Trappola: se l'utente trascina x_7 = 1 (discendente) nell'insieme condizionante, il secondo numero sale a 0.50 (animazione della barra 500 ms), i due valori divergono e compare in rosso 'un discendente porta informazione su x_5'; togliendo x_7 torna 0.40."
+      ],
+      "interactions": ["clic su qualunque nodo", "trascinamento di nodi dentro o fuori l'insieme condizionante", "pulsante 'nuova configurazione casuale' per la verifica numerica", "interruttore etichette x_i / nomi clinici"],
+      "visual": "Grafo con colori per ruolo (giallo nodo, blu genitori, arancio discendenti, verde non-discendenti), formula colorata, due valori di probabilità affiancati con esito della verifica.",
+      "aha": "Dati i genitori, tutto ciò che sta a monte o di lato non aggiunge informazione su un nodo; i discendenti invece sì, per questo sono esclusi.",
+      "formulasShown": ["I_l(G)=\\left\\{\\forall i,\\; x_i\\perp \\mathit{NonDescendants}_{x_i}\\mid \\mathit{Parents}_{x_i}\\right\\}", "p(x_5|x_1,x_3,x_2,x_4,x_6)=p(x_5|x_1,x_3)", "P(x_5=1|x_1=1,x_3=0,x_2=1,x_4=1,x_6=1)=0.40=P(x_5=1|x_1=1,x_3=0)", "P(x_5=1|x_1=1,x_3=0,x_2=1,x_4=1,x_6=1,x_7=1)=0.50\\neq0.40"],
+      "challenge": "Per ogni nodo prevedi l'insieme dei non-discendenti prima di cliccare; il widget conta gli errori. Poi trova il nodo con più non-discendenti non genitori (x_6: cinque).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p03-caccia-alle-indipendenze-locali",
+      "title": "Caccia alle indipendenze: scrivi tutto I_l(G)",
+      "concepts": ["c19", "c57"],
+      "scenario": "medicina",
+      "realExample": "Esercizio tipico dell'orale di Passerini ('local independencies'): data la rete cardiologica a 7 nodi, elencare tutte le assunzioni di indipendenza che la struttura impone sulla distribuzione dei pazienti.",
+      "storyboard": [
+        "Il grafo è a sinistra; a destra sette righe vuote 'x_i ⊥ [ ] | [ ]'.",
+        "L'utente trascina gettoni x_j nei due insiemi di ciascuna riga; ogni gettone giusto scatta al suo posto con un piccolo rimbalzo (spring circa 250 ms), uno sbagliato torna indietro (300 ms) e il nodo corrispondente lampeggia due volte nel grafo con un suggerimento ('x_7 è raggiungibile da x_4').",
+        "Completata una riga, gli archi che la giustificano si illuminano per 800 ms: i genitori in blu, i non-discendenti in verde; la riga completata mostra la formula finale, ad esempio x_5 ⊥ {x_2, x_4, x_6} | {x_1, x_3}.",
+        "Alla fine le sette righe formano I_l(G); un contatore mostra che le 13 coppie non adiacenti (21 coppie meno 8 archi) compaiono tutte in almeno un'affermazione, e un badge ricorda: 'ogni arco mancante è un'assunzione sulla distribuzione'.",
+        "Modalità 'grafo casuale': DAG casuale con 5-8 nodi generato con seed, per allenarsi."
+      ],
+      "interactions": ["trascinamento dei gettoni negli insiemi", "pulsante suggerimento", "pulsante 'grafo casuale' con numero di nodi 5-8", "timer opzionale"],
+      "visual": "Grafo e tabella delle 7 affermazioni con gettoni colorati; punteggio e tempo; evidenziazione degli archi che giustificano ogni riga.",
+      "aha": "La struttura della rete è un elenco preciso di affermazioni di indipendenza, una per nodo, che si leggono meccanicamente dal grafo.",
+      "formulasShown": ["x_4\\perp\\{x_5\\}\\mid\\{x_1,x_2,x_3\\}", "x_7\\perp\\{x_1,x_2,x_3,x_6\\}\\mid\\{x_4,x_5\\}", "x_6\\perp\\{x_1,x_2,x_3,x_5,x_7\\}\\mid\\{x_4\\}"],
+      "challenge": "Completa le 7 righe senza errori in meno di 3 minuti; poi ripeti su un grafo casuale con 8 nodi.",
+      "size": "M",
+      "tech": "html+motion"
+    },
+    {
+      "id": "p03-verificatore-di-i-map",
+      "title": "Questo grafo è un I-map? Verifica I_l(G) ⊆ I(p)",
+      "concepts": ["c25", "c26", "c27", "c28"],
+      "scenario": "medicina",
+      "realExample": "Tre variabili cliniche binarie: fumo F, cardiopatia C, ECG alterato E. La distribuzione vera p (sintetica) è generata da F → C → E con P(F=1) = 0.25, P(C=1|F=1) = 0.30, P(C=1|F=0) = 0.08, P(E=1|C=1) = 0.70, P(E=1|C=0) = 0.10: l'ECG dipende dal fumo solo attraverso la cardiopatia. Un effetto diretto opzionale del fumo sull'ECG si modella con P(E=1|C,F) = P(E=1|C) + ε·F. Un ricercatore propone vari grafi e bisogna capire quali sono modelli corretti di p.",
+      "storyboard": [
+        "In alto a destra un cerchio 'I(p)' contiene le indipendenze vere di p, calcolate numericamente su tutte le 6 affermazioni possibili tra 3 variabili (F ⊥ C, F ⊥ E, C ⊥ E, F ⊥ C | E, F ⊥ E | C, C ⊥ E | F) con tolleranza 0.001 sullo scarto massimo: con ε = 0 solo F ⊥ E | C è dentro.",
+        "L'utente sceglie un grafo candidato tra sei: F→C→E, E→C→F, F←C→E, F→C←E, grafo vuoto, grafo completo. Le sue indipendenze locali appaiono come gettoni (fade-in 200 ms ciascuno).",
+        "Ogni gettone vola verso il cerchio I(p) (500 ms): se l'indipendenza vale in p entra (verde), altrimenti rimbalza fuori (rosso) mostrando lo scarto numerico, ad esempio per il collider F→C←E il gettone F ⊥ E mostra p(F=1, E=1) = 0.070 contro p(F=1)p(E=1) = 0.25 · 0.181 = 0.045 (scarto 0.025).",
+        "Verdetto: I-map se tutti i gettoni sono entrati. Le due catene (F→C→E, E→C→F) e la biforcazione F←C→E passano, perché la loro unica indipendenza locale è F ⊥ E | C; collider e grafo vuoto no; il grafo completo passa con zero gettoni e il badge 'I-map ma non dice nulla'.",
+        "Per il grafo completo compare anche la freccia opposta: F ⊥ E | C sta in I(p) ma non in I_l(G), quindi il viceversa non vale.",
+        "Slider 'effetto diretto fumo → ECG' ε: con ε > 0 la distribuzione cambia (i numeri si aggiornano in 300 ms); oltre ε ≈ 0.0041 lo scarto massimo di F ⊥ E | C supera la tolleranza 0.001, il gettone esce da I(p) e le due catene e la biforcazione smettono di essere I-map, mentre il grafo completo resta tale."
+      ],
+      "interactions": ["selettore del grafo candidato (6 opzioni) o disegno libero degli archi", "slider ε da 0 a 0.3 (passo 0.0001, con campo numerico accanto)", "slider delle CPT della distribuzione vera, ciascuno da 0.01 a 0.99", "clic su un gettone per vedere il calcolo numerico"],
+      "visual": "Diagramma a insiemi (cerchio I(p), gettoni I_l(G)), grafo candidato a sinistra, tabella dei 6 test con valori numerici e soglia di tolleranza, verdetto I-map o non I-map.",
+      "aha": "Un I-map non afferma mai indipendenze false, ma può tacerne di vere: essere I-map significa essere corretti, non completi.",
+      "formulasShown": ["I_l(G)\\subseteq I(p)", "F\\perp E\\mid C\\;\\Leftrightarrow\\;p(F,E|C)=p(F|C)\\,p(E|C)", "p(F=1,E=1)=0.070\\neq p(F=1)\\,p(E=1)=0.25\\cdot0.181\\approx0.045", "P(E=1|C,F)=P(E=1|C)+\\varepsilon F"],
+      "challenge": "Prevedi, prima di verificarlo, quali dei sei grafi sono I-map per p (risposta: le due catene, la biforcazione e il grafo completo). Poi trova il valore minimo di ε che fa fallire la catena F→C→E con tolleranza 0.001 (risposta: ε ≈ 0.0041).",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p03-grafo-completo-sempre-i-map",
+      "title": "Il grafo completo è sempre un I-map: pota gli archi per risparmiare",
+      "concepts": ["c29", "c31"],
+      "scenario": "medicina",
+      "realExample": "Cinque variabili cliniche binarie in ordine fissato x_1 = età avanzata, x_2 = fumo, x_3 = colesterolo alto, x_4 = cardiopatia, x_5 = ECG alterato, con distribuzione sintetica generata da una rete sparsa nascosta: età → colesterolo, età → cardiopatia, fumo → cardiopatia, colesterolo → cardiopatia, cardiopatia → ECG (1 + 1 + 2 + 8 + 2 = 14 parametri). Partendo dal DAG completo, sempre corretto ma con 31 parametri, si rimuovono archi per fattorizzare la congiunta in fattori piccoli senza perdere la correttezza.",
+      "storyboard": [
+        "Il DAG completo su 5 nodi (10 archi, ordine fissato x_1, …, x_5) si disegna tutto insieme (fade 400 ms); sotto compare la sua fattorizzazione, che è la regola della catena, e un contatore mostra 31 parametri = 1 + 2 + 4 + 8 + 16 = 2^5 − 1, uguale alla congiunta piena.",
+        "Fase dimostrativa, prima del gioco: il pulsante 'cambia distribuzione' estrae p casuali (CPT uniformi in [0.05, 0.95]) e il bollino 'I-map ✓' resta sempre verde, perché I_l(G) contiene solo affermazioni banali; il gioco poi riparte con la p della rete nascosta.",
+        "L'utente clicca un arco x_j → x_i per rimuoverlo: il widget verifica numericamente (tolleranza 10^{-6}) che p(x_i | x_1, …, x_{i−1}) = p(x_i | Pa_{x_i} senza x_j) per tutte le configurazioni; se vale in p l'arco sfuma (300 ms), il fattore del nodo si accorcia nella formula e il contatore scende con un'animazione a rotella (400 ms).",
+        "Se la rimozione non è giustificata (ad esempio fumo → cardiopatia) il bollino diventa rosso, compare lo scarto numerico massimo e l'arco lampeggia due volte prima di tornare al suo posto.",
+        "Obiettivo visibile: una barra 'parametri' da 31 verso il minimo raggiungibile, 14, ottenuto con 5 rimozioni giustificate (x_1→x_2, x_2→x_3, x_1→x_5, x_2→x_5, x_3→x_5); il pulsante finale 'mostra rete nascosta' sovrappone la rete vera e conferma che coincidono. Anticipo del minimal I-map del modulo p04."
+      ],
+      "interactions": ["clic sugli archi per rimuoverli o ripristinarli", "pulsante 'cambia distribuzione'", "pulsante 'mostra rete nascosta' a fine partita"],
+      "visual": "DAG a 5 nodi, fattorizzazione aggiornata live sotto il grafo, contatore dei parametri, bollino I-map verde o rosso.",
+      "aha": "Un grafo che non afferma nessuna indipendenza è sempre corretto ma inutile: il vantaggio arriva solo quando si tolgono archi giustificati, cioè quando si fattorizza.",
+      "formulasShown": ["G_{\\text{completo}}:\\ p(x_1,\\dots,x_5)=\\prod_{i=1}^{5}p(x_i|x_1,\\dots,x_{i-1})", "\\#\\text{parametri}=\\sum_{i=1}^{5}2^{i-1}=2^5-1=31", "p(x_1,\\dots,x_5)=p(x_1)\\,p(x_2)\\,p(x_3|x_1)\\,p(x_4|x_1,x_2,x_3)\\,p(x_5|x_4):\\quad 1+1+2+8+2=14"],
+      "challenge": "Raggiungi il numero minimo di parametri (14, in 5 rimozioni) senza mai far diventare rosso il bollino; il widget conta le mosse sbagliate. Domanda bonus: perché non si può togliere età → colesterolo? (il colesterolo dipende davvero dall'età nella rete nascosta).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p03-esplosione-dei-parametri",
+      "title": "2^m contro la somma delle CPT: l'esplosione dei parametri",
+      "concepts": ["c30", "c33", "c58"],
+      "scenario": "medicina",
+      "realExample": "Un ospedale vuole modellare m sintomi e fattori di rischio binari. Con la congiunta piena servono 2^m numeri, stimabili solo con quantità enormi di pazienti; con una rete in cui ogni variabile ha al più k genitori il conto resta gestibile. Il DAG a 7 nodi della fonte è il caso concreto.",
+      "storyboard": [
+        "Slider m da 1 a 40: due barre in scala logaritmica (transizione 250 ms), 'congiunta piena' 2^m e 'rete bayesiana con al più k genitori'; accanto la memoria in byte (8 byte per numero): con m = 40 la congiunta ha 2^40 ≈ 1.1·10^12 numeri, circa 8.8 TB.",
+        "Slider k da 0 a 6 e v da 2 a 4: la barra della rete cresce come m·(v−1)·v^k (caso peggiore con tutti i nodi a k genitori), restando lineare in m; la formula mostra i valori sostituiti, es. m = 30, v = 2, k = 3: 30 · 1 · 8 = 240.",
+        "Riquadro 'DAG della fonte': sette barrette, una per nodo, alte 1, 1, 1, 8, 4, 2, 4; si impilano una alla volta (200 ms ciascuna) fino a 21, accanto a una colonna alta 127. La barretta di x_4 si illumina con l'etichetta 'fattore più grande: domina il conteggio'.",
+        "Aggiungendo un arco al DAG della fonte (ad esempio x_5 → x_4) la barretta di x_4 raddoppia a 16 con un'animazione di crescita (400 ms) e il totale passa a 29, mostrando quanto costa un genitore in più; un arco che chiuderebbe un ciclo è rifiutato."
+      ],
+      "interactions": ["slider m (1-40)", "slider k (0-6)", "slider v (2-4)", "aggiunta o rimozione di archi nel DAG della fonte"],
+      "visual": "Barre logaritmiche con valori esatti, indicatore di memoria, istogramma dei parametri per nodo del DAG a 7 nodi.",
+      "aha": "La congiunta piena esplode esponenzialmente con il numero di variabili; una BN paga in modo esponenziale solo il numero di genitori del nodo più affollato.",
+      "formulasShown": ["2^m", "\\#\\text{parametri}=\\sum_{i=1}^{m}(v_i-1)\\prod_{x_j\\in Pa_{x_i}}v_j", "1+1+1+8+4+2+4=21\\ \\ll\\ 2^7-1=127"],
+      "challenge": "Con m = 30 variabili binarie e al più 3 genitori per nodo, quanti parametri servono al massimo? (30·8 = 240, contro 2^30 − 1 ≈ 1.07·10^9).",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p03-teorema-imap-fattorizzazione",
+      "title": "(G, p): il teorema che lega grafo e fattorizzazione",
+      "concepts": ["c34", "c44", "c45"],
+      "scenario": "medicina",
+      "realExample": "La rete cardiologica come oggetto completo: il DAG G (struttura) e le CPD attaccate ai nodi. CPT sintetiche di riferimento, usate da tutti i widget 'medicina' di questo modulo (dichiarate come dati sintetici): x_1 età avanzata P(x_1=1) = 0.4; x_2 fumo P(x_2=1) = 0.3; x_3 familiarità P(x_3=1) = 0.2; x_4 cardiopatia P(x_4=1|x_1,x_2,x_3) = 0.05 (000), 0.15 (001), 0.15 (010), 0.30 (011), 0.20 (100), 0.35 (101), 0.40 (110), 0.60 (111); x_5 ipertensione P(x_5=1|x_1,x_3) = 0.15 (00), 0.30 (01), 0.40 (10), 0.60 (11); x_6 ST alterato P(x_6=1|x_4) = 0.10 (0), 0.70 (1); x_7 dispnea P(x_7=1|x_4,x_5) = 0.05 (00), 0.20 (01), 0.50 (10), 0.75 (11). Valori derivati: P(x_4=1) = 0.179, P(x_5=1) = 0.284, P(x_7=1) = 0.180. La probabilità di un paziente concreto (anziano, fumatore, senza familiarità, con cardiopatia, iperteso, ST alterato, dispnea: 1,1,0,1,1,1,1) si ottiene moltiplicando sette valori letti dalle CPD: 0.4 · 0.3 · 0.8 · 0.40 · 0.40 · 0.70 · 0.75 ≈ 0.00806.",
+      "storyboard": [
+        "A sinistra il grafo G, a destra le sette CPD come schede incollate ai nodi con una linea tratteggiata (disegno 600 ms); il titolo 'BN = (G, p)' si compone unendo le due metà (400 ms).",
+        "Selezionando un paziente, ogni scheda evidenzia la riga corrispondente alla configurazione dei genitori e il valore vola nel prodotto sotto il grafo (150 ms di sfasamento tra un fattore e il successivo); il prodotto si aggiorna con il valore numerico finale (0.00806 per il paziente di default).",
+        "Al centro una doppia freccia '⟺' con due pulsanti: 'I-map ⇒ fattorizza' riproduce in forma breve (circa 3 s) la regola della catena che si semplifica; 'fattorizza ⇒ I-map' riproduce la cancellazione dei fattori nella condizionata dell'ultima variabile.",
+        "Modificando un valore di una CPT, la distribuzione cambia ma il bollino 'G è I-map' resta verde: qualunque scelta delle CPD fattorizza secondo G, quindi soddisfa le sue indipendenze locali. Un piccolo pannello lo verifica live su un'indipendenza scelta a caso (es. P(x_5=1|x_1,x_3,x_2,x_4,x_6) = P(x_5=1|x_1,x_3))."
+      ],
+      "interactions": ["selettore del paziente (7 interruttori 0/1)", "modifica dei valori delle CPT con slider da 0.01 a 0.99 (il complemento si aggiorna da solo)", "due pulsanti per le direzioni del teorema", "pulsante 'ripristina CPT di riferimento'"],
+      "visual": "DAG con schede CPD collegate, prodotto numerico dei sette fattori, doppia freccia animata con le due mini-dimostrazioni.",
+      "aha": "Una rete bayesiana è struttura più numeri locali; qualunque numero si metta nelle CPD, la distribuzione rispetta le indipendenze del grafo, e viceversa.",
+      "formulasShown": ["\\text{BN}=(G,p)", "G\\ \\text{I-map per }p\\;\\Longleftrightarrow\\;p(x_1,\\dots,x_m)=\\prod_{i=1}^{m}p(x_i|Pa_{x_i})", "p(1,1,0,1,1,1,1)=0.4\\cdot0.3\\cdot0.8\\cdot0.40\\cdot0.40\\cdot0.70\\cdot0.75\\approx0.00806"],
+      "challenge": "Cambia le CPT in modo che il paziente di default abbia probabilità congiunta maggiore di 0.01 modificando una sola tabella (soglie: P(x_7=1|x_4=1,x_5=1) > 0.930, ad esempio 0.931, oppure P(x_2=1) > 0.372, ad esempio 0.373; il prodotto è lineare in ciascun fattore, quindi la soglia è 0.01 diviso il prodotto degli altri sei).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p03-dimostrazione-imap-fattorizzazione",
+      "title": "Dimostrazione animata: I-map ⇒ fattorizzazione",
+      "concepts": ["c36", "c37", "c38"],
+      "scenario": "medicina",
+      "realExample": "La rete cardiologica a 7 nodi: partendo dalla regola della catena, valida per qualunque tabella di pazienti, le indipendenze locali cancellano i condizionamenti inutili fino alla fattorizzazione compatta usata dal sistema di supporto alla diagnosi.",
+      "storyboard": [
+        "Passo 1: accanto al grafo compare l'elenco delle 7 indipendenze locali (ipotesi: G è un I-map), una riga ogni 150 ms.",
+        "Passo 2: i nodi scivolano su una riga in ordine topologico (x_1, …, x_7) con tutte le frecce verso destra (layout animato 700 ms); il pulsante 'altro ordine' li rimescola in un altro dei 34 ordini validi, ad esempio x_3, x_2, x_1, x_5, x_4, x_7, x_6.",
+        "Passo 3: si scrive la regola della catena, un fattore per volta (300 ms ciascuno): p(x_1) p(x_2|x_1) p(x_3|x_1,x_2) p(x_4|x_1,x_2,x_3) p(x_5|x_1,…,x_4) p(x_6|x_1,…,x_5) p(x_7|x_1,…,x_6); sotto ogni fattore il numero di parametri liberi della sua tabella con variabili binarie (1, 2, 4, 8, 16, 32, 64: totale 127).",
+        "Passo 4: in ogni fattore le variabili condizionanti non genitori si barrano in rosso una alla volta (250 ms per barratura), con il cartellino 'non-discendente di x_i: rimosso per indipendenza locale'; i conteggi si riducono (1, 1, 1, 8, 4, 2, 4: totale 21).",
+        "Fine: il prodotto semplificato coincide con il riquadro 'Example' di p.14.",
+        "Pulsante 'ordine sbagliato': con un ordine non topologico (es. x_7 per primo) nel fattore di x_4 compare x_7, che è un suo discendente; la barratura fallisce, x_7 diventa arancio e appare 'un discendente non si può togliere: serve l'ordine topologico'."
+      ],
+      "interactions": ["Passo avanti/indietro", "pulsante 'altro ordine topologico'", "pulsante 'ordine sbagliato'", "hover su una variabile barrata per vedere l'indipendenza usata"],
+      "visual": "Riga dei nodi in ordine topologico, fattori della regola della catena con variabili barrate in rosso, contatore delle dimensioni delle tabelle, grafo con evidenziati genitori e discendenti del nodo corrente.",
+      "aha": "La dimostrazione è regola della catena più cancellazione: l'ordine topologico garantisce che tutto ciò che precede x_i sia non-discendente, quindi eliminabile tranne i genitori.",
+      "formulasShown": ["p(x_1,\\dots,x_m)=\\prod_{i=1}^{m}p(x_i|x_1,\\dots,x_{i-1})", "p(x_i|x_1,\\dots,x_{i-1})=p(x_i|Pa_{x_i})", "x_i\\to x_j\\ \\text{in}\\ G\\;\\Rightarrow\\;i<j"],
+      "challenge": "Prima dell'animazione indica quali variabili verranno barrate nel fattore di x_5 (x_2 e x_4) e in quello di x_7 (x_1, x_2, x_3, x_6).",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p03-dimostrazione-fattorizzazione-imap",
+      "title": "Dimostrazione animata: fattorizzazione ⇒ I-map, con i numeri",
+      "concepts": ["c39", "c40", "c41", "c42"],
+      "scenario": "medicina",
+      "realExample": "Due casi. (1) Rete cardiologica a 7 nodi con CPT sintetiche: x_7 (dispnea) è l'ultima variabile e si verifica numericamente che p(x_7 | x_1, …, x_6) calcolata dalla congiunta coincide con p(x_7 | x_4, x_5) letta dalla CPT. (2) Rete giocattolo di p.16 (A → C ← B, C ultimo): per A = active, B = inactive, C = active il rapporto 0.126 / (0.126 + 0.084) = 0.6 è proprio il valore della CPT.",
+      "storyboard": [
+        "Passo 1: la congiunta è mostrata come prodotto di fattori colorati, uno per nodo; x_m (ultimo in ordine topologico) è in giallo.",
+        "Passo 2: regola del prodotto, la frazione p(x_1,…,x_m) / p(x_1,…,x_{m−1}); regola della somma, il denominatore si espande in Σ_{x_m} con due copie della congiunta (x_m = 0 e x_m = 1).",
+        "Passo 3: al numeratore e al denominatore compaiono i prodotti dei fattori; i fattori che non contengono x_m (tutti tranne il giallo) escono dalla somma con un salto e si cancellano a coppie con una barratura animata.",
+        "Passo 4: resta p(x_m|Pa)/Σ_{x_m} p(x_m|Pa); la somma al denominatore si riempie con i due valori della riga della CPT (es. 0.6 + 0.4) e si trasforma in '= 1'.",
+        "Verifica numerica: per una configurazione scelta dall'utente il widget calcola la condizionata direttamente dalla tabella congiunta e la confronta con la CPT: numeri identici.",
+        "Passo 'ripeti': x_m viene marginalizzato (la sua CPD somma a 1 e il fattore sparisce, 500 ms), il suo nodo sfuma e scompare dal grafo, x_{m−1} diventa giallo e l'animazione ricomincia. Ogni giro spunta x_i ⊥ (predecessori meno genitori) | genitori: con l'ordine x_1, …, x_7 della rete cardiologica solo x_3 e x_7 risultano completi, mentre x_1 (mancano x_2, x_3), x_2 (mancano x_3, x_5), x_4 (manca x_5), x_5 (manca x_6) e x_6 (manca x_7) restano parziali, con i non-discendenti mancanti in arancio.",
+        "Pulsante 'riordina per x_i': si sceglie un altro ordine topologico che mette x_i dopo tutti i suoi non-discendenti (per x_5: x_1, x_2, x_3, x_4, x_6, x_5, x_7; per x_6: x_1, x_2, x_3, x_4, x_5, x_7, x_6), si marginalizzano prima le variabili che lo seguono (suoi discendenti) e si ripete il passo con x_i ultimo; dopo aver sistemato tutti i nodi parziali le sette indipendenze locali sono spuntate e appare 'G è un I-map: I_l(G) ⊆ I(p)'."
+      ],
+      "interactions": ["Passo avanti/indietro", "selettore della rete: giocattolo (3 nodi) o cardiologica (7 nodi, CPT sintetiche dichiarate in p03-teorema-imap-fattorizzazione)", "scelta della configurazione delle variabili per la verifica numerica", "pulsante 'ripeti per la variabile precedente'", "pulsante 'riordina per x_i' per completare le indipendenze parziali"],
+      "visual": "Frazione grande con fattori colorati che si cancellano, somma che diventa 1, confronto numerico tabella congiunta contro CPT, grafo che perde un nodo a ogni ripetizione, elenco delle indipendenze locali che si spuntano.",
+      "aha": "Se la congiunta è un prodotto di CPD, tutto ciò che non tocca x_m si semplifica e la CPD somma a 1: la condizionata dipende solo dai genitori, cioè vale l'indipendenza locale.",
+      "formulasShown": ["p(x_m|x_1,\\dots,x_{m-1})=\\frac{\\prod_{i=1}^{m}p(x_i|Pa_{x_i})}{\\sum_{x_m}\\prod_{i=1}^{m}p(x_i|Pa_{x_i})}=\\frac{p(x_m|Pa_{x_m})}{\\sum_{x_m}p(x_m|Pa_{x_m})}", "\\sum_{x_m}p(x_m|Pa_{x_m})=1", "p(C=\\text{act}|A=\\text{a},B=\\text{i})=\\frac{0.126}{0.126+0.084}=0.6"],
+      "challenge": "Nella rete giocattolo calcola a mano p(C=active | A=inactive, B=active) dalla congiunta (0.147 / (0.147 + 0.063) = 0.7) e controlla che coincida con la CPT. Poi, nella rete cardiologica, prevedi quali nodi restano con l'indipendenza locale parziale dopo i sette giri con l'ordine x_1, …, x_7 (x_1, x_2, x_4, x_5, x_6) e scegli per x_4 un ordine topologico che la completi (es. x_1, x_2, x_3, x_5, x_4, x_6, x_7).",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p03-cpt-che-cresce",
+      "title": "Costruisci la CPT: v^k righe che esplodono",
+      "concepts": ["c46", "c47"],
+      "scenario": "medicina",
+      "realExample": "Un gruppo di cardiologi deve compilare a mano la CPT del nodo 'cardiopatia' in funzione dei fattori di rischio (età, fumo, familiarità, colesterolo, diabete, sedentarietà), ciascuno discretizzato in v livelli (es. basso, medio, alto). Ogni riga è una stima che gli esperti devono fornire o che va appresa dai dati.",
+      "storyboard": [
+        "Nodo 'cardiopatia' al centro, nessun genitore: la CPT ha una sola riga con una barra divisa in 'sì' e 'no' che somma a 1.",
+        "Slider k (numero di genitori): a ogni incremento un nuovo nodo genitore entra da sinistra con una freccia (400 ms); la tabella si duplica (o triplica con v = 3) con le nuove righe che scendono a cascata (30 ms di sfasamento per riga).",
+        "Ogni riga mostra la configurazione dei genitori come fila di pallini colorati e una barra orizzontale della distribuzione di x_i che somma a 1; un contatore mostra v^k righe e (v_i − 1)·v^k parametri liberi, con la formula a valori sostituiti (es. v = 3, k = 4, v_i = 2: 3^4 = 81 righe, 1 · 81 = 81 parametri).",
+        "Oltre 64 righe la tabella si comprime in una mappa di calore (morph 500 ms); un indicatore 'pagine A4 da compilare' cresce (40 righe per pagina).",
+        "Pulsante 'esempio della fonte': compare la CPT del gene C della rete giocattolo, k = 2, v = 2, 4 configurazioni disposte in colonna come nella slide, con i valori 0.9, 0.6, 0.7, 0.1."
+      ],
+      "interactions": ["slider k da 0 a 6", "slider v da 2 a 4", "clic su una riga per modificare la distribuzione con un cursore", "pulsante 'esempio della fonte'"],
+      "visual": "Nodo figlio con genitori entranti, tabella che cresce con animazione a cascata, barre di distribuzione per riga, contatori di righe e parametri, mappa di calore per tabelle grandi.",
+      "aha": "La CPT cresce in modo esponenziale nel numero di genitori: una rete resta compatta solo se ogni nodo ha pochi genitori.",
+      "formulasShown": ["\\#\\text{righe}=v^{k}", "\\#\\text{parametri liberi}=(v_i-1)\\,v^{k}", "\\sum_{s}P(x_i=s\\mid Pa_{x_i}=\\mathbf{u})=1"],
+      "challenge": "Quante righe e quanti parametri liberi servono per un nodo binario con 4 genitori a 3 stati? (3^4 = 81 righe, 81 parametri liberi).",
+      "size": "S",
+      "tech": "html+motion"
+    },
+    {
+      "id": "p03-rete-regolatoria-giocattolo",
+      "title": "La rete regolatoria giocattolo: accendi i geni",
+      "concepts": ["c48", "c49", "c59"],
+      "scenario": "fonte",
+      "realExample": "Esempio della fonte (p.16): geni A e B con probabilità a priori indipendenti (active 0.3), gene C potenziato da entrambi con la CPT 0.9 / 0.6 / 0.7 / 0.1. In biologia computazionale reti di questo tipo modellano come i fattori di trascrizione attivano un gene bersaglio a partire da dati di espressione.",
+      "storyboard": [
+        "Ricostruzione del riquadro verde 'Example: toy regulatory network': tabelle di A e B, grafo A → C ← B e CPT di C.",
+        "L'utente accende o spegne A e B: impulsi luminosi viaggiano lungo le frecce attive (600 ms), la colonna corrispondente della CPT si illumina e una barra mostra P(C = active | A, B) (0.9, 0.6, 0.7 o 0.1) con transizione di 300 ms.",
+        "Scheda 'congiunta': scegliendo anche C, la probabilità della configurazione compare come prodotto di tre fattori con i numeri (es. 0.3 · 0.7 · 0.6 = 0.126); la tabella di 8 righe si riempie una riga ogni 150 ms (0.081, 0.009, 0.126, 0.084, 0.147, 0.063, 0.049, 0.441) e la somma finale vale 1.000.",
+        "Scheda 'marginale di C': le quattro righe con C = active scivolano in un sommatore (800 ms), 0.081 + 0.126 + 0.147 + 0.049 = 0.403.",
+        "Scheda 'A e B indipendenti?': mappa 2×2 di p(A, B) sovrapposta a p(A)p(B), identiche (0.09, 0.21, 0.21, 0.49): la fattorizzazione garantisce A ⊥ B.",
+        "Anteprima di p04: osservando C = active, P(A = active | C) sale a 0.514; osservando anche B = active scende a 0.355, con B = inactive sale a 0.72. Un cartellino 'explaining away: lo vedrai nella d-separazione'."
+      ],
+      "interactions": ["interruttori A, B, C (active/inactive)", "slider delle prior di A e B e dei quattro valori P(C=active|A,B) della CPT, ciascuno da 0.01 a 0.99 (il complemento si aggiorna da solo)", "pulsante 'valori della fonte' per ripristinare 0.3 / 0.3 / 0.9, 0.6, 0.7, 0.1", "schede congiunta, marginale, indipendenza, anteprima"],
+      "visual": "Riquadro nello stile della slide, grafo con impulsi lungo gli archi, CPT con colonna attiva, tabella congiunta a 8 righe con somma, mappa 2×2 per l'indipendenza, barre delle posterior per l'anteprima.",
+      "aha": "Bastano 6 numeri liberi (1 + 1 + 4) per tutte le 8 probabilità congiunte; A e B sono indipendenti a priori, ma osservare C li lega.",
+      "formulasShown": ["p(A,B,C)=p(A)\\,p(B)\\,p(C|A,B)", "P(C=\\text{act})=\\sum_{A,B}P(A)P(B)P(C=\\text{act}|A,B)=0.403", "p(A,B)=p(A)\\,p(B)"],
+      "challenge": "Modifica un solo valore della CPT in modo che P(C = active) valga esattamente 0.5 (ad esempio portando P(C=act|i,i) da 0.1 a 0.1 + 0.097/0.49 ≈ 0.298).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p03-indipendenza-marginale-condizionata",
+      "title": "Indipendenti o no? Il test p(a,b) = p(a)p(b) con i numeri",
+      "concepts": ["c50", "c51"],
+      "scenario": "medicina",
+      "realExample": "Febbre (a) e tosse (b) in pazienti di un ambulatorio durante la stagione influenzale, con causa comune influenza (c). Dati sintetici: P(c=1) = 0.2; P(a=1|c=1) = 0.8, P(a=1|c=0) = 0.1; P(b=1|c=1) = 0.7, P(b=1|c=0) = 0.15. Marginalmente p(a=1, b=1) = 0.124 mentre p(a=1)p(b=1) = 0.24 · 0.26 = 0.0624: dipendenti. Dato c sono indipendenti per costruzione.",
+      "storyboard": [
+        "Mosaico 2×2 di p(a, b): l'area di ogni cella è la probabilità congiunta; sopra, rettangoli tratteggiati con le aree p(a)p(b).",
+        "Le celle dove i due valori differiscono si colorano in rosso con lo scarto numerico; la formula p(a,b) = p(a)·p(b) mostra i numeri sostituiti e un simbolo ≠.",
+        "Interruttore 'condiziona su c': il mosaico si divide con un'animazione di 500 ms in due mosaici (c = 0 e c = 1); in entrambi i rettangoli tratteggiati coincidono con le celle e il simbolo diventa '='.",
+        "Slider 'effetto diretto febbre → tosse' δ, con P(b=1|c,a) = P(b=1|c) + δ·a: con δ > 0 anche dentro i due mosaici compaiono scarti rossi (transizione 300 ms) e l'indipendenza condizionata cade; per δ = 0.2: p(a=1,b=1|c=1) = 0.720 contro p(a=1|c=1)p(b=1|c=1) = 0.688, p(a=1,b=1|c=0) = 0.035 contro 0.017.",
+        "Pulsante 'scambia struttura' (morph del grafo 600 ms): si passa a due cause indipendenti con effetto comune, a = influenza P(a=1) = 0.2, b = COVID-19 P(b=1) = 0.1, c = febbre con P(c=1|a,b) = 0.90 (1,1), 0.80 (1,0), 0.70 (0,1), 0.05 (0,0) (dati sintetici). Ora il mosaico marginale coincide (p(a=1,b=1) = 0.020 = 0.2 · 0.1: indipendenti) mentre quello con c = 1 mostra scarti: p(a=1,b=1|c=1) = 0.071 contro p(a=1|c=1)p(b=1|c=1) = 0.638 · 0.291 ≈ 0.186; P(a=1|c=1) = 0.638 scende a 0.243 se si osserva anche b = 1 (anticipo del collider e dell'explaining away di p04)."
+      ],
+      "interactions": ["interruttore 'condiziona su c'", "slider δ da 0 a 0.3 (passo 0.01)", "slider dei parametri della distribuzione, ciascuno da 0.01 a 0.99", "pulsante 'scambia struttura'"],
+      "visual": "Mosaic plot con celle reali e rettangoli tratteggiati del prodotto delle marginali, scarti in rosso, formule con valori sostituiti, legenda a,b,c con nomi clinici.",
+      "aha": "L'indipendenza è un'uguaglianza numerica tra congiunta e prodotto delle marginali; può mancare marginalmente e valere dato c, o viceversa.",
+      "formulasShown": ["p(a,b)=p(a)\\cdot p(b)", "p(a,b|c)=p(a|c)\\cdot p(b|c)", "0.124\\neq0.24\\cdot0.26=0.0624", "c=1:\\ 0.56=0.8\\cdot0.7,\\qquad c=0:\\ 0.015=0.1\\cdot0.15"],
+      "challenge": "Trova i valori di P(a=1|c) che rendono a e b marginalmente indipendenti pur con la causa comune (serve P(a=1|c=1) = P(a=1|c=0): la causa comune non deve influenzare a).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p03-dai-percorsi-alla-d-separazione",
+      "title": "Algebra o percorsi? Verso la d-separazione",
+      "concepts": ["c53", "c54", "c55"],
+      "scenario": "medicina",
+      "realExample": "Domande del cardiologo sulla rete a 7 nodi con le CPT sintetiche dichiarate in p03-teorema-imap-fattorizzazione: 'il fumo è indipendente dall'ipertensione?' (sì: P(x_5=1|x_2=1) = P(x_5=1|x_2=0) = 0.284), 'e se conosco che il paziente ha dispnea?' (no: P(x_5=1|x_7=1, x_2=1) = 0.489 contro P(x_5=1|x_7=1, x_2=0) = 0.538, perché il fumo 'spiega' la dispnea tramite la cardiopatia). Con l'algebra servono centinaia di operazioni per ciascuna domanda; con il grafo basta esaminare i percorsi tra le due variabili (le regole si imparano nel modulo p04).",
+      "storyboard": [
+        "L'utente sceglie due nodi a e b e un insieme condizionante (di default vuoto): preset fumo x_2 e ipertensione x_5; i due nodi si accendono in giallo (200 ms).",
+        "Pannello sinistro 'algebra' (Play, circa 3 s): le 128 righe della congiunta scorrono, un contatore sale fino al numero di somme e prodotti necessari per confrontare p(a, b | C) con p(a|C)p(b|C) su tutte le configurazioni; alla fine il verdetto numerico con i valori sostituiti (per x_2, x_5 con C = ∅: P(x_5=1|x_2=1) = 0.284 = P(x_5=1|x_2=0), 'indipendenti').",
+        "Pannello destro 'grafo': tutti i percorsi non orientati tra a e b vengono tracciati uno dopo l'altro (stroke-dashoffset, 500 ms ciascuno) con colori diversi (per x_2 e x_5: x_2→x_4←x_1→x_5, x_2→x_4←x_3→x_5, x_2→x_4→x_7←x_5); i nodi dove le frecce convergono (x_4, x_7) ricevono un'icona '→●←', quelli dove divergono o passano un'icona diversa.",
+        "Le regole per bloccare un percorso sono mostrate come lucchetto 'prossimo modulo: d-separazione'. Clic su x_7 per aggiungerlo all'insieme condizionante: il verdetto dell'algebra passa a 'dipendenti' (0.489 ≠ 0.538) e i tre percorsi lampeggiano, perché x_7 è sul terzo percorso ed è anche discendente del nodo convergente x_4 degli altri due (spiegazione completa in p04).",
+        "Clic su x_4 al posto di x_7: prima di mostrare il verdetto il widget chiede 'indipendenti o no?'; poi calcola P(x_5=1|x_4=1, x_2=1) = 0.358 contro P(x_5=1|x_4=1, x_2=0) = 0.384, 'dipendenti'. Aggiungendo anche x_1 e x_3 (insieme {x_1, x_3, x_4}, configurazione x_1 = 1, x_3 = 0, x_4 = 1) i due valori coincidono (0.40 = 0.40, cioè P(x_5=1|x_1=1,x_3=0) letto dalla CPT): tutti i percorsi sono di nuovo chiusi. Le regole restano sotto lucchetto fino a p04.",
+        "Riepilogo: la frase della fonte 'd-separation determines whether two variables are independent given a set of conditions by examining the paths in the graph'."
+      ],
+      "interactions": ["selezione di due nodi", "clic sui nodi per metterli o toglierli dall'insieme condizionante", "pulsante 'traccia i percorsi'", "pulsante 'verifica con l'algebra'"],
+      "visual": "Grafo a 7 nodi con percorsi colorati animati, pannello di calcolo con contatore delle operazioni, verdetto indipendente o dipendente, lucchetto con rimando a p04.",
+      "aha": "La stessa risposta che l'algebra ottiene con centinaia di operazioni è scritta nei percorsi del grafo: la d-separazione è il modo sistematico di leggerla.",
+      "formulasShown": ["a\\perp b\\mid C\\;\\Leftrightarrow\\;p(a,b|C)=p(a|C)\\,p(b|C)", "\\mathrm{dsep}(a;b\\mid C)\\;\\Rightarrow\\;a\\perp b\\mid C", "P(x_5=1|x_2=1)=P(x_5=1|x_2=0)=0.284", "P(x_5=1|x_7=1,x_2=1)=0.489\\neq P(x_5=1|x_7=1,x_2=0)=0.538", "P(x_5=1|x_4=1,x_2=1)=0.358\\neq P(x_5=1|x_4=1,x_2=0)=0.384", "P(x_5=1|x_1=1,x_3=0,x_4=1,x_2=1)=0.40=P(x_5=1|x_1=1,x_3=0,x_4=1,x_2=0)"],
+      "challenge": "Trova una coppia di nodi e un insieme condizionante per cui le variabili sono indipendenti a priori ma diventano dipendenti condizionando (es. x_2 e x_5 dato x_7).",
+      "size": "M",
+      "tech": "svg+motion"
+    }
+  ],
+  "exercises": [
+    {
+      "id": "es01",
+      "title": "Fattorizzazione e parametri di un DAG casuale",
+      "type": "numerico",
+      "description": "Dato un DAG casuale con m nodi (randomizzare m tra 4 e 8, grado entrante massimo tra 1 e 3, numero di stati v_i tra 2 e 3), scrivere la fattorizzazione p(x_1,…,x_m) = ∏ p(x_i|Pa_{x_i}), contare le righe di ogni CPT (∏_{Pa} v_j) e i parametri liberi Σ(v_i − 1)∏_{Pa} v_j, e confrontarli con quelli della congiunta piena ∏ v_i − 1. Soluzione calcolata leggendo gli archi entranti di ogni nodo.",
+      "concepts": ["c30", "c32", "c33", "c47", "c58"]
+    },
+    {
+      "id": "es02",
+      "title": "Calcoli sulla rete regolatoria giocattolo",
+      "type": "numerico",
+      "description": "Nella rete A → C ← B con P(A=active) = a, P(B=active) = b e CPT di C (quattro valori c_aa, c_ai, c_ia, c_ii) calcolare: (1) una probabilità congiunta a scelta; (2) P(C=active); (3) P(A=active | C=active). Randomizzare a, b in [0.1, 0.9] e i valori della CPT in [0.05, 0.95]; con i valori della fonte (0.3, 0.3; 0.9, 0.6, 0.7, 0.1) le risposte sono ad esempio 0.126, 0.403, 0.514. Soluzione: prodotto dei fattori; somma sulle 4 configurazioni dei genitori; regola di Bayes.",
+      "concepts": ["c48", "c49", "c59"]
+    },
+    {
+      "id": "es03",
+      "title": "Elencare le indipendenze locali",
+      "type": "concettuale",
+      "description": "Dato un DAG (quello della fonte o uno casuale con 5-8 nodi), elencare per ogni nodo genitori, discendenti, non-discendenti e l'indipendenza locale x_i ⊥ NonDescendants_{x_i} | Parents_{x_i}. Verifica automatica per confronto con l'insieme calcolato dal grafo.",
+      "concepts": ["c20", "c22", "c23", "c57"]
+    },
+    {
+      "id": "es04",
+      "title": "Dimostrare I-map ⇒ fattorizzazione",
+      "type": "dimostrazione",
+      "description": "Scrivere la dimostrazione completa: ipotesi (indipendenze locali), ordinamento topologico, regola della catena, sostituzione di p(x_i|x_1,…,x_{i−1}) con p(x_i|Pa_{x_i}) spiegando perché i predecessori sono non-discendenti. Versione guidata: riordinare i passaggi mescolati e abbinare a ciascuno la giustificazione.",
+      "concepts": ["c34", "c36", "c37", "c38"]
+    },
+    {
+      "id": "es05",
+      "title": "Dimostrare fattorizzazione ⇒ I-map",
+      "type": "dimostrazione",
+      "description": "Partendo da p(x_1,…,x_m) = ∏ p(x_i|Pa_{x_i}), ricavare p(x_m|x_1,…,x_{m−1}) = p(x_m|Pa_{x_m}) con regole di prodotto e somma, isolamento del termine di x_m e normalizzazione della CPD; spiegare come si estende a tutte le variabili. Versione guidata a completamento: una formula mancante per passo.",
+      "concepts": ["c39", "c40", "c41", "c42"]
+    },
+    {
+      "id": "es06",
+      "title": "Vero o falso sugli I-map",
+      "type": "concettuale",
+      "description": "Affermazioni da valutare con motivazione: (a) un grafo completo è un I-map per ogni distribuzione (vero); (b) se G è un I-map per p allora ogni indipendenza di p si legge in G (falso); (c) il grafo vuoto è un I-map per ogni p (falso, solo se tutte le variabili sono mutuamente indipendenti); (d) se p fattorizza secondo G allora G è un I-map per p (vero); (e) il grafo completo è la scelta migliore perché è sempre corretto (falso: non fattorizza nulla e ha 2^m − 1 parametri).",
+      "concepts": ["c26", "c27", "c28", "c29", "c34"]
+    },
+    {
+      "id": "es07",
+      "title": "Stima bayesiana multinomiale con prior di Dirichlet",
+      "type": "numerico",
+      "description": "Dati r esiti con conteggi N_k e iperparametri α_k, calcolare parametri della posterior (N_k + α_k), predittiva (N_k + α_k)/(N + α), stima ML N_k/N e peso N/(N+α) dei dati. Randomizzare r in {3, 4, 5, 6}, N_k interi in [0, 30] (almeno un conteggio nullo con probabilità 1/2), α_k in {0.5, 1, 2, 5}. Domanda aggiuntiva: quale α totale rende la stima esattamente a metà tra MLE e media a priori (α = N).",
+      "concepts": ["c02", "c04", "c05", "c06", "c07"]
+    },
+    {
+      "id": "es08",
+      "title": "Dimensione di una CPT",
+      "type": "numerico",
+      "description": "Per un nodo con v_i stati e k genitori ciascuno con v stati calcolare il numero di righe v^k e i parametri liberi (v_i − 1)·v^k. Randomizzare k in [0, 6], v in [2, 4], v_i in [2, 4]. Soluzione diretta dalla formula della fonte.",
+      "concepts": ["c46", "c47"]
+    },
+    {
+      "id": "es09",
+      "title": "Verifica numerica di indipendenza",
+      "type": "numerico",
+      "description": "Data una tabella congiunta p(a, b) 2×2 (oppure p(a, b, c) 2×2×2) decidere se a ⊥ b | ∅ confrontando p(a, b) con p(a)p(b), e se a ⊥ b | c confrontando p(a, b|c) con p(a|c)p(b|c) per entrambi i valori di c. Randomizzare generando con probabilità 1/2 tabelle indipendenti per costruzione e con probabilità 1/2 tabelle con dipendenza; soluzione: calcolo delle marginali e dei prodotti, confronto con tolleranza 10^{-6}.",
+      "concepts": ["c50", "c51", "c52"]
+    },
+    {
+      "id": "es10",
+      "title": "Indipendenza marginale nella struttura a V",
+      "type": "dimostrazione",
+      "description": "Dimostrare che nella rete A → C ← B vale A ⊥ B | ∅ per qualunque scelta delle CPT: p(A, B) = Σ_C p(A)p(B)p(C|A, B) = p(A)p(B). Domanda di approfondimento: vale anche A ⊥ B | C? Verificarlo numericamente con i valori di p.16 (no: P(A=act|C=act) ≈ 0.514 ma P(A=act|C=act, B=act) ≈ 0.355).",
+      "concepts": ["c48", "c50", "c51", "c59"]
+    },
+    {
+      "id": "es11",
+      "title": "Ordinamenti topologici del DAG a 7 nodi",
+      "type": "numerico",
+      "description": "Per la rete di p.12/14 (archi x_1→x_4, x_1→x_5, x_2→x_4, x_3→x_4, x_3→x_5, x_4→x_6, x_4→x_7, x_5→x_7): (1) dire quali di questi ordini sono topologici: x_1,x_2,x_3,x_4,x_5,x_6,x_7 (sì); x_3,x_2,x_1,x_5,x_4,x_7,x_6 (sì); x_1,x_3,x_5,x_2,x_4,x_7,x_6 (sì: x_5 può precedere x_2); x_1,x_2,x_4,x_3,x_5,x_6,x_7 (no: x_3→x_4 punta all'indietro); (2) contare tutti gli ordinamenti topologici (34, per enumerazione con backtracking: a ogni passo si sceglie un nodo i cui genitori sono già stati piazzati); (3) spiegare perché la dimostrazione 'I-map ⇒ Factorization' funziona con uno qualunque dei 34. Versione randomizzata: DAG casuale con 5-7 nodi e 5-10 archi; soluzione per enumerazione (algoritmo di Kahn con backtracking).",
+      "concepts": ["c36", "c56"],
+      "addedBy": "revisore"
+    },
+    {
+      "id": "es12",
+      "title": "Vero o falso sulle dimostrazioni e sulla lettura del grafo",
+      "type": "concettuale",
+      "description": "Affermazioni da valutare con motivazione: (a) la regola della catena vale per qualunque ordine delle variabili (vero: usa solo la regola del prodotto); (b) nella dimostrazione 'I-map ⇒ Factorization' si può usare un ordine qualunque (falso: con un ordine non topologico tra i condizionanti di x_i può esserci un suo discendente, es. x_7 nel fattore di x_4, che l'indipendenza locale non permette di togliere); (c) nella dimostrazione 'Factorization ⇒ I-map' l'unico fattore che contiene x_m è p(x_m|Pa_{x_m}) (vero: x_m è ultima in ordine topologico, quindi non è genitore di nessuno); (d) due nodi non collegati da un arco sono marginalmente indipendenti (falso: x_2 e x_7 non sono adiacenti ma dipendono tramite x_2→x_4→x_7); (e) la dimostrazione 'Factorization ⇒ I-map' prova che G cattura tutte le indipendenze di p (falso: prova I_l(G) ⊆ I(p); il viceversa non vale, p.13); (f) Σ_{x_m} p(x_m|Pa_{x_m}) = 1 vale per ogni configurazione dei genitori (vero: ogni riga/colonna della CPT è una distribuzione).",
+      "concepts": ["c17", "c28", "c36", "c37", "c38", "c40", "c41", "c42"],
+      "addedBy": "revisore"
+    }
+  ],
+  "examQuestions": [
+    {
+      "text": "Bayesian networks: formalization (DAG, local independencies, various case of d-separation criterion, general d-separation criterion and global independencies) and learning of the parameters (ML with complete data, MAP with prior knowledge, EM with incomplete data)",
+      "prof": "Passerini",
+      "concepts": ["c15", "c16", "c17", "c20", "c21", "c26", "c32", "c34", "c44", "c55"]
+    },
+    {
+      "text": "Hard or soft margin svm (choose one) + Learning bayesian network. Questions afterwards: canonical hyperplane, why do we use kkt, why solution of dual is equal to primal, disjoint cpd in BN, explain E-M in BN",
+      "prof": "Passerini",
+      "concepts": ["c32", "c44", "c45"]
+    },
+    {
+      "text": "Kernel machines + Bayesian networks  Question: how can you demonstrate that a kernel is valid? Is it easy to demonstrate that a kernel is positive definite?",
+      "prof": "Passerini",
+      "concepts": ["c15", "c20", "c26", "c34", "c44"]
+    },
+    {
+      "text": "Perceptron (All) + Parameter estimation Questions: - Problem with analytical solution for perceptron regression - Example of estimation of Gaussian parameters: why do we obtain a Gaussian also as posterior? - How to use parameter estimation in Bayesian Networks - Why ML is fast in Bayesian Network (CDP independence) - Problem of missing data in Bayesian Networks",
+      "prof": "Passerini",
+      "concepts": ["c02", "c32", "c33", "c45"]
+    },
+    {
+      "text": "Learning Parameters  (ML with complete data, MAP), SVM (Hard Margin, Lagrangian, Soft Margin), NonLinear,  Kernel Machine, Perceptron)",
+      "prof": "Passerini",
+      "concepts": ["c02", "c04", "c05", "c07"]
+    },
+    {
+      "text": "What is the formula of Maximum Likelihood, why we can use the separate products of the probabilities and what the Likelihood describe. How we can describe the goodness of an estimation and Is Maximum Likelihood Estimation a good estimator? Is it better or not with respect to the Bayesian Estimation? Why? Then he asked me to apply Maximum Likelihood estimation on an exercise. Last question was: In which case ML and Bayesian are the same?",
+      "prof": "Melgani",
+      "concepts": ["c04", "c06", "c07"],
+      "addedBy": "revisore"
+    }
+  ],
+  "crossLinks": [
+    {"moduleId": "p02-bernoulli-multinomiale", "why": "La metà superiore di p.11 (posterior Dirichlet, predittiva, pseudo-conteggi, equivalent sample size) chiude l'esempio multinomiale di p02, che contiene anche la stima ML θ*_k = N_k/N (p.10) e il caso Beta-Bernoulli."},
+    {"moduleId": "p01-stima-parametri", "why": "Prior coniugate, statistiche sufficienti e confronto tra stima ML e bayesiana: la coniugazione Dirichlet-multinomiale di c02 ne è un'applicazione."},
+    {"moduleId": "p04-d-separazione", "why": "Continua da p.16: casi tail-to-tail, head-to-tail e head-to-head (la rete giocattolo A → C ← B è un collider, explaining away), criterio generale di d-separazione, indipendenze globali I(G), I-equivalenza, minimal I-map e perfect map (il 'viceversa non vale' di c28)."},
+    {"moduleId": "p05-apprendimento-reti", "why": "Apprendimento delle CPT: la fattorizzazione di c32 rende la verosimiglianza un prodotto di termini separati per nodo (ML con conteggi, 'why ML is fast'); la stima MAP usa pseudo-conteggi di Dirichlet come quelli di c05-c07; EM per dati mancanti."},
+    {"moduleId": "m07-stima-bayesiana", "why": "Stima bayesiana nella parte di Melgani: stesso compromesso tra prior e dati del limite α → 0 (c07)."},
+    {"moduleId": "m17-bayes-map-ml", "why": "Teorema di Bayes e regole di somma e prodotto (c08) applicati alla classificazione; il calcolo P(A|C) della rete giocattolo è un'inferenza bayesiana."},
+    {"moduleId": "m10-em-dati-incompleti", "why": "L'algoritmo EM che le reti bayesiane usano per l'apprendimento con dati mancanti (domanda d'esame 'explain E-M in BN')."}
+  ],
+  "emptyPages": [],
+  "gaps": [
+    "p.11: la metà superiore (posterior Dirichlet, predittiva, interpretazione della prior) appartiene al modulo p02; inventariata qui come da regola delle pagine di confine (c01-c07), da deduplicare.",
+    "p.11: nel punto 'α_k represents the prior belief in the occurrence of outcome x^k' l'esito è scritto con apice (x^k), altrove con pedice (x_k): incoerenza di notazione della fonte.",
+    "p.11: la media della Dirichlet (N_k + α_k)/(N + α) è data senza dimostrazione; si usa la proprietà nota E[θ_k] = β_k / Σ β_j (der04, passo segnalato come integrazione).",
+    "p.11: le regole di somma e prodotto sono citate ma non scritte; le formule di c08 sono la forma standard (integrazione).",
+    "p.12: la definizione di non-discendenti ('nodes that cannot be reached from x_i by following the directed edges') non esclude esplicitamente x_i stesso; inoltre i genitori sono non-discendenti e compaiono anche nell'insieme condizionante, quindi l'indipendenza informativa riguarda NonDescendants meno Parents.",
+    "p.13: '2^m parameters' conta le configurazioni; i parametri liberi sono 2^m − 1 per il vincolo di normalizzazione (precisazione in c30 e der05).",
+    "p.13: 'the total is typically dominated by the largest conditional factor' è un'affermazione qualitativa; la formula esatta Σ(v_i − 1)∏ v_j di c33 e der05 è un'integrazione.",
+    "p.15: la dimostrazione 'Factorization ⇒ I-map' tratta solo l'ultima variabile x_m e conclude con 'Repeat this process for all variables'. Il passo di ricorsione (marginalizzare x_m lascia una fattorizzazione del sottografo; per un nodo generico scegliere un ordine topologico in cui venga dopo tutti i suoi non-discendenti) è esplicitato in der02 come integrazione.",
+    "p.15: 'a node with k parents, each having v states, would require a table with v^k rows' conta le configurazioni dei genitori; ogni riga contiene la distribuzione del figlio (v_i valori, v_i − 1 liberi). Nella slide di p.16 le configurazioni dei genitori sono colonne, non righe.",
+    "p.16: l'esempio 'toy regulatory network' è introdotto solo da 'An example of this is the following', senza commento; tutti i calcoli su di esso (congiunta, P(C=active) = 0.403, indipendenza di A e B, P(A|C)) sono derivati (c59, der06, ex02).",
+    "p.16: la seconda metà della pagina (definizioni di indipendenza marginale e condizionata, introduzione alla d-separazione) apre il modulo p04; inventariata qui (c50-c55) come contenuto della pagina di confine.",
+    "p.13 (segnalato dal revisore): 'The total is typically dominated by the largest conditional factor unless the graph is fully connected' è ambiguo. Anche nel DAG completo il fattore più grande (l'ultimo nodo, con m − 1 genitori binari: 2^{m−1} parametri) vale circa metà del totale 2^m − 1; il senso probabile dell'eccezione è che nel grafo completo il fattore più grande è esso stesso esponenziale in m, quindi non c'è alcun risparmio rispetto alla congiunta piena.",
+    "p.15 (segnalato dal revisore): il passo 4 della dimostrazione 'Factorization ⇒ I-map' dice 'show that G encodes all the local independencies in p'. Letteralmente suggerirebbe che G catturi tutte le indipendenze di p, in contrasto con c28 (p.13, 'the converse does not necessarily hold'); il contenuto dimostrato è che p soddisfa tutte le indipendenze locali codificate da G, cioè I_l(G) ⊆ I(p). Chiarito in c42 ed es12."
+  ]
+}

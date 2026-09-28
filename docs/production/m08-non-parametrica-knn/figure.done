@@ -1,0 +1,1 @@
+figure m08: figures.ts con 10 figure (fig01-fig10, tutte quelle dell'inventario), 10 WebP in public/figures/m08-non-parametrica-knn/ controllati a vista (fig05, fig06, fig09, fig10 composti da due zone della stessa pagina); KaTeX, rimandi e codici interni verificati; tsc senza errori in figures.ts. 2026-09-24

@@ -1,0 +1,552 @@
+{
+  "c01": [
+    "#ml-e-bayes-la-pagina-di-confine",
+    "#un-punto-contro-una-distribuzione",
+    "derivation:der10",
+    "widget:m08-ml-punto-vs-bayes-distribuzione",
+    "quiz:chk-02"
+  ],
+  "c02": [
+    "#un-punto-contro-una-distribuzione",
+    "formula:f-c02",
+    "derivation:der10",
+    "widget:m08-ml-punto-vs-bayes-distribuzione",
+    "quiz:chk-02"
+  ],
+  "c03": [
+    "#quando-ml-e-bayes-coincidono",
+    "#ml-contro-bayes-allorale",
+    "derivation:der10",
+    "widget:m08-quando-ml-e-bayes-coincidono",
+    "quiz:chk-01"
+  ],
+  "c04": [
+    "#quando-ml-e-bayes-coincidono",
+    "#ml-contro-bayes-allorale",
+    "formula:f-c04",
+    "formula:f-c04-2",
+    "derivation:der10",
+    "widget:m08-quando-ml-e-bayes-coincidono",
+    "quiz:chk-01"
+  ],
+  "c05": [
+    "#perché-ml-perché-bayes",
+    "#ml-contro-bayes-allorale",
+    "widget:m08-ml-o-bayes-bilancia-pratica",
+    "quiz:chk-02"
+  ],
+  "c06": [
+    "#perché-ml-perché-bayes",
+    "#ml-contro-bayes-allorale",
+    "widget:m08-ml-o-bayes-bilancia-pratica",
+    "quiz:chk-02"
+  ],
+  "c07": [
+    "#che-cosè-la-stima-non-parametrica",
+    "#non-parametrico-cosa-significa-perché-e-se-converge",
+    "widget:m08-parametrico-che-fallisce",
+    "quiz:chk-03"
+  ],
+  "c08": [
+    "#quando-serve",
+    "widget:m08-parametrico-che-fallisce",
+    "quiz:chk-03"
+  ],
+  "c09": [
+    "#quando-serve",
+    "widget:m08-parametrico-che-fallisce",
+    "quiz:chk-03"
+  ],
+  "c10": [
+    "#lavorare-sui-campioni",
+    "widget:m08-parametrico-che-fallisce",
+    "quiz:chk-03"
+  ],
+  "c11": [
+    "#flessibilità-e-suo-prezzo",
+    "widget:m08-flessibilita-e-suo-prezzo",
+    "quiz:chk-03"
+  ],
+  "c12": [
+    "#due-metodi-popolari-k-nn-e-parzen",
+    "widget:m08-due-strade-anteprima"
+  ],
+  "c13": [
+    "#due-metodi-popolari-k-nn-e-parzen",
+    "widget:m08-due-strade-anteprima"
+  ],
+  "c14": [
+    "#due-metodi-popolari-k-nn-e-parzen",
+    "widget:m08-due-strade-anteprima"
+  ],
+  "c15": [
+    "#il-punto-x-e-la-regione-r",
+    "formula:f-c15",
+    "derivation:der01",
+    "widget:m08-regione-r-e-probabilita"
+  ],
+  "c16": [
+    "#il-punto-x-e-la-regione-r",
+    "derivation:der01",
+    "widget:m08-regione-r-e-probabilita"
+  ],
+  "c17": [
+    "#la-probabilità-della-regione",
+    "formula:f-c17",
+    "derivation:der01",
+    "figure:fig05",
+    "widget:m08-regione-r-e-probabilita"
+  ],
+  "c18": [
+    "#la-probabilità-della-regione",
+    "formula:f-c18",
+    "figure:fig05",
+    "widget:m08-regione-r-e-probabilita"
+  ],
+  "c19": [
+    "#contare-i-campioni-la-frequenza-relativa",
+    "#k-è-una-variabile-binomiale",
+    "derivation:der06",
+    "widget:m08-frequenza-relativa-e-grandi-numeri",
+    "quiz:chk-04"
+  ],
+  "c20": [
+    "#contare-i-campioni-la-frequenza-relativa",
+    "formula:f-c20",
+    "derivation:der01",
+    "derivation:der06",
+    "example:ex08",
+    "figure:fig05",
+    "widget:m08-frequenza-relativa-e-grandi-numeri",
+    "quiz:chk-05"
+  ],
+  "c21": [
+    "#contare-i-campioni-la-frequenza-relativa",
+    "formula:f-c21",
+    "derivation:der06",
+    "figure:fig05",
+    "widget:m08-frequenza-relativa-e-grandi-numeri",
+    "quiz:chk-04"
+  ],
+  "c22": [
+    "#la-formula-madre",
+    "formula:f-c22",
+    "derivation:der01",
+    "derivation:der07",
+    "example:ex08",
+    "figure:fig06",
+    "widget:m08-da-pr-a-densita",
+    "quiz:chk-05"
+  ],
+  "c23": [
+    "#abbastanza-grande-abbastanza-piccola",
+    "derivation:der07",
+    "example:ex08",
+    "figure:fig06",
+    "widget:m08-dilemma-dimensione-regione"
+  ],
+  "c24": [
+    "#abbastanza-grande-abbastanza-piccola",
+    "derivation:der07",
+    "figure:fig06",
+    "widget:m08-dilemma-dimensione-regione",
+    "quiz:chk-06"
+  ],
+  "c25": [
+    "#abbastanza-grande-abbastanza-piccola",
+    "derivation:der07",
+    "figure:fig06",
+    "widget:m08-dilemma-dimensione-regione",
+    "quiz:chk-06"
+  ],
+  "c26": [
+    "#k-fisso-oppure-v-fisso",
+    "widget:m08-chi-fissa-cosa",
+    "quiz:chk-07"
+  ],
+  "c27": [
+    "#k-fisso-oppure-v-fisso",
+    "#la-cella-k-nn-si-regola-da-sola",
+    "derivation:der08",
+    "widget:m08-chi-fissa-cosa",
+    "widget:m08-volume-knn-segue-la-densita",
+    "quiz:chk-07",
+    "quiz:chk-13"
+  ],
+  "c28": [
+    "#k-fisso-oppure-v-fisso",
+    "widget:m08-chi-fissa-cosa",
+    "quiz:chk-07"
+  ],
+  "c29": [
+    "#vantaggi-e-svantaggi",
+    "#la-cella-k-nn-si-regola-da-sola",
+    "derivation:der08",
+    "widget:m08-pro-e-contro",
+    "widget:m08-volume-knn-segue-la-densita",
+    "widget:m08-carte-knn-o-parzen",
+    "quiz:chk-13",
+    "quiz:chk-22"
+  ],
+  "c30": [
+    "#vantaggi-e-svantaggi",
+    "widget:m08-pro-e-contro",
+    "widget:m08-carte-knn-o-parzen",
+    "quiz:chk-22"
+  ],
+  "c31": [
+    "#entrambi-convergono",
+    "#le-condizioni-generali-di-convergenza",
+    "example:ex01",
+    "widget:m08-griglia-parzen-vs-knn",
+    "widget:m08-carte-knn-o-parzen",
+    "quiz:chk-09",
+    "quiz:chk-22"
+  ],
+  "c32": [
+    "#parzen-contro-k-nn-al-crescere-di-n",
+    "formula:f-c32",
+    "formula:f-c32-2",
+    "formula:f-c32-3",
+    "figure:fig01",
+    "figure:fig08",
+    "example:ex01",
+    "widget:m08-griglia-parzen-vs-knn",
+    "quiz:chk-08"
+  ],
+  "c33": [
+    "#la-riga-di-parzen",
+    "formula:f-c33",
+    "figure:fig01",
+    "example:ex01",
+    "widget:m08-griglia-parzen-vs-knn",
+    "quiz:chk-08"
+  ],
+  "c34": [
+    "#la-riga-del-k-nn",
+    "formula:f-c34",
+    "figure:fig01",
+    "example:ex01",
+    "derivation:der08",
+    "widget:m08-griglia-parzen-vs-knn",
+    "quiz:chk-08"
+  ],
+  "c35": [
+    "#le-due-ipotesi",
+    "figure:fig07",
+    "widget:m08-ipotesi-knn"
+  ],
+  "c36": [
+    "#le-due-ipotesi",
+    "figure:fig07",
+    "widget:m08-ipotesi-knn"
+  ],
+  "c37": [
+    "#espandere-la-cella-fino-a-k-campioni",
+    "example:ex06",
+    "widget:m08-cella-che-si-espande",
+    "quiz:chk-11"
+  ],
+  "c38": [
+    "#espandere-la-cella-fino-a-k-campioni",
+    "formula:f-c38",
+    "formula:f-c38-2",
+    "example:ex06",
+    "widget:m08-cella-che-si-espande",
+    "quiz:chk-10",
+    "quiz:chk-11"
+  ],
+  "c39": [
+    "#la-formula-della-stima-k-nn",
+    "formula:f-c39",
+    "figure:fig07",
+    "example:ex06",
+    "derivation:der05",
+    "derivation:der09",
+    "widget:m08-cella-che-si-espande",
+    "quiz:chk-11"
+  ],
+  "c40": [
+    "#la-condizione-di-consistenza",
+    "formula:f-c40",
+    "derivation:der02",
+    "derivation:der03",
+    "derivation:der09",
+    "example:ex05",
+    "example:ex10",
+    "figure:fig07",
+    "widget:m08-condizioni-di-consistenza",
+    "quiz:chk-12"
+  ],
+  "c41": [
+    "#la-condizione-di-consistenza",
+    "derivation:der02",
+    "derivation:der09",
+    "widget:m08-condizioni-di-consistenza",
+    "quiz:chk-12"
+  ],
+  "c42": [
+    "#lesempio-della-radice-di-n",
+    "formula:f-c42",
+    "formula:f-c42-2",
+    "derivation:der02",
+    "derivation:der08",
+    "example:ex05",
+    "figure:fig07",
+    "widget:m08-condizioni-di-consistenza",
+    "quiz:chk-12"
+  ],
+  "c43": [
+    "#k-fisso-bias-oppure-overfitting",
+    "derivation:der03",
+    "derivation:der09",
+    "example:ex10",
+    "widget:m08-k-piccolo-k-grande",
+    "quiz:chk-12"
+  ],
+  "c44": [
+    "#k-troppo-piccolo-overfitting",
+    "derivation:der03",
+    "example:ex06",
+    "example:ex10",
+    "widget:m08-k-piccolo-k-grande",
+    "widget:m08-disegna-la-stima-knn",
+    "quiz:chk-15"
+  ],
+  "c45": [
+    "#k-troppo-grande-oversmoothing",
+    "derivation:der03",
+    "example:ex06",
+    "widget:m08-k-piccolo-k-grande",
+    "widget:m08-disegna-la-stima-knn",
+    "quiz:chk-15"
+  ],
+  "c46": [
+    "#k-come-iperparametro",
+    "widget:m08-k-piccolo-k-grande",
+    "quiz:chk-15"
+  ],
+  "c47": [
+    "#esempio-in-una-dimensione",
+    "formula:f-c47",
+    "figure:fig02",
+    "figure:fig09",
+    "example:ex02",
+    "example:ex09",
+    "derivation:der04",
+    "widget:m08-esempio-1d-k3-k5",
+    "widget:m08-disegna-la-stima-knn"
+  ],
+  "c48": [
+    "#le-discontinuità-di-pendenza",
+    "formula:f-c48",
+    "formula:f-c48-2",
+    "formula:f-c48-3",
+    "derivation:der04",
+    "example:ex02",
+    "example:ex09",
+    "figure:fig02",
+    "figure:fig09",
+    "widget:m08-esempio-1d-k3-k5",
+    "widget:m08-disegna-la-stima-knn",
+    "quiz:chk-16"
+  ],
+  "c49": [
+    "#la-forma-esplicita-in-una-dimensione",
+    "formula:f-c49",
+    "formula:f-c49-2",
+    "derivation:der04",
+    "example:ex02",
+    "example:ex06",
+    "example:ex09",
+    "widget:m08-esempio-1d-k3-k5",
+    "quiz:chk-16"
+  ],
+  "c50": [
+    "#code-pesanti",
+    "formula:f-c50",
+    "formula:f-c50-2",
+    "example:ex02",
+    "example:ex09",
+    "figure:fig02",
+    "widget:m08-un-solo-campione-e-code",
+    "widget:m08-disegna-la-stima-knn",
+    "quiz:chk-17"
+  ],
+  "c51": [
+    "#esempio-in-due-dimensioni",
+    "formula:f-c51",
+    "formula:f-c51-2",
+    "figure:fig03",
+    "figure:fig09",
+    "example:ex03",
+    "widget:m08-superficie-knn-2d"
+  ],
+  "c52": [
+    "#nelle-dimensioni-elevate",
+    "#dimensionalità-e-intorni-locali",
+    "example:ex03",
+    "figure:fig09",
+    "widget:m08-knn-e-dimensionalita",
+    "quiz:chk-18"
+  ],
+  "c53": [
+    "#stime-k-nn-al-crescere-di-n",
+    "formula:f-c53",
+    "figure:fig04",
+    "figure:fig10",
+    "example:ex04",
+    "widget:m08-knn-al-crescere-di-n",
+    "quiz:chk-19"
+  ],
+  "c54": [
+    "#la-colonna-gaussiana",
+    "figure:fig04",
+    "example:ex04",
+    "example:ex10",
+    "widget:m08-knn-al-crescere-di-n",
+    "quiz:chk-19"
+  ],
+  "c55": [
+    "#la-colonna-bimodale",
+    "figure:fig04",
+    "example:ex04",
+    "widget:m08-knn-al-crescere-di-n",
+    "quiz:chk-19"
+  ],
+  "c56": [
+    "#un-solo-campione",
+    "formula:f-c56",
+    "figure:fig04",
+    "example:ex04",
+    "widget:m08-un-solo-campione-e-code",
+    "quiz:chk-17",
+    "quiz:chk-19"
+  ],
+  "c57": [
+    "#verso-la-densità-vera",
+    "figure:fig04",
+    "example:ex04",
+    "widget:m08-knn-al-crescere-di-n",
+    "quiz:chk-19"
+  ],
+  "c58": [
+    "#una-finestra-attorno-ai-dati",
+    "formula:f-c58",
+    "widget:m08-parzen-ipercubo"
+  ],
+  "c59": [
+    "#lipercubo-di-lato-h",
+    "formula:f-c59",
+    "widget:m08-parzen-ipercubo",
+    "quiz:chk-21"
+  ],
+  "c60": [
+    "#lipercubo-di-lato-h",
+    "widget:m08-parzen-ipercubo",
+    "quiz:chk-21"
+  ],
+  "c61": [
+    "#la-funzione-finestra",
+    "formula:f-c61",
+    "formula:f-c61-2",
+    "figure:fig10",
+    "widget:m08-funzione-finestra-gamma",
+    "quiz:chk-21"
+  ],
+  "c62": [
+    "#la-funzione-finestra",
+    "formula:f-c62",
+    "formula:f-c62-2",
+    "formula:f-c62-3",
+    "widget:m08-funzione-finestra-gamma",
+    "quiz:chk-21"
+  ],
+  "c63": [
+    "#k-nn-e-parzen-a-confronto",
+    "#vantaggi-e-svantaggi",
+    "#stima-k-nn-disegno-classificatore-e-differenze-con-parzen",
+    "figure:fig01",
+    "widget:m08-chi-fissa-cosa",
+    "widget:m08-carte-knn-o-parzen",
+    "quiz:chk-22"
+  ],
+  "c64": [
+    "#dal-k-nn-stimatore-al-classificatore-k-nn",
+    "formula:f-c64",
+    "formula:f-c64-2",
+    "formula:f-c64-3",
+    "derivation:der05",
+    "example:ex07",
+    "widget:m08-dal-knn-stimatore-al-classificatore",
+    "quiz:chk-20"
+  ],
+  "c65": [
+    "#k-è-una-variabile-binomiale",
+    "formula:f-c65",
+    "formula:f-c65-2",
+    "formula:f-c65-3",
+    "derivation:der06",
+    "example:ex08",
+    "widget:m08-k-binomiale-e-imbuto",
+    "quiz:chk-04"
+  ],
+  "c66": [
+    "#bias-e-varianza-a-regione-fissata",
+    "formula:f-c66",
+    "formula:f-c66-2",
+    "formula:f-c66-3",
+    "derivation:der07",
+    "example:ex08",
+    "widget:m08-bias-varianza-a-regione-fissa",
+    "quiz:chk-06"
+  ],
+  "c67": [
+    "#il-volume-della-cella-ipersferica",
+    "formula:f-c67",
+    "formula:f-c67-2",
+    "example:ex06",
+    "widget:m08-volume-cella-ipersferica",
+    "quiz:chk-10",
+    "quiz:chk-18"
+  ],
+  "c68": [
+    "#la-cella-k-nn-si-regola-da-sola",
+    "formula:f-c68",
+    "formula:f-c68-2",
+    "derivation:der08",
+    "figure:fig01",
+    "widget:m08-volume-knn-segue-la-densita",
+    "quiz:chk-13"
+  ],
+  "c69": [
+    "#le-condizioni-generali-di-convergenza",
+    "formula:f-c69",
+    "formula:f-c69-2",
+    "derivation:der07",
+    "figure:fig01",
+    "widget:m08-griglia-parzen-vs-knn",
+    "widget:m08-carte-knn-o-parzen",
+    "quiz:chk-09"
+  ],
+  "c70": [
+    "#nel-k-nn-la-cella-è-aleatoria",
+    "formula:f-c70",
+    "formula:f-c70-2",
+    "formula:f-c70-3",
+    "formula:f-c70-4",
+    "derivation:der09",
+    "example:ex10",
+    "widget:m08-cella-aleatoria-beta",
+    "quiz:chk-14"
+  ],
+  "c71": [
+    "#agli-estremi-i-casi-limite-della-formula",
+    "#i-due-estremi-k-uguale-a-1-e-k-uguale-a-n",
+    "formula:f-c71",
+    "formula:f-c71-2",
+    "formula:f-c71-3",
+    "widget:m08-casi-limite-formula-madre",
+    "quiz:chk-06"
+  ]
+}

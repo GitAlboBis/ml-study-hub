@@ -1,0 +1,1329 @@
+## Panoramica
+
+Il foglio risponde a una domanda che Melgani fa all'orale: «How can we describe the goodness of an estimation?». Hai scelto un modello parametrico $p(\mathbf{x}|\boldsymbol{\theta})$ e hai stimato il vettore dei parametri $\boldsymbol{\theta}$ da $N$ campioni di training. Quanto è buona quella stima, e con quale metro la giudichi? <SourceRef doc="ch2" page={12} />
+
+Le cinque slide del Cap. 2 (p12-16) e le note (part1 p18-19) costruiscono la risposta come una catena:
+
+1. La stima $\hat{\boldsymbol{\theta}} = \hat{\boldsymbol{\theta}}(\mathbf{X})$ dipende dal training set $\mathbf{X}$, quindi è un **vettore aleatorio**.
+2. La giudichi con l'**errore di stima** $\boldsymbol{\varepsilon} = \hat{\boldsymbol{\theta}} - \boldsymbol{\theta}$: la stima ideale ha un errore senza bias e senza varianza.
+3. La varianza, da sola, non dice nulla: la confronti con il **bound di Cramér-Rao**, costruito con la matrice di informazione di Fisher. Lo stimatore che lo raggiunge è **efficiente**.
+4. Nei problemi reali gli stimatori sono spesso biased e inefficienti. Allora guardi il loro comportamento per $N \to +\infty$ e chiedi tre **proprietà asintotiche**: asintoticamente non polarizzato, asintoticamente efficiente, consistente.
+5. La **stima a massima verosimiglianza** (*Maximum Likelihood*, ML) possiede tutte e tre le proprietà: per questo la si usa in tanti problemi reali.
+
+Le pagine delle note su questo argomento cominciano prima delle slide sulla bontà e finiscono dopo. Si parte dal modello parametrico, dalla likelihood e dalle due procedure di stima, MLE e stima bayesiana (part1 p17-18). Si chiude con la definizione di stima ML, le sue proprietà e la scelta del modello statistico (part1 p20-21). Il foglio segue quest'ordine, perché prima di giudicare una stima devi sapere da dove viene.
+
+<Callout kind="intuizione">
+L'impianto di confezionamento del pesce misura la luminosità di 25 salmoni e ne stima la media. Il giorno dopo arrivano altri 25 salmoni e la stima cambia. Una buona regola di stima, al variare dei lotti, cade in media sul valore vero (niente bias), oscilla poco (varianza piccola, vicina al minimo possibile) e, con lotti sempre più grandi, finisce vicino al vero con probabilità che tende a 1 (consistenza).
+</Callout>
+
+<Callout kind="nota">
+Alcune parti del foglio sono **integrazioni didattiche**: la fonte non le contiene, ma all'orale il docente chiede di giustificare bias, varianza e consistenza. Sono dichiarate come tali nel punto in cui compaiono: gli esempi numerici, lo schizzo di dimostrazione del bound, la scomposizione dell'errore quadratico medio, le proprietà dell'informazione di Fisher, i legami tra le proprietà con i controesempi, il caso in cui il bound non vale, il quadro delle ipotesi.
+</Callout>
+
+<Callout kind="esame">
+Domanda reale della banca: «How we can describe the goodness of an estimation and Is Maximum Likelihood Estimation a good estimator?». Rispondi seguendo la catena qui sopra in sei tappe: stima aleatoria, errore di stima, bias e varianza, bound di Cramér-Rao ed efficienza, proprietà asintotiche, la ML le possiede. Le domande su Parzen e K-NN («Is Parzen a good estimator (bias/variance)?») usano gli stessi strumenti. Le sette domande della banca sono raccolte nella sezione per l'orale.
+</Callout>
+
+<Callout kind="inglese">
+Il lessico del foglio: *estimate* (stima) ed *estimator* (stimatore), *estimation error* (errore di stima), *bias* (polarizzazione), *unbiased* (non polarizzato), *variance* (varianza), *Cramér-Rao bound*, *Fisher information matrix* (matrice di informazione di Fisher), *efficient* (efficiente), *asymptotically unbiased*, *asymptotically efficient*, *consistent* (consistente), *likelihood* (verosimiglianza), *log-likelihood*.
+</Callout>
+
+## Il punto di partenza: modello parametrico e likelihood
+
+Le note aprono la stima parametrica a p17, pagina che il foglio condivide con <ModLink to="m03-stima-intro-parametrica">l'introduzione alla stima parametrica</ModLink>. Qui la riprendi perché ogni definizione di bontà poggia su questi oggetti: il vettore dei parametri, il training set, la likelihood. <SourceRef doc="part1" page={17} />
+
+### Il modello parametrico
+
+<Definition term="Vettore dei parametri" en="parameter vector">
+Assumi che il modello della densità di probabilità $p(\mathbf{x})$ sia caratterizzato da $r$ **parametri**, che insieme definiscono il vettore dei parametri $\boldsymbol{\theta}$. La dipendenza del modello da questo vettore si scrive $p(\mathbf{x}|\boldsymbol{\theta})$.
+</Definition>
+
+<Formula id="f-c01" />
+
+<Formula id="f-c01-2" />
+
+Il training set $\mathbf{X}$ raccoglie gli $N$ campioni. Le note lo chiamano «a vector of independent and identically distributed (iid) random variables»: ogni campione è una <Term en="random variable">variabile aleatoria</Term>, i campioni sono indipendenti tra loro e seguono tutti la stessa $p(\mathbf{x}|\boldsymbol{\theta})$.
+
+<Formula id="f-c01-3" />
+
+Il resto del foglio parla della qualità della stima $\hat{\boldsymbol{\theta}}$ ricavata da $\mathbf{X}$. Il vettore $\boldsymbol{\theta}$ senza cappello è il valore vero: nella visione ML è fisso ma ignoto. Nel caso della luminosità dei salmoni con varianza nota hai $r = 1$ e $\boldsymbol{\theta} = (m)$; se stimi anche la varianza, $r = 2$ e $\boldsymbol{\theta} = (m, \sigma^2)$.
+
+### La funzione di verosimiglianza
+
+Dato che $\mathbf{X}$ è un vettore di variabili aleatorie iid, le note definiscono la <Term en="likelihood function">funzione di verosimiglianza</Term> come il prodotto, sugli $N$ campioni, della densità del modello valutata in ciascun campione:
+
+<Formula id="f-c02" />
+
+Leggila come funzione di $\boldsymbol{\theta}$ a dati fissati. I campioni sono quelli che hai osservato, e sono fermi; a muoversi è il parametro. Le note: la funzione «defines the likelihood of the parameter vector $\boldsymbol{\theta}$ with respect to the observed data set $\mathbf{X}$». La ritrovi in due punti del foglio: dentro la matrice di informazione di Fisher del bound di Cramér-Rao e nella definizione di stima ML.
+
+<Callout kind="intuizione">
+Hai misurato 12 salmoni. Per ogni media candidata $m$ calcoli la densità gaussiana in ciascun salmone e moltiplichi i 12 numeri. Una media vicina al centro dei dati dà densità alte su quasi tutti i pesci, e il prodotto è grande. Una media spostata verso 5 lascia molti pesci nelle code, e il prodotto crolla.
+</Callout>
+
+<Widget id="m04-likelihood-come-prodotto" />
+
+### Perché la likelihood è un prodotto
+
+Le note lo dicono in una frase: poiché i campioni sono indipendenti, la probabilità complessiva si esprime come prodotto delle probabilità dei singoli campioni. A sinistra del segno di uguale, scritta per esteso, c'è la densità congiunta (*joint density*) di tutto il training set:
+
+<Formula id="f-c03" />
+
+Le due ipotesi di «iid» entrano in due passi diversi. La **regola del prodotto** delle densità condizionate (*chain rule*) vale sempre: $p(\mathbf{x}_1, \ldots, \mathbf{x}_N|\boldsymbol{\theta})$ è $p(\mathbf{x}_1|\boldsymbol{\theta})$ per $p(\mathbf{x}_2|\mathbf{x}_1, \boldsymbol{\theta})$ e così via. L'**indipendenza** (*independent*) fa cadere il condizionamento sui campioni precedenti: noto $\boldsymbol{\theta}$, gli altri campioni non dicono nulla sul $k$-esimo. L'**identica distribuzione** (*identically distributed*) rende tutti i fattori la stessa funzione $p$ valutata in punti diversi. Senza la seconda ipotesi avresti ancora un prodotto, ma di densità $p_k$ diverse tra loro; senza la prima non avresti più un prodotto.
+
+<Derivation id="der19" />
+
+Due conseguenze usate in tutto il foglio cadono insieme all'ipotesi iid: la log-likelihood diventa una somma e l'informazione di Fisher cresce in proporzione a $N$. Il controesempio della misura duplicata mostra il rischio. Se il secondo campione è una copia del primo, il prodotto lo conta due volte: il picco della likelihood si stringe come se avessi il doppio dei dati e sottovaluti l'incertezza della stima.
+
+<Check id="chk-01" />
+
+<Callout kind="esame">
+Richiesta reale: «why we can use the separate products of the probabilities». Rispondi: la likelihood è la densità congiunta dei campioni; la regola del prodotto la scrive come catena di condizionate; l'indipendenza toglie i condizionamenti, l'identica distribuzione rende uguali i fattori. Aggiungi che senza indipendenza (misure ripetute, dati correlati nel tempo) il prodotto non è più giustificato.
+</Callout>
+
+### Che cosa misura la likelihood
+
+Le note le danno un significato preciso: la likelihood è una **misura della compatibilità o dell'accordo** (*measure of the compatibility or agreement*) tra i parametri del modello $\boldsymbol{\theta}$ e i campioni osservati $\mathbf{X}$. Misura quanto bene il modello scelto riesce a «spiegare» (*explain*) i campioni di training. Analizzando la funzione di verosimiglianza individui quali parametri hanno più verosimilmente generato i campioni osservati. Le note chiamano questo processo fondamentale per l'inferenza statistica (*foundational in statistical inference*): è ciò che ti permette di stimare i parametri che meglio si adattano ai dati. <SourceRef doc="part1" page={17} />
+
+Una precisazione aiuta all'orale. Come funzione di $\boldsymbol{\theta}$ la likelihood non è una densità di probabilità sul parametro: in generale non integra a 1 su $\boldsymbol{\theta}$ (può farlo per caso, come con una sola osservazione gaussiana di varianza nota), e nella visione ML $\boldsymbol{\theta}$ non è nemmeno aleatorio. È un punteggio di accordo tra un $\boldsymbol{\theta}$ candidato e i dati.
+
+<Callout kind="esame">
+Richiesta reale: «what the Likelihood describe». Rispondi con le parole delle note: descrive la compatibilità tra i parametri e i campioni osservati, cioè quanto bene il modello con quei parametri spiega il training set. Poi collega: la stima ML sceglie il $\boldsymbol{\theta}$ con la compatibilità massima.
+</Callout>
+
+### La figura a tre pannelli
+
+Le note riportano la figura «Likelihood Function: Example» della slide ch2 p10. <SourceRef doc="ch2" page={10} />
+
+<Figure id="fig01" />
+
+Il **pannello alto** mostra una dozzina di campioni monodimensionali (pallini rossi) tra circa 1.9 e 4.8 sull'asse $x$, graduato da 1 a 7, e quattro gaussiane candidate tratteggiate, con la stessa larghezza e medie diverse. Quella centrata attorno a 5 spiega male i dati: molti pallini cadono nella sua coda sinistra. Il **pannello centrale** mostra $p(\mathbf{X}|\theta)$ in funzione di $\theta$: un picco stretto con il massimo in $\hat{\theta}$. Le ordinate sono dell'ordine di $10^{-7}$ (tacche $0.4$, $0.8$, $1.2 \times 10^{-7}$), perché moltiplicare tante densità produce numeri minuscoli. Il **pannello basso** mostra la log-likelihood $l(\theta)$, una curva concava larga, tra $-20$ e $-100$, con il massimo nello stesso $\hat{\theta}$ indicato dalla freccia.
+
+<Formula id="f-c05" />
+
+Il messaggio della figura ha tre parti. La likelihood è funzione di $\theta$, non di $x$. Il suo massimo individua la stima. Il logaritmo non sposta il massimo. La lettura fine sulla slide ch2 p10, più nitida della copia nelle note, dà il picco di $p(\mathbf{X}|\theta)$ a circa $1.7 \times 10^{-7}$ e il massimo di $l(\theta)$ a circa $-16$. I due valori sono coerenti: $\ln(1.7 \times 10^{-7}) \approx -15.6$, quindi il pannello basso è il logaritmo del pannello centrale. Sul grafico la curva $l(\theta)$ vale circa $-75$ in $\theta = 0$, attraversa $-80$ attorno a $\theta \approx 6.3$ e scende a $-100$ verso $\theta = 7$. Nella figura la scritta $l(\theta)$ etichetta l'asse del pannello basso e $p(\mathbf{X}|\theta)$ quello del pannello centrale; l'uguaglianza tra la prima e il logaritmo della seconda è la definizione di log-likelihood.
+
+Per una gaussiana con $\sigma$ nota la log-likelihood è una parabola esatta (integrazione didattica, la fonte non lo scrive):
+
+<Formula id="f-c05-2" />
+
+Con $N = 12$, $\sigma \approx 1$ e $\hat{\theta} = 3.1$ la parabola vale circa $-74$ in $\theta = 0$ e scende sotto $-100$ prima di $\theta = 7$, come nel grafico. La sua curvatura (*curvature*), $N/\sigma^2$, è l'informazione di Fisher: la larghezza del picco centrale, $\sigma/\sqrt{N} \approx 0.29$, è la radice del bound di Cramér-Rao che incontrerai più avanti.
+
+<Derivation id="der17" />
+
+<Example id="ex01" title="Likelihood Function: Example, i numeri dei tre pannelli">
+
+La fonte non fornisce i dati: i valori sono letti sul grafico della slide ch2 p10 e i conti con la parabola sono un'integrazione.
+
+<Step title="Il pannello alto: campioni e gaussiane candidate">
+
+Una dozzina di luminosità tra circa 1.9 e 4.8. Le quattro gaussiane tratteggiate hanno la stessa larghezza e medie circa 2.5, 3, 3.5 e 5. Per ogni valore di $\theta$ (la media) calcoli $p(\mathbf{X}|\theta)$ come prodotto delle densità nei 12 campioni.
+
+</Step>
+
+<Step title="Il pannello centrale: un picco stretto e minuscolo">
+
+Il massimo cade in $\hat{\theta} \approx 3.1$ e vale circa $1.7 \times 10^{-7}$: le tacche dell'asse sono $0.4$, $0.8$ e $1.2 \times 10^{-7}$ e il picco supera l'ultima.
+
+</Step>
+
+<Step title="Il pannello basso: la log-likelihood">
+
+Il massimo vale circa $-16$, nello stesso $\hat{\theta}$. Controllo:
+
+$$
+\ln(1.7 \times 10^{-7}) = \ln 1.7 - 7 \ln 10 \approx 0.53 - 16.12 = -15.6
+$$
+
+</Step>
+
+<Step title="La parabola spiega la forma della curva">
+
+Con $N = 12$ e $\sigma = 1$, $l(\theta) = -16 - 6\,(\theta - 3.1)^2$:
+
+$$
+l(0) \approx -16 - 6 \cdot 9.61 \approx -74, \qquad l(7) \approx -16 - 6 \cdot 15.21 \approx -107
+$$
+
+La parabola attraversa $-80$ a $\theta = 3.1 + \sqrt{64/6} \approx 6.4$; sul grafico l'incrocio si legge attorno a 6.3, una differenza dentro l'errore di lettura dei valori.
+
+</Step>
+
+<Step title="La larghezza del picco">
+
+La likelihood è una campana in $\theta$ con deviazione standard (*standard deviation*) $\sigma/\sqrt{N} = 1/\sqrt{12} \approx 0.29$: il picco centrale va circa da $3.1 - 3 \cdot 0.29 = 2.2$ a $3.1 + 3 \cdot 0.29 = 4$. Risultato: la stima è il $\theta$ che rende massima la likelihood, e il logaritmo non sposta il massimo.
+
+</Step>
+
+</Example>
+
+<Widget id="m04-tre-pannelli-likelihood" />
+
+## Due procedure di stima: MLE e stima bayesiana
+
+Le note elencano le due procedure principali per stimare il vettore dei parametri. <SourceRef doc="part1" page={17} />
+
+<Definition term="Stima a massima verosimiglianza" en="Maximum Likelihood Estimation, MLE">
+Il vettore $\boldsymbol{\theta}$ è un insieme di quantità **fisse ma ignote** (*fixed but unknown*). La stima migliore è quella che massimizza la verosimiglianza di ottenere i campioni effettivamente osservati.
+</Definition>
+
+<Definition term="Stima bayesiana" en="Bayesian Estimation, BE">
+I parametri sono **variabili aleatorie** con una distribuzione a priori (*prior*) nota. Quando osservi i campioni, aggiorni la prior con il teorema di Bayes (*Bayes' theorem*) e ottieni una densità a posteriori (*posterior density*). L'approccio incorpora conoscenze o convinzioni a priori sui parametri e le combina con l'informazione dei dati, per produrre una stima più informata.
+</Definition>
+
+<SourceRef doc="part1" page={18} />
+
+### Le due differenze chiave
+
+Le note riassumono il confronto in due punti.
+
+<Columns>
+<Col title="MLE">
+
+**Natura dei parametri.** $\boldsymbol{\theta}$ è una costante che vuoi stimare.
+
+**Obiettivo.** Ottimizzi una funzione di costo o obiettivo basata **solo sui dati osservati**, e trovi i valori dei parametri che massimizzano la likelihood. Il risultato è un punto.
+
+</Col>
+<Col title="BE">
+
+**Natura dei parametri.** $\boldsymbol{\theta}$ è una variabile aleatoria: riflette l'incertezza e porta la conoscenza a priori dentro la stima.
+
+**Obiettivo.** Combini l'informazione dei campioni di training con la prior e ottieni una densità a posteriori, cioè una descrizione probabilistica completa dell'incertezza sul parametro.
+
+</Col>
+</Columns>
+
+Le note chiudono così: capiti i due approcci, scegli il metodo più adatto in base al contesto del problema e alla natura dei dati disponibili.
+
+Per questo foglio conta la visione MLE. Bias, varianza e bound di Cramér-Rao hanno senso quando $\boldsymbol{\theta}$ è deterministico e l'aleatorietà sta tutta nel training set $\mathbf{X}$. Nella visione bayesiana, dove $\boldsymbol{\theta}$ è aleatorio, alcuni passaggi del foglio (per esempio portare $\boldsymbol{\theta}$ fuori dal valore atteso, *expected value*) non varrebbero.
+
+<Callout kind="intuizione">
+Un filtro antispam stima la probabilità $\theta$ che un'email con la parola «offerta» sia spam. Con 5 email etichettate, 4 spam, la MLE dice $\hat{\theta} = 4/5 = 0.8$ e basta. La stima bayesiana parte da una prior (per esempio «di solito queste email sono spam nel 50% dei casi») e restituisce una curva a posteriori che la combina con i 5 dati. Con migliaia di email la prior pesa sempre meno e le due risposte coincidono.
+</Callout>
+
+<Widget id="m04-ml-contro-bayes-parametro" />
+
+<Check id="chk-02" />
+
+<Callout kind="esame">
+Due domande reali toccano questo confronto. Melgani: «Is it better or not with respect to the Bayesian Estimation? Why? … In which case ML and Bayesian are the same?». All'ultima parte la slide ch2 p40 risponde con due casi (*ML and Bayes solutions are equivalent*): nel limite di infiniti campioni di training, dove entra la consistenza (entrambe le stime convergono al valore vero, quindi coincidono), **oppure** se la prior $p(\boldsymbol{\theta})$ è uniforme (*uniform prior*), cioè senza conoscenza a priori: la prior non sposta la posterior e la soluzione bayesiana si riduce a quella ML (part1 p30). Al «why?» rispondi che la stima bayesiana è preferibile con pochi dati e una prior affidabile, ma che in pratica la ML è spesso preferita per due motivi che la slide elenca: complessità di calcolo più bassa (*lower computational complexity*) e interpretabilità più facile (*easier interpretability*). <SourceRef doc="ch2" page={40} /> Passerini chiede la stessa distinzione nella parte sulla stima dei parametri. Gli sviluppi sono in <ModLink to="m07-stima-bayesiana">stima bayesiana e confronto ML vs Bayes</ModLink> e in <ModLink to="p01-stima-parametri">stima ML e bayesiana dei parametri</ModLink>.
+</Callout>
+
+## La stima è un vettore aleatorio
+
+La slide «Estimation Goodness» parte da un'osservazione: la stima del vettore dei parametri dipende dal vettore delle osservazioni $\mathbf{X}$. <SourceRef doc="ch2" page={12} />
+
+<Formula id="f-c10" />
+
+Lo <Term en="estimator">stimatore</Term> è una funzione del training set. Qualunque procedura di stima (ML, bayesiana, media campionaria (*sample mean*)…) è una regola che trasforma $\mathbf{X}$ in un valore $\hat{\boldsymbol{\theta}}$.
+
+Da qui la conclusione della slide, con «random vector» in rosso: la stima è un <Term en="random vector">vettore aleatorio</Term>. Le note spiegano perché: se cambia l'insieme dei campioni di training, cambia anche la stima. <SourceRef doc="part1" page={18} />
+
+<Callout kind="intuizione">
+Ogni giorno l'impianto campiona 10 salmoni diversi e ristima la luminosità media. La media vera della popolazione non cambia, la stima sì: lunedì 4.35, martedì 3.98, mercoledì 4.51. Se raccogli le stime di tanti giorni ottieni un istogramma: ha un centro (la media della stima) e una larghezza (la sua deviazione standard). Con 40 salmoni al giorno l'istogramma si stringe della metà, perché la deviazione standard della media scala come $\sigma/\sqrt{N}$.
+</Callout>
+
+<Widget id="m04-la-stima-e-aleatoria" />
+
+### Rispetto a che cosa si fa la media
+
+Le slide usano $E\{\cdot\}$ e $\operatorname{var}\{\cdot\}$ (p13) e $P\{\cdot\}$ (p16) senza scrivere rispetto a quale distribuzione li calcolano. La catena logica lo fissa senza ambiguità (integrazione didattica): la stima è funzione di $\mathbf{X}$, $\mathbf{X}$ è un vettore di $N$ campioni iid con densità $p(\mathbf{X}|\boldsymbol{\theta}) = \prod_k p(\mathbf{x}_k|\boldsymbol{\theta})$, e $\boldsymbol{\theta}$ è una costante fissa ma ignota. I tre operatori sono quindi integrali sullo spazio dei possibili training set di $N$ campioni, pesati con la likelihood calcolata nel $\boldsymbol{\theta}$ vero.
+
+<Formula id="f-c68" />
+
+<Formula id="f-c68-2" />
+
+<Formula id="f-c68-3" />
+
+Quattro conseguenze:
+
+1. Bias, varianza, bound e $P\{\Vert \boldsymbol{\varepsilon} \Vert < \delta\}$ **non dipendono dal training set che hai in mano**: sono funzioni di $\boldsymbol{\theta}$ e di $N$. Per questo ha senso farne il limite per $N \to +\infty$.
+2. $\boldsymbol{\theta}$ esce dal valore atteso perché è una costante. Nella visione bayesiana, dove $\boldsymbol{\theta}$ è aleatorio, quel passaggio non varrebbe.
+3. Poiché $\boldsymbol{\theta}$ è ignoto, bias e varianza si calcolano in teoria oppure si stimano con simulazioni su dati sintetici, come fanno i widget del foglio.
+4. È la stessa $E\{\cdot\}$ che compare nella matrice di Fisher della slide p14.
+
+<Check id="chk-03" />
+
+### Stima e stimatore
+
+Le slide dicono quasi sempre «estimate» («An estimate is said unbiased», «An estimate is said to be consistent»), le note quasi sempre «estimator» («An estimator is considered unbiased»). La slide p15 usa entrambi nella stessa pagina: «biased and inefficient estimators» e «An estimate is said to be asymptotically unbiased». La fonte li tratta come sinonimi.
+
+A rigore lo **stimatore** (*estimator*) è la regola $\hat{\boldsymbol{\theta}}(\cdot)$ che trasforma il training set in un valore; la **stima** (*estimate*) è il valore $\hat{\boldsymbol{\theta}}(\mathbf{X})$ ottenuto su un particolare $\mathbf{X}$. Le proprietà del foglio (unbiased, efficient, consistent…) sono proprietà della regola, perché le definisci mediando su tutti i possibili $\mathbf{X}$. Dire «questo numero è unbiased» non ha senso. All'orale puoi usare il termine del docente, ma sappi spiegare la distinzione se te la chiedono.
+
+## L'errore di stima
+
+Per quantificare l'accuratezza delle stime (parole delle note) la slide definisce l'<Term en="estimation error">errore di stima</Term> $\boldsymbol{\varepsilon}$: la differenza tra il valore stimato e il valore vero del parametro. <SourceRef doc="ch2" page={12} />
+
+<Formula id="f-c12" />
+
+L'errore è funzione sia delle osservazioni $\mathbf{X}$ sia di $\boldsymbol{\theta}$, ed è un vettore di $r$ componenti, una per parametro: $\varepsilon_i = \hat{\theta}_i - \theta_i$ con $i = 1, 2, \ldots, r$. Poiché dipende da $\mathbf{X}$, anche l'errore è un vettore aleatorio. Un dettaglio tipografico: nella slide la $\mathbf{X}$ dentro $\boldsymbol{\varepsilon}(\mathbf{X}, \boldsymbol{\theta})$ è in tondo non grassetto, mentre in $\hat{\boldsymbol{\theta}}(\mathbf{X})$ è in grassetto; nelle note è in grassetto in entrambe. È lo stesso vettore delle osservazioni. <SourceRef doc="part1" page={18} />
+
+### Due significati di estimation error
+
+Attenzione a un'omonimia tra capitoli (integrazione didattica). Qui «estimation error» è il vettore aleatorio $\boldsymbol{\varepsilon}$: la distanza tra la stima dei parametri di una pdf e il loro valore vero.
+
+<Formula id="f-c66" />
+
+Nel Cap. 4 lo stesso nome indica un'altra cosa: la parte dell'errore di generalizzazione dovuta al fatto che una macchina impara da un training set limitato invece che dall'intera popolazione, contrapposta all'errore di approssimazione dovuto allo spazio delle ipotesi (note part1 p100). Le due nozioni sono parenti, perché nascono entrambe dal training set finito e calano al crescere di $N$, ma non vanno scambiate: qui parli dei parametri di un modello statistico, là del rischio di una macchina addestrata. Il tema è in <ModLink to="m21-errore-generalizzazione">errore di generalizzazione</ModLink>.
+
+<Widget id="m04-trabocchetti-di-terminologia" />
+
+<Check id="chk-04" />
+
+<Callout kind="esame">
+Domanda reale di Melgani: «Generalization error (Approximation error - Estimation error) - (Trained machine) - Target space/ hypothesis space - Empirical risk …». Se nella risposta citi l'errore di stima, chiarisci subito quale: quello del Cap. 4 è una componente del rischio, non il vettore $\boldsymbol{\varepsilon} = \hat{\boldsymbol{\theta}} - \boldsymbol{\theta}$ di questo foglio.
+</Callout>
+
+## La stima ideale
+
+La slide p12 fissa l'obiettivo. Per ottenere una <Term en="ideal estimate">stima ideale</Term> di ciascun parametro $\theta_i$ ($i = 1, 2, \ldots, r$) serve che il corrispondente errore di stima $\varepsilon_i$ soddisfi due requisiti: sia **unbiased** (non polarizzato, a media nulla) e **non abbia varianza** (*no variance*). <SourceRef doc="ch2" page={12} />
+
+<Formula id="f-c13" />
+
+La slide e le note enunciano i due requisiti a parole; la scrittura con $E\{\cdot\}$ e $\operatorname{var}\{\cdot\}$ è la loro formalizzazione con i simboli della slide p13. Sono i due assi lungo cui giudichi ogni stimatore: l'**errore sistematico** (*systematic error*) e l'**errore casuale** (*random error*). Insieme equivalgono a $E\{\varepsilon_i^2\} = 0$, cioè a $\varepsilon_i = 0$ con probabilità 1: la stima coincide con il valore vero su tutti i training set tranne, al più, un insieme di probabilità nulla.
+
+Le note aggiungono una precisazione che nelle slide manca: ottenere insieme assenza di bias e varianza nulla può essere difficile (*challenging*), ma i due criteri servono come **riferimenti fondamentali** (*fundamental benchmarks*) per valutare la bontà dei metodi di stima. L'ideale è un metro di giudizio, non un obiettivo raggiungibile. Il bound di Cramér-Rao dirà perché: per uno stimatore unbiased di un modello regolare, con informazione di Fisher finita, la varianza minima a $N$ finito è strettamente positiva. Uno stimatore biased invece può avere varianza nulla: lo stimatore costante («dico sempre 5») non oscilla mai, ma sbaglia sempre della stessa quantità. <SourceRef doc="part1" page={18} />
+
+<Callout kind="intuizione">
+Pensa a un tiro al bersaglio in cui ogni colpo è la stima ottenuta da un nuovo lotto di salmoni. Il **bias** è lo spostamento del baricentro dei colpi rispetto al centro. La **varianza** è la dispersione dei colpi attorno al loro baricentro. Varianza zero da sola non basta: il tiratore che colpisce sempre lo stesso punto sbagliato ha una rosa perfetta e un bias enorme.
+</Callout>
+
+<Widget id="m04-bersaglio-bias-varianza" />
+
+## Bias e stima non polarizzata
+
+La slide p13 apre con una definizione: il <Term en="bias">bias</Term> di un errore di stima è il suo **valor medio**. Poiché $\boldsymbol{\theta}$ è una costante, esce dal valore atteso, e il bias diventa la differenza tra il valore atteso della stima e il valore vero. <SourceRef doc="ch2" page={13} />
+
+<Formula id="f-c15" />
+
+La slide dà solo la frase «The bias of an estimation error is its mean value»: la formula è la conseguenza immediata della definizione di $\boldsymbol{\varepsilon}$. Il bias è l'errore sistematico che resta anche mediando su infiniti training set della stessa dimensione $N$; in generale dipende da $\boldsymbol{\theta}$ e da $N$.
+
+<Definition term="Stima non polarizzata" en="unbiased estimate">
+Una stima si dice **unbiased** se il valore atteso del suo errore è nullo: $E\{\boldsymbol{\varepsilon}\} = 0$. Equivalentemente, il valore atteso della stima coincide con il valore vero: in media lo stimatore produce il valore corretto del parametro.
+</Definition>
+
+<Formula id="f-c16" />
+
+Nella slide le due scritture sono collegate da una freccia verde. Nel livello di testo del PDF, sotto la freccia, c'è la parola italiana «ossia» (residuo della versione italiana delle slide), sia a p13 sia a p15: la freccia va letta come equivalenza, non come semplice implicazione. Le note usano $\Rightarrow$. Nella slide p13 lo zero è uno scalare, nella p15 un vettore nullo in grassetto: differenza solo tipografica.
+
+<Figure id="fig04" />
+
+<Derivation id="der01" />
+
+<Check id="chk-05" />
+
+## La varianza dell'errore
+
+La slide p13 definisce poi la varianza dell'errore sul parametro $i$-esimo: il valore atteso del quadrato dello scarto tra la stima e la **media della stima**. Nelle note la frase introduttiva sta a fine p18 e la formula a inizio p19. <SourceRef doc="ch2" page={13} /> <SourceRef doc="part1" page={19} />
+
+<Formula id="f-c17" />
+
+Guarda il secondo termine dentro la parentesi: è $\hat{\theta}_i$ con una barra sopra il cappello, sia nella slide sia nelle note. Il testo estratto dal PDF perde i segni e mostra «$\theta_i - \theta_i$»; ingrandendo le immagini la barra c'è. La barra indica il valor medio della stima, $\bar{\hat{\theta}}_i = E\{\hat{\theta}_i\}$, che la fonte non definisce esplicitamente. La varianza misura la dispersione della stima al variare del training set: l'errore casuale.
+
+### Varianza attorno alla media della stima
+
+Perché nella formula c'è la media della stima e non il valore vero? Perché $\theta_i$ è una costante, e sottrarre una costante non cambia la dispersione. La varianza dell'errore coincide con la varianza della stima:
+
+<Formula id="f-c18" />
+
+La varianza misura quanto la stima oscilla attorno alla **propria** media; quanto quella media dista dal vero lo misura il bias. Solo per uno stimatore unbiased la media della stima coincide con $\theta_i$, e allora la varianza diventa l'errore quadratico medio:
+
+<Formula id="f-c18-2" />
+
+<Derivation id="der02" />
+
+<Callout kind="intuizione">
+Un sensore di temperatura in una cella frigorifera ha rumore gaussiano di varianza vera $\sigma^2 = 4$ °C². Stimi $\sigma^2$ da 5 letture dividendo per $N$: in media ottieni $3.2$, non $4$. La varianza di questo stimatore misura quanto le stime oscillano attorno a $3.2$; la distanza tra $3.2$ e $4$ è il bias, $-0.8$. Sono due numeri diversi, e l'errore complessivo li somma.
+</Callout>
+
+<Widget id="m04-varianza-attorno-alla-media" />
+
+<Check id="chk-06" />
+
+### Errore quadratico medio: varianza più bias al quadrato
+
+Perché la slide chiede entrambe le condizioni per la stima ideale? La risposta è una scomposizione che la fonte non scrive (integrazione didattica). L'<Term en="mean squared error">errore quadratico medio</Term> sul parametro $i$-esimo è la somma della varianza dell'errore e del quadrato del bias:
+
+<Formula id="f-c19" />
+
+Aggiungi e togli la media della stima dentro l'errore: il primo pezzo è la fluttuazione casuale, il secondo è il bias, una costante. Sviluppando il quadrato il termine misto si annulla, perché lo scarto dalla propria media ha valore atteso zero. Varianza e bias al quadrato sono due addendi non negativi: la loro somma è zero **se e solo se** lo sono entrambi. Un solo requisito non basta, come mostra lo stimatore costante.
+
+<Derivation id="der03" />
+
+La scomposizione spiega anche perché a volte conviene uno stimatore biased. Con 5 letture del sensore lo stimatore ML della varianza (bias $-0.8$, varianza $5.12$) ha errore quadratico medio $5.12 + 0.64 = 5.76$, mentre lo stimatore corretto con $1/(N-1)$ (bias nullo, varianza $8$) arriva a $8$. Un po' di bias può comprare molta varianza.
+
+<Check id="chk-07" />
+
+<Callout kind="esame">
+Tre domande reali chiedono di giudicare uno stimatore con bias e varianza: «Is Parzen a good estimator (bias/variance)?», «Is it a good estimate? (Bias, variance and consideration about the characteristics of the width to have a consistent estimate)», e la domanda sul K-NN che chiede che cosa significano *overfit* e *oversmooth*. Rispondi con gli strumenti di questa sezione: il bias è la media dell'errore, la varianza la sua dispersione, l'errore quadratico medio li somma. Per Parzen il bias nasce dalla larghezza della finestra e la varianza dal numero di campioni che cadono nella finestra: vedi <ModLink to="m09-parzen-windows">finestre di Parzen</ModLink> e <ModLink to="m08-non-parametrica-knn">stima non parametrica e K-NN</ModLink>.
+</Callout>
+
+## Il bound di Cramér-Rao
+
+### Perché serve un riferimento
+
+L'ultimo punto della slide p13 fa da ponte: per valutare la bontà della varianza della stima serve riferirla al cosiddetto **bound di Cramér-Rao** (in rosso nella slide). Un valore di varianza da solo non dice se è «piccolo». Con $\sigma = 2$, una varianza di $0.16$ sulla luminosità media è ottima con 25 salmoni (è proprio il bound $\sigma^2/N = 4/25$) e pessima con 2500 (lì il bound vale $4/2500 = 0.0016$). Serve un metro assoluto: un limite inferiore teorico alla varianza di ogni stimatore unbiased, fissati il modello e il numero di campioni. <SourceRef doc="ch2" page={13} />
+
+### La disuguaglianza di Cramér-Rao
+
+<Definition term="Bound di Cramér-Rao" en="Cramér-Rao bound">
+Esprime un **limite inferiore** (*lower bound*) sulla varianza di uno stimatore statistico **unbiased**, basato sull'**informazione di Fisher** (*Fisher information*). Nessuno stimatore non polarizzato può avere varianza più piccola, qualunque regola di stima adotti.
+</Definition>
+
+<SourceRef doc="ch2" page={14} />
+
+Le note lo chiamano disuguaglianza di Cramér-Rao (*Cramér-Rao inequality*): per ogni parametro, la varianza dell'errore di stima è maggiore o uguale all'elemento diagonale $i$-esimo dell'inversa della matrice di informazione di Fisher. <SourceRef doc="part1" page={19} />
+
+<Formula id="f-c22" />
+
+Il membro destro dipende solo dal modello $p(\mathbf{X}|\boldsymbol{\theta})$, dal valore di $\boldsymbol{\theta}$ e da $N$. Non dipende dallo stimatore: è un pavimento comune a tutte le regole unbiased.
+
+La fonte nomina una sola ipotesi, «unbiased». Il teorema completo ne chiede altre (integrazione didattica):
+
+- stimatore unbiased **per ogni** valore di $\boldsymbol{\theta}$, non solo per quello vero;
+- **condizioni di regolarità** (*regularity conditions*) su $p(\mathbf{X}|\boldsymbol{\theta})$: il supporto non dipende da $\boldsymbol{\theta}$, la densità è derivabile rispetto a $\boldsymbol{\theta}$, derivata e integrale si possono scambiare;
+- matrice di Fisher **invertibile**, cioè parametri identificabili (*identifiable parameters*).
+
+I casi limite si leggono subito. Con campioni iid il bound scende come $1/N$ e tende a zero per $N \to +\infty$. Tende a zero anche quando il rumore del modello tende a zero: per la media di una gaussiana $\sigma^2/N \to 0$ per $\sigma \to 0$. Con $N = 1$ è il bound del singolo campione. Se la regolarità cade, il bound può essere violato anche da uno stimatore unbiased: lo vedrai con l'uniforme su $[0, \theta]$ alla fine di questa sezione.
+
+La fonte non dimostra la disuguaglianza. Lo schizzo qui sotto, nel caso scalare, mostra da dove viene: derivi rispetto a $\theta$ l'ipotesi di assenza di bias, fai comparire la derivata della log-likelihood (lo *score*) e applichi la disuguaglianza di Cauchy-Schwarz tra l'errore e lo score. L'uguaglianza vale solo se lo score è proporzionale all'errore dello stimatore: è la condizione che lega lo stimatore efficiente alla stima ML.
+
+<Derivation id="der09" />
+
+<Callout kind="intuizione">
+Stimi la temperatura di una cella frigorifera da $N$ letture con rumore gaussiano di deviazione standard $\sigma$ nota. Quattro regole, tutte unbiased: media campionaria, mediana, semisomma di minimo e massimo, prima lettura. Il bound $\sigma^2/N$ è un pavimento sotto le quattro barre delle varianze. La media campionaria lo tocca; la mediana sta più in alto, di un fattore che si avvicina a $\pi/2 \approx 1.57$ al crescere di $N$ (non in modo monotono: con $N$ pari è un po' più basso); la prima lettura non scende mai sotto $\sigma^2$.
+</Callout>
+
+<Widget id="m04-pavimento-di-cramer-rao" />
+
+### Solo per stimatori unbiased
+
+La parola «unbiased» è in rosso nella slide e in grassetto nelle note: il limite riguarda la varianza degli stimatori **non polarizzati**. Uno stimatore biased può avere varianza sotto il bound senza contraddizione. Il caso estremo è lo stimatore costante: varianza zero, bias arbitrario. Per questo il confronto con il bound ha senso solo dopo aver verificato l'assenza di bias, almeno asintotica.
+
+Un caso concreto e utile (integrazione didattica) è la regressione ridge con un solo parametro. Modello $y_k = \theta x_k + n_k$ con rumore gaussiano di varianza $\sigma^2$ nota e $S = \sum_k x_k^2$. La stima ai minimi quadrati (*least squares*) è unbiased con varianza $\sigma^2/S$, uguale al bound: è efficiente. La ridge divide per $S + \lambda$ invece che per $S$: moltiplica la stima per il fattore $S/(S+\lambda) < 1$, introduce un bias proporzionale a $\theta$ e riduce la varianza del quadrato dello stesso fattore. Il valore di $\lambda$ che minimizza l'errore quadratico medio è $\lambda^* = \sigma^2/\theta^2$, indipendente da $N$; a svanire con $N$ è il guadagno $S/(S + \lambda^*)$, che tende a 1. L'ultimo passo della dimostrazione dà la versione del bound per stimatori biased, $\operatorname{var}\{\varepsilon\} \geq (1 + \partial b/\partial\theta)^2 / I(\theta)$: la ridge la raggiunge esattamente.
+
+<Derivation id="der18" />
+
+<Example id="ex08" title="Sovrapprezzo per stanza: la ridge sta sotto il bound e sbaglia meno">
+
+Dati sintetici, scenario case, integrazione didattica. Tolto l'effetto della superficie, stimi $\theta$ = sovrapprezzo per ogni stanza in più da $N = 8$ case.
+
+<Step title="I dati">
+
+Scarti di stanze $x = (-2, -1, -1, 0, 0, 1, 1, 2)$, quindi $S = \sum_k x_k^2 = 4 + 1 + 1 + 0 + 0 + 1 + 1 + 4 = 12$. Valore vero $\theta = 10$ k€ per stanza, rumore $\sigma = 40$ k€.
+
+</Step>
+
+<Step title="Minimi quadrati: unbiased ed efficiente">
+
+$$
+\operatorname{var}\{\hat{\theta}_0\} = \frac{\sigma^2}{S} = \frac{1600}{12} = 133.3
+$$
+
+La deviazione standard è $11.5$ k€, più grande del parametro stesso. La varianza coincide con il bound di Cramér-Rao: lo stimatore è efficiente.
+
+</Step>
+
+<Step title="Ridge con λ = 16: bias e varianza">
+
+$$
+E\{\hat{\theta}_{16}\} = \theta\,\frac{S}{S + \lambda} = 10 \cdot \frac{12}{28} = 4.29, \qquad \text{bias} = -5.71
+$$
+
+$$
+\operatorname{var}\{\hat{\theta}_{16}\} = \frac{\sigma^2 S}{(S + \lambda)^2} = \frac{19200}{784} = 24.5
+$$
+
+La varianza è il 18% del bound.
+
+</Step>
+
+<Step title="Errore quadratico medio">
+
+Ridge: $24.5 + 5.71^2 = 24.5 + 32.7 = 57.1$. Minimi quadrati: $133.3$. Il valore $\lambda = 16$ è proprio l'ottimo $\lambda^* = \sigma^2/\theta^2 = 1600/100$.
+
+</Step>
+
+<Step title="Il vantaggio svanisce con N grande">
+
+Il guadagno $S/(S + \lambda^*)$ vale $12/28 = 0.43$ con $N = 8$, $24/40 = 0.60$ con $N = 16$ ($S = 24$), $1200/1216 \approx 0.99$ con $N = 800$ ($S = 1200$). Con tanti dati i due stimatori si equivalgono. Morale: il bound non vieta varianze più piccole a chi accetta un bias, ed è per questo che nei problemi reali si usano spesso stimatori biased.
+
+</Step>
+
+</Example>
+
+<Widget id="m04-sotto-il-pavimento" />
+
+Lo stesso meccanismo sta dietro la regolarizzazione delle reti neurali (*weight decay*, penalità L2): vedi <ModLink to="d04-regolarizzazione">regolarizzazione</ModLink>.
+
+<Check id="chk-08" />
+
+### L'informazione di Fisher
+
+La fonte dice che il bound è «based on the Fisher information» e la definisce con il gradiente della log-likelihood. Nel caso di un solo parametro ($r = 1$) la definizione della slide si scrive così (la fonte dà solo la forma matriciale):
+
+<Formula id="f-c24" />
+
+<Definition term="Informazione di Fisher" en="Fisher information">
+Misura quanta informazione le osservazioni $\mathbf{X}$ portano sul parametro $\boldsymbol{\theta}$, cioè quanto la log-likelihood è sensibile a piccole variazioni di $\boldsymbol{\theta}$. È il valore atteso del quadrato della derivata della log-likelihood (lo *score*).
+</Definition>
+
+Una log-likelihood appuntita attorno al massimo dà molta informazione e quindi una varianza minima piccola; una log-likelihood piatta dà poca informazione e un bound alto. È la lettura del pannello basso della figura a tre pannelli: più campioni, parabola più stretta.
+
+Tre proprietà aiutano a usarla (integrazione didattica, valida sotto le condizioni di regolarità che la fonte non riporta).
+
+**Lo score ha media nulla** nel $\boldsymbol{\theta}$ vero. Una densità integra a 1 per ogni $\boldsymbol{\theta}$; derivando e scambiando derivata e integrale ottieni zero. Quindi $\mathbf{I}(\boldsymbol{\theta})$ è la matrice di covarianza (*covariance matrix*) dello score.
+
+<Formula id="f-c63" />
+
+**L'informazione si somma** sui campioni iid. La log-likelihood è una somma di $N$ termini, gli score dei singoli campioni hanno media nulla e sono indipendenti: i termini misti del quadrato si annullano e restano $N$ termini uguali.
+
+<Formula id="f-c63-2" />
+
+È per questo che il bound scende come $1/N$: raddoppiare i campioni dimezza il bound, cioè il limite inferiore della varianza di uno stimatore unbiased.
+
+<Derivation id="der06" />
+
+**Forma con la curvatura.** L'informazione di Fisher è anche l'opposto del valore atteso della matrice delle derivate seconde della log-likelihood:
+
+<Formula id="f-c63-3" />
+
+<Formula id="f-c63-4" />
+
+La slide usa la prima scrittura (prodotto delle derivate prime), i software spesso la seconda. Per la media di una gaussiana la curvatura vale $-N/\sigma^2$ per ogni training set e $I(m) = N/\sigma^2$; per una Bernoulli ($k$ successi su $N$) la curvatura dipende dai dati, e solo il suo valore atteso dà $N/(\theta(1-\theta))$.
+
+<Derivation id="der13" />
+
+<Widget id="m04-fisher-pendenza-e-curvatura" />
+
+<Callout kind="intuizione">
+Un filtro antispam stima la probabilità $\theta$ che la parola «gratis» compaia in un'email di spam, con $k/N$ su $N$ email. L'informazione è $N/(\theta(1-\theta))$: è minima per $\theta = 0.5$, dove ogni email è più imprevedibile e quindi dice meno. Con $\theta = 0.2$, per una deviazione standard minima di $0.02$ servono $N = 0.2 \cdot 0.8 / 0.02^2 = 400$ email.
+</Callout>
+
+<Widget id="m04-score-e-curvatura-spam" />
+
+Esempi in cui queste condizioni cadono (supporto dipendente da $\theta$, score a media non nulla, bound violato) sono nell'ultima sottosezione.
+
+### La matrice di informazione di Fisher
+
+Con $r$ parametri l'informazione diventa una matrice $r \times r$. La slide la definisce in forma compatta, come valore atteso del prodotto esterno (*outer product*) tra il gradiente della log-likelihood rispetto a $\boldsymbol{\theta}$ e il suo trasposto (apice $t$). <SourceRef doc="ch2" page={14} />
+
+<Formula id="f-c25" />
+
+Il gradiente è un vettore colonna di $r$ componenti; il prodotto di un vettore colonna per il suo trasposto è una matrice $r \times r$. Il valore atteso è preso rispetto alle osservazioni $\mathbf{X}$ distribuite secondo $p(\mathbf{X}|\boldsymbol{\theta})$. Nella slide «Fisher information matrix» è in rosso. La slide dà anche la definizione elemento per elemento: l'elemento $(i, j)$ è il valore atteso del prodotto tra la derivata parziale della log-likelihood rispetto a $\theta_i$ e quella rispetto a $\theta_j$.
+
+<Formula id="f-c26" />
+
+Le due formule dicono la stessa cosa, la seconda componente per componente: il valore atteso di una matrice si calcola elemento per elemento. Sulla diagonale ($i = j$) c'è il valore atteso del quadrato della derivata rispetto a $\theta_i$. Nelle slide la $\mathrm{I}$ non è in grassetto; nella formula elemento per elemento la $\theta$ di $[\mathrm{I}(\theta)]_{ij}$ non è in grassetto (come i $\theta_i$, $\theta_j$ dei denominatori), mentre quella dentro $p(\mathbf{X}|\boldsymbol{\theta})$ sì; qui usi il grassetto per coerenza con la notazione vettoriale.
+
+<Derivation id="der04" />
+
+Per una gaussiana con entrambi i parametri incogniti, $\boldsymbol{\theta} = (m, \sigma^2)$, la matrice è diagonale: il termine misto si annulla perché i momenti centrali dispari di una gaussiana sono nulli. I due bound sulla diagonale dell'inversa sono $\sigma^2/N$ per la media e $2\sigma^4/N$ per la varianza (integrazione didattica).
+
+<Derivation id="der12" />
+
+<Widget id="m04-matrice-di-fisher-2x2" />
+
+### Diagonale dell'inversa, non inverso della diagonale
+
+Dalle due formule della slide seguono le proprietà strutturali della matrice. È **simmetrica**, perché scambiare $i$ e $j$ non cambia il prodotto:
+
+<Formula id="f-c27" />
+
+Ha elementi diagonali **non negativi**, perché sono valori attesi di quadrati. E nel bound compare l'elemento diagonale **dell'inversa**, $[\mathbf{I}^{-1}(\boldsymbol{\theta})]_{ii}$, non l'inverso dell'elemento diagonale. I due coincidono solo se la matrice è diagonale. Quando i parametri sono accoppiati (termini fuori diagonale non nulli) vale:
+
+<Formula id="f-c27-2" />
+
+$1/[\mathbf{I}]_{ii}$ è il bound che avresti se tutti gli altri parametri fossero noti; doverli stimare insieme può solo alzarlo. Con un solo parametro il bound si riduce all'inverso dell'informazione:
+
+<Formula id="f-c27-3" />
+
+Il caso $2 \times 2$ si vede con la formula dell'inversa: $[\mathbf{I}^{-1}]_{11} = b/(ab - c^2) = 1/(a - c^2/b) \geq 1/a$, con uguaglianza solo se $c = 0$. Per qualunque $r$ la disuguaglianza segue da Cauchy-Schwarz, purché la matrice sia simmetrica e definita positiva (integrazione didattica).
+
+<Derivation id="der14" />
+
+<Derivation id="der22" />
+
+<Example id="ex07" title="Prezzi delle case: il bound sull'intercetta quando i parametri sono accoppiati">
+
+Dati sintetici, scenario case, integrazione didattica.
+
+<Step title="Il modello e i dati">
+
+Prezzo $= a_0 + b_0 \cdot$ superficie $+$ rumore gaussiano con $\sigma = 20$ k€ nota. $N = 50$ case, superficie media $\bar{x} = 100$ m², deviazione standard $s_x = 30$ m², quindi $\sum_k x_k = 5000$ e $\sum_k x_k^2 = N(s_x^2 + \bar{x}^2) = 545000$.
+
+</Step>
+
+<Step title="La matrice di Fisher">
+
+$$
+\mathbf{I} = \frac{1}{\sigma^2} \begin{bmatrix} N & \sum_k x_k \\ \sum_k x_k & \sum_k x_k^2 \end{bmatrix} = \frac{1}{400} \begin{bmatrix} 50 & 5000 \\ 5000 & 545000 \end{bmatrix}
+$$
+
+I termini fuori diagonale non sono nulli: intercetta e pendenza sono accoppiate.
+
+</Step>
+
+<Step title="Il bound sbagliato: inverso della diagonale">
+
+$$
+\frac{1}{[\mathbf{I}]_{11}} = \frac{\sigma^2}{N} = \frac{400}{50} = 8
+$$
+
+in (k€)², cioè una deviazione standard minima di $2.83$ k€ sull'intercetta.
+
+</Step>
+
+<Step title="Il bound giusto: diagonale dell'inversa">
+
+$$
+[\mathbf{I}^{-1}]_{11} = \frac{\sigma^2}{N}\left(1 + \frac{\bar{x}^2}{s_x^2}\right) = 8 \times \left(1 + \frac{10000}{900}\right) = 8 \times 12.11 \approx 96.9
+$$
+
+in (k€)². La deviazione standard minima è $9.84$ k€, oltre tre volte tanto.
+
+</Step>
+
+<Step title="La pendenza e il centraggio">
+
+$[\mathbf{I}^{-1}]_{22} = \sigma^2/(N s_x^2) = 400/45000 \approx 0.0089$, cioè $0.094$ k€/m². Se centri la superficie ($\bar{x} = 0$) la matrice diventa diagonale e il bound sull'intercetta torna a $8$ (k€)², mentre quello sulla pendenza non cambia.
+
+</Step>
+
+</Example>
+
+<Widget id="m04-diagonale-dell-inversa" />
+
+<Check id="chk-09" />
+
+### Lo stimatore efficiente
+
+Nella slide p14, in basso a destra, c'è una nota scritta in diagonale in rosso e nero: «Nota: When the bound is reached, the estimator is said efficient». È l'unica definizione di stimatore efficiente nelle slide.
+
+<Figure id="fig03" />
+
+<Definition term="Stimatore efficiente" en="efficient estimator">
+Uno stimatore unbiased la cui varianza **raggiunge** il bound di Cramér-Rao, per ogni parametro. Le note aggiungono: ottiene la minima varianza possibile per uno stimatore unbiased ed è quindi **ottimo in termini di efficienza statistica** (*optimal in terms of statistical efficiency*).
+</Definition>
+
+<Formula id="f-c28" />
+
+La fonte lo dice a parole; l'uguaglianza è la formalizzazione: il segno $\geq$ della disuguaglianza diventa $=$ per ogni $i$. Uno stimatore efficiente non esiste sempre. Lo schizzo di dimostrazione del bound dice quando esiste: solo se lo score si scrive come $I(\theta)$ per l'errore dello stimatore. <SourceRef doc="part1" page={19} />
+
+<Check id="chk-10" />
+
+### Un esempio completo: la media di una gaussiana
+
+La fonte non dà esempi numerici del bound. Il caso più semplice (integrazione didattica) è una gaussiana monodimensionale con varianza $\sigma^2$ nota e media $m$ da stimare con $N$ campioni iid. Lo score è $\frac{1}{\sigma^2}\sum_k (x_k - m)$; il suo quadrato medio dà l'informazione:
+
+<Formula id="f-c29" />
+
+Il bound è il reciproco:
+
+<Formula id="f-c29-2" />
+
+La media campionaria è unbiased e ha proprio varianza $\sigma^2/N$: raggiunge il bound, quindi è efficiente. Annullando lo score trovi che è anche la stima ML.
+
+<Formula id="f-c29-3" />
+
+<Derivation id="der05" />
+
+<Example id="ex03" title="Quanti salmoni servono? Bound di Cramér-Rao per la luminosità media">
+
+Dati sintetici, scenario pesce, integrazione didattica. La luminosità dei salmoni è gaussiana con deviazione standard nota $\sigma = 2$; stimi la media $m$ con $N = 25$ pesci.
+
+<Step title="Informazione e bound">
+
+$$
+I(m) = \frac{N}{\sigma^2} = \frac{25}{4} = 6.25, \qquad \frac{\sigma^2}{N} = \frac{4}{25} = 0.16
+$$
+
+La deviazione standard minima è $\sqrt{0.16} = 0.4$.
+
+</Step>
+
+<Step title="Media campionaria: efficiente">
+
+La sua varianza è $\sigma^2/N = 0.16$: coincide con il bound.
+
+</Step>
+
+<Step title="Mediana campionaria: unbiased ma non efficiente">
+
+La formula asintotica della varianza della mediana campionaria (*sample median*), $1/(4N\,p(m)^2) = (\pi/2)\,\sigma^2/N$, dà $\approx 0.251$; il valore esatto con $N = 25$, calcolato con la densità della statistica d'ordine (*order statistic*) centrale, è $\approx 0.247$. Il rapporto con il bound non è costante: vale 1 con $N = 1$ e $N = 2$ (lì la mediana coincide con la media), circa 1.35 con $N = 3$, circa 1.54 con $N = 25$. Non è nemmeno monotono: circa 1.19 con $N = 4$, 1.43 con $N = 5$, 1.47 con $N = 20$, perché con $N$ pari la mediana è la media dei due valori centrali e il rapporto è più basso. Al crescere di $N$ tende comunque a $\pi/2 \approx 1.57$. La mediana è consistente (la varianza tende a zero) ma non è nemmeno asintoticamente efficiente, perché il rapporto al limite è $\pi/2 \neq 1$.
+
+</Step>
+
+<Step title="Quanti pesci per un bound di 0.1">
+
+$$
+\frac{\sigma^2}{N} \leq 0.1 \;\Longrightarrow\; N \geq \frac{4}{0.1} = 40
+$$
+
+Alla mediana ne servono circa $(\pi/2) \cdot 40 \approx 63$ per la stessa varianza: con $N$ di qualche decina il rapporto è già vicino al limite, e il calcolo esatto con 63 pesci dà una varianza di circa 0.099.
+
+</Step>
+
+<Step title="Primo pesce">
+
+Lo stimatore «primo pesce $x_1$» è unbiased con varianza $4$ e rapporto con il bound $4/0.16 = 25$, che cresce come $N$: né efficiente né consistente.
+
+</Step>
+
+</Example>
+
+<Check id="chk-11" />
+
+### Quando il bound non vale
+
+Le condizioni di regolarità che la fonte sottintende non sono un dettaglio (integrazione didattica). Prendi letture iid **uniformi** su $[0, \theta]$, per esempio un sensore con fondo scala $\theta$ ignoto:
+
+<Formula id="f-c70" />
+
+La likelihood vale $\theta^{-N}$ per $\theta \geq \max_k x_k$ e $0$ altrimenti: è decrescente, quindi la stima ML è il campione più grande e **non** si trova annullando la derivata, che non si annulla mai. Questa stima è biased (sottostima sempre, il massimo non può superare $\theta$), ma asintoticamente unbiased e consistente:
+
+<Formula id="f-c70-2" />
+
+Corretta con il fattore $(N+1)/N$ diventa unbiased, con varianza più piccola del «bound» che otterresti applicando alla cieca la formula della slide p14, $\theta^2/N^2$:
+
+<Formula id="f-c70-3" />
+
+Nessuna contraddizione. Il supporto di $p(x|\theta)$ dipende da $\theta$, lo scambio tra derivata e integrale non è lecito, lo score vale sempre $-N/\theta$ e non ha media nulla: la dimostrazione del bound cade al secondo passo. Un segnale da ricordare: la varianza scende come $1/N^2$, più in fretta dell'$1/N$ di qualunque bound regolare con campioni iid.
+
+<Derivation id="der20" />
+
+<Example id="ex09" title="Fondo scala di un sensore: uno stimatore unbiased sotto il bound formale">
+
+Dati sintetici, scenario sensori, integrazione didattica. Letture uniformi su $[0, \theta]$ con fondo scala vero $\theta = 10$; ne osservi $N = 10$.
+
+<Step title="Stima ML: la lettura massima M">
+
+$$
+E\{M\} = \frac{N\theta}{N+1} = \frac{100}{11} \approx 9.09, \qquad \text{bias} \approx -0.91
+$$
+
+$$
+\operatorname{var}\{M\} = \frac{N\theta^2}{(N+1)^2(N+2)} = \frac{1000}{1452} \approx 0.689
+$$
+
+Errore quadratico medio $\approx 0.689 + 0.826 = 1.515$.
+
+</Step>
+
+<Step title="Stimatore corretto">
+
+$\tilde{\theta} = (N+1)M/N = 1.1\,M$ è unbiased, con varianza $\theta^2/(N(N+2)) = 100/120 \approx 0.833$.
+
+</Step>
+
+<Step title="La formula della slide applicata alla cieca">
+
+La formula dell'informazione di Fisher, usata senza controllare le ipotesi, darebbe:
+
+$$
+I(\theta) = \frac{N^2}{\theta^2} = 1, \qquad \frac{\theta^2}{N^2} = 1
+$$
+
+cioè un «bound» pari a 1. Lo stimatore unbiased ha varianza $0.833 < 1$: il bound formale è violato, perché il supporto dipende da $\theta$ e le condizioni di regolarità non valgono.
+
+</Step>
+
+<Step title="Confronto con lo stimatore dei momenti">
+
+Lo stimatore dei momenti (*method of moments estimator*) $2\bar{x}$ è unbiased con varianza $\theta^2/(3N) = 100/30 \approx 3.33$, quattro volte più grande. Con $N = 100$: $\operatorname{var}\{\tilde{\theta}\} = 100/10200 \approx 0.0098$ (scende come $1/N^2$), $\operatorname{var}\{2\bar{x}\} \approx 0.333$ (scende come $1/N$).
+
+</Step>
+
+<Step title="Consistenza della stima ML">
+
+Con la definizione della slide p16: $P\{\vert M - \theta \vert < 0.5\} = 1 - 0.95^N$ vale $0.401$ con $N = 10$ e $0.994$ con $N = 100$.
+
+</Step>
+
+</Example>
+
+<Widget id="m04-ipotesi-del-bound" />
+
+<Check id="chk-12" />
+
+## Proprietà asintotiche
+
+La slide p15 cambia prospettiva: dalle proprietà a $N$ finito a quelle per $N$ grande. <SourceRef doc="ch2" page={15} />
+
+### Gli stimatori reali sono biased e inefficienti
+
+Primo punto della slide: spesso le stime usate nei problemi reali sono ottenute da stimatori polarizzati (*biased*) e inefficienti (*inefficient*). Le note: «In many practical scenarios, the estimates we utilize are derived from biased and inefficient estimators». Le proprietà a $N$ finito (unbiased, efficient) sono quindi troppo severe per essere l'unico criterio: uno stimatore efficiente spesso non esiste, e a volte un bias conviene, come per la ridge con pochi dati, che porta l'errore quadratico medio sotto la metà di quello dei minimi quadrati. Serve un criterio più realistico: il comportamento per $N$ grande. <SourceRef doc="part1" page={19} />
+
+### Quanti campioni e quanto buoni
+
+Le note aggiungono due frasi che nelle slide mancano. L'efficacia di uno stimatore può dipendere molto dal **numero limitato di campioni di training** disponibili. Di conseguenza la qualità di uno stimatore dipende da due fattori chiave: il **numero di campioni** di training e la **qualità intrinseca** di quei campioni. Aumentare $N$ non rimedia a campioni di cattiva qualità (rumorosi, etichettati male, non rappresentativi): un bias dovuto a etichette sbagliate resta anche con infiniti campioni.
+
+Per valutare e confrontare correttamente gli stimatori le note assumono spesso un **numero infinito di campioni di training** (in grassetto):
+
+<Formula id="f-c32" />
+
+Così elimini l'effetto della scarsità di dati e giudichi la regola di stima in sé. È la giustificazione del passaggio al limite in tutte le definizioni che seguono.
+
+<Callout kind="intuizione">
+Stimi la riflettanza media nel vicino infrarosso della classe vegetazione da $N$ pixel di un'immagine satellitare etichettati a mano. Se il 10% delle etichette è sbagliato (pixel di suolo chiamati vegetazione), la stima converge a un valore spostato: l'errore quadratico medio non scende sotto il quadrato del bias, per quanti pixel tu aggiunga. Più campioni riducono la varianza, non la cattiva qualità.
+</Callout>
+
+<Widget id="m04-quantita-e-qualita-dei-campioni" />
+
+Lo stesso problema, visto dal lato delle feature, è l'effetto Hughes: a $N$ fissato più feature significano più parametri da stimare e stime peggiori. Vedi <ModLink to="m11-hughes-feature-selection">effetto Hughes e selezione delle feature</ModLink>.
+
+### Buono significa buone proprietà asintotiche
+
+Per giudicare meglio la bontà dello stimatore se ne analizza il comportamento **per grandi insiemi di osservazioni** (*for large sets of observations*, in rosso). In altre parole, uno stimatore è detto buono se ha buone **proprietà asintotiche** (*asymptotic properties*, in rosso). Le note: si analizza il comportamento al tendere della dimensione del campione all'infinito. Le proprietà sono tre: asintotica non polarizzazione, asintotica efficienza, consistenza.
+
+### Stima asintoticamente non polarizzata
+
+<Definition term="Stima asintoticamente non polarizzata" en="asymptotically unbiased">
+Il valore atteso dell'errore tende al vettore nullo per $N \to +\infty$; equivalentemente, il valore atteso della stima tende al valore vero.
+</Definition>
+
+<Formula id="f-c34" />
+
+Le note: al crescere del numero di campioni $N$ il valore atteso dello stimatore si avvicina al valore vero del parametro. La freccia verde della slide ha di nuovo la parola «ossia» nel livello di testo del PDF: le due scritture sono equivalenti. Sotto, la slide mostra la frazione dell'efficienza asintotica.
+
+<Figure id="fig05" />
+
+Uno stimatore unbiased lo è anche asintoticamente; il viceversa non vale. L'esempio classico è la stima ML della varianza.
+
+<Widget id="m04-corsa-verso-infinito" />
+
+### L'esempio del corso: la covarianza ML
+
+La slide ch2 p31 («Gaussian Model: ML Estimation», fuori da queste pagine) dà l'esempio concreto delle definizioni asintotiche. Le stime ML del vettore medio e della matrice di covarianza di una gaussiana multivariata, da $N$ campioni iid, sono: <SourceRef doc="ch2" page={31} />
+
+<Formula id="f-c64" />
+
+La seconda uguaglianza scrive la covarianza come media dei prodotti esterni meno il prodotto esterno della media. La slide dichiara le due stime «asymptotically unbiased and efficient, and consistent» (in rosso). In più dà i loro valori attesi:
+
+<Formula id="f-c64-2" />
+
+La media campionaria è unbiased per ogni $N$. La covarianza ML è biased per ogni $N$ finito, con bias $-\Sigma/N$ che tende a zero: è asintoticamente unbiased. Lo stimatore unbiased elementare (*elementary unbiased estimator*) divide per $N-1$; la slide riusa lo stesso simbolo $\hat{\Sigma}$:
+
+<Formula id="f-c64-3" />
+
+È l'esempio da citare all'orale per distinguere *unbiased* da *asymptotically unbiased*. Nel caso scalare (integrazione didattica) il fattore $(N-1)/N$ si ricava scomponendo gli scarti dalla media campionaria; la varianza viene dalla chi-quadrato con $N-1$ gradi di libertà. Il rapporto con il bound, $(N-1)/N$, è sotto 1 a $N$ finito: nessuna contraddizione, perché il bound vale per gli unbiased e questo stimatore è biased. Rispetto al bound della sua classe di bias il rapporto è $N/(N-1) \geq 1$.
+
+<Derivation id="der11" />
+
+<Example id="ex04" title="Stima ML della varianza con pochi campioni: biased oggi, buona all'infinito">
+
+Dati sintetici, scenario sensori, integrazione didattica basata sul fattore $(N-1)/N$ di ch2 p31. Rumore gaussiano di un sensore con varianza vera $\sigma^2 = 4$.
+
+<Step title="N = 5: valore atteso e bias">
+
+$$
+E\{\hat{\sigma}^2\} = \frac{N-1}{N}\,\sigma^2 = \frac{4}{5} \cdot 4 = 3.2, \qquad \text{bias} = -0.8
+$$
+
+</Step>
+
+<Step title="N = 5: varianza e bound">
+
+$$
+\operatorname{var}\{\hat{\sigma}^2\} = \frac{2(N-1)\sigma^4}{N^2} = \frac{2 \cdot 4 \cdot 16}{25} = 5.12, \qquad \frac{2\sigma^4}{N} = \frac{32}{5} = 6.4
+$$
+
+Rapporto $5.12/6.4 = 0.8$: sotto 1 perché lo stimatore è biased.
+
+</Step>
+
+<Step title="Lo stimatore corretto con 1/(N−1)">
+
+È unbiased ma ha varianza $2\sigma^4/(N-1) = 32/4 = 8 > 6.4$: non è efficiente. Errore quadratico medio: ML $5.12 + 0.64 = 5.76$ contro $8$ dello stimatore unbiased.
+
+</Step>
+
+<Step title="N = 100 e N = 1000">
+
+Con $N = 100$: $E\{\hat{\sigma}^2\} = 3.96$, rapporto ML $0.99$, rapporto dello stimatore unbiased $100/99 = 1.0101$. Con $N = 1000$: $E\{\hat{\sigma}^2\} = 3.996$, rapporti $0.999$ e $1.001$. Entrambi sono asintoticamente unbiased, asintoticamente efficienti e consistenti.
+
+</Step>
+
+<Step title="Controllo con il bound della classe di bias">
+
+Il rapporto $0.8$ confronta uno stimatore biased con il bound degli unbiased. Il bound della sua classe è $((N-1)/N)^2 \cdot 2\sigma^4/N = 0.64 \cdot 6.4 = 4.096$, e rispetto a quello il rapporto è $5.12/4.096 = 1.25 = N/(N-1)$, maggiore di 1 come deve essere.
+
+</Step>
+
+</Example>
+
+<Check id="chk-13" />
+
+Il modello gaussiano completo è in <ModLink to="m06-modelli-pdf-gaussiana">modelli di PDF e modello gaussiano</ModLink>.
+
+### Stima asintoticamente efficiente
+
+<Definition term="Stima asintoticamente efficiente" en="asymptotically efficient">
+Per ogni parametro $i = 1, 2, \ldots, r$ il rapporto tra la varianza dell'errore e il corrispondente bound di Cramér-Rao tende a 1 per $N \to +\infty$.
+</Definition>
+
+<Formula id="f-c35" />
+
+Le note: lo stimatore raggiunge la minima varianza possibile (cioè il bound di Cramér-Rao) tra tutti gli stimatori unbiased, nel limite di campioni numerosi. La slide dà solo il limite del rapporto; le due formulazioni sono compatibili.
+
+Perché il rapporto e non la differenza? Perché sia la varianza sia il bound tendono a zero, quindi la loro differenza tende a zero per qualunque stimatore con varianza evanescente. Conta che ci vadano **con la stessa velocità**. Varianza e bound vanno calcolati con lo stesso $N$.
+
+Una sottigliezza che la fonte non discute: il bound è definito per stimatori unbiased, ma questa definizione si applica anche a stimatori solo asintoticamente unbiased, come la ML. A $N$ finito il rapporto può allora essere anche minore di 1 senza contraddizione: lo hai visto con la varianza ML, $0.8$ a $N = 5$. <SourceRef doc="part1" page={19} />
+
+<Check id="chk-14" />
+
+## Consistenza
+
+### La definizione e come si legge
+
+La slide p16 definisce la terza proprietà asintotica. <SourceRef doc="ch2" page={16} />
+
+<Definition term="Stima consistente" en="consistent estimate">
+Una stima è **consistente** se converge al valore vero quando $N \to +\infty$: per ogni $\delta > 0$ la probabilità che la norma dell'errore sia minore di $\delta$ tende a 1.
+</Definition>
+
+<Formula id="f-c36" />
+
+Leggila simbolo per simbolo. $\Vert \boldsymbol{\varepsilon} \Vert$ è la norma del vettore errore. $\delta$ è una tolleranza positiva scelta a piacere, anche piccolissima, fissata **prima** di fare il limite su $N$. $P\{\Vert \boldsymbol{\varepsilon} \Vert < \delta\}$ è la probabilità, sui possibili training set di $N$ campioni, che la stima cada entro $\delta$ dal vero. Il limite uguale a 1 **per ogni** $\delta$ dice che, per quanto stretta sia la tolleranza, basta prendere $N$ abbastanza grande. Con un solo parametro la norma è il valore assoluto:
+
+<Formula id="f-c37" />
+
+In statistica questa convergenza si chiama **convergenza in probabilità** (*convergence in probability*); la fonte non usa il termine e dice solo «converges to the true value». La norma è quella euclidea, ma la definizione non dipende dalla scelta: in dimensione finita tutte le norme sono equivalenti, e chiedere $\Vert \boldsymbol{\varepsilon} \Vert < \delta$ per $\delta$ arbitrario equivale a chiedere che ogni componente $\vert \varepsilon_i \vert$ diventi arbitrariamente piccola.
+
+<Callout kind="intuizione">
+I salmoni passano sul nastro uno alla volta e ricalcoli la media dopo ogni pesce. Ogni nastro è una traiettoria diversa. La consistenza dice che, fissata una banda larga $\delta$ attorno al vero, la frazione di traiettorie dentro la banda sale verso 1. Con $\delta = 0.1$ e $\sigma = 1$ il 95% delle traiettorie è dentro la banda da circa $N = 385$; se dimezzi $\delta$ servono quattro volte i pesci.
+</Callout>
+
+<Widget id="m04-imbuto-della-consistenza" />
+
+<Example id="ex05" title="Consistenza in numeri: probabilità di stare entro δ dal vero">
+
+Dati sintetici, scenario pesce, integrazione didattica. Media campionaria della luminosità con $\sigma = 2$, tolleranza $\delta = 0.5$.
+
+<Step title="La formula">
+
+L'errore della media campionaria è gaussiano con varianza $\sigma^2/N$, quindi
+
+$$
+P\{\vert \varepsilon \vert < \delta\} = 2\Phi\!\left(\frac{\delta\sqrt{N}}{\sigma}\right) - 1
+$$
+
+dove $\Phi$ è la funzione di distribuzione (*cumulative distribution function*) della normale standard.
+
+</Step>
+
+<Step title="I valori al crescere di N">
+
+| $N$ | $\delta\sqrt{N}/\sigma$ | $P\{\vert \varepsilon \vert < 0.5\}$ |
+|---|---|---|
+| 4 | 0.5 | 0.383 |
+| 10 | 0.79 | 0.571 |
+| 25 | 1.25 | 0.789 |
+| 100 | 2.5 | 0.988 |
+| 400 | 5 | circa 1 |
+
+</Step>
+
+<Step title="Tolleranza più stretta">
+
+Dimezzando $\delta$ a $0.25$ servono quattro volte i campioni per ottenere le stesse probabilità: l'argomento di $\Phi$ dipende da $\delta\sqrt{N}$. Per ogni $\delta$ fissato il limite è comunque 1.
+
+</Step>
+
+<Step title="Uno stimatore unbiased ma non consistente">
+
+Lo stimatore che usa solo il primo campione dà sempre $2\Phi(0.5/2) - 1 = 2\Phi(0.25) - 1 = 0.197$, per qualunque $N$: unbiased ma non consistente.
+
+</Step>
+
+</Example>
+
+<Check id="chk-15" />
+
+### La condizione per la consistenza
+
+L'ultimo punto della slide p16: la **condizione necessaria** (*necessary condition*, in rosso) per la consistenza è che la stima sia asintoticamente non polarizzata e con varianza che converge a zero quando $N \to +\infty$. Le note usano il plurale, «necessary conditions». La fonte la enuncia a parole; i due limiti ne sono la formalizzazione con i simboli delle slide p15 e p13:
+
+<Formula id="f-c38" />
+
+Nella statistica standard queste due condizioni insieme sono **sufficienti** per la consistenza. La dimostrazione usa la disuguaglianza di Chebyshev (integrazione didattica): la probabilità di un errore più grande di $\delta$ è al massimo l'errore quadratico medio diviso per $\delta^2$, e l'errore quadratico medio è varianza più bias al quadrato. Se entrambi tendono a zero, la probabilità di sbagliare più di $\delta$ tende a zero per ogni $\delta$. Serve un'ipotesi implicita: la varianza dello stimatore esiste finita, almeno per $N$ abbastanza grande.
+
+<Derivation id="der07" />
+
+Che servano **entrambe** lo mostrano due controesempi sulla media $m$ di una gaussiana. Uno strumento con offset costante, $\bar{x} + c$, ha varianza $\sigma^2/N \to 0$ ma bias $c$: la stima converge a $m + c$, al valore sbagliato. Il primo campione $x_1$ ha bias nullo ma varianza $\sigma^2$ costante: la stima non converge.
+
+<Reveal label="Necessaria o sufficiente? La sottigliezza">
+
+A rigore le due condizioni non sono strettamente necessarie. Si può costruire uno stimatore consistente il cui valore atteso non converge: vale $\bar{x}$ con probabilità $1 - 1/N$ e $N^2$ con probabilità $1/N$, estratto a caso indipendentemente dai dati. L'evento anomalo ha probabilità $1/N$ che svanisce, quindi lo stimatore è consistente; ma il suo valore atteso, $(1 - 1/N)\,m + N$, diverge. All'esame riporta la formulazione del docente («necessary condition») e sappi mostrare perché bias che tende a zero e varianza che tende a zero **portano** alla consistenza. I passaggi sono nella dimostrazione [«legami tra le proprietà»](#derivation:der16).
+
+</Reveal>
+
+<Check id="chk-16" />
+
+### Fiducia sui grandi dataset
+
+La sezione delle note si chiude a inizio p20 con una frase: assicurandoti che queste proprietà asintotiche siano soddisfatte, puoi avere maggiore fiducia nell'**affidabilità** (*reliability*) e nell'**accuratezza** (*accuracy*) degli stimatori quando li applichi a grandi insiemi di dati. <SourceRef doc="part1" page={20} />
+
+La consistenza è anche il criterio con cui giudichi le stime non parametriche: per il K-NN servono $K_N \to +\infty$ e $K_N/N \to 0$, per Parzen una larghezza della finestra che tende a zero, ma non troppo in fretta. Vedi <ModLink to="m08-non-parametrica-knn">K-NN</ModLink> e <ModLink to="m09-parzen-windows">finestre di Parzen</ModLink>.
+
+## Il quadro delle proprietà
+
+### Cinque proprietà a confronto
+
+Le cinque slide definiscono due proprietà a $N$ finito e tre asintotiche. Il quadro qui sotto le mette in fila: è la base per rispondere a «How can we describe the goodness of an estimation?».
+
+| Proprietà | Quando | Condizione |
+|---|---|---|
+| *unbiased* | ogni $N$ | $E\{\boldsymbol{\varepsilon}\} = 0$, cioè $E\{\hat{\boldsymbol{\theta}}\} = \boldsymbol{\theta}$ |
+| *efficient* | ogni $N$ | unbiased e $\operatorname{var}\{\varepsilon_i\} = [\mathbf{I}^{-1}(\boldsymbol{\theta})]_{ii}$ |
+| *asymptotically unbiased* | $N \to +\infty$ | il bias tende a $\mathbf{0}$ |
+| *asymptotically efficient* | $N \to +\infty$ | $\operatorname{var}\{\varepsilon_i\} / [\mathbf{I}^{-1}(\boldsymbol{\theta})]_{ii} \to 1$ |
+| *consistent* | $N \to +\infty$ | $P\{\Vert \boldsymbol{\varepsilon} \Vert < \delta\} \to 1$ per ogni $\delta > 0$ |
+
+Ogni proprietà a $N$ finito implica la sua versione asintotica, non il viceversa. Lo schema della risposta orale ha sei tappe: (1) la stima è aleatoria; (2) errore di stima; (3) bias e varianza, stima ideale; (4) bound di Cramér-Rao ed efficienza; (5) proprietà asintotiche; (6) la stima ML le possiede tutte e tre.
+
+<Callout kind="intuizione">
+Un classificatore COVID-19 da radiografia: stimi la sensibilità $\theta$ da $N$ pazienti malati, $k$ dei quali positivi. $k/N$ è unbiased ed efficiente. $(k+1)/(N+2)$ è biased a ogni $N$ ma ha tutte e tre le proprietà asintotiche. La frequenza sui soli primi 10 pazienti è unbiased ma non consistente. Un valore fisso preso dalla letteratura ha varianza zero ed è inutile.
+</Callout>
+
+<Widget id="m04-pagella-dello-stimatore" />
+
+### Chi implica chi
+
+La fonte definisce le cinque proprietà ma non ne discute i legami, che sono la tipica domanda di approfondimento all'orale (integrazione didattica). Le implicazioni vere:
+
+<Formula id="f-c67" />
+
+<Formula id="f-c67-2" />
+
+C'è una terza implicazione, che vale con campioni iid: il bound scende come $1/N$, quindi uno stimatore asintoticamente unbiased e asintoticamente efficiente ha varianza che tende a zero ed è consistente.
+
+Le implicazioni false, ciascuna con un controesempio sulla media $m$ di una gaussiana:
+
+- **unbiased non implica consistent**: il primo campione $x_1$ ha varianza $\sigma^2$ costante;
+- **consistent non implica asymptotically efficient**: la mediana campionaria ha rapporto varianza/bound che tende a $\pi/2 \approx 1.57$;
+- **varianza che tende a zero non basta senza bias che tende a zero**: $\bar{x} + c$ converge a $m + c$;
+- **asymptotically unbiased non implica unbiased**: la varianza ML, con il fattore $(N-1)/N$.
+
+<Derivation id="der16" />
+
+### Le ipotesi di ogni risultato
+
+La fonte sparge o sottintende le ipotesi. Eccole raccolte in un posto (integrazione didattica).
+
+1. **Likelihood come prodotto** (part1 p17): campioni iid. Se cade l'indipendenza il prodotto non è più la densità congiunta.
+2. **Bias e varianza** (slide p12-13): $\boldsymbol{\theta}$ fisso ma ignoto, $N$ fissato, operatori calcolati sui training set. Caso limite: lo stimatore costante ha varianza 0 e bias qualsiasi.
+3. **Disuguaglianza di Cramér-Rao** (slide p14): stimatore unbiased per ogni $\boldsymbol{\theta}$, condizioni di regolarità, matrice di Fisher invertibile. Casi limite: con campioni iid il bound scende come $1/N$; tende a 0 se il rumore tende a 0; con parametri accoppiati sale rispetto a $1/[\mathbf{I}]_{ii}$; per stimatori biased vale una forma diversa; senza regolarità può essere violato.
+4. **Stimatore efficiente** (nota della slide p14): unbiased e con varianza uguale al bound per ogni $i$. Non è detto che esista.
+5. **Proprietà asintotiche** (slide p15-16): $N \to +\infty$ con campioni iid generati sempre dallo stesso modello. Il rapporto dell'efficienza asintotica confronta varianza e bound allo stesso $N$; la consistenza va verificata per ogni $\delta > 0$, fissato prima del limite.
+6. **Condizione per la consistenza** (slide p16): bias e varianza che tendono a 0, con varianza finita. Insieme sono sufficienti; il docente le chiama necessarie.
+7. **Teorema su ML ed efficienza** (part1 p20, slide ch2 p19): le «certain assumptions» riguardano solo $p(\mathbf{x}|\boldsymbol{\theta})$ e sono le condizioni di regolarità del modello; a queste si aggiungono le due ipotesi esplicite dell'enunciato, cioè l'esistenza dello stimatore efficiente e l'assenza di bias della ML.
+8. **Proprietà asintotiche della ML** (part1 p20-21): campioni iid, modello corretto, regolarità, parametri identificabili. Se il modello scelto per $p(\mathbf{x})$ è sbagliato non esiste un «valore vero» a cui convergere: per questo la scelta del modello viene prima della stima.
+
+Il [widget «Togli un'ipotesi»](#widget:m04-ipotesi-del-bound) ti fa spegnere un'ipotesi alla volta e mostra quale conclusione cade.
+
+## La stima a massima verosimiglianza
+
+Dopo le proprietà asintotiche le note passano alla stima ML (part1 p20, slide ch2 p17-19), che è il cuore di <ModLink to="m05-max-likelihood">stima a massima verosimiglianza</ModLink>. Qui interessa per un motivo preciso: è lo stimatore che giudichi con gli strumenti appena costruiti. <SourceRef doc="part1" page={20} />
+
+### La definizione di stima ML
+
+<Definition term="Stima a massima verosimiglianza" en="maximum likelihood (ML) estimate">
+La stima ML del vettore dei parametri $\boldsymbol{\theta}$ è il valore di $\boldsymbol{\theta}$ che massimizza la funzione di verosimiglianza $p(\mathbf{X}|\boldsymbol{\theta})$ costruita sui dati osservati $\mathbf{X}$.
+</Definition>
+
+<Formula id="f-c41" />
+
+Le note aggiungono un'osservazione. Facendo variare il vettore $\boldsymbol{\theta}$ generi funzioni di densità diverse, ciascuna con il suo valore di likelihood. Intuitivamente la stima ML è il valore di $\boldsymbol{\theta}$ che si accorda più strettamente (*most closely aligns*) con i campioni di training osservati: quello che massimizza la probabilità di osservare proprio quei dati sotto il modello. La slide ch2 p17 dice «in some sense best agrees with the actually observed training samples». <SourceRef doc="ch2" page={17} />
+
+### Il logaritmo della likelihood
+
+Per scopi analitici (*analytical purposes*) conviene lavorare con la <Term en="log-likelihood">log-likelihood</Term>. Il logaritmo è una funzione monotona crescente: conserva l'ordinamento dei valori della likelihood, quindi il punto di massimo non cambia. La stima ML si scrive anche così:
+
+<Formula id="f-c43" />
+
+Le note scrivono $\arg\max_{\boldsymbol{\theta}} \ln(p(\mathbf{X}|\boldsymbol{\theta}))$, con una coppia di parentesi in più; la slide ch2 p17 scrive $\arg\max_{\boldsymbol{\theta}} \ln p(\mathbf{X}|\boldsymbol{\theta})$. È la stessa formula. Ed è la stessa log-likelihood che compare nella matrice di Fisher.
+
+Il vantaggio pratico, secondo le note: la trasformazione logaritmica semplifica i calcoli, in particolare quando hai prodotti di probabilità, perché li converte in **somme** e rende l'ottimizzazione più gestibile. Con campioni iid la log-likelihood è la somma dei logaritmi delle densità dei singoli campioni:
+
+<Formula id="f-c44" />
+
+Due guadagni concreti. La somma si deriva termine a termine, e la condizione di massimo diventa una somma di gradienti uguale a zero. E la somma non soffre dei valori minuscoli del prodotto: nella figura a tre pannelli 12 campioni danno già $10^{-7}$; con qualche migliaio di campioni il prodotto sparisce sotto la precisione di un calcolatore, mentre la somma dei logaritmi resta un numero normale. La somma vale solo perché la likelihood è un prodotto, cioè per l'ipotesi iid.
+
+<Derivation id="der10" />
+
+<Check id="chk-17" />
+
+### Una sola osservazione: la ML search
+
+Le note illustrano la stima ML della media $\hat{m}$ di una gaussiana monodimensionale con varianza nota, a partire da una **sola osservazione** $x_0$ (figura della slide ch2 p18). <SourceRef doc="ch2" page={18} />
+
+<Figure id="fig02" />
+
+Sopra il grafico c'è il titolo «Likelihood». Una famiglia di gaussiane con medie diverse scorre lungo l'asse da $-6$ a $6$: è la «ML search», indicata dalla freccia a due punte. Una linea verticale continua marca lo zero dell'asse. La linea verticale tratteggiata segna $x_0$, vicino a $x = 1$, e l'etichetta «x0» in basso a destra è collegata alla sua base da una freccia curva; le tacche sulla linea tratteggiata indicano il valore della likelihood di ciascuna curva in $x_0$. La tacca più alta è quella della curva centrata proprio su $x_0$, e la figura scrive il risultato:
+
+<Formula id="f-c45" />
+
+La derivazione analitica conferma la figura: con una sola osservazione la likelihood è la densità gaussiana valutata in $x_0$ e vista come funzione di $m$; la derivata della log-likelihood, $(x_0 - m)/\sigma^2$, si annulla solo in $m = x_0$, e la derivata seconda $-1/\sigma^2$ dice che è un massimo. In coda, un controllo con gli strumenti del foglio: la stima è unbiased e ha varianza $\sigma^2$, uguale al bound per $N = 1$. È lo stimatore efficiente.
+
+<Derivation id="der08" />
+
+<Example id="ex02" title="Stima ML della media di una gaussiana 1-D con una sola osservazione x0">
+
+Esempio della fonte (slide ch2 p18, note p20). Le medie delle curve e i valori delle tacche sono letti sul grafico.
+
+<Step title="Le cinque gaussiane candidate">
+
+Medie in $-2$ (viola), $-1.5$ (rossa), $0$ (blu), $1$ (verde, coincide con $x_0$), $1.5$ (magenta). Deviazione standard comune $\sigma \approx 1$, ricavata dalle altezze delle tacche.
+
+</Step>
+
+<Step title="La likelihood di ciascuna curva in x0 = 1">
+
+Rispetto al massimo, la likelihood relativa è $\exp(-(x_0 - m)^2/2)$:
+
+$$
+\text{verde } 1, \quad \text{magenta } e^{-0.125} \approx 0.88, \quad \text{blu } e^{-0.5} \approx 0.61, \quad \text{rossa } e^{-3.125} \approx 0.04, \quad \text{viola } e^{-4.5} \approx 0.01
+$$
+
+</Step>
+
+<Step title="Il risultato">
+
+La tacca più alta è quella della curva verde, centrata su $x_0$: $\hat{m} = x_0$. La gaussiana che dà più verosimiglianza all'osservazione è quella centrata sull'osservazione stessa.
+
+</Step>
+
+</Example>
+
+<Widget id="m04-ricerca-ml-singola-osservazione" />
+
+<Check id="chk-18" />
+
+<Callout kind="esame">
+Richiesta reale: «Explain ML estimation, develop the first derivative for a gaussian and explain the meaning of the result». Con $N$ campioni e $\sigma$ nota: $\partial \ln p(\mathbf{X}|m)/\partial m = \frac{1}{\sigma^2}\sum_k (x_k - m) = 0$ dà $\hat{m} = \frac{1}{N}\sum_k x_k$. Il significato: la stima ML della media è la media campionaria (con una sola osservazione, l'osservazione stessa), ed è unbiased ed efficiente, con varianza $\sigma^2/N$ uguale al bound.
+</Callout>
+
+## La stima ML è un buon stimatore
+
+### ML ed efficienza
+
+Le note (p20) e la slide ch2 p19 enunciano un teorema senza dimostrarlo. Sotto certe ipotesi sulla distribuzione $p(\mathbf{x}|\boldsymbol{\theta})$, si può dimostrare che, **se esiste uno stimatore efficiente e se la stima ML è unbiased, allora la stima ML è proprio la stima efficiente**. La slide: «if it exists an efficient estimate and if the ML estimate is unbiased, then the efficient estimate is that provided by ML estimation». <SourceRef doc="ch2" page={19} />
+
+Le «certain assumptions» (slide: «In certain hypotheses») non sono precisate: sono le condizioni di regolarità del bound. L'idea della dimostrazione sta negli ultimi due passi dello [schizzo del bound](#derivation:der09): se lo stimatore efficiente esiste, lo score ha la forma $I(\theta)\,(\hat{\theta}_{eff} - \theta)$; la stima ML annulla lo score, quindi coincide con $\hat{\theta}_{eff}$. Il caso più semplice lo hai appena visto: con una sola osservazione $\hat{m} = x_0$ è unbiased con varianza $\sigma^2 = 1/I(m)$.
+
+Una conseguenza logica (integrazione didattica): quando il massimo della likelihood è un punto stazionario interno allo spazio dei parametri, la ML che coincide con lo stimatore efficiente è automaticamente unbiased. L'ipotesi «the ML estimate is unbiased» serve a escludere i massimi sul bordo. Se vincoli la media di una gaussiana a $m \geq 0$, la stima ML diventa $\max(\bar{x}, 0)$: è biased e non coincide più con lo stimatore efficiente $\bar{x}$. All'esame riporta l'enunciato del docente con entrambe le ipotesi.
+
+Lo stimatore efficiente può esistere per una parametrizzazione e non per un'altra (integrazione didattica). Con tempi esponenziali tra due eventi, se stimi il **tempo medio** $\tau$ la ML è la media dei tempi: unbiased, varianza $\tau^2/N$ uguale al bound, efficiente per ogni $N$. Se stimi il **tasso** $\lambda = 1/\tau$ la ML è il reciproco della media: biased, con varianza sopra il bound per ogni $N$ finito, perché lo score non ha la forma richiesta e uno stimatore efficiente per $\lambda$ non esiste.
+
+<Derivation id="der15" />
+
+<Widget id="m04-ml-raggiunge-il-bound" />
+
+### Le tre proprietà asintotiche della ML
+
+Anche nei casi in cui uno stimatore efficiente non esiste, la stima ML mostra comunque buone proprietà asintotiche. La slide ch2 p19 dice che è «asymptotically unbiased, asymptotically efficient, consistent»; le note (p21) le descrivono una per una. <SourceRef doc="part1" page={21} />
+
+**Asintoticamente non polarizzata** (*Asymptotic Unbiasedness*): al tendere della dimensione del campione all'infinito, la stima ML converge in valore atteso al valore vero del parametro. A $N$ finito può essere polarizzata, come la stima ML della varianza di una gaussiana, con valore atteso $(N-1)/N$ volte $\sigma^2$.
+
+<Formula id="f-c48" />
+
+**Asintoticamente efficiente** (*Asymptotic Efficiency*): al crescere della dimensione del campione la stima ML raggiunge la varianza più bassa possibile tra tutti gli stimatori unbiased, cioè il rapporto tra la sua varianza e il bound di Cramér-Rao tende a 1.
+
+<Formula id="f-c49" />
+
+**Consistente** (*Consistency*): al crescere del numero di osservazioni la stima ML converge al valore vero del parametro.
+
+<Formula id="f-c50" />
+
+Le note danno le tre proprietà solo a parole; le formule sono le definizioni delle slide p15-16 applicate a $\hat{\boldsymbol{\theta}}_{ML}$, con $\boldsymbol{\varepsilon} = \hat{\boldsymbol{\theta}}_{ML} - \boldsymbol{\theta}$. È la risposta alla domanda d'esame «Is Maximum Likelihood Estimation a good estimator?»: sì, nel senso asintotico definito in questo foglio.
+
+La fonte non le dimostra. Uno schizzo nel caso scalare (integrazione didattica) sviluppa lo score al primo ordine attorno al $\theta$ vero. L'errore della ML diventa il rapporto tra due medie campionarie: al denominatore la curvatura media, che per la legge dei grandi numeri (*law of large numbers*) tende a $I_1(\theta)$; al numeratore lo score medio, con media nulla e varianza $I_1(\theta)/N$. L'errore eredita media nulla e varianza $1/(N I_1(\theta))$, cioè il bound di $N$ campioni. Le ipotesi sottintese: campioni iid, modello $p(\mathbf{x}|\boldsymbol{\theta})$ corretto, condizioni di regolarità, parametri identificabili, $\theta$ vero interno allo spazio dei parametri.
+
+<Derivation id="der21" />
+
+<Example id="ex06" title="Tasso di allarmi di una rete di sensori: ML biased e inefficiente con pochi dati, buona con tanti">
+
+Dati sintetici, scenario sensori, integrazione didattica. Tempi tra allarmi esponenziali con tasso vero $\lambda = 2$ allarmi/ora; stima ML $\hat{\lambda} = N/\sum_k x_k$.
+
+<Step title="N = 10">
+
+$$
+E\{\hat{\lambda}\} = \frac{N}{N-1}\,\lambda = \frac{20}{9} \approx 2.222 \quad (\text{bias} \approx +0.222)
+$$
+
+$$
+\operatorname{var}\{\hat{\lambda}\} = \frac{N^2\lambda^2}{(N-1)^2(N-2)} = \frac{400}{648} \approx 0.617, \qquad \frac{\lambda^2}{N} = 0.4, \qquad \text{rapporto} \approx 1.543
+$$
+
+</Step>
+
+<Step title="N = 100">
+
+$E\{\hat{\lambda}\} = 200/99 \approx 2.020$ (bias $\approx +0.020$); varianza $\approx 0.0416$; bound $0.04$; rapporto $\approx 1.041$.
+
+</Step>
+
+<Step title="Quando il rapporto scende sotto 1.1">
+
+Il rapporto è $N^3/((N-1)^2(N-2))$: vale $1.102$ con $N = 42$ e $1.099$ con $N = 43$. Scende sotto $1.1$ da $N = 43$.
+
+</Step>
+
+<Step title="Il tempo medio invece è efficiente">
+
+Se stimi il tempo medio $\tau = 1/\lambda = 0.5$ ore con la media dei tempi, la stima è unbiased e la varianza $\tau^2/N$ ($0.025$ con $N = 10$) coincide con il bound: stimatore efficiente per ogni $N$.
+
+</Step>
+
+<Step title="Conclusione">
+
+Per $\lambda$ uno stimatore efficiente non esiste e la ML è biased e inefficiente con pochi dati, ma è asintoticamente unbiased, asintoticamente efficiente e consistente: le tre proprietà delle note.
+
+</Step>
+
+</Example>
+
+<Widget id="m04-ml-tre-proprieta-asintotiche" />
+
+<Check id="chk-19" />
+
+La consistenza collega ML e Bayes: nel limite di infiniti campioni anche la soluzione bayesiana converge allo stesso valore, e le due stime diventano equivalenti. È il primo dei due casi della risposta a «In which case ML and Bayesian are the same?»; il secondo è la prior $p(\boldsymbol{\theta})$ uniforme, con cui la soluzione bayesiana si riduce a quella ML anche con pochi dati (slide ch2 p40, note part1 p30). Il confronto è sviluppato in <ModLink to="m07-stima-bayesiana">stima bayesiana</ModLink>. Anche l'algoritmo EM, che ottiene stime ML con dati incompleti, eredita queste proprietà: vedi <ModLink to="m10-em-dati-incompleti">dati incompleti ed EM</ModLink>.
+
+### Perché la ML è così usata
+
+Le note chiudono: queste proprietà desiderabili contribuiscono all'applicazione diffusa della stima a massima verosimiglianza in molti problemi reali, e la rendono un metodo preferito nell'analisi statistica e nel machine learning. La slide ch2 p19: «Such properties are behind the common use of ML estimation in numerous real problems». <SourceRef doc="ch2" page={19} />
+
+<Callout kind="esame">
+«Is Maximum Likelihood Estimation a good estimator?» Rispondi in tre frasi. A $N$ finito può essere biased (varianza ML, fattore $(N-1)/N$), ma se esiste uno stimatore efficiente e la ML è unbiased, la ML è quello stimatore. Anche quando lo stimatore efficiente non esiste, la ML è asintoticamente unbiased, asintoticamente efficiente e consistente. Per questo è il metodo più usato; il prezzo sono le ipotesi (iid, modello corretto, regolarità).
+</Callout>
+
+## La scelta del modello statistico
+
+### Tre aspetti da considerare
+
+Le proprietà della ML valgono se il modello è corretto. Le note (p21) e la slide ch2 p20 dicono che, quando scegli un modello statistico per $p(\mathbf{x})$, devi considerare tre aspetti principali. <SourceRef doc="ch2" page={20} />
+
+1. **La natura statistica intrinseca del fenomeno** (*Intrinsic Statistical Nature of the Phenomenon*). Capire le caratteristiche fondamentali del fenomeno fisico che analizzi è essenziale per scegliere un modello appropriato. La forma della distribuzione nasce prima di tutto dalla fisica di ciò che misuri: grandezze solo positive, grandezze somma di molti contributi, ampiezze di segnali diffusi.
+2. **Le caratteristiche del rumore** (*Noise Characteristics*). Valuta il rumore introdotto nelle fasi di trasmissione e di acquisizione del segnale. Può venire dal **mezzo di propagazione** (le note scrivono «passive») o dai **sensori** («active»), e influenza in modo significativo le prestazioni del modello. La slide scrive «(passive/active) signal transmission and acquisition phases by the propagation medium and the sensor, respectively», dove «passive/active» sembra riferirsi al tipo di sistema di acquisizione (sensore ottico passivo, radar attivo): un'ambiguità da chiarire con il docente.
+3. **Il pre-processing e l'estrazione delle feature** (*Pre-processing and Feature Extraction*). I metodi usati prima di fornire i dati al sistema di riconoscimento possono influenzare la scelta del modello. Ogni trasformazione (logaritmo, medie su finestre, filtri, rapporti tra bande) cambia la forma della distribuzione e quindi il modello adatto.
+
+Le note concludono che scegliere e applicare correttamente questi passi migliora l'efficacia del modello statistico scelto. <SourceRef doc="part1" page={21} />
+
+<Callout kind="intuizione">
+La stessa scena (acqua, vegetazione, urbano) vista da un sensore ottico passivo e da un radar attivo. Le riflettanze ottiche per classe sono quasi gaussiane. Le ampiezze radar hanno rumore moltiplicativo (*speckle*) e seguono una Rayleigh: una gaussiana le descrive male. Una media su finestre $5 \times 5$, magari dopo il logaritmo, le rende più simmetriche: è il terzo aspetto, il pre-processing, che cambia il modello giusto.
+</Callout>
+
+<Widget id="m04-scelta-del-modello-statistico" />
+
+### I modelli più usati
+
+Tra i modelli statistici più usati per le distribuzioni di probabilità le note elencano sei famiglie, ciascuna con il suo uso tipico.
+
+| Modello | Uso secondo le note |
+|---|---|
+| Gaussiano (*Gaussian Model*) | ideale per dati che seguono una distribuzione normale |
+| Gaussiano generalizzato (*Generalized Gaussian Model*) | alternativa flessibile che può rappresentare varie distribuzioni di dati |
+| Gamma (*Gamma Model*) | dati continui non negativi, spesso nella teoria delle code (*queuing theory*) |
+| Rayleigh (*Rayleigh Model*) | radar e comunicazioni, per modellare segnali diffusi (*scattered signals*) |
+| Chi-quadrato (*Chi-square Model*) | test di ipotesi (*hypothesis testing*) e bontà di adattamento (*goodness-of-fit*) |
+| Log-Normale (*Log-Normal Model*) | variabili con asimmetria positiva (*positively skewed*), come i dati finanziari |
+
+Il **modello gaussiano** è il riferimento parametrico del corso, con media e varianza come parametri; il teorema del limite centrale (*central limit theorem*) ne spiega la diffusione, per grandezze che nascono dalla somma di molti contributi. Il **gaussiano generalizzato** ha un parametro di forma (*shape parameter*) in più: passa da distribuzioni appuntite con code pesanti a distribuzioni quasi piatte e include la gaussiana come caso particolare. Gli altri quattro descrivono dati **non negativi e asimmetrici**, per i quali la gaussiana è il modello sbagliato: la scelta tra loro segue il meccanismo che genera i dati.
+
+<Callout kind="intuizione">
+Gli errori di previsione della radiazione solare nelle giornate serene sono quasi gaussiani; nelle giornate a nuvolosità variabile hanno un picco stretto e code pesanti. La gaussiana generalizzata copre entrambi i casi cambiando il parametro di forma.
+</Callout>
+
+<Widget id="m04-galleria-modelli-simmetrici" />
+
+<Widget id="m04-galleria-modelli-positivi" />
+
+Le note concludono che scegliere il modello giusto è vitale per catturare con accuratezza i processi sottostanti e ottenere un'analisi efficace. La pagina termina con «Examples of these models are the following:», ma la figura con gli esempi è a p22, nel foglio <ModLink to="m06-modelli-pdf-gaussiana">modelli di PDF e modello gaussiano</ModLink>, insieme alle formule delle sei famiglie. <SourceRef doc="part1" page={21} />
+
+<Check id="chk-20" />
+
+## Collegamenti
+
+- <ModLink to="m03-stima-intro-parametrica">Stima parametrica: introduzione</ModLink>. Le pagine part1 p17-19 sono condivise: modello parametrico, likelihood come prodotto per campioni iid, figura dei tre pannelli e le due procedure MLE e BE sono il prerequisito di questo foglio.
+- <ModLink to="m05-max-likelihood">Stima a massima verosimiglianza</ModLink>. Le pagine part1 p20-21 sono condivise: definizione di stima ML, log-likelihood, esempio con una sola osservazione, proprietà della ML e scelta del modello. Qui la ML è giudicata con efficienza e proprietà asintotiche.
+- <ModLink to="m06-modelli-pdf-gaussiana">Modelli di PDF e modello gaussiano</ModLink>. In ch2 p31 le stime ML di media e covarianza sono dichiarate asintoticamente unbiased, efficienti e consistenti, con il fattore $(N-1)/N$ e lo stimatore unbiased con $1/(N-1)$. L'elenco dei modelli prosegue con le figure di p22.
+- <ModLink to="m07-stima-bayesiana">Stima bayesiana e confronto ML vs Bayes</ModLink>. Le due soluzioni coincidono in due casi: con infiniti campioni, perché entrambe sono consistenti, oppure con una prior uniforme. In pratica la ML è spesso preferita per il calcolo più leggero e l'interpretazione più facile.
+- <ModLink to="p01-stima-parametri">Stima ML e bayesiana dei parametri (Passerini)</ModLink>. Stesse due visioni del parametro, costante o variabile aleatoria, con i prior coniugati.
+- <ModLink to="m08-non-parametrica-knn">Stima non parametrica e K-NN</ModLink>. La consistenza è il criterio con cui giudichi la stima K-NN: condizioni su $K$ in funzione di $N$.
+- <ModLink to="m09-parzen-windows">Finestre di Parzen</ModLink>. La stima di Parzen è biased ma asintoticamente unbiased e consistente se la larghezza della finestra è scelta bene: stesse nozioni di bias, varianza e consistenza.
+- <ModLink to="m10-em-dati-incompleti">Dati incompleti ed EM</ModLink>. EM produce stime ML con dati incompleti ed eredita le proprietà della ML.
+- <ModLink to="m21-errore-generalizzazione">Errore di generalizzazione</ModLink>. La coppia bias/varianza anticipa la scomposizione in errore di approssimazione ed errore di stima. Attenzione all'omonimia: là «estimation error» è una componente del rischio, qui è $\boldsymbol{\varepsilon} = \hat{\boldsymbol{\theta}} - \boldsymbol{\theta}$.
+- <ModLink to="d04-regolarizzazione">Regolarizzazione</ModLink>. Il *weight decay* (L2) è uno stimatore volutamente biased con varianza ridotta, come la ridge a un parametro di questo foglio.
+- <ModLink to="m11-hughes-feature-selection">Effetto Hughes e selezione delle feature</ModLink>. L'effetto Hughes nasce dagli errori di stima con campioni finiti: a $N$ fissato più feature significano più parametri e stime peggiori.
+
+## Per l'orale
+
+Sette domande della banca toccano questo foglio: sei di Melgani, una di Passerini. Qui trovi il testo originale e lo scheletro della risposta; le risposte complete, con la lista dei punti da toccare, sono nella scheda dell'orale del foglio.
+
+<Widget id="m04-simulatore-orale-bonta" />
+
+### Formula della ML, bontà della stima e confronto con Bayes
+
+<Callout kind="esame">
+Melgani: «What is the formula of Maximum Likelihood, why we can use the separate products of the probabilities and what the Likelihood describe. How we can describe the goodness of an estimation and Is Maximum Likelihood Estimation a good estimator? Is it better or not with respect to the Bayesian Estimation? Why? Then he asked me to apply Maximum Likelihood estimation on an exercise. Last question was: In which case ML and Bayesian are the same?»
+</Callout>
+
+Parto dalla formula $\hat{\boldsymbol{\theta}} = \arg\max_{\boldsymbol{\theta}} p(\mathbf{X}|\boldsymbol{\theta})$ con $p(\mathbf{X}|\boldsymbol{\theta}) = \prod_k p(\mathbf{x}_k|\boldsymbol{\theta})$. Il prodotto è lecito perché i campioni sono iid: la densità congiunta si fattorizza per l'indipendenza e i fattori sono uguali per l'identica distribuzione. La likelihood descrive la compatibilità tra i parametri e i dati osservati. Per la bontà seguo la catena: stima aleatoria, errore $\boldsymbol{\varepsilon}$, bias e varianza, bound di Cramér-Rao con la matrice di Fisher ed efficienza, tre proprietà asintotiche. La ML è buona: se esiste uno stimatore efficiente e la ML è unbiased, è lei; altrimenti ha comunque le tre proprietà asintotiche. Rispetto a Bayes non usa la prior: con pochi dati e una prior affidabile Bayes fa meglio, ma in pratica si preferisce spesso la ML perché ha complessità di calcolo più bassa e si interpreta più facilmente. Le due soluzioni coincidono in due casi: con infiniti campioni, perché entrambe sono consistenti, oppure con una prior $p(\boldsymbol{\theta})$ uniforme, che non sposta la posterior. Come esercizio svolgo la media di una gaussiana: $\hat{m} = \frac{1}{N}\sum_k x_k$.
+
+### Parzen: bias e varianza
+
+<Callout kind="esame">
+Melgani: «Parzen Window Estimation: context, properties etc. Which is the most common window function (write the formula)? Is Parzen a good estimator (bias/variance)? Graphical representation of how the counting/interpolation works with a couple of samples.»
+</Callout>
+
+Per la parte «Is Parzen a good estimator» uso le definizioni di questo foglio: il bias è la media dell'errore, la varianza la sua dispersione. La stima di Parzen è biased a larghezza finita (la sua media è la pdf sfocata dal kernel) ma asintoticamente unbiased se la larghezza tende a zero; la varianza tende a zero se il numero di campioni nella finestra cresce. Insieme danno la consistenza. Il resto della risposta è nel foglio sulle finestre di Parzen.
+
+### Parzen: larghezza e consistenza
+
+<Callout kind="esame">
+Melgani: «Parzen Windows: general context (what we want to do, why they are non parametric estimation), gaussian kernel with spherical symmetry with formula and some drawing to represent it, How the choice of the width impacts our estimate? Is it a good estimate? (Bias, variance and consideration about the characteristics of the width to have a consistent estimate)»
+</Callout>
+
+Qui il docente chiede esplicitamente la consistenza. Enuncio la definizione della slide p16, $\lim_{N \to +\infty} P\{\Vert \boldsymbol{\varepsilon} \Vert < \delta\} = 1$ per ogni $\delta > 0$, e la condizione: bias che tende a zero e varianza che tende a zero. Per Parzen la prima chiede una larghezza che tende a zero, la seconda che la larghezza non tenda a zero troppo in fretta rispetto a $N$.
+
+### Stime non parametriche e derivata per la gaussiana
+
+<Callout kind="esame">
+Melgani: «Explain non-parametric estimation, what non-parametric means and why we use it, explain both KNN and Parzen windows, do they tend to the optimal solution? Explain ML estimation, develop the first derivative for a gaussian and explain the meaning of the result. Explain box classifier»
+</Callout>
+
+«Do they tend to the optimal solution?» è una domanda di consistenza: sì, con le condizioni su $K$ o sulla larghezza della finestra. Per la ML: definizione, passaggio alla log-likelihood (stesso massimo, prodotti che diventano somme), derivata $\frac{1}{\sigma^2}\sum_k (x_k - m) = 0$ e risultato $\hat{m} = \bar{x}$. Il significato: la media campionaria è la stima ML, unbiased ed efficiente, con varianza $\sigma^2/N$ uguale al bound; con una sola osservazione la stima è $x_0$, come nella figura della ML search.
+
+### Stima dei parametri (Passerini)
+
+<Callout kind="esame">
+Passerini: «Perceptron (All) + Parameter estimation Questions: - Problem with analytical solution for perceptron regression - Example of estimation of Gaussian parameters: why do we obtain a Gaussian also as posterior? - How to use parameter estimation in Bayesian Networks - Why ML is fast in Bayesian Network (CDP independence)»
+</Callout>
+
+Da questo foglio servono le due visioni del parametro. Nella MLE $\boldsymbol{\theta}$ è una costante fissa ma ignota e la stima è il punto che massimizza la likelihood usando solo i dati; nella stima bayesiana $\boldsymbol{\theta}$ è aleatorio, la prior si aggiorna con il teorema di Bayes e ottieni una posterior. La posterior gaussiana e le reti bayesiane sono nei fogli di Passerini.
+
+### Errore di generalizzazione
+
+<Callout kind="esame">
+Melgani: «Generalization error (Approximation error - Estimation error) - (Trained machine) - Target space/ hypothesis space - Empirical risk Loss function (correlation coefficient - MSE - RMSE-absolute error)»
+</Callout>
+
+Da questo foglio serve solo l'avvertenza: l'«estimation error» del Cap. 4 è la parte del rischio dovuta al training set finito, non il vettore $\boldsymbol{\varepsilon} = \hat{\boldsymbol{\theta}} - \boldsymbol{\theta}$. Le due nozioni condividono l'origine (pochi campioni) e calano al crescere di $N$.
+
+### K-NN: overfit, oversmooth e differenze con Parzen
+
+<Callout kind="esame">
+Melgani: «K-NN estimation, how does it works, we draw a graph for example and asked how is the distribution, what does it mean overfit and oversmooth. Then he asked how the K-NN classifier works and made an example. Last question what are the difference with parzen window»
+</Callout>
+
+*Overfit* e *oversmooth* si leggono con bias e varianza. Un $K$ piccolo segue i singoli campioni: bias basso, varianza alta (*overfit*). Un $K$ grande media su una regione ampia: varianza bassa, bias alto (*oversmooth*). L'errore quadratico medio li somma, e la consistenza chiede che entrambi tendano a zero al crescere di $N$.
+
+### Schema della risposta: come si descrive la bontà di una stima
+
+1. La stima $\hat{\boldsymbol{\theta}} = \hat{\boldsymbol{\theta}}(\mathbf{X})$ dipende dal training set: è un vettore aleatorio.
+2. L'errore di stima $\boldsymbol{\varepsilon} = \hat{\boldsymbol{\theta}} - \boldsymbol{\theta}$ è aleatorio anche lui; la stima ideale ha errore unbiased e senza varianza.
+3. Bias $E\{\boldsymbol{\varepsilon}\} = E\{\hat{\boldsymbol{\theta}}\} - \boldsymbol{\theta}$; varianza $E\{(\hat{\theta}_i - \bar{\hat{\theta}}_i)^2\}$ attorno alla media della stima.
+4. La varianza si giudica con il bound di Cramér-Rao, $\operatorname{var}\{\varepsilon_i\} \geq [\mathbf{I}^{-1}(\boldsymbol{\theta})]_{ii}$, valido per stimatori unbiased; chi lo raggiunge è efficiente.
+5. Gli stimatori reali sono spesso biased e inefficienti: si guardano le proprietà asintotiche (asintoticamente unbiased, asintoticamente efficiente, consistente, con la condizione su bias e varianza).
+6. La ML possiede tutte e tre le proprietà asintotiche, ed è efficiente quando lo stimatore efficiente esiste e la ML è unbiased.

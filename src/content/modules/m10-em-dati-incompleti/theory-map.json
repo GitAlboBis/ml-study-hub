@@ -1,0 +1,467 @@
+{
+  "c01": [
+    "#dalle-variabili-osservabili-alle-variabili-latenti",
+    "#panoramica",
+    "widget:m10-nastro-senza-etichette"
+  ],
+  "c02": [
+    "#dalle-variabili-osservabili-alle-variabili-latenti",
+    "#panoramica",
+    "widget:m10-nastro-senza-etichette"
+  ],
+  "c03": [
+    "#usare-tutta-linformazione-anche-parziale",
+    "widget:m10-nastro-senza-etichette"
+  ],
+  "c04": [
+    "#approccio-parametrico-ed-em",
+    "#perché-non-un-metodo-non-parametrico",
+    "widget:m10-parametrico-batte-nonparametrico"
+  ],
+  "c05": [
+    "#approccio-parametrico-ed-em",
+    "#che-cosè-em",
+    "widget:m10-parametrico-batte-nonparametrico",
+    "quiz:chk-01"
+  ],
+  "c06": [
+    "#due-forme-di-dato-incompleto",
+    "formula:f-c06",
+    "example:ex02",
+    "widget:m10-nastro-senza-etichette",
+    "quiz:chk-01"
+  ],
+  "c07": [
+    "#n-osservazioni-iid-in-uno-spazio-a-n-dimensioni",
+    "formula:f-c07",
+    "example:ex01",
+    "widget:m10-costruttore-di-misture"
+  ],
+  "c08": [
+    "#la-mistura-di-modi-gaussiani",
+    "formula:f-c08",
+    "figure:fig01",
+    "derivation:der01",
+    "derivation:der07",
+    "example:ex01",
+    "widget:m10-costruttore-di-misture"
+  ],
+  "c09": [
+    "#prior-medie-e-covarianze-dei-modi",
+    "formula:f-c09",
+    "formula:f-c09-2",
+    "example:ex01",
+    "widget:m10-costruttore-di-misture"
+  ],
+  "c10": [
+    "#prior-medie-e-covarianze-dei-modi",
+    "formula:f-c10",
+    "derivation:der05",
+    "widget:m10-costruttore-di-misture",
+    "quiz:chk-02"
+  ],
+  "c11": [
+    "#il-vettore-dei-parametri",
+    "formula:f-c11",
+    "example:ex01",
+    "widget:m10-superficie-mistura-e-theta",
+    "quiz:chk-02"
+  ],
+  "c12": [
+    "#la-figura-della-mistura",
+    "figure:fig01",
+    "figure:fig07",
+    "widget:m10-superficie-mistura-e-theta"
+  ],
+  "c13": [
+    "#stimare-ogni-modo-non-solo-la-somma",
+    "example:ex01",
+    "widget:m10-detective-dei-modi"
+  ],
+  "c14": [
+    "#i-tre-motivi-dellincompletezza",
+    "example:ex01",
+    "widget:m10-detective-dei-modi",
+    "quiz:chk-03"
+  ],
+  "c15": [
+    "#i-tre-motivi-dellincompletezza",
+    "figure:fig02",
+    "example:ex01",
+    "widget:m10-detective-dei-modi",
+    "quiz:chk-03"
+  ],
+  "c16": [
+    "#i-tre-motivi-dellincompletezza",
+    "example:ex01",
+    "widget:m10-detective-dei-modi",
+    "quiz:chk-03"
+  ],
+  "c17": [
+    "#perché-non-un-metodo-non-parametrico",
+    "widget:m10-parametrico-batte-nonparametrico"
+  ],
+  "c18": [
+    "#il-problema-di-stima-ml",
+    "formula:f-c18",
+    "formula:f-c18-2",
+    "derivation:der01",
+    "widget:m10-ml-facile-o-difficile"
+  ],
+  "c19": [
+    "#il-problema-di-stima-ml",
+    "formula:f-c19",
+    "derivation:der01",
+    "widget:m10-ml-facile-o-difficile"
+  ],
+  "c20": [
+    "#facile-o-difficile-il-logaritmo-di-una-somma",
+    "derivation:der01",
+    "widget:m10-ml-facile-o-difficile",
+    "quiz:chk-04"
+  ],
+  "c21": [
+    "#facile-o-difficile-il-logaritmo-di-una-somma",
+    "formula:f-c21",
+    "derivation:der01",
+    "derivation:der07",
+    "widget:m10-ml-facile-o-difficile",
+    "quiz:chk-04"
+  ],
+  "c22": [
+    "#dataset-incompleto-e-dataset-completo",
+    "derivation:der02",
+    "widget:m10-dataset-completo-z"
+  ],
+  "c23": [
+    "#dataset-incompleto-e-dataset-completo",
+    "formula:f-c23",
+    "derivation:der02",
+    "widget:m10-dataset-completo-z"
+  ],
+  "c24": [
+    "#dataset-incompleto-e-dataset-completo",
+    "derivation:der02",
+    "derivation:der03",
+    "derivation:der07",
+    "derivation:der09",
+    "example:ex01",
+    "widget:m10-dataset-completo-z"
+  ],
+  "c25": [
+    "#la-densità-congiunta-dei-dati-completi",
+    "formula:f-c25",
+    "derivation:der02",
+    "derivation:der04",
+    "widget:m10-dataset-completo-z",
+    "quiz:chk-05"
+  ],
+  "c26": [
+    "#le-due-verosimiglianze",
+    "formula:f-c26",
+    "derivation:der02",
+    "derivation:der07",
+    "derivation:der09",
+    "widget:m10-due-verosimiglianze"
+  ],
+  "c27": [
+    "#le-due-verosimiglianze",
+    "formula:f-c27",
+    "derivation:der02",
+    "derivation:der07",
+    "widget:m10-due-verosimiglianze"
+  ],
+  "c28": [
+    "#che-cosè-em",
+    "#che-cosè-em-e-come-funziona",
+    "widget:m10-em-passo-passo-1d"
+  ],
+  "c29": [
+    "#lidea-mediare-il-log-della-verosimiglianza-completa",
+    "derivation:der03",
+    "widget:m10-costruire-q"
+  ],
+  "c30": [
+    "#laspettazione-condizionata-q",
+    "formula:f-c30",
+    "figure:fig03",
+    "derivation:der03",
+    "widget:m10-costruire-q",
+    "quiz:chk-06"
+  ],
+  "c31": [
+    "#laspettazione-condizionata-q",
+    "formula:f-c31",
+    "figure:fig03",
+    "derivation:der03",
+    "widget:m10-costruire-q",
+    "quiz:chk-05",
+    "quiz:chk-06"
+  ],
+  "c32": [
+    "#laspettazione-condizionata-q",
+    "derivation:der03",
+    "widget:m10-costruire-q",
+    "quiz:chk-06"
+  ],
+  "c33": [
+    "#e-step-e-m-step",
+    "formula:f-c33",
+    "figure:fig04",
+    "derivation:der03",
+    "widget:m10-em-passo-passo-1d",
+    "quiz:chk-07"
+  ],
+  "c34": [
+    "#e-step-e-m-step",
+    "formula:f-c34",
+    "formula:f-c34-2",
+    "figure:fig04",
+    "derivation:der04",
+    "widget:m10-em-passo-passo-1d",
+    "quiz:chk-07"
+  ],
+  "c35": [
+    "#e-step-e-m-step",
+    "formula:f-c35",
+    "figure:fig04",
+    "widget:m10-em-passo-passo-1d",
+    "quiz:chk-07"
+  ],
+  "c36": [
+    "#inizializzazione-e-criterio-di-arresto",
+    "formula:f-c36",
+    "widget:m10-inizializza-e-ferma",
+    "quiz:chk-08"
+  ],
+  "c37": [
+    "#inizializzazione-e-criterio-di-arresto",
+    "formula:f-c37",
+    "derivation:der08",
+    "widget:m10-inizializza-e-ferma"
+  ],
+  "c38": [
+    "#che-cosa-fanno-davvero-i-due-passi",
+    "widget:m10-inizializza-e-ferma",
+    "quiz:chk-08"
+  ],
+  "c39": [
+    "#che-cosa-fanno-davvero-i-due-passi",
+    "widget:m10-inizializza-e-ferma",
+    "quiz:chk-08"
+  ],
+  "c40": [
+    "#la-log-verosimiglianza-non-scende-mai",
+    "formula:f-c40",
+    "formula:f-c40-2",
+    "figure:fig05",
+    "derivation:der04",
+    "example:ex03",
+    "widget:m10-salita-monotona-q",
+    "widget:m10-minorante-q",
+    "quiz:chk-09"
+  ],
+  "c41": [
+    "#la-log-verosimiglianza-non-scende-mai",
+    "formula:f-c41",
+    "figure:fig05",
+    "figure:fig08",
+    "widget:m10-salita-monotona-q"
+  ],
+  "c42": [
+    "#nessuna-garanzia-di-massimo-globale",
+    "derivation:der04",
+    "derivation:der08",
+    "widget:m10-massimi-locali-e-selle",
+    "widget:m10-collasso-sigma-zero",
+    "quiz:chk-09",
+    "quiz:chk-11"
+  ],
+  "c43": [
+    "#nessuna-garanzia-di-massimo-globale",
+    "derivation:der04",
+    "derivation:der08",
+    "widget:m10-massimi-locali-e-selle",
+    "quiz:chk-10"
+  ],
+  "c44": [
+    "#nessuna-garanzia-di-massimo-globale",
+    "derivation:der08",
+    "widget:m10-massimi-locali-e-selle",
+    "quiz:chk-10"
+  ],
+  "c45": [
+    "#em-funziona-bene-sulle-misture",
+    "widget:m10-massimi-locali-e-selle"
+  ],
+  "c46": [
+    "#il-termine-che-si-ripete-la-posterior-del-modo",
+    "formula:f-c46",
+    "formula:f-c46-2",
+    "formula:f-c46-3",
+    "derivation:der03",
+    "derivation:der05",
+    "derivation:der09",
+    "example:ex01",
+    "example:ex03",
+    "widget:m10-responsabilita-bayes",
+    "quiz:chk-12"
+  ],
+  "c47": [
+    "#il-termine-che-si-ripete-la-posterior-del-modo",
+    "formula:f-c47",
+    "derivation:der05",
+    "example:ex03",
+    "widget:m10-responsabilita-bayes",
+    "quiz:chk-12"
+  ],
+  "c48": [
+    "#aggiornamento-dei-prior",
+    "formula:f-c48",
+    "derivation:der05",
+    "derivation:der09",
+    "example:ex01",
+    "example:ex03",
+    "widget:m10-m-step-medie-pesate",
+    "quiz:chk-13"
+  ],
+  "c49": [
+    "#aggiornamento-delle-medie",
+    "formula:f-c49",
+    "derivation:der05",
+    "derivation:der08",
+    "derivation:der09",
+    "example:ex01",
+    "example:ex03",
+    "widget:m10-m-step-medie-pesate",
+    "quiz:chk-14"
+  ],
+  "c50": [
+    "#aggiornamento-delle-covarianze",
+    "formula:f-c50",
+    "formula:f-c50-2",
+    "derivation:der05",
+    "derivation:der09",
+    "example:ex01",
+    "example:ex03",
+    "widget:m10-m-step-medie-pesate",
+    "quiz:chk-15"
+  ],
+  "c51": [
+    "#stime-ml-pesate-il-caso-con-etichette-note",
+    "formula:f-c51",
+    "derivation:der05",
+    "derivation:der09",
+    "widget:m10-m-step-medie-pesate",
+    "quiz:chk-16"
+  ],
+  "c52": [
+    "#refusi-e-notazione-delle-slide",
+    "#aggiornamento-delle-covarianze",
+    "formula:f-c52",
+    "figure:fig09",
+    "derivation:der05",
+    "widget:m10-em-gmm-mappa-satellitare",
+    "quiz:chk-15"
+  ],
+  "c53": [
+    "#la-procedura-completa",
+    "#la-mistura-dallinizio-alla-fine",
+    "example:ex01",
+    "widget:m10-em-gmm-mappa-satellitare"
+  ],
+  "c54": [
+    "#quattro-punti-uno-senza-la-componente-x1",
+    "figure:fig06",
+    "derivation:der06",
+    "example:ex02",
+    "widget:m10-quattro-punti-x1-mancante"
+  ],
+  "c55": [
+    "#quattro-punti-uno-senza-la-componente-x1",
+    "figure:fig06",
+    "figure:fig09",
+    "derivation:der06",
+    "example:ex02",
+    "widget:m10-quattro-punti-x1-mancante"
+  ],
+  "c56": [
+    "#le-step-con-una-feature-mancante",
+    "formula:f-c56",
+    "formula:f-c56-2",
+    "derivation:der06",
+    "example:ex02",
+    "widget:m10-quattro-punti-x1-mancante",
+    "quiz:chk-17"
+  ],
+  "c57": [
+    "#il-risultato-numerico",
+    "formula:f-c57",
+    "derivation:der06",
+    "example:ex02",
+    "widget:m10-quattro-punti-x1-mancante",
+    "quiz:chk-17"
+  ],
+  "c58": [
+    "#em-per-i-dati-mancanti-in-pratica",
+    "derivation:der06",
+    "example:ex02",
+    "widget:m10-dati-mancanti-in-pratica"
+  ],
+  "c59": [
+    "#la-distanza-euclidea-nel-kernel-sferico",
+    "formula:f-c59",
+    "formula:f-c59-2",
+    "widget:m10-sigma-kernel-e-normalizzazione",
+    "seeAlso:m09-parzen-windows#la-formula-di-specht"
+  ],
+  "c60": [
+    "#il-ruolo-di-sigma",
+    "widget:m10-sigma-kernel-e-normalizzazione",
+    "seeAlso:m09-parzen-windows#sigma-come-parametro-di-smoothing"
+  ],
+  "c61": [
+    "#normalizzare-le-feature",
+    "widget:m10-sigma-kernel-e-normalizzazione",
+    "seeAlso:m09-parzen-windows#normalizzare-le-feature"
+  ],
+  "c62": [
+    "#sigma-adattivo-con-gli-l-vicini",
+    "formula:f-c62",
+    "widget:m10-sigma-adattivo",
+    "quiz:chk-18",
+    "seeAlso:m09-parzen-windows#sigma-adattiva"
+  ],
+  "c63": [
+    "#metodo-di-specht-e-pnn",
+    "widget:m10-pnn-parzen-come-rete",
+    "seeAlso:m09-parzen-windows#probabilistic-neural-networks"
+  ],
+  "c64": [
+    "#sigma-adattivo-con-gli-l-vicini",
+    "widget:m10-sigma-adattivo",
+    "quiz:chk-18",
+    "seeAlso:m09-parzen-windows#sigma-adattiva"
+  ],
+  "c65": [
+    "#le-due-verosimiglianze",
+    "formula:f-c65",
+    "formula:f-c65-2",
+    "derivation:der07",
+    "widget:m10-due-verosimiglianze"
+  ],
+  "c66": [
+    "#perché-la-salita-è-garantita",
+    "formula:f-c66",
+    "derivation:der04",
+    "derivation:der08",
+    "widget:m10-minorante-q"
+  ],
+  "c67": [
+    "#quando-la-verosimiglianza-non-ha-massimo",
+    "formula:f-c67",
+    "formula:f-c67-2",
+    "widget:m10-collasso-sigma-zero",
+    "quiz:chk-11"
+  ]
+}

@@ -1,0 +1,1918 @@
+{
+  "moduleId": "p08-svm-hard-margin",
+  "title": "SVM a margine rigido",
+  "stages": {"inventario": "done", "completezza": "done", "formule": "done"},
+  "pagesReviewed": [{"doc": "part2", "from": 46, "to": 55}],
+  "overview": "Il modulo introduce le Support Vector Machines (SVM) come classificatori lineari a massimo margine (large margin classifiers): tra gli infiniti iperpiani che separano i dati si sceglie quello più lontano dagli esempi più vicini delle due classi. Si definiscono margine di confidenza e margine geometrico, si fissa la scala con l'iperpiano canonico (rho = 1, margine 1/||w||) e si motiva la scelta con il teorema del Margin Error Bound. Poi si costruisce il problema primale dell'hard margin SVM (min 1/2||w||^2 con vincoli y_i(w^T x_i + w0) >= 1), si fa la digressione sull'ottimizzazione vincolata con l'approccio KKT e i moltiplicatori di Lagrange, e si deriva passo per passo il problema duale, la funzione di decisione come combinazione di prodotti scalari, le condizioni di complementarità che definiscono i support vectors (modelli sparsi) e il calcolo di w0. Per l'orale di Passerini è un blocco centrale: iperpiano canonico, perché si usa KKT, perché primale e duale coincidono, quando scegliere primale o duale, derivazione del duale con i dati solo nei prodotti scalari.",
+  "concepts": [
+    {
+      "id": "c01",
+      "name": "SVM: classificatori lineari a massimo margine",
+      "nameEn": "Support Vector Machines, large margin classifiers",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 46}],
+      "detail": "Le Support Vector Machines (SVM) sono classificatori lineari (linear classifiers) che scelgono l'iperpiano (hyperplane) che massimizza il margine di separazione (separation margin) tra le classi. Appartengono alla famiglia dei classificatori a largo margine (large margin classifiers). La fonte apre il capitolo elencando quattro caratteristiche chiave (Key Characteristics): massimizzazione del margine, support vectors, garanzie di generalizzazione, estensione ai classificatori non lineari (concetti c02-c05). Il confine resta un iperpiano w^T x + w0 = 0 come negli altri classificatori lineari del corso: cambia il criterio con cui lo si sceglie.",
+      "latex": ["\\mathbf{w}^T\\mathbf{x} + w_0 = 0"],
+      "symbols": [{"s": "\\mathbf{w}", "meaning": "vettore dei pesi, normale all'iperpiano"}, {"s": "w_0", "meaning": "bias (termine noto)"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c02",
+      "name": "Massimizzare il margine rende il classificatore più robusto",
+      "nameEn": "Maximizing the Margin",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 46}],
+      "detail": "Prima caratteristica chiave: le SVM cercano l'iperpiano che ottiene la più ampia separazione (largest separation margin) tra le due classi, e questo fornisce un classificatore più robusto (a more robust classifier). Il margine è il 'cuscinetto' tra il confine e gli esempi più vicini: più è largo, meno il confine dipende dalla posizione esatta dei punti.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c03",
+      "name": "Support vectors: il piccolo sottoinsieme che determina la soluzione",
+      "nameEn": "Support Vectors",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 46}],
+      "detail": "Seconda caratteristica chiave: la soluzione è determinata da un piccolo sottoinsieme degli esempi di training (small subset of training examples), detti support vectors, che sono i punti più vicini all'iperpiano (lie closest to the hyperplane). Sono critici nel definire il margine (critical in defining the margin). La caratterizzazione formale (alpha_i > 0, punti sugli iperpiani di confidenza minima) arriva a pag. 54 con le condizioni KKT (c68-c70).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c04",
+      "name": "Garanzie di generalizzazione (error bounds)",
+      "nameEn": "Generalization Guarantees",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 46}],
+      "detail": "Terza caratteristica chiave: le SVM sono fondate sulla teoria della generalizzazione (generalization theory) e forniscono limiti superiori all'errore (error bounds) che offrono garanzie formali di affidabilità (formal assurances of reliability): bound più piccoli indicano migliori prestazioni su dati mai visti (generalization) rispetto ad altri metodi di classificazione. Il bound concreto è il teorema del Margin Error Bound di pag. 48 (c19-c24).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c05",
+      "name": "Estensione ai classificatori non lineari: kernel machines",
+      "nameEn": "Extension to Nonlinear Classifiers (kernel functions, kernel machines)",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 46}],
+      "detail": "Quarta caratteristica chiave: usando funzioni kernel (kernel functions) le SVM si estendono ai casi in cui i dati non sono linearmente separabili (not linearly separable). Si ottengono le kernel machines, che mappano implicitamente (implicitly map) i dati in spazi a dimensione più alta (higher-dimensional spaces) dove cercano una separazione lineare. Qui è solo annunciato: il meccanismo passa dal duale (c60) ed è sviluppato nei moduli p10-p11.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c06",
+      "name": "Molti iperpiani separano correttamente: quale scegliere",
+      "nameEn": "Multiple hyperplanes may correctly classify all examples",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 46}],
+      "detail": "Nel contesto dei classificatori lineari, molti iperpiani diversi possono classificare correttamente tutti gli esempi. La figura di pag. 46 mostra nel piano (x_1, x_2) cerchi rossi (classe negativa) in basso a sinistra e quadrati blu (classe positiva) in alto a destra, con un ventaglio di rette grigie sottili, tutte separatrici; l'iperpiano in grassetto (bold hyperplane) è il classificatore a massimo margine (maximum margin classifier), indicato come la scelta ottima (the optimal choice). Una doppia freccia perpendicolare al confine collega un cerchio rosso e un quadrato blu vicini: è il margine. Il problema che le SVM risolvono è quindi un problema di scelta tra soluzioni tutte a errore di training nullo.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c07",
+      "name": "Margine: distanza tra l'iperpiano e gli esempi più vicini",
+      "nameEn": "Margin",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 46}],
+      "detail": "Il margine (margin) è la distanza tra l'iperpiano e gli esempi più vicini di ciascuna classe, sia positivi sia negativi (the distance between the hyperplane and the nearest examples from each class (both positive and negative)). Si misura sulla perpendicolare al confine (come la doppia freccia della figura), quindi è una distanza geometrica; la versione formale è il margine geometrico rho/||w|| di pag. 47 (c12). La formula riportata (distanza punto-iperpiano) non è scritta a pag. 46, che definisce il margine solo a parole: è il margine geometrico del singolo punto già visto nel modulo p06.",
+      "latex": ["d(\\mathbf{x}_i, H) = \\frac{|\\mathbf{w}^T\\mathbf{x}_i + w_0|}{\\|\\mathbf{w}\\|}"],
+      "symbols": [{"s": "H", "meaning": "iperpiano w^T x + w0 = 0"}, {"s": "d(\\mathbf{x}_i, H)", "meaning": "distanza euclidea del punto dall'iperpiano (margine geometrico del punto, modulo p06)"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c08",
+      "name": "Classificatore a massimo margine: massimizza la somma dei margini",
+      "nameEn": "Maximum margin classifier",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 46}, {"doc": "part2", "page": 48}],
+      "detail": "Il classificatore a massimo margine (maximum margin classifier) massimizza la somma dei margini verso gli esempi più vicini (maximizes the sum of the margins to these closest examples), garantendo la massima separazione possibile tra le due classi (the greatest possible separation between the two classes). È l'iperpiano in grassetto della figura di pag. 46. Con l'iperpiano canonico (pag. 47-48) i due margini valgono entrambi 1/||w|| e la loro somma è 2/||w||, l'ampiezza della fascia indicata nella figura di pag. 48.",
+      "latex": ["\\frac{1}{\\|\\mathbf{w}\\|} + \\frac{1}{\\|\\mathbf{w}\\|} = \\frac{2}{\\|\\mathbf{w}\\|}"],
+      "symbols": [{"s": "\\|\\mathbf{w}\\|", "meaning": "norma euclidea del vettore dei pesi"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c09",
+      "name": "Robustezza a perturbazioni e rumore",
+      "nameEn": "Greater robustness to variations in the data",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 46}],
+      "detail": "L'approccio a massimo margine dà maggiore robustezza alle variazioni dei dati (greater robustness to variations in the data): il classificatore è meno sensibile a piccole perturbazioni o rumore (less sensitive to minor perturbations or noise). Intuizione: un esempio nuovo simile a uno di training (spostato di poco) resta dalla stessa parte del confine finché lo spostamento è più piccolo del margine.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c10",
+      "name": "Condizione di corretta classificazione y f(x) > 0",
+      "nameEn": "Positive classification distances, y f(x) > 0",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 47}],
+      "detail": "Per avere 'distanze di classificazione' positive (to ensure positive classification distances) deve valere y f(x) > 0, dove y appartiene a {-1, 1} ed è l'etichetta vera (true label) e f(x) è l'uscita del classificatore (classifier's output). Il prodotto è positivo esattamente quando il segno dell'uscita coincide con l'etichetta: codificare le classi come -1 e +1 permette di scrivere la correttezza di entrambe le classi con un'unica disuguaglianza. y f(x) è il margine funzionale del punto (functional margin, modulo p06).",
+      "latex": ["y f(\\mathbf{x}) > 0", "y \\in \\{-1, 1\\}"],
+      "symbols": [{"s": "y", "meaning": "etichetta vera, -1 o +1"}, {"s": "f(\\mathbf{x})", "meaning": "uscita del classificatore (w^T x + w0)"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c11",
+      "name": "Margine di confidenza rho del classificatore",
+      "nameEn": "Confidence margin",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 47}],
+      "detail": "Il margine di confidenza (confidence margin) di un classificatore per un training set D è rho = min_{(x,y) in D} y f(x). Rappresenta il più piccolo margine tra tutti gli esempi di training, cioè la previsione meno sicura (the least confident prediction) quando si classificano correttamente tutti gli esempi. È un margine funzionale (dipende dalla scala di w e w0) valutato sul caso peggiore.",
+      "latex": ["\\rho = \\min_{(\\mathbf{x},y)\\in D} y f(\\mathbf{x})"],
+      "symbols": [{"s": "\\rho", "meaning": "margine di confidenza (funzionale) del classificatore sul training set"}, {"s": "D", "meaning": "training set di coppie (x, y)"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c12",
+      "name": "Margine geometrico rho/||w||",
+      "nameEn": "Geometric margin",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 47}],
+      "detail": "Il margine geometrico (geometric margin) del classificatore corregge per la norma del vettore dei pesi w: rho/||w|| = min_{(x,y) in D} y f(x)/||w||. Questo margine fa sì che la scala di w non influenzi il comportamento del classificatore, perché solo la direzione relativa di w (the relative direction of w) determina l'iperpiano. Geometricamente è la distanza euclidea dal confine dell'esempio di training più vicino.",
+      "latex": ["\\frac{\\rho}{\\|\\mathbf{w}\\|} = \\min_{(\\mathbf{x},y)\\in D} \\frac{y f(\\mathbf{x})}{\\|\\mathbf{w}\\|}"],
+      "symbols": [{"s": "\\rho/\\|\\mathbf{w}\\|", "meaning": "margine geometrico, invariante alla scala di (w, w0)"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c13",
+      "name": "Obiettivo: massimizzare rho/||w|| con tutti gli esempi corretti",
+      "nameEn": "Maximize rho/||w|| under the assumption y f(x) > 0",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 47}],
+      "detail": "Per massimizzare la robustezza del classificatore si vuole massimizzare (maximize) rho/||w||, sotto l'ipotesi (assumption) y f(x) > 0 che garantisce la corretta classificazione di tutti gli esempi di training. È l'obiettivo di partenza: fissando poi la scala (iperpiano canonico) diventa il problema dell'hard margin SVM. La scrittura max su (w, w0) esplicita le variabili rispetto a cui si ottimizza.",
+      "latex": ["\\max_{\\mathbf{w}, w_0} \\frac{\\rho}{\\|\\mathbf{w}\\|} \\quad \\text{con} \\quad y f(\\mathbf{x}) > 0 \\;\\; \\forall (\\mathbf{x}, y) \\in D"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c14",
+      "name": "Invarianza di scala dell'iperpiano: un grado di libertà in più",
+      "nameEn": "Infinitely many equivalent formulations (scaling by alpha)",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 47}],
+      "detail": "Un iperpiano è definito da w^T x + w0 = 0. Esistono però infinite formulazioni equivalenti (infinitely many equivalent formulations): moltiplicare w e w0 per una costante alpha non nulla non cambia il confine di decisione (decision boundary), perché alpha(w^T x + w0) = 0 per ogni alpha diverso da 0 ha le stesse soluzioni. Questo introduce un grado di libertà (degree of freedom): rho cresce linearmente con alpha mentre il confine resta fermo, quindi massimizzare il margine funzionale da solo non avrebbe senso. Il grado di libertà va eliminato con un vincolo aggiuntivo (c15). Attenzione: questo alpha è una costante di scala, non un moltiplicatore di Lagrange.",
+      "latex": ["\\mathbf{w}^T\\mathbf{x} + w_0 = 0", "\\alpha\\left(\\mathbf{w}^T\\mathbf{x} + w_0\\right) = 0 \\qquad \\forall \\alpha \\neq 0"],
+      "symbols": [{"s": "\\alpha", "meaning": "costante di scala non nulla (qui non è un moltiplicatore di Lagrange)"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c15",
+      "name": "Iperpiano canonico: rho = 1",
+      "nameEn": "Canonical hyperplane",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 47}],
+      "detail": "Il grado di libertà si elimina imponendo un vincolo aggiuntivo: si sceglie l'iperpiano canonico (canonical hyperplane), definito in modo che il margine di confidenza valga 1: rho = min_{(x,y) in D} y f(x) = 1. Tra tutte le coppie (alpha w, alpha w0) che descrivono lo stesso confine, si prende quella per cui l'esempio più vicino ha y f(x) = 1. Nella slide il pedice è scritto (X, y) con X maiuscola, ma indica lo stesso training set D. Domanda d'orale ricorrente ('canonical hyperplane').",
+      "latex": ["\\rho = \\min_{(\\mathbf{x},y)\\in D} y f(\\mathbf{x}) = 1"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c16",
+      "name": "La scelta rho = 1 è arbitraria e fissa la norma di w",
+      "nameEn": "The choice of rho = 1 is arbitrary but simplifies the optimization problem",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 47}],
+      "detail": "Due osservazioni della fonte: la scelta rho = 1 è arbitraria (arbitrary) ma semplifica il problema di ottimizzazione (simplifies the optimization problem); il vincolo fa sì che w abbia la grandezza appropriata (appropriate magnitude) perché il margine sia uguale a 1, rimuovendo il grado di libertà. Qualsiasi altra costante positiva darebbe lo stesso confine con w riscalato: 1 è solo la scelta più comoda.",
+      "latex": ["\\rho = 1"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c17",
+      "name": "Margine geometrico dell'iperpiano canonico: 1/||w||",
+      "nameEn": "Geometric margin for the canonical hyperplane",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 47}],
+      "detail": "Per l'iperpiano canonico il margine geometrico diventa rho/||w|| = 1/||w||. Tutto il margine ora dipende solo dalla norma di w: massimizzarlo significa rendere w il più corto possibile (compatibilmente con i vincoli). È la distanza dal confine delle rette w^T x + w0 = +1 e -1 (figura di pag. 48).",
+      "latex": ["\\frac{\\rho}{\\|\\mathbf{w}\\|} = \\frac{1}{\\|\\mathbf{w}\\|}"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c18",
+      "name": "Rappresentazione visiva: le rette w^T x + w0 = 1, 0, -1 e la fascia 2/||w||",
+      "nameEn": "A visual representation (canonical hyperplane and margin hyperplanes)",
+      "kind": "figura",
+      "sourcePages": [{"doc": "part2", "page": 47}, {"doc": "part2", "page": 48}],
+      "detail": "La figura in cima a pag. 48 (annunciata a fine pag. 47 con 'A visual representation of this is the following') mostra nel piano (x_1, x_2): la retta continua w^T x + w0 = 0 (confine); due rette tratteggiate parallele w^T x + w0 = 1 (dal lato dei quadrati blu, classe positiva) e w^T x + w0 = -1 (dal lato dei cerchi rossi, classe negativa) che passano per i punti più vicini delle due classi; il vettore w disegnato perpendicolare al confine, dall'origine verso la classe positiva; una freccia tra le due rette tratteggiate etichettata 2/||w||, l'ampiezza completa della fascia di margine. Nessun punto sta dentro la fascia: i punti più vicini stanno sul suo bordo, e sono esattamente tre (due quadrati blu sulla retta +1, un cerchio rosso sulla retta -1), gli stessi che la figura di pag. 55 evidenzia come support vectors.",
+      "latex": ["\\mathbf{w}^T\\mathbf{x} + w_0 = 1", "\\mathbf{w}^T\\mathbf{x} + w_0 = 0", "\\mathbf{w}^T\\mathbf{x} + w_0 = -1", "\\frac{2}{\\|\\mathbf{w}\\|}"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c19",
+      "name": "Teorema del Margin Error Bound: ipotesi",
+      "nameEn": "Theorem: Margin Error Bound (family of linear decision functions)",
+      "kind": "teorema",
+      "sourcePages": [{"doc": "part2", "page": 48}],
+      "detail": "Il teorema (Theorem: Margin Error Bound) considera una famiglia di funzioni di decisione lineari (family of linear decision functions) f(x) = sign(w^T x), senza termine di bias, con ||w|| <= Lambda e ||x|| <= R, dove R, Lambda > 0: pesi e ingressi hanno norma limitata. R misura quanto sono 'grandi' i dati, Lambda quanto può essere lungo il vettore dei pesi. Il teorema è enunciato senza dimostrazione.",
+      "latex": ["f(\\mathbf{x}) = \\operatorname{sign}\\left(\\mathbf{w}^T\\mathbf{x}\\right)", "\\|\\mathbf{w}\\| \\le \\Lambda, \\qquad \\|\\mathbf{x}\\| \\le R, \\qquad R, \\Lambda > 0"],
+      "symbols": [{"s": "\\Lambda", "meaning": "limite superiore della norma dei pesi"}, {"s": "R", "meaning": "raggio della sfera che contiene i dati"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c20",
+      "name": "Soglia di margine rho e margin error nu",
+      "nameEn": "Margin threshold rho and margin error nu",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 48}],
+      "detail": "Quantità aggiuntive del teorema: rho > 0 è una soglia di margine data (a given margin threshold); nu è la frazione di esempi di training con margine minore di rho/||w|| (the fraction of training examples with margins smaller than rho/||w||), detta margin error. Un esempio conta come margin error anche se è classificato correttamente, purché stia più vicino al confine di rho/||w||. La seconda formula è una trascrizione in simboli della definizione a parole della fonte.",
+      "latex": ["\\rho > 0", "\\nu = \\frac{1}{m}\\left|\\left\\{ i : \\frac{y_i\\,\\mathbf{w}^T\\mathbf{x}_i}{\\|\\mathbf{w}\\|} < \\frac{\\rho}{\\|\\mathbf{w}\\|} \\right\\}\\right|"],
+      "symbols": [{"s": "\\nu", "meaning": "margin error: frazione di esempi di training dentro la fascia di semiampiezza rho/||w|| (o sbagliati)"}, {"s": "m", "meaning": "numero di esempi di training"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c21",
+      "name": "Enunciato del bound sull'errore di test",
+      "nameEn": "Margin error bound on the test misclassification probability",
+      "kind": "teorema",
+      "sourcePages": [{"doc": "part2", "page": 48}],
+      "detail": "Per qualunque distribuzione dei dati P (for any data distribution P), con probabilità almeno 1 - delta (rispetto al campionamento degli m esempi di training), e per qualunque rho > 0 e delta in (0, 1), la probabilità che un campione di test estratto da P sia classificato male è limitata superiormente da nu + sqrt( c/m ( R^2 Lambda^2 / rho^2 ln^2(m) + ln(1/delta) ) ), dove c è una costante universale (universal constant). Il bound somma l'errore di margine osservato sul training (nu) e un termine di complessità che dipende da m, dal rapporto R Lambda / rho e dalla confidenza delta. La scrittura del membro sinistro P(y != f(x)) esplicita 'la probabilità che un campione di test sia classificato male'.",
+      "latex": ["P\\left(y \\neq f(\\mathbf{x})\\right) \\le \\nu + \\sqrt{\\frac{c}{m}\\left(\\frac{R^2\\Lambda^2}{\\rho^2}\\ln^2(m) + \\ln\\left(\\frac{1}{\\delta}\\right)\\right)}", "\\delta \\in (0, 1)", "\\text{with probability at least } 1 - \\delta \\text{ over the sampling of } m \\text{ training examples}, \\quad \\forall \\rho > 0"],
+      "symbols": [{"s": "P", "meaning": "distribuzione (qualunque) che genera training e test"}, {"s": "\\delta", "meaning": "probabilità che il bound fallisca (confidenza 1 - delta)"}, {"s": "c", "meaning": "costante universale"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c22",
+      "name": "Fattore 1 del bound: numero di margin errors nu",
+      "nameEn": "Number of margin errors (nu)",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 48}],
+      "detail": "Il limite superiore sull'errore di test dipende da più fattori. Il primo è il numero di margin errors nu: rappresenta la frazione di esempi di training il cui margine è minore di rho/||w||. Un nu più piccolo implica un bound più stretto (tighter bound), cioè una migliore generalizzazione. nu entra nel bound in modo additivo, fuori dalla radice.",
+      "latex": ["\\nu \\downarrow \\;\\Rightarrow\\; \\text{bound} \\downarrow"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c23",
+      "name": "Fattore 2 del bound: numero di esempi m",
+      "nameEn": "Number of training examples (m)",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 48}],
+      "detail": "Il bound decresce in modo inverso rispetto a m, con una dipendenza logaritmica: il termine si comporta come sqrt(ln^2(m)/m). Questo sottolinea l'importanza di avere un training set più grande per una migliore generalizzazione. Ad esempio sqrt(ln^2(m)/m) vale circa 0.22 per m = 1000 e circa 0.036 per m = 100000.",
+      "latex": ["\\sqrt{\\frac{\\ln^2(m)}{m}}"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c24",
+      "name": "Fattore 3 del bound: dimensione del margine rho (scala come 1/rho^2)",
+      "nameEn": "Margin size (rho)",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 48}],
+      "detail": "Il bound scala con 1/rho^2: margini più grandi portano a limiti più bassi sull'errore di test. Questo rafforza l'obiettivo di massimizzare il margine per una maggiore robustezza. Il fattore 1/rho^2 moltiplica R^2 Lambda^2 ln^2(m) sotto radice; aumentare rho però può far crescere nu (più punti dentro la fascia): il bound premia un margine ampio ottenuto con pochi margin errors.",
+      "latex": ["\\frac{1}{\\rho^2}"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c25",
+      "name": "Con rho = 1 massimizzare il margine equivale a minimizzare ||w||",
+      "nameEn": "If rho is fixed to 1, maximizing the margin is equivalent to minimizing ||w||",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 49}],
+      "detail": "Prima nota chiave (Key Notes) dopo il teorema: se rho è fissato a 1 (cioè si usa l'iperpiano canonico), massimizzare il margine equivale a minimizzare ||w||. Collegamento con il bound: con rho = 1 il termine di complessità contiene R^2 Lambda^2, e Lambda è il limite su ||w||, quindi pesi più corti significano un bound più basso.",
+      "latex": ["\\rho = 1 \\;\\Rightarrow\\; \\max \\frac{1}{\\|\\mathbf{w}\\|} \\iff \\min \\|\\mathbf{w}\\|"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c26",
+      "name": "Garanzia probabilistica: servono margine ampio e più dati",
+      "nameEn": "Probabilistic guarantee on the test error",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 49}],
+      "detail": "Seconda nota chiave: il teorema fornisce una garanzia probabilistica (probabilistic guarantee) sull'errore di test, e sottolinea che sia un margine più grande sia più dati di training sono critici per migliorare le prestazioni del classificatore. 'Probabilistica' perché vale con probabilità almeno 1 - delta sul campionamento del training set.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c27",
+      "name": "Vantaggio teorico dei classificatori a largo margine",
+      "nameEn": "Theoretical advantage of large-margin classifiers",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 49}],
+      "detail": "Terza nota chiave: il bound dimostra il vantaggio teorico (theoretical advantage) dei classificatori a largo margine, come le SVM, nel generalizzare meglio su dati mai visti (better generalization to unseen data). È la giustificazione teorica della scelta del massimo margine tra tutti gli iperpiani separatori.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c28",
+      "name": "Hard margin SVM: vincolo y f(x) >= 1",
+      "nameEn": "Hard Margin SVM, minimum margin of 1",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 49}],
+      "detail": "Hard Margin SVM: per garantire che il margine (rho) sia esattamente 1 si impone la condizione y f(x) >= 1, dove f(x) = w^T x + w0. Così ogni esempio di training non solo è classificato correttamente ma soddisfa anche un margine minimo (minimum margin) di 1. Il vincolo scritto è >= 1: il minimo vale esattamente 1 all'ottimo perché, minimizzando ||w||, almeno un punto finisce sul bordo (altrimenti si potrebbe accorciare ancora w). 'Hard' perché nessuna violazione è ammessa.",
+      "latex": ["y f(\\mathbf{x}) \\ge 1", "f(\\mathbf{x}) = \\mathbf{w}^T\\mathbf{x} + w_0"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c29",
+      "name": "Obiettivo di apprendimento: ottimizzare w e w0 minimizzando ||w||",
+      "nameEn": "Learning objective (maximize the margin = minimize ||w||)",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 49}],
+      "detail": "L'obiettivo di apprendimento (learning objective) consiste nell'ottimizzare w e w0. Lo scopo è massimizzare il margine, che equivale a minimizzare ||w||, la norma del vettore dei pesi, perché il margine geometrico dell'iperpiano canonico è 1/||w||. w0 non compare nell'obiettivo ma entra nei vincoli.",
+      "latex": ["\\max \\frac{1}{\\|\\mathbf{w}\\|} \\iff \\min_{\\mathbf{w}, w_0} \\|\\mathbf{w}\\|"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c30",
+      "name": "Minimizzare ||w||^2 invece di ||w||",
+      "nameEn": "Minimize ||w||^2 instead of ||w|| (the square function is monotonic for non-negative values)",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 49}],
+      "detail": "Invece di minimizzare ||w|| si minimizza ||w||^2, perché la norma al quadrato conserva le stesse proprietà di ottimizzazione: la funzione quadrato è monotona per valori non negativi (the square function is monotonic for non-negative values), quindi l'ordinamento delle soluzioni e il minimizzatore non cambiano; inoltre semplifica i calcoli (simplifies calculations): ||w||^2 = w^T w è differenziabile ovunque e dà un problema quadratico.",
+      "latex": ["\\arg\\min_{\\mathbf{w}} \\|\\mathbf{w}\\| = \\arg\\min_{\\mathbf{w}} \\|\\mathbf{w}\\|^2"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c31",
+      "name": "Problema primale dell'hard margin SVM",
+      "nameEn": "Hard Margin SVM optimization problem (Primal Formulation)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 49}, {"doc": "part2", "page": 51}],
+      "detail": "Il problema di ottimizzazione (optimization problem) dell'hard margin SVM, ripetuto a pag. 51 come formulazione primale (Primal Formulation): minimizzare 1/2 ||w||^2 rispetto a w e w0, soggetto a (subject to) y_i(w^T x_i + w0) >= 1 per ogni (x_i, y_i) in D. C'è un vincolo per ogni esempio di training (m vincoli) e le variabili sono i d + 1 numeri (w, w0). È la formula da saper scrivere all'orale ('Hard Margin' nella domanda di Passerini).",
+      "latex": ["\\min_{\\mathbf{w}, w_0} \\frac{1}{2}\\|\\mathbf{w}\\|^2", "\\text{subject to: } \\; y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) \\ge 1 \\qquad \\forall (\\mathbf{x}_i, y_i) \\in D"],
+      "symbols": [{"s": "(\\mathbf{x}_i, y_i)", "meaning": "i-esimo esempio di training"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c32",
+      "name": "Il fattore 1/2 semplifica le derivate",
+      "nameEn": "The 1/2 factor",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 49}],
+      "detail": "Spiegazione (Explanation): il fattore 1/2 è una costante che semplifica il calcolo delle derivate durante l'ottimizzazione (la derivata di 1/2 ||w||^2 rispetto a w è esattamente w, senza il 2). Non altera la soluzione, perché scalare linearmente la funzione obiettivo non cambia il suo minimizzatore (scaling the objective function linearly doesn't affect its minimizer).",
+      "latex": ["\\frac{\\partial}{\\partial \\mathbf{w}}\\,\\frac{1}{2}\\|\\mathbf{w}\\|^2 = \\mathbf{w}"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c33",
+      "name": "Problema di ottimizzazione quadratica",
+      "nameEn": "Quadratic optimization problem",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 49}],
+      "detail": "La formulazione minimizza ||w||^2, che è una funzione quadratica (quadratic function): il problema è quindi un problema di ottimizzazione quadratica (quadratic optimization problem). I vincoli y_i(w^T x_i + w0) >= 1 sono lineari in (w, w0): obiettivo quadratico più vincoli lineari è la forma standard della programmazione quadratica (QP).",
+      "latex": ["\\|\\mathbf{w}\\|^2 = \\mathbf{w}^T\\mathbf{w} = \\sum_{k=1}^{d} w_k^2"],
+      "symbols": [{"s": "d", "meaning": "numero di feature (dimensione di w)"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c34",
+      "name": "I vincoli garantiscono correttezza e forma canonica",
+      "nameEn": "Constraints (all training points correctly classified, canonical form)",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 49}],
+      "detail": "Note (Notes), vincoli (Constraints): i vincoli garantiscono che tutti i punti di training siano classificati correttamente. Il classificatore è in forma canonica (canonical form) perché y_i(w^T x_i + w0) >= 1 assicura un margine di almeno 1. I vincoli fanno quindi due lavori insieme: correttezza (segno) e taratura della scala (valore minimo 1).",
+      "latex": ["y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) \\ge 1"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c35",
+      "name": "Minimizzare ||w||^2 = massimizzare il margine al quadrato",
+      "nameEn": "Objective Function: maximizing the squared margin",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 50}],
+      "detail": "Funzione obiettivo (Objective Function): minimizzare ||w||^2 corrisponde a massimizzare il margine al quadrato (maximizing the squared margin), il che assicura robustezza (ensuring robustness). Il margine canonico è 1/||w||, il suo quadrato 1/||w||^2.",
+      "latex": ["\\min \\|\\mathbf{w}\\|^2 \\iff \\max \\frac{1}{\\|\\mathbf{w}\\|^2}"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c36",
+      "name": "Regione ammissibile convessa: minimo globale con la programmazione quadratica",
+      "nameEn": "Quadratic Optimization: convex feasible region, global minimum",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 50}],
+      "detail": "Ottimizzazione quadratica (Quadratic Optimization): la funzione obiettivo è quadratica e la regione ammissibile (feasible region) formata dai vincoli y_i(w^T x_i + w0) >= 1 è un insieme convesso (convex set): ogni vincolo è lineare in (w, w0) e definisce un semispazio, e l'intersezione di semispazi è convessa. La convessità assicura che un minimo globale (global minimum) si possa trovare in modo efficiente con tecniche di programmazione quadratica (quadratic programming): niente minimi locali.",
+      "latex": ["\\left\\{(\\mathbf{w}, w_0) : y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) \\ge 1 \\;\\; \\forall i\\right\\}"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c37",
+      "name": "Ottimizzazione vincolata: approccio KKT e moltiplicatori di Lagrange",
+      "nameEn": "Digression: Constrained Optimization, Karush-Kuhn-Tucker (KKT) approach, Lagrange multipliers",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 50}],
+      "detail": "Digressione sull'ottimizzazione vincolata (Digression: Constrained Optimization). In ottimizzazione i problemi vincolati si risolvono trasformandoli in una forma non vincolata (unconstrained form) senza alterarne la soluzione (without altering the solution). Lo si fa con l'approccio di Karush-Kuhn-Tucker (KKT approach), che introduce variabili aggiuntive chiamate moltiplicatori di Lagrange (Lagrange multipliers). È la risposta di base alla domanda d'orale 'why do we use KKT'.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c38",
+      "name": "Problema vincolato generico min f(z) con g_i(z) >= 0",
+      "nameEn": "Generic constrained problem",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 50}],
+      "detail": "Si considera un problema generico: minimizzare f(z) soggetto a g_i(z) >= 0 per ogni i. f(z) è la funzione obiettivo (objective function) e le g_i(z) >= 0 sono i vincoli (constraints). Nell'hard margin SVM: z = (w, w0), f(z) = 1/2 ||w||^2 e g_i(z) = y_i(w^T x_i + w0) - 1.",
+      "latex": ["\\min_{z} f(z)", "\\text{subject to: } \\; g_i(z) \\ge 0 \\qquad \\forall i"],
+      "symbols": [{"s": "z", "meaning": "variabili del problema originale"}, {"s": "g_i(z)", "meaning": "i-esimo vincolo, soddisfatto se non negativo"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c39",
+      "name": "Lagrangiana generica: min su z, max su alpha >= 0",
+      "nameEn": "Lagrangian (min-max reformulation)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 50}],
+      "detail": "Per affrontare il problema vincolato si introduce una variabile non negativa alpha_i >= 0 (il moltiplicatore di Lagrange) per ogni vincolo, e il problema si riscrive come Lagrangiana (Lagrangian): min_z max_{alpha >= 0} f(z) - sum_i alpha_i g_i(z). Il segno meno davanti alla somma è coerente con vincoli nella forma g_i >= 0: così un vincolo violato fa salire la Lagrangiana. La funzione L(z, alpha) è la Lagrangiana vera e propria.",
+      "latex": ["\\min_{z}\\max_{\\boldsymbol{\\alpha} \\ge 0} \\; f(z) - \\sum_{i}\\alpha_i g_i(z)", "L(z, \\boldsymbol{\\alpha}) = f(z) - \\sum_{i}\\alpha_i g_i(z)"],
+      "symbols": [{"s": "\\alpha_i", "meaning": "moltiplicatore di Lagrange del vincolo i, non negativo"}, {"s": "L(z, \\boldsymbol{\\alpha})", "meaning": "Lagrangiana"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c40",
+      "name": "Due gruppi di variabili: z e alpha",
+      "nameEn": "Two groups of variables (original variables z, Lagrange multipliers alpha)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 50}],
+      "detail": "Il problema riformulato ha due gruppi di variabili (two groups of variables): z, le variabili del problema originale (variables of the original problem, poi chiamate primali), e alpha, i moltiplicatori di Lagrange associati ai vincoli (poi chiamati variabili duali). Si minimizza rispetto al primo gruppo e si massimizza rispetto al secondo.",
+      "latex": ["z \\;\\text{(variabili originali)}, \\qquad \\boldsymbol{\\alpha} = (\\alpha_1, \\alpha_2, \\dots) \\;\\text{(moltiplicatori)}"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c41",
+      "name": "Problema min-max e punto di sella di L(z, alpha)",
+      "nameEn": "Min-max problem, saddle point",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 50}],
+      "detail": "La riformulazione crea un problema min-max (min-max problem), la cui soluzione corrisponde a un punto di sella (saddle point) di L(z, alpha): il punto in cui la minimizzazione rispetto a z e la massimizzazione rispetto ad alpha si incontrano (meet). La formula riportata è la definizione standard di punto di sella (non scritta nella fonte): in (z*, alpha*) L è minima lungo z e massima lungo alpha.",
+      "latex": ["L(z^*, \\boldsymbol{\\alpha}) \\le L(z^*, \\boldsymbol{\\alpha}^*) \\le L(z, \\boldsymbol{\\alpha}^*)"],
+      "symbols": [{"s": "(z^*, \\boldsymbol{\\alpha}^*)", "meaning": "punto di sella della Lagrangiana"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c42",
+      "name": "Insight 1: un vincolo violato rende la Lagrangiana illimitata",
+      "nameEn": "Constraint Satisfaction",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 50}],
+      "detail": "Insight chiave, soddisfacimento dei vincoli (Constraint Satisfaction): se un punto z' viola un vincolo, cioè g_i(z') < 0 per qualche i, il termine -alpha_i g_i(z') diventa positivo e illimitato (positive and unbounded) quando si massimizza su alpha_i >= 0. Di conseguenza L(z, alpha) tende a infinito per quel z', che quindi non può essere la soluzione ottima. Implicazione (Implication): la soluzione z* deve soddisfare tutti i vincoli g_i(z*) >= 0 per evitare valori infiniti dell'obiettivo.",
+      "latex": ["g_i(z') < 0 \\;\\Rightarrow\\; \\max_{\\alpha_i \\ge 0}\\left(-\\alpha_i g_i(z')\\right) = +\\infty", "g_i(z^*) \\ge 0 \\quad \\forall i"],
+      "symbols": [{"s": "z'", "meaning": "punto che viola almeno un vincolo"}, {"s": "z^*", "meaning": "soluzione ottima"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c43",
+      "name": "Insight 2: per i vincoli soddisfatti il massimo si ha con alpha_i = 0",
+      "nameEn": "Maximizing alpha_i",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 51}],
+      "detail": "Insight chiave, massimizzare alpha_i (Maximizing alpha_i): se g_i(z') >= 0, massimizzare L(z, alpha) rispetto ad alpha_i >= 0 rende -alpha_i g_i(z) uguale a zero, perché con g_i positivo ogni alpha_i > 0 abbasserebbe L. Succede perché porre alpha_i = 0 per i vincoli soddisfatti ne elimina l'impatto sull'obiettivo. Implicazione: i vincoli soddisfatti con g_i(z*) > 0 danno contributo nullo all'obiettivo attraverso i loro moltiplicatori. Quindi, per z ammissibile, max_alpha L(z, alpha) = f(z). Nota di notazione: nella stessa frase la fonte scrive g_i(z') >= 0 e poi -alpha_i g_i(z) senza apice; è la stessa quantità, qui scritta sempre con z'.",
+      "latex": ["g_i(z') \\ge 0 \\;\\Rightarrow\\; \\max_{\\alpha_i \\ge 0}\\left(-\\alpha_i g_i(z')\\right) = 0", "g_i(z^*) > 0 \\;\\Rightarrow\\; \\alpha_i = 0"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c44",
+      "name": "Soluzione di sella: alpha_i > 0 solo per i vincoli attivi",
+      "nameEn": "Saddle Point Solution (active and inactive constraints)",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 51}],
+      "detail": "Soluzione al punto di sella (Saddle Point Solution): la soluzione ottima z* soddisfa tutti i vincoli (g_i(z*) >= 0) e minimizza f(z). Contemporaneamente alpha_i > 0 solo per i vincoli attivi (active constraints), dove g_i(z*) = 0 (sul bordo, on the boundary); per i vincoli inattivi (inactive constraints, g_i(z*) > 0) si ha alpha_i = 0. In una formula: alpha_i g_i(z*) = 0 per ogni i (complementarità, complementary slackness), che a pag. 54 diventa la condizione che definisce i support vectors.",
+      "latex": ["\\alpha_i > 0 \\;\\Rightarrow\\; g_i(z^*) = 0", "g_i(z^*) > 0 \\;\\Rightarrow\\; \\alpha_i = 0", "\\alpha_i\\, g_i(z^*) = 0 \\quad \\forall i"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c45",
+      "name": "Interpretazione KKT: vincoli rispettati e obiettivo minimizzato",
+      "nameEn": "Interpretation of the KKT formulation",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 51}],
+      "detail": "Interpretazione (Interpretation): la formulazione KKT assicura che i vincoli siano rispettati mentre si minimizza l'obiettivo f(z); l'ottimizzazione elimina naturalmente ogni z' che viola i vincoli rendendo L(z, alpha) illimitata per quel z'. La soluzione risultante z* è garantita (1) soddisfare tutti i vincoli (Satisfy all constraints, g_i(z*) >= 0) e (2) minimizzare l'obiettivo f(z) (Minimize the objective), raggiungendo lo scopo del problema originale. In sintesi: min_z max_alpha L coincide con il minimo di f sulla regione ammissibile.",
+      "latex": ["g_i(z^*) \\ge 0 \\quad \\forall i", "\\min_{z}\\max_{\\boldsymbol{\\alpha}\\ge 0} L(z, \\boldsymbol{\\alpha}) = \\min_{z:\\; g_i(z)\\ge 0 \\;\\forall i} f(z)"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c46",
+      "name": "KKT applicato all'hard margin SVM: primale e duale",
+      "nameEn": "Leveraging the KKT approach for the Hard Margin SVM (primal and dual formulation)",
+      "kind": "procedura",
+      "sourcePages": [{"doc": "part2", "page": 51}],
+      "detail": "Per risolvere il problema di ottimizzazione dell'hard margin SVM si sfrutta l'approccio KKT, che riformula il problema con i moltiplicatori di Lagrange e porta sia a una formulazione primale (primal formulation) sia a una formulazione duale (dual formulation). Procedura: (1) scrivere la primale; (2) costruire la Lagrangiana con un alpha_i per vincolo; (3) annullare le derivate rispetto a w e w0; (4) sostituire per ottenere il duale nei soli alpha; (5) risolvere il duale; (6) ricavare w e w0.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c47",
+      "name": "Lagrangiana dell'hard margin SVM",
+      "nameEn": "Lagrangian of the Hard Margin SVM",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 51}, {"doc": "part2", "page": 52}, {"doc": "part2", "page": 54}],
+      "detail": "Per includere i vincoli nella minimizzazione si introducono moltiplicatori di Lagrange alpha_i >= 0, uno per ogni esempio di training (m = |D|). La Lagrangiana è L(w, w0, alpha) = 1/2 ||w||^2 - sum_{i=1}^m alpha_i ( y_i(w^T x_i + w0) - 1 ). È l'istanza della Lagrangiana generica con f = 1/2 ||w||^2 e g_i = y_i(w^T x_i + w0) - 1. La fonte la riscrive identica a pag. 52 (per il duale) e a pag. 54 (per le condizioni KKT).",
+      "latex": ["L(\\mathbf{w}, w_0, \\boldsymbol{\\alpha}) = \\frac{1}{2}\\|\\mathbf{w}\\|^2 - \\sum_{i=1}^{m}\\alpha_i\\left(y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) - 1\\right)", "\\alpha_i \\ge 0, \\qquad m = |D|"],
+      "symbols": [{"s": "\\boldsymbol{\\alpha}", "meaning": "vettore dei moltiplicatori di Lagrange, uno per esempio"}, {"s": "m = |D|", "meaning": "numero di esempi di training"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c48",
+      "name": "Min sulle variabili primali, max sulle duali: la sella di L(w, w0, alpha)",
+      "nameEn": "Minimized w.r.t. primal variables, maximized w.r.t. dual variables, saddle point",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 52}],
+      "detail": "La Lagrangiana dell'SVM è minimizzata (Minimized) rispetto alle variabili primali w e w0 (le variabili del problema originale) e massimizzata (Maximized) rispetto alle variabili duali alpha_i >= 0. La soluzione sta nel punto di sella (saddle point) di L(w, w0, alpha). Per la domanda d'orale 'why solution of dual is equal to primal': primale e duale descrivono lo stesso punto di sella; poiché il primale è convesso (obiettivo quadratico, vincoli lineari, c36) l'ordine min-max si può scambiare senza cambiare il valore ottimo. La fonte parla solo di punto di sella: il nome del risultato (dualità forte, strong duality) è un'integrazione.",
+      "latex": ["\\min_{\\mathbf{w}, w_0}\\;\\max_{\\boldsymbol{\\alpha}\\ge 0}\\; L(\\mathbf{w}, w_0, \\boldsymbol{\\alpha})"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c49",
+      "name": "Stazionarietà rispetto a w0: sum alpha_i y_i = 0",
+      "nameEn": "Derivative w.r.t. w0",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 52}],
+      "detail": "Formulazione duale (Dual Formulation): per eliminare le variabili primali (w, w0) si calcolano le derivate della Lagrangiana rispetto ad esse e si pongono uguali a zero. Derivata rispetto a w0: dL/dw0 = -sum alpha_i y_i = 0, quindi sum_{i=1}^m alpha_i y_i = 0. Questa condizione diventa il vincolo di uguaglianza del duale: la 'massa' dei moltiplicatori della classe positiva bilancia quella della classe negativa.",
+      "latex": ["\\frac{\\partial}{\\partial w_0}L(\\mathbf{w}, w_0, \\boldsymbol{\\alpha}) = 0 \\;\\Rightarrow\\; \\sum_{i=1}^{m}\\alpha_i y_i = 0"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c50",
+      "name": "Stazionarietà rispetto a w: w = sum alpha_i y_i x_i",
+      "nameEn": "Derivative w.r.t. w (w as a linear combination of the support vectors)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 52}],
+      "detail": "Derivata rispetto a w: dL/dw = w - sum alpha_i y_i x_i = 0, quindi w = sum_{i=1}^m alpha_i y_i x_i. Questo esprime w come combinazione lineare dei support vectors (esempi con alpha_i > 0): gli esempi con alpha_i = 0 non entrano nella somma. È il ponte tra primale (w) e duale (alpha).",
+      "latex": ["\\frac{\\partial}{\\partial \\mathbf{w}}L(\\mathbf{w}, w_0, \\boldsymbol{\\alpha}) = 0 \\;\\Rightarrow\\; \\mathbf{w} = \\sum_{i=1}^{m}\\alpha_i y_i \\mathbf{x}_i"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c51",
+      "name": "Sostituzione nella Lagrangiana: espansione in quattro termini",
+      "nameEn": "Substituting w into the Lagrangian",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 52}],
+      "detail": "Sostituendo w = sum alpha_i y_i x_i nella Lagrangiana, 1/2 ||w||^2 - sum alpha_i ( y_i(w^T x_i + w0) - 1 ) si espande in quattro termini: +1/2 sum_{i,j} alpha_i alpha_j y_i y_j x_i^T x_j (dal quadrato della norma), -sum_{i,j} alpha_i alpha_j y_i y_j x_i^T x_j (dal termine w^T x_i), -sum_i alpha_i y_i w0 (dal bias), +sum_i alpha_i (dal -1). Il secondo termine è scritto con x_i^T x_j: essendo la doppia somma simmetrica in i e j è equivalente a x_j^T x_i.",
+      "latex": ["\\frac{1}{2}\\|\\mathbf{w}\\|^2 - \\sum_{i=1}^{m}\\alpha_i\\left(y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) - 1\\right)", "= \\frac{1}{2}\\sum_{i,j=1}^{m}\\alpha_i\\alpha_j y_i y_j \\mathbf{x}_i^T\\mathbf{x}_j - \\sum_{i,j=1}^{m}\\alpha_i\\alpha_j y_i y_j \\mathbf{x}_i^T\\mathbf{x}_j - \\sum_{i=1}^{m}\\alpha_i y_i w_0 + \\sum_{i=1}^{m}\\alpha_i"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c52",
+      "name": "Semplificazione: funzione dei soli alpha",
+      "nameEn": "The function depends only on the dual variables",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 52}],
+      "detail": "E poiché sum alpha_i y_i = 0 (And, since ...), il termine con w0 si annulla e i due termini doppi si combinano (1/2 - 1 = -1/2): resta sum_i alpha_i - 1/2 sum_{i,j} alpha_i alpha_j y_i y_j x_i^T x_j. Questa funzione dipende solo dalle variabili duali (dual variables) alpha_i e ora si può risolvere direttamente (can now be solved directly). I dati compaiono solo attraverso i prodotti scalari x_i^T x_j.",
+      "latex": ["= \\sum_{i=1}^{m}\\alpha_i - \\frac{1}{2}\\sum_{i,j=1}^{m}\\alpha_i\\alpha_j y_i y_j \\mathbf{x}_i^T\\mathbf{x}_j"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c53",
+      "name": "Problema duale dell'hard margin SVM",
+      "nameEn": "Dual problem",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 52}, {"doc": "part2", "page": 53}],
+      "detail": "Il problema duale (the dual problem is expressed as): massimizzare su alpha in R^m la funzione sum alpha_i - 1/2 sum_{i,j} alpha_i alpha_j y_i y_j x_i^T x_j, soggetto a (Subject to) alpha_i >= 0 per ogni i = 1, ..., m (non negatività dei moltiplicatori di Lagrange, non-negativity of Lagrange multipliers) e sum alpha_i y_i = 0 (derivato dal problema primale, derived from the primal problem: è la stazionarietà rispetto a w0). La formula del vincolo di uguaglianza è in cima a pag. 53.",
+      "latex": ["\\max_{\\boldsymbol{\\alpha}\\in\\mathbb{R}^m} \\; \\sum_{i=1}^{m}\\alpha_i - \\frac{1}{2}\\sum_{i,j=1}^{m}\\alpha_i\\alpha_j y_i y_j \\mathbf{x}_i^T\\mathbf{x}_j", "\\text{subject to: } \\; \\alpha_i \\ge 0 \\quad \\forall i = 1, \\dots, m", "\\sum_{i=1}^{m}\\alpha_i y_i = 0"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c54",
+      "name": "Il duale è un problema quadratico convesso in alpha",
+      "nameEn": "Interpretation of the dual (objective quadratic in alpha, convex optimization)",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 53}],
+      "detail": "Interpretazione (Interpretation): obiettivo (Objective) = massimizzare la funzione duale L(alpha), che è quadratica in alpha; vincoli (Constraints) = gli alpha_i soddisfano la condizione di non negatività e il vincolo di uguaglianza. Il problema è un problema di ottimizzazione quadratica (quadratic optimization problem), risolvibile con tecniche standard di ottimizzazione convessa (standard convex optimization techniques).",
+      "latex": ["L(\\boldsymbol{\\alpha}) = \\sum_{i=1}^{m}\\alpha_i - \\frac{1}{2}\\sum_{i,j=1}^{m}\\alpha_i\\alpha_j y_i y_j \\mathbf{x}_i^T\\mathbf{x}_j"],
+      "symbols": [{"s": "L(\\boldsymbol{\\alpha})", "meaning": "funzione duale"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c55",
+      "name": "Solo i punti con alpha_i > 0 influenzano il classificatore",
+      "nameEn": "Key Insights: Support Vectors",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 53}],
+      "detail": "Insight (Key Insights) sul duale, support vectors: solo i punti con alpha_i > 0 (i support vectors) influenzano il classificatore finale (influence the final classifier). Gli altri hanno alpha_i = 0 e scompaiono sia da w sia dalla funzione di decisione.",
+      "latex": ["\\alpha_i > 0 \\;\\Leftrightarrow\\; \\mathbf{x}_i \\text{ support vector}"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c56",
+      "name": "w è determinato solo dai support vectors",
+      "nameEn": "Weights w determined only by the support vectors",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 53}],
+      "detail": "Insight sui pesi w: sono calcolati come w = sum alpha_i y_i x_i, il che evidenzia che w è determinato solo dai support vectors (the support vectors), perché i termini con alpha_i = 0 si annullano.",
+      "latex": ["\\mathbf{w} = \\sum_{i=1}^{m}\\alpha_i y_i \\mathbf{x}_i = \\sum_{i:\\,\\alpha_i > 0}\\alpha_i y_i \\mathbf{x}_i"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c57",
+      "name": "Il margine geometrico è massimizzato indirettamente",
+      "nameEn": "Geometric Margin: maximized indirectly by minimizing 1/2||w||^2",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 53}],
+      "detail": "Insight sul margine geometrico (Geometric Margin): è massimizzato indirettamente (maximized indirectly) minimizzando 1/2 ||w||^2 nel problema primale. Nessuna delle due formulazioni contiene il margine in modo esplicito: lo si legge alla fine come 1/||w||, con w ricostruito dagli alpha.",
+      "latex": ["\\min \\frac{1}{2}\\|\\mathbf{w}\\|^2 \\;\\Rightarrow\\; \\max \\frac{1}{\\|\\mathbf{w}\\|}"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c58",
+      "name": "Il duale apre al kernel trick per dati non separabili linearmente",
+      "nameEn": "Dual formulation allows efficient computation for large datasets, kernel trick",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 53}],
+      "detail": "La formulazione duale permette un calcolo efficiente per dataset grandi (efficient computation for large datasets), sfruttando tecniche come il kernel trick per gestire dati non separabili linearmente (non-linearly separable data). Attenzione: a pag. 54 la stessa fonte indica il duale come più adatto quando m è relativamente piccolo; la frase va letta nel senso di dataset 'grandi' in numero di feature (d), vedi gaps.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c59",
+      "name": "Vantaggio del duale 1: vincoli più semplici",
+      "nameEn": "Advantages of the Dual Formulation: Simpler Constraints (box constraints)",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 53}],
+      "detail": "Vantaggi della formulazione duale (Advantages of the Dual Formulation), vincoli più semplici (Simpler Constraints): il duale riduce i vincoli a 'box constraints' (scritti nella fonte come alpha_i > 0 e sum alpha_i y_i = 0), più facili da risolvere con tecniche standard di programmazione quadratica. Al posto di m vincoli che coinvolgono i dati (y_i(w^T x_i + w0) >= 1) ci sono vincoli di segno sulle singole variabili più una sola uguaglianza lineare. Il vincolo corretto è alpha_i >= 0 (vedi gaps).",
+      "latex": ["\\alpha_i \\ge 0, \\qquad \\sum_{i=1}^{m}\\alpha_i y_i = 0"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c60",
+      "name": "Vantaggio del duale 2: kernel trick in spazi ad alta o infinita dimensione",
+      "nameEn": "Kernel Trick",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 53}],
+      "detail": "Vantaggi del duale, kernel trick: la formulazione duale è naturalmente adatta a introdurre i kernel, permettendo un calcolo efficiente in spazi delle feature ad alta dimensione (o a dimensione infinita) (high-dimensional (or infinite-dimensional) feature spaces). Il motivo, visibile nel duale e nella funzione di decisione: i dati compaiono solo nei prodotti scalari x_i^T x_j, che si possono sostituire con una funzione kernel k(x_i, x_j) (sviluppo nel modulo p10). È il collegamento chiesto all'orale 'link to the dual problem ... show that features appears only in dot products'.",
+      "latex": ["\\mathbf{x}_i^T\\mathbf{x}_j \\;\\longrightarrow\\; k(\\mathbf{x}_i, \\mathbf{x}_j)"],
+      "symbols": [{"s": "k(\\mathbf{x}_i, \\mathbf{x}_j)", "meaning": "funzione kernel (prodotto scalare in uno spazio delle feature implicito)"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c61",
+      "name": "Formulazione primale: d + 1 variabili, adatta se d << m",
+      "nameEn": "Comparison of Variables: Primal Formulation",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "part2", "page": 53}],
+      "detail": "Confronto delle variabili (Comparison of Variables), formulazione primale: variabili (w, w0), in totale d + 1, dove d è il numero di feature del dataset; obiettivo min_{w, w0} 1/2 ||w||^2. È adatta quando il numero di feature d è molto più piccolo del numero di esempi di training m (d << m).",
+      "latex": ["(\\mathbf{w}, w_0) \\in \\mathbb{R}^{d+1}", "\\min_{\\mathbf{w}, w_0}\\frac{1}{2}\\|\\mathbf{w}\\|^2", "d \\ll m"],
+      "symbols": [{"s": "d", "meaning": "numero di feature"}, {"s": "m", "meaning": "numero di esempi di training"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c62",
+      "name": "Formulazione duale: m variabili, adatta se m << d",
+      "nameEn": "Comparison of Variables: Dual Formulation",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "part2", "page": 53}, {"doc": "part2", "page": 54}],
+      "detail": "Formulazione duale: variabili alpha_i per ogni i = 1, ..., m, quindi m variabili (una per ogni esempio di training); obiettivo (in cima a pag. 54) max_{alpha in R^m} sum alpha_i - 1/2 sum alpha_i alpha_j y_i y_j x_i^T x_j. È adatta quando il numero di esempi di training m è molto più piccolo del numero di feature d (m << d).",
+      "latex": ["\\alpha_i \\quad \\forall i = 1, \\dots, m", "\\boldsymbol{\\alpha} \\in \\mathbb{R}^{m}", "\\max_{\\boldsymbol{\\alpha}\\in\\mathbb{R}^m} \\sum_{i=1}^{m}\\alpha_i - \\frac{1}{2}\\sum_{i,j=1}^{m}\\alpha_i\\alpha_j y_i y_j \\mathbf{x}_i^T\\mathbf{x}_j", "m \\ll d"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c63",
+      "name": "Regola di scelta: primale se d << m, duale se m piccolo o con kernel",
+      "nameEn": "When to choose the primal or the dual formulation",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "part2", "page": 54}],
+      "detail": "Riassunto della fonte: la formulazione primale si sceglie in generale quando la dimensionalità dello spazio delle feature (d) è molto minore del numero di esempi di training (m). La formulazione duale è più appropriata per dataset in cui il numero di esempi m è relativamente piccolo, oppure quando si usano kernel per la classificazione non lineare. È la risposta diretta alle domande d'orale 'SVM (when should we opt for primal or dual formulation)' e 'when do we use (and why) primal or dual': si risolve il problema con meno incognite, e con i kernel il duale è l'unica via praticabile.",
+      "latex": ["d \\ll m \\;\\Rightarrow\\; \\text{primale}, \\qquad m \\ll d \\;\\text{ oppure kernel} \\;\\Rightarrow\\; \\text{duale}"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c64",
+      "name": "Funzione di decisione in forma duale",
+      "nameEn": "Decision function f(x) = sum alpha_i y_i x_i^T x + w0",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 54}],
+      "detail": "Sostituendo w = sum alpha_i y_i x_i nella funzione di decisione si ottiene f(x) = w^T x + w0 = sum_{i=1}^m alpha_i y_i x_i^T x + w0. Per classificare un nuovo punto non serve w esplicito: bastano gli alpha, le etichette, i punti di training (di fatto i soli support vectors) e w0. La classe predetta è il segno di f(x).",
+      "latex": ["f(\\mathbf{x}) = \\mathbf{w}^T\\mathbf{x} + w_0 = \\sum_{i=1}^{m}\\alpha_i y_i \\mathbf{x}_i^T\\mathbf{x} + w_0"],
+      "symbols": [{"s": "\\mathbf{x}", "meaning": "punto di test"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c65",
+      "name": "Combinazione lineare di prodotti scalari tra training e test",
+      "nameEn": "Linear combination of dot products",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 54}],
+      "detail": "Punto chiave (Key points): la funzione di decisione è una combinazione lineare di prodotti scalari (linear combination of dot products) tra i punti di training x_i e il punto di test x. È la seconda occorrenza (dopo il duale) del fatto che i dati entrano solo tramite prodotti scalari.",
+      "latex": ["\\mathbf{x}_i^T\\mathbf{x}"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c66",
+      "name": "Il prodotto scalare misura la similarità",
+      "nameEn": "The dot product quantifies similarity",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 54}],
+      "detail": "Punto chiave: il prodotto scalare (dot product) quantifica la similarità (similarity) tra punti nello spazio delle feature (feature space). È grande quando i due vettori sono lunghi e allineati, nullo quando sono ortogonali, negativo quando puntano in versi opposti. Questa lettura prepara l'idea di kernel come misura di similarità generalizzata.",
+      "latex": ["\\mathbf{x}_i^T\\mathbf{x} = \\sum_{k=1}^{d} x_{ik}\\,x_k"],
+      "symbols": [{"s": "x_{ik}", "meaning": "k-esima feature del punto di training i"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c67",
+      "name": "Pesi alpha_i y_i: influenza e verso del voto di ogni punto",
+      "nameEn": "Weights of the combination alpha_i y_i",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 54}],
+      "detail": "Punto chiave: i pesi della combinazione sono dati da alpha_i y_i. Un alpha_i grande (large) implica che il punto di training corrispondente x_i ha una grande influenza (large influence) sulla decisione di classificazione, pesata dalla sua etichetta di classe y_i, che dà il segno (verso) del contributo.",
+      "latex": ["\\alpha_i y_i"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c68",
+      "name": "Condizione KKT di complementarità per l'SVM",
+      "nameEn": "KKT conditions at the saddle point (written 'KTT conditions' in the notes)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 54}],
+      "detail": "Il problema di ottimizzazione SVM include la Lagrangiana L(w, w0, alpha) (riscritta a pag. 54). Al punto di sella della Lagrangiana vale, per ogni i, la condizione (chiamata nella fonte 'KTT conditions', refuso per KKT) alpha_i ( y_i(w^T x_i + w0) - 1 ) = 0. È la complementarità (complementary slackness) della digressione (c44) con g_i = y_i(w^T x_i + w0) - 1: il prodotto tra moltiplicatore e vincolo è sempre zero.",
+      "latex": ["\\alpha_i\\left(y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) - 1\\right) = 0 \\qquad \\forall i"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c69",
+      "name": "Due possibilità: alpha_i = 0 oppure punto sull'iperpiano di minimo margine",
+      "nameEn": "Two possibilities (alpha_i = 0, or the point lies on the minimum confidence margin hyperplane)",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 54}],
+      "detail": "La condizione implica due possibilità (two possibilities): alpha_i = 0, e il punto x_i non contribuisce (does not contribute) alla funzione di decisione; oppure y_i(w^T x_i + w0) = 1, e il punto x_i giace sull'iperpiano di margine di confidenza minimo (minimum confidence margin hyperplane), cioè su una delle rette tratteggiate w^T x + w0 = +1 o -1 della figura.",
+      "latex": ["\\alpha_i = 0", "y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) = 1"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c70",
+      "name": "Definizione di support vector",
+      "nameEn": "Support Vectors (points on the minimum confidence hyperplanes, alpha_i > 0)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 54}],
+      "detail": "I support vectors sono i punti di training x_i che giacciono sugli iperpiani di confidenza minima (minimum confidence hyperplanes), e quindi hanno alpha_i > 0. Precisazione: la complementarità garantisce che alpha_i > 0 implica y_i f(x_i) = 1; il caso degenere di un punto sul bordo con alpha_i = 0 non è discusso dalla fonte.",
+      "latex": ["\\alpha_i > 0 \\;\\Rightarrow\\; y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) = 1"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c71",
+      "name": "I support vectors sono gli unici a influenzare direttamente il confine",
+      "nameEn": "Characteristics of Support Vectors: the only points that directly influence the decision boundary",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 54}],
+      "detail": "Caratteristiche dei support vectors (Characteristics of Support Vectors): sono gli unici punti che influenzano direttamente (directly influence) il confine di decisione. Spostare un support vector (anche di poco) sposta il confine; spostare un punto lontano non lo cambia finché resta fuori dalla fascia.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c72",
+      "name": "I punti con alpha_i = 0 si possono rimuovere",
+      "nameEn": "All other points (alpha_i = 0) can be ignored",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 55}],
+      "detail": "Tutti gli altri punti, per cui alpha_i = 0, possono essere ignorati (rimossi dal training set) senza modificare la funzione di decisione (can be ignored (removed from the training set) without affecting the decision function). Riallenando l'SVM sui soli support vectors si ottiene lo stesso iperpiano.",
+      "latex": ["\\alpha_i = 0 \\;\\Rightarrow\\; \\alpha_i y_i \\mathbf{x}_i^T\\mathbf{x} = 0"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c73",
+      "name": "Le SVM sono modelli sparsi",
+      "nameEn": "SVMs are sparse models",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 55}],
+      "detail": "Le SVM sono quindi modelli sparsi (sparse models), perché il numero di support vectors è tipicamente molto più piccolo del numero totale di punti di training (typically much smaller than the total number of training points). Conseguenza pratica: la funzione di decisione duale richiede solo |SV| prodotti scalari per classificare un nuovo punto.",
+      "latex": ["|SV| \\ll m"],
+      "symbols": [{"s": "|SV|", "meaning": "numero di support vectors"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c74",
+      "name": "Figura: support vectors in evidenza, gli altri sbiaditi",
+      "nameEn": "Support vectors highlighted (figure)",
+      "kind": "figura",
+      "sourcePages": [{"doc": "part2", "page": 55}],
+      "detail": "Figura in cima a pag. 55: lo stesso piano (x_1, x_2) delle figure precedenti con il confine (retta continua), le due rette tratteggiate di margine e il vettore w. Solo tre punti sono a colori pieni: un quadrato blu in alto sulla retta tratteggiata superiore, un quadrato blu sulla stessa retta vicino all'asse x_1 e un cerchio rosso sulla retta tratteggiata inferiore; tutti gli altri punti sono sbiaditi. È lo stesso insieme di 21 punti delle figure di pag. 46 e 48 (12 cerchi, 9 quadrati): i support vectors sono 3 su 21, circa il 14%. Visualizza la sparsità: solo i support vectors contano.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c75",
+      "name": "Calcolo di w0 da un support vector",
+      "nameEn": "Deriving w0 from the KKT conditions using any support vector",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 55}],
+      "detail": "Dalle condizioni KKT si ricava w0 usando qualunque support vector x_i con alpha_i > 0: vale y_i(w^T x_i + w0) = 1 e riordinando (Rearranging) w0 = (1 - y_i w^T x_i)/y_i. La formula permette di calcolare w0 per ogni support vector (enables computing w0 for each support vector). Semplificazione (non scritta nella fonte): poiché y_i appartiene a {-1, +1}, 1/y_i = y_i e quindi w0 = y_i - w^T x_i.",
+      "latex": ["y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) = 1", "w_0 = \\frac{1 - y_i\\mathbf{w}^T\\mathbf{x}_i}{y_i}"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c76",
+      "name": "Media di w0 su tutti i support vectors",
+      "nameEn": "w0 averaged over all support vectors for robustness",
+      "kind": "procedura",
+      "sourcePages": [{"doc": "part2", "page": 55}],
+      "detail": "Per robustezza (For robustness), w0 viene tipicamente mediato su tutti i support vectors per ridurre l'instabilità numerica (to reduce numerical instability). Il solver restituisce gli alpha con una tolleranza finita, quindi le singole stime di w0 differiscono leggermente; la media le stabilizza. La formula scrive in simboli la media descritta a parole.",
+      "latex": ["w_0 = \\frac{1}{|SV|}\\sum_{i \\in SV}\\frac{1 - y_i\\mathbf{w}^T\\mathbf{x}_i}{y_i}"],
+      "symbols": [{"s": "SV", "meaning": "insieme degli indici dei support vectors (alpha_i > 0)"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c77",
+      "name": "Limite dell'hard margin: classi molto vicine, margine minuscolo",
+      "nameEn": "Soft Margin SVM motivation: points from opposing classes very close",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 55}],
+      "detail": "Inizio della sezione Soft Margin SVM (pag. 55, il seguito è nel modulo p09): se punti di classi opposte sono molto vicini (very close) tra loro, il margine diventa estremamente piccolo (extremely small), riducendo drasticamente la robustezza del classificatore (drastically reducing the classifier's robustness). È il limite strutturale dell'hard margin: il margine è deciso dal caso peggiore.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c78",
+      "name": "Esempio: un solo campione mal etichettato fa crollare il margine",
+      "nameEn": "Adding a single misclassified or mislabeled sample",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "part2", "page": 55}],
+      "detail": "Esempio della fonte (For example): aggiungere un solo campione mal classificato o mal etichettato (a single misclassified or mislabeled sample), ad esempio un punto blu molto vicino o dentro la regione della classe rossa, fa restringere il margine in modo significativo (causes the margin to shrink significantly). Il nuovo iperpiano separatore può ancora classificare correttamente tutti i punti, ma con un margine molto più piccolo di prima (much smaller margin than before). Se il punto finisce oltre ogni separatore possibile, l'hard margin non ha soluzione: motivazione del soft margin (p09).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c79",
+      "name": "Quadro completo delle condizioni KKT dell'hard margin SVM",
+      "nameEn": "KKT conditions of the Hard Margin SVM (stationarity, primal feasibility, dual feasibility, complementary slackness)",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 49}, {"doc": "part2", "page": 51}, {"doc": "part2", "page": 52}, {"doc": "part2", "page": 54}],
+      "detail": "Sintesi del revisore: la fonte chiama 'KTT conditions' (refuso per KKT) solo la complementarità di pag. 54, ma le condizioni che caratterizzano la soluzione dell'hard margin SVM sono sparse in quattro punti del capitolo e all'orale conviene elencarle insieme. (1) Stazionarietà (stationarity, pag. 52): le derivate della Lagrangiana rispetto alle variabili primali si annullano, quindi w = sum alpha_i y_i x_i e sum alpha_i y_i = 0. (2) Ammissibilità primale (primal feasibility, pag. 49 e 51): y_i(w^T x_i + w0) >= 1 per ogni esempio. (3) Ammissibilità duale (dual feasibility, pag. 51-52): alpha_i >= 0. (4) Complementarità (complementary slackness, pag. 54, in forma generica alpha_i g_i(z*) = 0 a pag. 51): alpha_i(y_i(w^T x_i + w0) - 1) = 0. Da (1) e (4) seguono w come combinazione dei soli support vectors e il calcolo di w0 di pag. 55. Integrazione non scritta nella fonte: il problema è convesso con vincoli lineari (pag. 50), quindi, se i dati sono separabili, una terna (w, w0, alpha) che soddisfa tutte e quattro le condizioni è la soluzione ottima e primale e duale hanno lo stesso valore ottimo. È la risposta più compatta alle domande d'orale 'why do we use KKT' e 'why solution of dual is equal to primal'.",
+      "latex": ["\\mathbf{w} = \\sum_{i=1}^{m}\\alpha_i y_i \\mathbf{x}_i, \\qquad \\sum_{i=1}^{m}\\alpha_i y_i = 0", "y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) \\ge 1 \\qquad \\forall i", "\\alpha_i \\ge 0 \\qquad \\forall i", "\\alpha_i\\left(y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) - 1\\right) = 0 \\qquad \\forall i"],
+      "symbols": [{"s": "\\alpha_i", "meaning": "moltiplicatore di Lagrange dell'esempio i (variabile duale)"}, {"s": "y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) - 1", "meaning": "vincolo g_i dell'esempio i: nullo sul bordo del margine, positivo fuori dalla fascia"}],
+      "examRelevance": 3,
+      "addedBy": "revisore"
+    },
+    {
+      "id": "c80",
+      "name": "Il simbolo rho ha due ruoli: margine di confidenza e soglia del teorema",
+      "nameEn": "rho as confidence margin (p. 47) vs rho as a given margin threshold (p. 48)",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 47}, {"doc": "part2", "page": 48}, {"doc": "part2", "page": 49}],
+      "detail": "Osservazione del revisore sulla notazione della fonte. A pag. 47 rho è una quantità calcolata dal classificatore: il margine di confidenza rho = min_{(x,y) in D} y f(x). A pag. 48, nel teorema del Margin Error Bound, rho > 0 è invece una soglia data (a given margin threshold) e il teorema vale per qualunque rho > 0; nu conta gli esempi di training con margine minore di rho/||w||. Le due letture si incontrano così: se come soglia si prende proprio il margine di confidenza del classificatore, nessun esempio di training ha margine minore e nu = 0; con l'iperpiano canonico quella soglia vale 1, nel bound resta solo il termine di complessità con R^2 Lambda^2 (diviso rho^2 = 1), e Lambda è il limite su ||w||. È il senso della prima nota di pag. 49: 'If rho is fixed to 1 (i.e., the canonical hyperplane), maximizing the margin is equivalent to minimizing ||w||'. Scegliere una soglia più grande del margine di confidenza riduce il termine 1/rho^2 ma fa crescere nu. Il teorema usa f(x) = sign(w^T x) senza bias: il collegamento con l'iperpiano canonico con w0 è un'estensione naturale, non dimostrata nella fonte.",
+      "latex": ["\\rho = \\min_{(\\mathbf{x},y)\\in D} y f(\\mathbf{x}) \\qquad \\text{(pag. 47: margine di confidenza)}", "\\rho > 0 \\;\\text{soglia data}, \\qquad \\nu = \\text{frazione di esempi con margine} < \\frac{\\rho}{\\|\\mathbf{w}\\|} \\qquad \\text{(pag. 48)}", "\\rho = 1, \\;\\; y_i f(\\mathbf{x}_i) \\ge 1 \\;\\forall i \\;\\Rightarrow\\; \\nu = 0, \\qquad \\nu + \\sqrt{\\frac{c}{m}\\left(R^2\\Lambda^2\\ln^2(m) + \\ln\\left(\\frac{1}{\\delta}\\right)\\right)}"],
+      "symbols": [{"s": "\\rho", "meaning": "a pag. 47 margine di confidenza del classificatore; a pag. 48 soglia di margine scelta liberamente"}],
+      "examRelevance": 2,
+      "addedBy": "revisore"
+    }
+  ],
+  "derivations": [
+    {
+      "id": "der01",
+      "title": "Dal margine geometrico al problema primale dell'hard margin SVM",
+      "sourcePages": [{"doc": "part2", "page": 47}, {"doc": "part2", "page": 49}],
+      "goal": "Mostrare come l'idea 'massimizza la distanza dei punti più vicini' diventa il problema quadratico min 1/2||w||^2 con vincoli y_i(w^T x_i + w0) >= 1.",
+      "steps": [
+        "\\max_{\\mathbf{w}, w_0} \\frac{\\rho}{\\|\\mathbf{w}\\|}, \\qquad \\rho = \\min_{(\\mathbf{x},y)\\in D} y f(\\mathbf{x}), \\qquad y f(\\mathbf{x}) > 0 \\;\\; \\forall (\\mathbf{x}, y) \\in D",
+        "\\alpha\\left(\\mathbf{w}^T\\mathbf{x} + w_0\\right) = 0 \\iff \\mathbf{w}^T\\mathbf{x} + w_0 = 0 \\qquad \\forall \\alpha \\neq 0",
+        "\\rho = \\min_{(\\mathbf{x},y)\\in D} y f(\\mathbf{x}) = 1",
+        "\\frac{\\rho}{\\|\\mathbf{w}\\|} = \\frac{1}{\\|\\mathbf{w}\\|}",
+        "\\max \\frac{1}{\\|\\mathbf{w}\\|} \\iff \\min \\|\\mathbf{w}\\| \\iff \\min \\|\\mathbf{w}\\|^2 \\iff \\min \\frac{1}{2}\\|\\mathbf{w}\\|^2",
+        "\\min_{\\mathbf{w}, w_0} \\frac{1}{2}\\|\\mathbf{w}\\|^2 \\quad \\text{s.t.} \\quad y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) \\ge 1 \\;\\; \\forall (\\mathbf{x}_i, y_i) \\in D"
+      ],
+      "stepWhy": [
+        "Obiettivo di pag. 47: massimizzare il margine geometrico (distanza del punto più vicino), imponendo che tutti gli esempi siano classificati correttamente.",
+        "Moltiplicare w e w0 per una costante non nulla non cambia il confine: c'è un grado di libertà, e rho da solo si potrebbe gonfiare a piacere.",
+        "Si elimina il grado di libertà scegliendo l'iperpiano canonico: la scala di (w, w0) è fissata in modo che il punto più vicino abbia y f(x) = 1.",
+        "Con rho = 1 il margine geometrico dipende solo dalla norma di w.",
+        "1/t è decrescente per t > 0, il quadrato è monotono sui non negativi e il fattore 1/2 è una costante positiva: nessuna trasformazione cambia il minimizzatore, l'ultima semplifica le derivate.",
+        "Il vincolo 'rho = 1 e tutti corretti' si scrive come y_i f(x_i) >= 1 per ogni esempio (il minimo sarà esattamente 1 all'ottimo): è il problema primale, quadratico con vincoli lineari."
+      ],
+      "concepts": ["c12", "c13", "c14", "c15", "c17", "c25", "c29", "c30", "c31", "c32"]
+    },
+    {
+      "id": "der02",
+      "title": "Ampiezza della fascia di margine: 2/||w||",
+      "sourcePages": [{"doc": "part2", "page": 47}, {"doc": "part2", "page": 48}],
+      "goal": "Giustificare l'etichetta 2/||w|| della figura di pag. 48 a partire dal margine geometrico 1/||w|| dell'iperpiano canonico.",
+      "steps": [
+        "d(\\mathbf{x}, H) = \\frac{|\\mathbf{w}^T\\mathbf{x} + w_0|}{\\|\\mathbf{w}\\|}",
+        "\\mathbf{w}^T\\mathbf{x}^+ + w_0 = 1 \\;\\Rightarrow\\; d(\\mathbf{x}^+, H) = \\frac{1}{\\|\\mathbf{w}\\|}",
+        "\\mathbf{w}^T\\mathbf{x}^- + w_0 = -1 \\;\\Rightarrow\\; d(\\mathbf{x}^-, H) = \\frac{1}{\\|\\mathbf{w}\\|}",
+        "d(\\mathbf{x}^+, H) + d(\\mathbf{x}^-, H) = \\frac{2}{\\|\\mathbf{w}\\|}"
+      ],
+      "stepWhy": [
+        "Distanza di un punto dall'iperpiano H: w^T x + w0 = 0 (margine geometrico del punto, modulo p06); è la stessa quantità y f(x)/||w|| di pag. 47 per un punto classificato bene.",
+        "Un punto positivo sulla retta tratteggiata w^T x + w0 = 1 (iperpiano canonico) dista 1/||w|| dal confine.",
+        "Idem per un punto negativo sulla retta w^T x + w0 = -1: il valore assoluto elimina il segno.",
+        "Le due rette sono parallele al confine e stanno da parti opposte: la fascia misura la somma dei due margini, come la 'somma dei margini' del classificatore a massimo margine di pag. 46."
+      ],
+      "concepts": ["c07", "c08", "c17", "c18"]
+    },
+    {
+      "id": "der03",
+      "title": "Perché min-max della Lagrangiana risolve il problema vincolato",
+      "sourcePages": [{"doc": "part2", "page": 50}, {"doc": "part2", "page": 51}],
+      "goal": "Mostrare che min_z max_{alpha >= 0} L(z, alpha) coincide con il minimo di f sulla regione ammissibile e ricavare la complementarità alpha_i g_i(z*) = 0.",
+      "steps": [
+        "\\min_z f(z) \\quad \\text{s.t.} \\quad g_i(z) \\ge 0 \\;\\; \\forall i",
+        "L(z, \\boldsymbol{\\alpha}) = f(z) - \\sum_i \\alpha_i g_i(z), \\qquad \\alpha_i \\ge 0",
+        "g_i(z') < 0 \\;\\Rightarrow\\; -\\alpha_i g_i(z') \\xrightarrow{\\alpha_i \\to \\infty} +\\infty \\;\\Rightarrow\\; \\max_{\\boldsymbol{\\alpha}\\ge 0} L(z', \\boldsymbol{\\alpha}) = +\\infty",
+        "g_i(z) \\ge 0 \\;\\forall i \\;\\Rightarrow\\; \\max_{\\boldsymbol{\\alpha}\\ge 0} L(z, \\boldsymbol{\\alpha}) = f(z) \\quad (\\alpha_i = 0 \\text{ se } g_i(z) > 0)",
+        "\\min_z \\max_{\\boldsymbol{\\alpha}\\ge 0} L(z, \\boldsymbol{\\alpha}) = \\min_{z:\\; g_i(z) \\ge 0\\; \\forall i} f(z)",
+        "\\alpha_i^* > 0 \\Rightarrow g_i(z^*) = 0, \\qquad g_i(z^*) > 0 \\Rightarrow \\alpha_i^* = 0 \\qquad \\left(\\alpha_i^* g_i(z^*) = 0\\right)"
+      ],
+      "stepWhy": [
+        "Problema generico della digressione di pag. 50.",
+        "Un moltiplicatore non negativo per vincolo; il segno meno fa sì che un vincolo violato (g_i < 0) aumenti L.",
+        "Constraint Satisfaction: se un vincolo è violato, massimizzando su alpha_i il termine cresce senza limite, quindi z' non può essere il minimo del max.",
+        "Maximizing alpha_i: se tutti i vincoli sono soddisfatti ogni termine -alpha_i g_i è <= 0, il massimo si ottiene annullandolo (alpha_i = 0 per i vincoli con g_i > 0) e resta f(z).",
+        "Il max su alpha agisce da 'muro': vale f dentro la regione ammissibile e +infinito fuori; minimizzarlo equivale a minimizzare f tra i punti ammissibili (Interpretation, pag. 51).",
+        "Saddle Point Solution: al punto di sella i moltiplicatori positivi stanno solo sui vincoli attivi (sul bordo), quelli inattivi hanno moltiplicatore nullo."
+      ],
+      "concepts": ["c38", "c39", "c41", "c42", "c43", "c44", "c45"]
+    },
+    {
+      "id": "der04",
+      "title": "Lagrangiana dell'SVM e condizioni di stazionarietà",
+      "sourcePages": [{"doc": "part2", "page": 51}, {"doc": "part2", "page": 52}],
+      "goal": "Ricavare le due condizioni che eliminano le variabili primali: sum alpha_i y_i = 0 e w = sum alpha_i y_i x_i.",
+      "steps": [
+        "L(\\mathbf{w}, w_0, \\boldsymbol{\\alpha}) = \\frac{1}{2}\\|\\mathbf{w}\\|^2 - \\sum_{i=1}^{m}\\alpha_i\\left(y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) - 1\\right), \\qquad \\alpha_i \\ge 0",
+        "L = \\frac{1}{2}\\mathbf{w}^T\\mathbf{w} - \\sum_{i=1}^{m}\\alpha_i y_i \\mathbf{w}^T\\mathbf{x}_i - w_0\\sum_{i=1}^{m}\\alpha_i y_i + \\sum_{i=1}^{m}\\alpha_i",
+        "\\frac{\\partial L}{\\partial w_0} = -\\sum_{i=1}^{m}\\alpha_i y_i = 0 \\;\\Rightarrow\\; \\sum_{i=1}^{m}\\alpha_i y_i = 0",
+        "\\frac{\\partial L}{\\partial \\mathbf{w}} = \\mathbf{w} - \\sum_{i=1}^{m}\\alpha_i y_i \\mathbf{x}_i = \\mathbf{0} \\;\\Rightarrow\\; \\mathbf{w} = \\sum_{i=1}^{m}\\alpha_i y_i \\mathbf{x}_i",
+        "\\mathbf{w} = \\sum_{i:\\,\\alpha_i > 0}\\alpha_i y_i \\mathbf{x}_i"
+      ],
+      "stepWhy": [
+        "Lagrangiana generica con f = 1/2||w||^2 e g_i = y_i(w^T x_i + w0) - 1, un moltiplicatore per ognuno degli m esempi (pag. 51).",
+        "Espansione della somma (passaggio esplicitato): separa i termini che dipendono da w, da w0 e da nessuno dei due, così le derivate si leggono subito.",
+        "w0 compare solo nel termine lineare -w0 sum alpha_i y_i: la derivata è la costante -sum alpha_i y_i, che deve annullarsi (pag. 52).",
+        "La derivata di 1/2 w^T w è w (grazie al fattore 1/2) e quella di -alpha_i y_i w^T x_i è -alpha_i y_i x_i: ponendo il gradiente a zero si isola w (pag. 52).",
+        "I termini con alpha_i = 0 spariscono: w è combinazione lineare dei soli support vectors."
+      ],
+      "concepts": ["c47", "c49", "c50", "c56"]
+    },
+    {
+      "id": "der05",
+      "title": "Derivazione del problema duale",
+      "sourcePages": [{"doc": "part2", "page": 52}, {"doc": "part2", "page": 53}],
+      "goal": "Sostituire le condizioni di stazionarietà nella Lagrangiana per ottenere un problema nei soli alpha, in cui i dati compaiono solo nei prodotti scalari x_i^T x_j.",
+      "steps": [
+        "\\frac{1}{2}\\|\\mathbf{w}\\|^2 = \\frac{1}{2}\\Big(\\sum_{i=1}^{m}\\alpha_i y_i \\mathbf{x}_i\\Big)^T\\Big(\\sum_{j=1}^{m}\\alpha_j y_j \\mathbf{x}_j\\Big) = \\frac{1}{2}\\sum_{i,j=1}^{m}\\alpha_i\\alpha_j y_i y_j \\mathbf{x}_i^T\\mathbf{x}_j",
+        "\\sum_{i=1}^{m}\\alpha_i y_i \\mathbf{w}^T\\mathbf{x}_i = \\sum_{i=1}^{m}\\alpha_i y_i \\Big(\\sum_{j=1}^{m}\\alpha_j y_j \\mathbf{x}_j\\Big)^T\\mathbf{x}_i = \\sum_{i,j=1}^{m}\\alpha_i\\alpha_j y_i y_j \\mathbf{x}_i^T\\mathbf{x}_j",
+        "L = \\frac{1}{2}\\sum_{i,j=1}^{m}\\alpha_i\\alpha_j y_i y_j \\mathbf{x}_i^T\\mathbf{x}_j - \\sum_{i,j=1}^{m}\\alpha_i\\alpha_j y_i y_j \\mathbf{x}_i^T\\mathbf{x}_j - \\sum_{i=1}^{m}\\alpha_i y_i w_0 + \\sum_{i=1}^{m}\\alpha_i",
+        "\\sum_{i=1}^{m}\\alpha_i y_i = 0 \\;\\Rightarrow\\; \\sum_{i=1}^{m}\\alpha_i y_i w_0 = w_0 \\sum_{i=1}^{m}\\alpha_i y_i = 0",
+        "L(\\boldsymbol{\\alpha}) = \\sum_{i=1}^{m}\\alpha_i - \\frac{1}{2}\\sum_{i,j=1}^{m}\\alpha_i\\alpha_j y_i y_j \\mathbf{x}_i^T\\mathbf{x}_j",
+        "\\max_{\\boldsymbol{\\alpha}\\in\\mathbb{R}^m} L(\\boldsymbol{\\alpha}) \\quad \\text{s.t.} \\quad \\alpha_i \\ge 0 \\;\\; \\forall i = 1, \\dots, m, \\qquad \\sum_{i=1}^{m}\\alpha_i y_i = 0"
+      ],
+      "stepWhy": [
+        "Si sostituisce w = sum alpha_i y_i x_i nel quadrato della norma: il prodotto di due somme dà una doppia somma su (i, j).",
+        "Stessa sostituzione nel termine w^T x_i: esce la stessa doppia somma (i prodotti scalari sono simmetrici, x_j^T x_i = x_i^T x_j), come scritto a pag. 52.",
+        "Riga di pag. 52: la Lagrangiana dopo la sostituzione ha quattro termini (norma, prodotto con i dati, bias, costante).",
+        "'And, since sum alpha_i y_i = 0': il termine del bias si annulla grazie alla stazionarietà rispetto a w0.",
+        "I due termini doppi si combinano (1/2 - 1 = -1/2): resta una funzione dei soli alpha, quadratica, con i dati solo nei prodotti scalari.",
+        "Per la sella si massimizza rispetto ai moltiplicatori; i vincoli sono la non negatività degli alpha e la condizione su w0, che non essendo più nell'obiettivo diventa un vincolo (pag. 52-53)."
+      ],
+      "concepts": ["c51", "c52", "c53", "c54"]
+    },
+    {
+      "id": "der06",
+      "title": "Funzione di decisione in forma duale",
+      "sourcePages": [{"doc": "part2", "page": 54}],
+      "goal": "Riscrivere f(x) in termini di alpha e prodotti scalari tra il punto di test e i punti di training.",
+      "steps": [
+        "f(\\mathbf{x}) = \\mathbf{w}^T\\mathbf{x} + w_0",
+        "= \\Big(\\sum_{i=1}^{m}\\alpha_i y_i \\mathbf{x}_i\\Big)^T\\mathbf{x} + w_0",
+        "= \\sum_{i=1}^{m}\\alpha_i y_i \\mathbf{x}_i^T\\mathbf{x} + w_0",
+        "= \\sum_{i \\in SV}\\alpha_i y_i \\mathbf{x}_i^T\\mathbf{x} + w_0"
+      ],
+      "stepWhy": [
+        "Funzione di decisione lineare dell'SVM.",
+        "Si sostituisce la condizione di stazionarietà w = sum alpha_i y_i x_i.",
+        "La trasposizione è lineare: la somma esce dal prodotto scalare, e il risultato è una combinazione lineare di prodotti scalari x_i^T x con pesi alpha_i y_i.",
+        "I termini con alpha_i = 0 si annullano: servono solo i support vectors (modello sparso)."
+      ],
+      "concepts": ["c64", "c65", "c67", "c73"]
+    },
+    {
+      "id": "der07",
+      "title": "Dalla complementarità KKT ai support vectors",
+      "sourcePages": [{"doc": "part2", "page": 54}, {"doc": "part2", "page": 55}],
+      "goal": "Usare la condizione alpha_i(y_i f(x_i) - 1) = 0 per dividere i punti di training in support vectors e punti irrilevanti.",
+      "steps": [
+        "\\alpha_i\\left(y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) - 1\\right) = 0 \\qquad \\forall i",
+        "\\alpha_i = 0 \\quad \\lor \\quad y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) = 1",
+        "y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) > 1 \\;\\Rightarrow\\; \\alpha_i = 0",
+        "\\alpha_i > 0 \\;\\Rightarrow\\; y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) = 1",
+        "f(\\mathbf{x}) = \\sum_{i:\\,\\alpha_i > 0}\\alpha_i y_i \\mathbf{x}_i^T\\mathbf{x} + w_0"
+      ],
+      "stepWhy": [
+        "Condizione KKT al punto di sella (pag. 54): complementarità della digressione con g_i = y_i(w^T x_i + w0) - 1.",
+        "Un prodotto è zero se e solo se almeno un fattore è zero: due possibilità.",
+        "Un punto strettamente fuori dalla fascia ha il secondo fattore positivo, quindi il suo moltiplicatore deve essere nullo: non contribuisce.",
+        "Un moltiplicatore positivo obbliga il punto a stare sull'iperpiano di minima confidenza: è la definizione di support vector.",
+        "Nella funzione di decisione restano solo i support vectors; gli altri possono essere rimossi dal training set senza cambiare nulla (pag. 55)."
+      ],
+      "concepts": ["c68", "c69", "c70", "c72"]
+    },
+    {
+      "id": "der08",
+      "title": "Calcolo di w0 dai support vectors",
+      "sourcePages": [{"doc": "part2", "page": 55}],
+      "goal": "Ricavare il bias w0, che non compare nel duale, dalle condizioni KKT.",
+      "steps": [
+        "y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) = 1 \\qquad (\\alpha_i > 0)",
+        "\\mathbf{w}^T\\mathbf{x}_i + w_0 = \\frac{1}{y_i}",
+        "w_0 = \\frac{1}{y_i} - \\mathbf{w}^T\\mathbf{x}_i = \\frac{1 - y_i\\mathbf{w}^T\\mathbf{x}_i}{y_i}",
+        "y_i \\in \\{-1, +1\\} \\;\\Rightarrow\\; \\frac{1}{y_i} = y_i \\;\\Rightarrow\\; w_0 = y_i - \\mathbf{w}^T\\mathbf{x}_i",
+        "w_0 = \\frac{1}{|SV|}\\sum_{i \\in SV}\\left(y_i - \\mathbf{w}^T\\mathbf{x}_i\\right)"
+      ],
+      "stepWhy": [
+        "Per un support vector (alpha_i > 0) la complementarità impone che il vincolo sia attivo.",
+        "Si divide per y_i, che è non nullo.",
+        "Si isola w0 e si porta a denominatore comune: è la formula della fonte (Rearranging).",
+        "Semplificazione esplicitata: con etichette -1/+1 dividere per y_i equivale a moltiplicare per y_i.",
+        "Ogni support vector dà una stima di w0; per robustezza numerica la fonte suggerisce di mediarle su tutti i support vectors."
+      ],
+      "concepts": ["c75", "c76"]
+    }
+  ],
+  "workedExamples": [
+    {
+      "id": "ex01",
+      "title": "Molti separatori, uno solo a massimo margine (figura di pag. 46)",
+      "sourcePages": [{"doc": "part2", "page": 46}],
+      "description": "Nel piano (x_1, x_2) ci sono 12 cerchi rossi (classe negativa) nella metà sinistra e in basso e 9 quadrati blu (classe positiva) in alto a destra (conteggio verificato ingrandendo la figura; è lo stesso insieme di 21 punti delle figure di pag. 48 e 55). Un fascio di una dozzina di rette grigie sottili, tutte passanti per uno stesso punto (perno) sull'asse x_2 poco sopra l'origine, attraversa la zona tra le classi: tutte classificano correttamente tutti gli esempi. La retta nera in grassetto, anch'essa passante per il perno, è il classificatore a massimo margine. Una doppia freccia perpendicolare alla retta in grassetto collega il cerchio rosso più vicino (appena sotto l'asse x_1, a destra dell'origine) e il quadrato blu più vicino (appena sopra l'asse x_1); due brevi segmenti paralleli alla retta in grassetto, uno per ciascun punto, segnano i due bordi del margine. Messaggio: il margine è la distanza dagli esempi più vicini di ciascuna classe, il classificatore a massimo margine massimizza la somma di questi margini ed è più robusto a perturbazioni e rumore. Nessun dato numerico nella fonte.",
+      "concepts": ["c06", "c07", "c08", "c09"]
+    },
+    {
+      "id": "ex02",
+      "title": "Iperpiano canonico e rette di margine (figura di pag. 48)",
+      "sourcePages": [{"doc": "part2", "page": 48}],
+      "description": "Stesso tipo di dati della figura di pag. 46. Sono disegnate tre rette parallele: w^T x + w0 = 1 (tratteggiata, lato dei quadrati blu), w^T x + w0 = 0 (continua, confine) e w^T x + w0 = -1 (tratteggiata, lato dei cerchi rossi). Il vettore w parte dall'origine perpendicolare al confine verso la classe positiva. La distanza tra le due rette tratteggiate è etichettata 2/||w|| (doppia freccia perpendicolare tra il cerchio rosso sulla retta -1 e la retta +1). Sulle rette tratteggiate stanno esattamente tre punti: due quadrati blu sulla retta +1 (uno in alto a sinistra vicino all'asse x_2, uno appena sopra l'asse x_1) e un cerchio rosso sulla retta -1 (appena sotto l'asse x_1, a destra dell'origine). Sono i futuri support vectors, gli stessi tre evidenziati nella figura di pag. 55. I punti sono 21 (12 cerchi rossi, 9 quadrati blu), come nella figura di pag. 46; un quadrato blu in basso a destra è molto vicino alla retta +1 ma resta fuori dalla fascia. Osservazione sul disegno (non scritta nella fonte): la retta tratteggiata -1 passa praticamente per l'origine, da cui parte il vettore w, quindi nel disegno w^T 0 + w0 = -1, cioè w0 = -1 circa. Nessun dato numerico nella fonte.",
+      "concepts": ["c15", "c17", "c18"]
+    },
+    {
+      "id": "ex03",
+      "title": "Un campione mal etichettato restringe il margine (pag. 55)",
+      "sourcePages": [{"doc": "part2", "page": 55}],
+      "description": "Esempio qualitativo che apre la sezione Soft Margin SVM: se punti di classi opposte sono molto vicini il margine diventa estremamente piccolo. Aggiungendo un solo campione mal classificato o mal etichettato (un punto blu molto vicino o dentro la regione dei rossi) il margine si restringe significativamente; il nuovo iperpiano separatore può ancora classificare correttamente tutti i punti ma con un margine molto più piccolo di prima. Nessun dato numerico nella fonte.",
+      "concepts": ["c77", "c78"]
+    }
+  ],
+  "figures": [
+    {
+      "id": "fig01",
+      "doc": "part2",
+      "page": 46,
+      "description": "Piano (x_1, x_2) con 12 cerchi rossi (negativi) e 9 quadrati blu (positivi): un fascio di una dozzina di rette grigie tutte separatrici, passanti per uno stesso perno sull'asse x_2 poco sopra l'origine, e la retta nera in grassetto a massimo margine (per lo stesso perno), con doppia freccia perpendicolare tra il cerchio rosso e il quadrato blu più vicini e due brevi segmenti paralleli al confine che segnano i bordi del margine.",
+      "region": "centro della pagina, tra 'In the context of linear classifiers...' e 'However, the bold hyperplane...'",
+      "concepts": ["c06", "c07", "c08"],
+      "importance": 3
+    },
+    {
+      "id": "fig02",
+      "doc": "part2",
+      "page": 48,
+      "description": "Iperpiano canonico: retta continua w^T x + w0 = 0, rette tratteggiate w^T x + w0 = 1 e w^T x + w0 = -1 con le etichette delle equazioni in alto a sinistra, vettore w normale al confine che parte dall'origine verso i quadrati blu, doppia freccia etichettata 2/||w|| tra le rette tratteggiate. Stesso insieme di 21 punti della figura di pag. 46 (12 cerchi, 9 quadrati); esattamente tre punti appoggiati sulle rette tratteggiate: due quadrati blu sulla retta +1 (in alto vicino all'asse x_2 e appena sopra l'asse x_1) e un cerchio rosso sulla retta -1. Nel disegno la retta -1 passa praticamente per l'origine (w0 circa -1).",
+      "region": "metà superiore della pagina, sopra 'Theorem: Margin Error Bound'",
+      "concepts": ["c15", "c17", "c18"],
+      "importance": 3
+    },
+    {
+      "id": "fig03",
+      "doc": "part2",
+      "page": 55,
+      "description": "Support vectors in evidenza: confine, rette tratteggiate di margine e vettore w (dall'origine, che giace praticamente sulla retta -1); solo due quadrati blu (retta +1: in alto a sinistra e appena sopra l'asse x_1) e un cerchio rosso (retta -1) sono a colori pieni, gli altri 18 punti (11 cerchi e 7 quadrati) sono sbiaditi: 3 support vectors su 21 punti (sparsità).",
+      "region": "metà superiore della pagina, tra 'SVMs are therefore sparse models' e 'From the KKT conditions'",
+      "concepts": ["c70", "c72", "c73", "c74"],
+      "importance": 3
+    }
+  ],
+  "widgets": [
+    {
+      "id": "p08-fabbrica-dei-separatori",
+      "title": "Quale retta mettere in produzione? La fabbrica dei separatori",
+      "concepts": ["c01", "c06", "c07", "c08"],
+      "scenario": "pesce",
+      "realExample": "Nastro trasportatore dell'impianto di confezionamento: 24 pesci già etichettati (12 salmoni, y = -1, più scuri e stretti; 12 spigole, y = +1, più chiare e larghe) descritti da luminosità e larghezza (dati sintetici ispirati all'esempio del Cap. 1). Il classificatore lineare deve smistare i pesci futuri: tra le infinite rette che separano perfettamente il training set, quale mettere in produzione?",
+      "storyboard": [
+        "Stato iniziale: piano luminosità (asse x_1) contro larghezza (asse x_2), come nella figura di pag. 46: salmoni come cerchi rossi in basso a sinistra, spigole come quadrati blu in alto a destra. Nessuna retta.",
+        "Premendo 'Genera separatori' nasce dal centro dei dati un ventaglio di 15 rette grigie sottili (stagger di 60 ms), ciascuna con un'etichetta 'errori di training = 0': tutte separano perfettamente.",
+        "Passando il mouse su una retta questa si ispessisce e partono due frecce perpendicolari verso il salmone e la spigola più vicini: le etichette mostrano d_- e d_+ (distanze) e la loro somma, il margine della retta; le altre rette si attenuano.",
+        "Lo studente trascina e ruota una propria retta con due maniglie: una barra orizzontale mostra d_+ + d_- in tempo reale; se la retta smette di separare diventa tratteggiata rossa, gli esempi sbagliati lampeggiano e il margine non viene calcolato.",
+        "Pulsante 'Mostra il massimo margine': la retta nera in grassetto della figura compare in 600 ms con la doppia freccia verso i punti più vicini; le rette grigie sbiadiscono e un badge dice 'SVM: classificatore lineare a massimo margine (large margin classifier)'. Il punteggio confronta il margine della retta dello studente con quello ottimo."
+      ],
+      "interactions": ["pulsante 'Genera separatori' (nuovo seed a ogni clic, 15 rette)", "hover sulle rette del ventaglio (evidenziazione in 150 ms)", "trascinare le due maniglie della propria retta entro il riquadro (luminosità e larghezza normalizzate da 0 a 10)", "pulsante 'Mostra il massimo margine'", "pulsante 'Nuovo lotto' (24 nuovi pesci separabili)"],
+      "visual": "Scatter 2D con cerchi rossi e quadrati blu, rette grigie sottili, retta dello studente in arancio, retta SVM nera in grassetto, frecce perpendicolari con quote numeriche d_+ e d_-, barra del margine e contatore degli errori di training. Etichetta 'dati sintetici ispirati all'impianto di confezionamento'.",
+      "aha": "Separare correttamente non basta: tra infinite rette a zero errori l'SVM sceglie quella più lontana dagli esempi più vicini di entrambe le classi.",
+      "formulasShown": ["\\mathbf{w}^T\\mathbf{x} + w_0 = 0", "\\text{margine} = d_+ + d_-", "d_\\pm = \\min_{\\mathbf{x}_i \\in \\text{classe } \\pm} \\frac{|\\mathbf{w}^T\\mathbf{x}_i + w_0|}{\\|\\mathbf{w}\\|}", "d_+ = \\frac{|0.6\\cdot 6.2 + 0.8\\cdot 5.1 - 7.0|}{\\|(0.6,\\, 0.8)\\|} = 0.80"],
+      "challenge": "Avvicinati al margine massimo trascinando la retta: punteggio = tuo margine / margine SVM; sopra il 95% la retta in grassetto si sblocca da sola.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p08-scossa-di-rumore",
+      "title": "Scuoti i pesci: quale confine regge al rumore?",
+      "concepts": ["c02", "c09"],
+      "scenario": "pesce",
+      "realExample": "I sensori ottici del nastro misurano luminosità e larghezza con rumore (riflessi, pesce bagnato, posizione sul nastro). Un pesce nuovo assomiglia a uno di training ma è spostato di poco: un confine che sfiora i dati sbaglia, quello a massimo margine resiste finché lo spostamento è più piccolo del margine. Dati sintetici: 24 pesci separabili, confine A a massimo margine con margine geometrico 0.90, confine B separatore con margine 0.25.",
+      "storyboard": [
+        "Stato iniziale: piano luminosità-larghezza con i 24 pesci e due confini separatori a confronto: A a massimo margine (nero, fascia grigia, quota 'margine 0.90') e B che sfiora due spigole (grigio tratteggiato, quota 'margine 0.25'). Entrambi hanno zero errori di training.",
+        "Modalità 'rumore limitato' (predefinita): con lo slider r attorno a ogni pesce si disegna un disco di raggio r, cioè tutte le posizioni di un pesce simile. Un confine resta corretto per ogni perturbazione finché nessun disco lo attraversa: a r = 0.25 i dischi delle due spigole critiche toccano B, diventano arancio e B lampeggia 'non più affidabile' (300 ms); A resiste fino a r = 0.90, quando si accendono i dischi dei suoi punti più vicini.",
+        "Un contatore 'r massimo tollerato' per ciascun confine coincide con il suo margine geometrico; sotto compare la formula con i numeri del punto critico.",
+        "Modalità 'rumore gaussiano': slider sigma; premendo Play ogni pesce genera 30 fantasmi gaussiani a ondate di 200 ms; i fantasmi classificati male da A o da B si colorano di arancio e due contatori mostrano l'errore percentuale di A e di B. Il grafico errore contro sigma si disegna in tempo reale con due curve (A nera, B grigia): per sigma piccolo B inizia a sbagliare molto prima di A.",
+        "Chiusura: badge 'margine grande = meno sensibile a piccole perturbazioni o rumore (greater robustness to variations in the data)'."
+      ],
+      "interactions": ["toggle 'rumore limitato' / 'rumore gaussiano'", "slider r da 0 a 1.5 (passo 0.05)", "slider sigma da 0 a 1.5 (passo 0.05)", "Play / Passo delle ondate di fantasmi", "trascinare la retta B (se smette di separare torna alla posizione precedente in 200 ms)", "pulsante 'Nuovi fantasmi' (nuovo seed)"],
+      "visual": "Scatter con i pesci originali pieni, dischi di raggio r semitrasparenti (arancio quando toccano un confine) oppure fantasmi semitrasparenti con errori in arancio; due confini con le loro fasce e quote del margine; contatori 'r massimo tollerato' ed errore percentuale; piccolo grafico errore contro sigma con due curve.",
+      "aha": "Il margine è un cuscinetto: finché il rumore sposta i punti meno del margine la classificazione non cambia, quindi il confine a massimo margine è il più robusto.",
+      "formulasShown": ["r < \\min_i \\frac{y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right)}{\\|\\mathbf{w}\\|} \\;\\Rightarrow\\; \\text{nessun errore}", "r_{max}(A) = 0.90, \\qquad r_{max}(B) = 0.25", "\\text{errore}(\\sigma) = \\frac{\\#\\text{fantasmi mal classificati}}{\\#\\text{fantasmi}}"],
+      "challenge": "Trascina B per ottenere un confine separatore che tolleri un raggio r maggiore di quello di A: il contatore 'r massimo tollerato' non supera mai 0.90, perché r massimo tollerato è il margine geometrico e A è il confine che lo massimizza.",
+      "size": "M",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "p08-solleva-e-separa",
+      "title": "Solleva e separa: anteprima delle kernel machines",
+      "concepts": ["c05"],
+      "scenario": "sensori",
+      "realExample": "Sensore di temperatura di una cella frigorifera industriale: 20 letture sintetiche, 12 normali tra 2 e 6 gradi (y = -1) e 8 anomalie, 4 sotto 0.5 gradi e 4 sopra 7.5 gradi (y = +1). Su una sola feature nessuna soglia (iperpiano in 1D) separa normali e anomalie; centrando x = T - 4 e mappando x in (x, x^2) il problema diventa separabile linearmente.",
+      "storyboard": [
+        "Asse 1D delle temperature (da -2 a 10 gradi) con le 20 letture: normali (blu) al centro, anomalie (rosse) ai due lati. Una soglia trascinabile mostra in un contatore gli errori: qualunque soglia sbaglia almeno un gruppo intero di anomalie (almeno 4 errori).",
+        "Pulsante 'Solleva': ogni punto sale verticalmente fino all'altezza x^2, con x = T - 4 (800 ms, easing out), disegnando una parabola: ora i punti vivono nel piano (x, x^2); le normali stanno sotto x^2 = 4, le anomalie sopra x^2 = 12.25.",
+        "Nel nuovo piano compare (600 ms) la retta orizzontale a massimo margine x^2 = 8.125 con le rette tratteggiate x^2 = 4 e x^2 = 12.25 e la fascia: i blu stanno sotto, i rossi sopra; accanto il valore f(x) della lettura selezionata.",
+        "Pulsante 'Riproietta': la retta ricade sull'asse 1D (600 ms) come due soglie simmetriche x = -2.85 e x = +2.85, cioè T = 1.15 e T = 6.85 gradi: il classificatore lineare nello spazio sollevato è non lineare nello spazio originale.",
+        "Nota finale: 'le kernel machines fanno questa mappa implicitamente, senza calcolare le nuove coordinate (modulo p10)'."
+      ],
+      "interactions": ["trascinare la soglia 1D (da -2 a 10 gradi)", "pulsanti 'Solleva' e 'Riproietta'", "slider del centro dell'intervallo normale da 3 a 7 gradi (larghezza 4 gradi fissa, anomalie oltre 1.5 gradi dai bordi; il centraggio x = T - 4 resta fisso)", "clic su una lettura per vederne le coordinate (x, x^2) e f(x)"],
+      "visual": "Asse 1D con punti colorati, animazione verticale verso la parabola, piano 2D con retta e fascia di margine, doppia soglia riproiettata; formula della mappa aggiornata con i valori del punto selezionato.",
+      "aha": "Un problema non separabile diventa separabile in uno spazio di dimensione più alta: la SVM resta lineare lì e diventa non lineare qui.",
+      "formulasShown": ["\\phi(x) = (x, x^2), \\qquad x = T - 4", "f(x) = w_1 x + w_2 x^2 + w_0", "f(x) = \\frac{x^2 - 8.125}{4.125}, \\qquad T = 8: \\;\\; f(4) = \\frac{16 - 8.125}{4.125} = 1.91"],
+      "challenge": "Sposta l'intervallo normale fuori centro: con (x, x^2) la separazione riesce ancora? Quale dei pesi deve diventare diverso da zero? (Sì: le letture normali restano un arco contiguo della parabola e una retta inclinata le separa; deve diventare diverso da zero w_1.)",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p08-segno-della-fiducia",
+      "title": "y f(x): segno giusto e fiducia minima",
+      "concepts": ["c10", "c11"],
+      "scenario": "banca",
+      "realExample": "Antifrode su carta di credito: ogni transazione è descritta da importo normalizzato e numero di transazioni nell'ultima ora; y = +1 frode, y = -1 legittima (dati sintetici). f(x) è il punteggio del classificatore lineare; y f(x) dice se il segno è giusto e quanto il modello è sicuro. Retta iniziale: w = (1.5, 1.0), w0 = -2.5.",
+      "storyboard": [
+        "Piano con 16 transazioni e una retta w^T x + w0 = 0 regolabile; a destra una tabella con colonne y, f(x), y f(x) per ogni transazione.",
+        "Ogni punto ha un piccolo termometro proporzionale a y f(x): verde verso l'alto se positivo (classificato bene), rosso verso il basso se negativo.",
+        "Trascinando la retta i valori scorrono in tempo reale; la riga con il minimo di y f(x) si illumina e rho = min y f(x) compare in grande sopra il grafico.",
+        "Se una transazione passa dalla parte sbagliata il suo y f(x) diventa negativo, rho < 0 e compare l'avviso 'la condizione y f(x) > 0 non vale per tutti'.",
+        "Pulsante 'Ordina': le righe si riordinano per y f(x) (FLIP 400 ms) e la prima viene etichettata 'previsione meno sicura (least confident prediction)'."
+      ],
+      "interactions": ["trascinare la retta (traslazione) e ruotarla con una maniglia (angolo da 0 a 360 gradi, ||w|| resta 1.80)", "pulsante 'Ordina'", "clic su una transazione per vedere il calcolo di y f(x) con i numeri"],
+      "visual": "Scatter con cerchi (legittime) e quadrati (frodi), termometri verdi/rossi per punto, tabella sincronizzata, valore di rho in grande con la riga responsabile evidenziata.",
+      "aha": "y f(x) unisce correttezza (il segno) e fiducia (la grandezza); il margine di confidenza del classificatore è il caso peggiore sul training set.",
+      "formulasShown": ["y\\,f(\\mathbf{x}) > 0", "\\rho = \\min_{(\\mathbf{x},y)\\in D} y\\,f(\\mathbf{x})", "y\\,f(\\mathbf{x}) = (+1)\\,(1.5\\cdot 1.2 + 1.0\\cdot 1.4 - 2.5) = 0.70"],
+      "challenge": "Senza cambiare la lunghezza di w, sposta e ruota la retta per rendere rho il più grande possibile.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p08-scala-senza-cambiare",
+      "title": "Moltiplica w per alpha: il confine non si muove",
+      "concepts": ["c12", "c13", "c14"],
+      "scenario": "banca",
+      "realExample": "Stesso antifrode: il modello può essere scritto con infinite coppie (w, w0) proporzionali. Chi valuta il modello deve usare una misura che non si lasci ingannare dalla scala: il margine geometrico. Dati sintetici.",
+      "storyboard": [
+        "Scena antifrode con la retta fissa; uno slider alpha da 0.1 a 10 (scala logaritmica) moltiplica w e w0.",
+        "Tre contatori: ||alpha w||, rho(alpha) = min y f(x) e rho/||w||. Muovendo alpha i primi due crescono linearmente mentre il terzo resta fermo; la retta non si sposta di un pixel.",
+        "Le curve di livello f(x) = +1, -1, +2, -2 (linee sottili) si avvicinano o si allontanano dal confine: i valori di f dipendono dalla scala, la geometria no.",
+        "Seconda modalità: una manopola ruota la direzione di w; ora cambiano il confine e anche rho/||w||, e un grafico traccia rho/||w|| contro l'angolo, con il massimo evidenziato solo se tutti i punti restano corretti.",
+        "Messaggio finale: 'massimizzare rho/||w|| con y f(x) > 0 per tutti significa cercare la direzione (e la posizione) migliore, non la scala'."
+      ],
+      "interactions": ["slider alpha di scala da 0.1 a 10 (scala logaritmica)", "manopola della direzione di w (angolo da 0 a 360 gradi, passo 1 grado)", "slider della traslazione w0 da -5 a 5 (passo 0.05)"],
+      "visual": "Scatter con confine e curve di livello tratteggiate, tre contatori numerici animati, grafico rho/||w|| contro angolo con cursore dell'angolo corrente. Un'etichetta ricorda che qui alpha è una costante di scala, non un moltiplicatore di Lagrange.",
+      "aha": "Il margine funzionale si gonfia a piacere moltiplicando w; quello geometrico no: per questo si massimizza rho/||w||, e resta un grado di libertà da fissare.",
+      "formulasShown": ["\\frac{\\rho}{\\|\\mathbf{w}\\|} = \\min_{(\\mathbf{x},y)\\in D} \\frac{y f(\\mathbf{x})}{\\|\\mathbf{w}\\|}", "\\alpha\\left(\\mathbf{w}^T\\mathbf{x} + w_0\\right) = 0 \\quad \\forall \\alpha \\neq 0", "\\alpha = 3: \\;\\; \\|3\\mathbf{w}\\| = 3\\|\\mathbf{w}\\|, \\;\\; \\rho(3) = 3\\rho, \\;\\; \\frac{3\\rho}{3\\|\\mathbf{w}\\|} = \\frac{\\rho}{\\|\\mathbf{w}\\|}"],
+      "challenge": "Trova con manopola e traslazione la retta che massimizza rho/||w|| (tolleranza 2 gradi): poi confrontala con quella SVM.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p08-iperpiano-canonico",
+      "title": "Fissa rho = 1: nasce l'iperpiano canonico",
+      "concepts": ["c15", "c16", "c17", "c18"],
+      "scenario": "pesce",
+      "realExample": "Il classificatore del pesce ha confine fissato ma scala di (w, w0) libera. Per poter confrontare modelli e scrivere il problema di ottimizzazione si sceglie la taratura canonica: la spigola e il salmone più vicini devono avere f = +1 e -1. Dati sintetici: spigole (y = +1) in (3, 3), (5, 2), (4, 4), (5, 4); salmoni (y = -1) in (1, 1), (0, 1), (1, 0), (0, 0); spigola più vicina (3, 3), salmone più vicino (1, 1).",
+      "storyboard": [
+        "Ricostruzione della figura di pag. 48: confine w^T x + w0 = 0 continuo, rette tratteggiate w^T x + w0 = +1 e -1, vettore w normale al confine. Si parte da w = (2, 2), w0 = -8.",
+        "Con lo slider alpha di scala le rette tratteggiate si avvicinano o si allontanano dal confine (il luogo f = 1 dipende dalla scala) mentre il confine resta fermo; rho = min y f(x) scorre (4 all'inizio).",
+        "Pulsante 'Rendi canonico': alpha si porta a 1/rho = 0.25 in 600 ms, finché le rette tratteggiate toccano esattamente la spigola e il salmone più vicini, che si accendono; w diventa (0.5, 0.5) e w0 = -2.",
+        "Compaiono le quote: distanza confine-retta tratteggiata = 1/||w|| = 1.414 e fascia completa = 2/||w|| = 2.828, come nella figura.",
+        "Contatore dei gradi di libertà: 'prima: infinite (w, w0) equivalenti; dopo: una sola'. Trascinando il confine (rotazione, traslazione) la forma canonica si ricalcola in tempo reale."
+      ],
+      "interactions": ["slider alpha di scala da 0.05 a 2 (scala logaritmica)", "pulsante 'Rendi canonico'", "trascinare il confine (rotazione e traslazione)", "toggle 'mostra 2/||w||'"],
+      "visual": "Scatter del pesce, confine continuo, rette tratteggiate, vettore w, quote 1/||w|| e 2/||w|| con valori numerici, pannello con w, w0, rho e ||w|| aggiornati live; i punti sulle rette tratteggiate evidenziati.",
+      "aha": "Fissare rho = 1 non cambia il confine: sceglie solo la taratura di w, così il margine diventa 1/||w|| e massimizzarlo vuol dire accorciare w.",
+      "formulasShown": ["\\rho = \\min_{(\\mathbf{x},y)\\in D} y f(\\mathbf{x}) = 1", "\\frac{\\rho}{\\|\\mathbf{w}\\|} = \\frac{1}{\\|\\mathbf{w}\\|}", "\\mathbf{w}^T\\mathbf{x} + w_0 = \\pm 1", "\\rho = \\min(4, 6, 8, 10, 4, 6, 6, 8) = 4 \\;\\Rightarrow\\; \\alpha = \\tfrac{1}{4}: \\;\\; \\mathbf{w} = (0.5, 0.5), \\; w_0 = -2, \\; \\frac{1}{\\|\\mathbf{w}\\|} = 1.414"],
+      "challenge": "Dato w = (2, 2), w0 = -8, prevedi il fattore che rende canonico l'iperpiano e il margine risultante, poi verifica con il pulsante.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p08-prezzo-del-margine",
+      "title": "Il prezzo del margine: nu contro 1/rho^2",
+      "concepts": ["c19", "c20", "c21", "c24", "c80"],
+      "scenario": "cifre",
+      "realExample": "Classificatore lineare di cifre scritte a mano 0 contro 1 (immagini 28x28 riassunte in due feature normalizzate, intensità media e larghezza del tratto, con ||x|| <= R = 1). Si usano m = 2000 cifre di training con classi leggermente sovrapposte e un w fissato con ||w|| = 1. Il teorema dà un limite superiore all'errore sulle cifre future; lo studente sceglie la soglia di margine rho e vede il compromesso tra nu e termine di complessità. Dati sintetici; la costante universale c è posta a 1 solo a scopo illustrativo.",
+      "storyboard": [
+        "Pannello sinistro: le 2000 cifre di training nel piano (cerchi per gli 0, croci per gli 1), il confine sign(w^T x) passante per l'origine (senza bias, come nel teorema) e una fascia di semiampiezza rho/||w|| attorno al confine.",
+        "Slider rho/||w||: la fascia si allarga in tempo reale; i punti con margine y_i w^T x_i/||w|| minore di rho/||w|| (dentro la fascia o dalla parte sbagliata) si colorano d'arancio con una transizione di 150 ms e il contatore nu = frazione di margin errors cresce.",
+        "Pannello destro: barra impilata del bound = nu (arancio) + termine di complessità sqrt(c/m (R^2 Lambda^2/rho^2 ln^2 m + ln 1/delta)) (viola), aggiornata a ogni movimento dello slider. Allargando la fascia la parte viola si accorcia e quella arancio cresce; la zona sopra 1 è ombreggiata come 'bound non informativo'.",
+        "Sotto la barra si disegna punto per punto la curva bound(rho) mentre si muove lo slider: forma a U. Il pulsante 'Mostra il minimo' completa la curva su tutta la griglia (800 ms) e marca il minimo con un pallino dorato.",
+        "Pannello delle ipotesi sempre visibile: f(x) = sign(w^T x), ||w|| <= Lambda, ||x|| <= R, per qualunque P, con probabilità almeno 1 - delta. Gli slider delta e Lambda mostrano che delta entra solo in ln(1/delta) e Lambda moltiplica 1/rho.",
+        "Pulsante 'rho = margine di confidenza' (aggiunto dal revisore): il widget passa a un campione separabile delle stesse cifre (tolte le cifre ambigue) e lo slider salta al valore rho = min y_i w^T x_i del classificatore; la fascia tocca esattamente i punti più vicini, nessun punto è arancio e nu = 0. Un cartellino spiega che il rho del teorema è una soglia scelta, quello di pag. 47 un valore calcolato, e che con la forma canonica questa soglia vale 1: il bound dipende allora solo da R^2 Lambda^2, cioè dalla norma dei pesi."
+      ],
+      "interactions": ["slider della semiampiezza rho/||w|| da 0.02 a 0.6 (passo 0.01)", "slider delta da 0.01 a 0.2", "slider Lambda da ||w|| a 3||w||", "pulsante 'Mostra il minimo'", "pulsante 'rho = margine di confidenza' (campione separabile, nu si azzera)", "hover sulla barra per vedere la formula con i numeri sostituiti"],
+      "visual": "Canvas con 2000 punti, fascia di margine semitrasparente, margin errors in arancio; barra impilata nu + complessità con la zona 'non informativo' sopra 1; curva a U del bound contro rho con il minimo dorato; pannello delle ipotesi con i valori correnti di R, Lambda, m, delta, c.",
+      "aha": "Un margine più largo paga in nu (più punti dentro la fascia) ma riduce il termine di complessità come 1/rho^2: il bound premia i classificatori che separano con ampio margine quasi tutti i punti.",
+      "formulasShown": ["\\nu + \\sqrt{\\frac{c}{m}\\left(\\frac{R^2\\Lambda^2}{\\rho^2}\\ln^2(m) + \\ln\\left(\\frac{1}{\\delta}\\right)\\right)}", "0.06 + \\sqrt{\\frac{1}{2000}\\left(\\frac{1^2\\cdot 1^2}{0.3^2}\\ln^2(2000) + \\ln(20)\\right)} = 0.06 + 0.568 = 0.628"],
+      "challenge": "Trova rho che minimizza il bound; poi porta Lambda da 2||w|| a ||w|| e prevedi in che direzione si sposterà l'ottimo prima di verificarlo. (Verso rho più piccoli: il termine di complessità pesa meno e conviene una fascia più stretta con meno margin errors.)",
+      "size": "L",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "p08-bound-e-dati",
+      "title": "Più esempi e meno margin errors: il bound si stringe",
+      "concepts": ["c04", "c22", "c23"],
+      "scenario": "cifre",
+      "realExample": "Lo stesso classificatore di cifre 0 contro 1: quanti esempi etichettati servono perché la garanzia formale diventi utile? Si confronta il bound con l'errore reale misurato su cifre di test (dati sintetici, c = 1 illustrativa).",
+      "storyboard": [
+        "Asse orizzontale logaritmico di m (da 100 a 10^7), asse verticale del bound. La curva sqrt(ln^2(m)/m) si disegna da sinistra a destra in 1.2 s.",
+        "Slider m: il termine di complessità scende (circa 0.22 per m = 1000, 0.036 per m = 100000 prima dei fattori R Lambda/rho); per m piccolo il bound supera 1 e la zona sopra 1 è ombreggiata come 'bound non informativo'.",
+        "Slider nu (0-20%): la curva trasla rigidamente verso l'alto di nu, con la didascalia 'nu più piccolo = bound più stretto'.",
+        "Pulsante 'Allena su m cifre' ripetuto 20 volte: pallini dell'errore reale di test compaiono sotto la curva del bound, a confermare che è un limite superiore (con probabilità almeno 1 - delta).",
+        "Badge finale: 'garanzia formale di affidabilità (generalization guarantee): vale per qualunque distribuzione P'."
+      ],
+      "interactions": ["slider m da 100 a 10^7 (scala log)", "slider nu da 0 a 20%", "slider R Lambda/rho da 1 a 10", "slider delta da 0.01 a 0.2", "pulsante 'Allena su m cifre' (Monte Carlo, 20 ripetizioni da 150 ms)"],
+      "visual": "Grafico log-lineare con la curva del bound, fascia 'non informativo' sopra 1, pallini Monte Carlo dell'errore di test, etichette numeriche dei termini.",
+      "aha": "Il bound scende quasi come 1/sqrt(m) (a meno del logaritmo) e trasla con nu: più dati e meno margin errors danno garanzie migliori, e la garanzia vale qualunque sia la distribuzione.",
+      "formulasShown": ["\\sqrt{\\frac{\\ln^2(m)}{m}}", "\\nu + \\sqrt{\\frac{c}{m}\\left(\\frac{R^2\\Lambda^2}{\\rho^2}\\ln^2(m) + \\ln\\left(\\frac{1}{\\delta}\\right)\\right)}", "m = 1000: \\;\\; \\sqrt{\\frac{\\ln^2(1000)}{1000}} = \\sqrt{\\frac{47.7}{1000}} = 0.218"],
+      "challenge": "Con R Lambda/rho = 3, delta = 0.05 e c = 1, quanti esempi servono perché il termine di complessità scenda sotto 0.1? (circa 1.24 * 10^5)",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p08-norma-contro-margine",
+      "title": "Stringi w, allarghi il margine",
+      "concepts": ["c25", "c29", "c30", "c35"],
+      "scenario": "pesce",
+      "realExample": "Dodici candidati classificatori del pesce, tutti separatori e tutti già in forma canonica (rho = 1). Per scegliere il migliore non serve misurare distanze: basta guardare la lunghezza di w. Dati sintetici.",
+      "storyboard": [
+        "Sul piano del pesce 12 rette candidate in forma canonica; accanto un grafico con ||w|| in ascissa e margine 1/||w|| in ordinata: ogni candidato è un punto sull'iperbole.",
+        "Cliccando un candidato si evidenzia la sua retta con la fascia 2/||w|| nel piano dei dati e il suo punto sull'iperbole.",
+        "Toggle dell'obiettivo: ||w||, ||w||^2 o 1/2 ||w||^2. La colonna dei valori cambia ma la classifica, riordinata con FLIP (400 ms), resta identica: il primo è sempre lo stesso candidato.",
+        "Barra accanto 'margine al quadrato' 1/||w||^2: minimizzare ||w||^2 equivale a massimizzarla.",
+        "Pulsante 'Ottimo': appare il separatore SVM con ||w|| minimo e margine massimo, il punto più alto dell'iperbole."
+      ],
+      "interactions": ["clic sui candidati", "toggle dell'obiettivo (||w||, ||w||^2, 1/2 ||w||^2)", "pulsante 'Ottimo'", "trascinare un candidato entro il riquadro (resta separatore; la forma canonica si ricalcola)"],
+      "visual": "Piano dei dati con rette e fasce, grafico iperbole 1/||w||, tabella classifica animata, barra del margine al quadrato.",
+      "aha": "Con rho = 1 margine e norma sono due facce della stessa medaglia; elevare al quadrato (monotono sui non negativi) non cambia il vincitore.",
+      "formulasShown": ["\\max \\frac{1}{\\|\\mathbf{w}\\|} \\iff \\min \\|\\mathbf{w}\\| \\iff \\min \\frac{1}{2}\\|\\mathbf{w}\\|^2", "\\min \\|\\mathbf{w}\\|^2 \\iff \\max \\frac{1}{\\|\\mathbf{w}\\|^2}", "\\|\\mathbf{w}\\| = 1.8: \\;\\; \\frac{1}{\\|\\mathbf{w}\\|} = 0.556, \\;\\; \\frac{1}{2}\\|\\mathbf{w}\\|^2 = 1.62, \\;\\; \\frac{1}{\\|\\mathbf{w}\\|^2} = 0.309"],
+      "challenge": "Ordina a mano i 12 candidati dal margine più grande al più piccolo guardando solo ||w||.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p08-large-margin-in-gara",
+      "title": "Gara di generalizzazione: massimo margine contro separatore qualsiasi",
+      "concepts": ["c26", "c27"],
+      "scenario": "telerilevamento",
+      "realExample": "Classificazione di pixel da drone (UAV) in acqua contro vegetazione con due bande (rosso e vicino infrarosso, NIR). Con pochi pixel etichettati un perceptron trova una qualunque retta separatrice, l'SVM quella a massimo margine: quale sbaglia meno sui pixel nuovi? Dati sintetici.",
+      "storyboard": [
+        "Mosaico sintetico 40x40 di acqua (blu scuro) e vegetazione (verde); con lo slider m si estraggono m pixel etichettati (10-200) che volano nel piano (rosso, NIR).",
+        "Si allenano un perceptron (retta arancio) e l'SVM (retta nera con fascia); la mappa viene riclassificata e i pixel sbagliati del metodo selezionato diventano magenta.",
+        "Pulsante 'Ripeti 50 volte': a ogni ripetizione (100 ms) si ricampionano i pixel; due istogrammi dell'errore sui pixel di test si accumulano (arancio perceptron, nero SVM).",
+        "Grafico riassuntivo: errore medio con barra di deviazione standard per i due metodi al variare di m, costruito punto per punto.",
+        "Didascalia: 'il bound promette di più ai classificatori a largo margine e a chi ha più dati': di solito la curva SVM sta sotto e le due curve si avvicinano per m grande."
+      ],
+      "interactions": ["slider m da 10 a 200 pixel etichettati", "selettore del metodo mostrato sulla mappa", "pulsante 'Ripeti 50 volte'", "pulsante 'Nuovo mosaico'"],
+      "visual": "Mappa raster, scatter (rosso, NIR) con le due rette, istogrammi sovrapposti degli errori, grafico errore medio contro m con barre d'errore.",
+      "aha": "La garanzia probabilistica diventa visibile: margine più grande e più dati danno in media errori di test più bassi e meno variabili.",
+      "formulasShown": ["\\hat{E}_{test} = \\frac{\\#\\text{pixel sbagliati}}{\\#\\text{pixel di test}}", "\\hat{E}_{test} = \\frac{37}{1500} = 2.5\\%"],
+      "challenge": "Trova il valore di m oltre il quale le due curve di errore medio quasi si sovrappongono.",
+      "size": "L",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "p08-semaforo-dei-vincoli",
+      "title": "Il semaforo dei vincoli y_i(w^T x_i + w0) >= 1",
+      "concepts": ["c28", "c31", "c34"],
+      "scenario": "pesce",
+      "realExample": "Sedici pesci del nastro: l'hard margin SVM chiede che ogni pesce sia non solo dalla parte giusta ma anche fuori dalla fascia di margine. Ogni pesce è un vincolo del problema primale. Dati sintetici.",
+      "storyboard": [
+        "Piano con 16 pesci; ogni punto ha un semaforo: verde se y_i f(x_i) >= 1, giallo se 0 < y_i f(x_i) < 1 (corretto ma dentro la fascia), rosso se y_i f(x_i) <= 0 (sbagliato).",
+        "L'utente trascina la retta e cambia la scala di w con uno slider: i semafori cambiano colore in tempo reale e il contatore 'vincoli soddisfatti k/16' si aggiorna.",
+        "Riquadro del problema primale: min 1/2 ||w||^2 sopra 16 righe di vincoli, ciascuna con il valore numerico y_i(w^T x_i + w0) che si spunta o si accende di rosso in sincronia col semaforo.",
+        "Quando tutti i semafori sono verdi compare il valore dell'obiettivo 1/2 ||w||^2 e il bottone 'Accorcia w', che riduce ||w|| finché un vincolo diventa attivo (= 1): i pesci che si appoggiano alle rette +1/-1 lampeggiano.",
+        "Messaggio: 'tutti verdi = tutti classificati correttamente con margine almeno 1: forma canonica'."
+      ],
+      "interactions": ["trascinare e ruotare la retta", "slider di scala di w da 0.2 a 3", "pulsante 'Accorcia w' (riduzione animata di ||w|| in 1 s)", "clic su una riga dei vincoli per evidenziare il pesce"],
+      "visual": "Scatter con semafori, rette +1/-1 tratteggiate, pannello del problema primale con valori live, obiettivo 1/2||w||^2 in grande.",
+      "aha": "Il vincolo >= 1 chiede più della correttezza; e siccome ||w|| si vuole piccolo, qualche vincolo finisce per valere esattamente 1.",
+      "formulasShown": ["\\min_{\\mathbf{w}, w_0} \\frac{1}{2}\\|\\mathbf{w}\\|^2", "y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) \\ge 1 \\quad \\forall (\\mathbf{x}_i, y_i) \\in D", "y_7\\left(\\mathbf{w}^T\\mathbf{x}_7 + w_0\\right) = (-1)\\,(0.5\\cdot 1 + 0.5\\cdot 0 - 2) = 1.5 \\ge 1"],
+      "challenge": "Rendi verdi tutti i semafori con il valore di 1/2 ||w||^2 più piccolo possibile (entro il 5% dell'ottimo).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p08-mezzo-e-quadrato",
+      "title": "Perché ||w||^2 e perché 1/2",
+      "concepts": ["c30", "c32", "c33"],
+      "scenario": "pesce",
+      "realExample": "Addestrare l'SVM del pesce con un solver richiede un obiettivo comodo da derivare. Si confrontano ||w||, ||w||^2 e 1/2 ||w||^2 lungo la direzione ottima dei pesi: stesso minimo ammissibile, calcoli diversi. Dati sintetici.",
+      "storyboard": [
+        "Tre curve sovrapposte in funzione di t = ||w||: t, t^2 e t^2/2, con la zona ammissibile t >= t_min imposta dai vincoli (t_min = 1.2 in questo esempio) evidenziata.",
+        "Un cursore scorre lungo t: i tre valori si aggiornano e il minimo ammissibile cade per tutte nello stesso t_min (linea verticale).",
+        "Toggle 'derivata': appaiono le derivate 1, 2t e t; didascalia 'con 1/2 il gradiente di 1/2||w||^2 è esattamente w'.",
+        "Vista 2D sul piano dei pesi (w_1, w_2): superficie a paraboloide 1/2(w_1^2 + w_2^2) con contorni circolari, contro il cono ||w||: la prima è quadratica e liscia, quindi il problema è di ottimizzazione quadratica.",
+        "Riepilogo: stesso minimizzatore, derivate più semplici, forma standard per la programmazione quadratica."
+      ],
+      "interactions": ["cursore su t da 0 a 3 (passo 0.01)", "toggle 'derivata'", "rotazione della vista 3D del paraboloide (trascinamento orizzontale, solo azimut)", "slider k da 0.1 a 10 davanti all'obiettivo (k ||w||^2)"],
+      "visual": "Grafico 1D con tre curve colorate e zona ammissibile, derivate tratteggiate, vista 3D o a curve di livello del paraboloide.",
+      "aha": "Moltiplicare per una costante positiva o elevare al quadrato una quantità non negativa non sposta il minimo: si sceglie la forma più comoda da derivare.",
+      "formulasShown": ["\\frac{\\partial}{\\partial \\mathbf{w}}\\frac{1}{2}\\|\\mathbf{w}\\|^2 = \\mathbf{w}", "\\arg\\min \\|\\mathbf{w}\\| = \\arg\\min \\|\\mathbf{w}\\|^2 = \\arg\\min \\frac{1}{2}\\|\\mathbf{w}\\|^2", "t = 1.5: \\;\\; t = 1.5, \\;\\; t^2 = 2.25, \\;\\; \\tfrac{1}{2}t^2 = 1.125"],
+      "challenge": "Prevedi: se l'obiettivo fosse 5||w||^2 il w ottimo cambierebbe? E se fosse sqrt(||w||)? Verifica con lo slider k.",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p08-regione-ammissibile",
+      "title": "Il punto ammissibile più vicino all'origine",
+      "concepts": ["c31", "c33", "c36"],
+      "scenario": "telerilevamento",
+      "realExample": "Sei pixel di un'immagine da satellite ridotti a due bande standardizzate (rosso, NIR): acqua (y = -1) in (-1, -1), (-2, -1), (-1, -3); vegetazione (y = +1) in (1, 1), (3, 1), (1, 2) (dati sintetici). Invece del piano dei dati si guarda lo spazio dei pesi (w_1, w_2): ogni pixel di training disegna un semipiano di pesi ammessi, e l'SVM cerca il w più corto dentro l'intersezione. Soluzione: w* = (0.5, 0.5), w0* = 0, support vectors (1, 1) e (-1, -1).",
+      "storyboard": [
+        "A sinistra il piano dei dati con i 6 pixel; a destra il piano dei pesi (w_1, w_2) da -1 a 2, con w0 fissato dallo slider (valore iniziale 0).",
+        "Passando su un pixel, nel piano dei pesi si disegna in 200 ms il suo semipiano y_i(w^T x_i + w0) >= 1: bordo colorato come il pixel, lato ammesso ombreggiato; ad esempio il pixel (3, 1) con w0 = 0 dà 3 w_1 + w_2 >= 1.",
+        "Pulsante 'Tutti i vincoli': i 6 semipiani si sovrappongono uno dopo l'altro (stagger 250 ms) e resta evidenziata l'intersezione, una regione convessa (illimitata): 'regione ammissibile convessa'. Con w0 = 0 i vincoli di (1, 1) e (-1, -1) coincidono.",
+        "Cerchi concentrici di livello di 1/2||w||^2 centrati nell'origine crescono (1 s) finché toccano la regione: il punto di contatto è w* = (0.5, 0.5) (pallino dorato, 1/2||w||^2 = 0.25) e nel piano dei dati compare la retta corrispondente con la sua fascia; i vincoli che passano per w* si accendono come attivi.",
+        "Slider w0: la regione cambia forma e il punto di contatto si sposta; un piccolo grafico traccia il minimo di 1/2||w||^2 contro w0, (1 + |w0|)^2/4, convesso con un unico minimo globale 0.25 in w0 = 0."
+      ],
+      "interactions": ["slider w0 da -1.5 a 1.5 (passo 0.05)", "hover sui pixel", "pulsante 'Tutti i vincoli'", "trascinare un pixel entro [-4, 4] x [-4, 4] (regione, punto dorato e grafico si ricalcolano)"],
+      "visual": "Due pannelli collegati: dati (pixel colorati) e pesi (semipiani ombreggiati, poligono convesso, cerchi di livello, punto dorato), grafico piccolo del minimo contro w0.",
+      "aha": "Ogni vincolo è un semipiano, l'intersezione è convessa e l'obiettivo è una ciotola: per questo esiste un unico minimo globale che la programmazione quadratica trova senza rischio di minimi locali.",
+      "formulasShown": ["\\left\\{\\mathbf{w} : y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) \\ge 1\\right\\}", "\\min_{\\mathbf{w}, w_0}\\frac{1}{2}\\|\\mathbf{w}\\|^2", "w_0 = 0: \\;\\; w_1 + w_2 \\ge 1, \\; 3w_1 + w_2 \\ge 1, \\; w_1 + 2w_2 \\ge 1, \\; 2w_1 + w_2 \\ge 1, \\; w_1 + 3w_2 \\ge 1", "\\min_{\\mathbf{w}} \\tfrac{1}{2}\\|\\mathbf{w}\\|^2 = \\frac{(1 + |w_0|)^2}{4}"],
+      "challenge": "Trascina un pixel in modo che il suo vincolo diventi inutile (il suo semipiano contiene già tutta la regione): il punto dorato non deve muoversi. (Ad esempio sposta (3, 1) in (4, 2): il vincolo 4 w_1 + 2 w_2 >= 1 è il doppio di 2 w_1 + w_2 >= 1, quello del pixel (-2, -1), ed è sempre soddisfatto.)",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p08-muro-della-lagrangiana",
+      "title": "La Lagrangiana alza un muro sui vincoli violati",
+      "concepts": ["c37", "c38", "c39", "c42"],
+      "scenario": "pesce",
+      "realExample": "La SVM più piccola possibile: una sola feature (luminosità centrata) e due pesci, una spigola in x = 1 (y = +1) e un salmone in x = -2 (y = -1), con w0 fissato a 0 per avere un solo peso w. Il problema min 1/2 w^2 con vincoli w >= 1 e 2w >= 1 mostra come il trucco di Lagrange trasforma i vincoli in penalità. Dati sintetici.",
+      "storyboard": [
+        "Grafico di f(w) = 1/2 w^2; la zona w < 1, dove il vincolo della spigola g_1(w) = w - 1 è violato, è ombreggiata in rosso. In alto il problema generico min f(z) con g_i(z) >= 0 e, sotto, la sua istanza.",
+        "Slider alpha_1 da 0 a 20: la curva L(w, alpha_1) = 1/2 w^2 - alpha_1(w - 1) si deforma: a destra di w = 1 scende, a sinistra sale sempre più ripida.",
+        "Pulsante 'max su alpha >= 0': si disegna l'inviluppo superiore di tante curve: coincide con f(w) nella zona ammissibile e schizza a +infinito nella zona violata, con un muro verticale animato in w = 1.",
+        "Un pallino z' trascinabile nella zona rossa mostra il valore di -alpha_1 g_1(z') che cresce senza limite al crescere di alpha_1: 'questo punto non può essere la soluzione'.",
+        "Riquadro finale: la riscrittura min_z max_{alpha >= 0} f(z) - sum alpha_i g_i(z) con z = w, e il minimo del 'muro' in w* = 1 evidenziato."
+      ],
+      "interactions": ["slider alpha_1 da 0 a 20 (passo 0.1)", "pulsante 'max su alpha >= 0' (l'inviluppo si disegna in 1 s)", "trascinare il punto z' sull'asse w da -1 a 3", "toggle per mostrare anche il vincolo del salmone (alpha_2, g_2(w) = 2w - 1)"],
+      "visual": "Grafico 1D con f(w), famiglia di curve L(w, alpha) sfumate, inviluppo in grassetto, muro verticale rosso, valore numerico di -alpha g(z') live; riquadro con le formule generiche e istanziate.",
+      "aha": "Il vincolo sparisce come vincolo ma rientra come penalità infinita: minimizzare il massimo su alpha equivale a minimizzare f solo tra i punti ammissibili.",
+      "formulasShown": ["\\min_z f(z) \\quad \\text{s.t. } g_i(z) \\ge 0 \\;\\; \\forall i", "\\min_z \\max_{\\boldsymbol{\\alpha} \\ge 0} f(z) - \\sum_i \\alpha_i g_i(z)", "\\max_{\\boldsymbol{\\alpha} \\ge 0} L(w, \\boldsymbol{\\alpha}) = \\begin{cases} \\frac{1}{2}w^2 & w \\ge 1 \\\\ +\\infty & w < 1 \\end{cases}", "w' = 0.8, \\; \\alpha_1 = 20: \\;\\; -\\alpha_1 g_1(w') = -20\\,(0.8 - 1) = 4"],
+      "challenge": "Prima di premere il pulsante prevedi dove sta il minimo di max_alpha L; poi verifica (w* = 1).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p08-alfa-si-spegne",
+      "title": "Vincolo soddisfatto, moltiplicatore spento",
+      "concepts": ["c40", "c43", "c45"],
+      "scenario": "pesce",
+      "realExample": "Stessa SVM 1D del pesce (spigola in x = 1, salmone in x = -2, w0 = 0): due vincoli g_1(w) = w - 1 e g_2(w) = 2w - 1 con i loro moltiplicatori alpha_1 e alpha_2. Si osserva cosa fa la massimizzazione sui moltiplicatori quando i vincoli sono soddisfatti, attivi o violati. Dati sintetici.",
+      "storyboard": [
+        "Due pannelli collegati: a sinistra la variabile originale z = w (slider), a destra i due moltiplicatori alpha_1 (spigola) e alpha_2 (salmone) come manopole non negative; in alto il valore di L(w, alpha).",
+        "Con w = 1.5 entrambi i vincoli sono soddisfatti (g_1 = 0.5, g_2 = 2): alzando una manopola L diminuisce; il pulsante 'max su alpha' riporta entrambe a 0 con un'animazione a molla.",
+        "Con w = 1: g_1 = 0 (vincolo attivo), alpha_1 può muoversi senza cambiare L; g_2 = 1 > 0 e alpha_2 torna a 0.",
+        "Con w = 0.8: g_1 = -0.2 < 0, alpha_1 vola verso l'alto e la barra di L esce dal grafico.",
+        "Una tabella si compila da sola: 'vincolo soddisfatto con margine -> alpha = 0; sul bordo -> alpha libero (lo fissa la stazionarietà); violato -> +infinito', più la riga 'z* soddisfa tutti i vincoli e minimizza f'."
+      ],
+      "interactions": ["slider w da 0 a 2.5 (passo 0.05)", "manopole alpha_1 e alpha_2 da 0 a 5", "pulsante 'max su alpha' (animazione a molla di 400 ms)", "cinque valori di w preimpostati: 2, 1, 0.8, 0.5, 0.3"],
+      "visual": "Slider e manopole con valori numerici, barra verticale di L, colori dei vincoli (verde soddisfatto, giallo attivo, rosso violato), tabella riassuntiva animata.",
+      "aha": "Il moltiplicatore di un vincolo non attivo si spegne: solo i vincoli che toccano la soluzione hanno voce in capitolo, preludio ai support vectors.",
+      "formulasShown": ["L(z, \\boldsymbol{\\alpha}) = f(z) - \\sum_i \\alpha_i g_i(z)", "g_i(z) > 0 \\;\\Rightarrow\\; \\alpha_i = 0", "w = 1.5: \\;\\; L = \\tfrac{1}{2}(1.5)^2 - \\alpha_1 (0.5) - \\alpha_2 (2) = 1.125 - 0.5\\,\\alpha_1 - 2\\,\\alpha_2"],
+      "challenge": "Per i cinque valori di w preimpostati prevedi se alpha_1 e alpha_2 che massimizzano L valgono 0, sono liberi o vanno a infinito, poi premi 'verifica'. (w = 2: 0 e 0; w = 1: libero e 0; w = 0.8: infinito e 0; w = 0.5: infinito e libero; w = 0.3: infinito e infinito.)",
+      "size": "S",
+      "tech": "html+motion"
+    },
+    {
+      "id": "p08-punto-di-sella",
+      "title": "Il punto di sella della Lagrangiana",
+      "concepts": ["c41", "c44", "c48"],
+      "scenario": "pesce",
+      "realExample": "Ancora la SVM 1D del pesce, tenendo solo il vincolo attivo della spigola: L(w, alpha) = 1/2 w^2 - alpha(w - 1). La soluzione è un punto di sella (w*, alpha*) = (1, 1): minimo lungo w, massimo lungo alpha. Spostando la spigola si vede quale vincolo diventa attivo. Dati sintetici. Con w0 fissato a 0 non c'è la condizione sum alpha_i y_i = 0: i moltiplicatori dei due pesci non devono bilanciarsi.",
+      "storyboard": [
+        "Superficie 3D ruotabile di L(w, alpha): lungo w è una parabola verso l'alto, lungo alpha una retta; il dominio alpha >= 0 è evidenziato.",
+        "Due pallini: uno scende lungo w (minimizzazione), l'altro sale lungo alpha (massimizzazione); le traiettorie a zig-zag convergono al punto di sella (1, 1), marcato in oro.",
+        "Sezioni sincronizzate: ad alpha fissato la parabola in w ha minimo in w = alpha; a w fissato L è lineare in alpha con pendenza -(w - 1); al punto di sella entrambe sono stazionarie.",
+        "Toggle 'sposta la spigola in x = 3': ora i vincoli sono 3w >= 1 e 2w >= 1, attivo è quello del salmone; la sella si sposta in w* = 0.5 con alpha_salmone* = 0.25 e alpha_spigola* = 0 (vincolo inattivo).",
+        "Riquadro: 'min rispetto alle variabili primali, max rispetto alle duali alpha >= 0'; didascalia 'nell'SVM vero la sella vive in d + 1 + m dimensioni'."
+      ],
+      "interactions": ["rotazione e zoom della superficie", "pulsante Play della discesa/salita (40 passi da 100 ms)", "toggle 'sposta la spigola in x = 3'", "clic su un punto della superficie (w da -1 a 3, alpha da 0 a 3) per vedere le due sezioni"],
+      "visual": "Superficie 3D a colori con curve di livello, due traiettorie, punto di sella dorato, due mini-grafici delle sezioni, valori numerici di w, alpha, L.",
+      "aha": "La soluzione non è né un minimo né un massimo di L ma una sella: minima nelle variabili del problema, massima nei moltiplicatori; e i moltiplicatori positivi stanno solo sui vincoli attivi.",
+      "formulasShown": ["L(w, \\alpha) = \\frac{1}{2}w^2 - \\alpha(w - 1)", "\\frac{\\partial L}{\\partial w} = w - \\alpha = 0, \\;\\; \\frac{\\partial L}{\\partial \\alpha} = -(w - 1) = 0 \\;\\Rightarrow\\; (w^*, \\alpha^*) = (1, 1)", "\\alpha_i > 0 \\Rightarrow g_i(z^*) = 0, \\qquad g_i(z^*) > 0 \\Rightarrow \\alpha_i = 0"],
+      "challenge": "Prima di attivare il toggle, prevedi quale vincolo diventerà attivo spostando la spigola in x = 3 e quanto varrà w*.",
+      "size": "L",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "p08-w-somma-di-frecce",
+      "title": "w è una somma di frecce pesate dagli alpha",
+      "concepts": ["c47", "c49", "c50", "c56"],
+      "scenario": "pesce",
+      "realExample": "Otto pesci di training nel piano luminosità-larghezza: spigole (y = +1) in (3, 3), (5, 2), (4, 4), (5, 4); salmoni (y = -1) in (1, 1), (0, 1), (1, 0), (0, 0). Ogni pesce ha un moltiplicatore alpha_i >= 0 e il vettore dei pesi dell'SVM si ricostruisce come somma dei vettori y_i x_i pesati. Dati sintetici con soluzione nota: spigola (3, 3) e salmone (1, 1) sono i support vectors, con alpha = 0.25 ciascuno, w = (0.5, 0.5), w0 = -2.",
+      "storyboard": [
+        "Piano con gli 8 pesci e, sopra, la Lagrangiana L(w, w0, alpha) scritta per intero; accanto a ogni pesce una manopola alpha_i (0-1).",
+        "Ogni alpha_i > 0 genera una freccia alpha_i y_i x_i (blu per le spigole, rossa e rovesciata per i salmoni) che si allunga in 300 ms e si accoda testa-coda alle altre partendo dall'origine: la freccia nera risultante è w.",
+        "In alto una bilancia: piatto sinistro sum alpha_i delle spigole, destro sum alpha_i dei salmoni; la condizione dL/dw0 = 0 chiede l'equilibrio sum alpha_i y_i = 0 e la bilancia si inclina se non è rispettata.",
+        "Il confine corrispondente si disegna in tempo reale; il pulsante 'Ottimo' porta le manopole a (0.25, 0.25, 0, ..., 0): bilancia in equilibrio, w = (0.5, 0.5), retta SVM con w0 = -2.",
+        "Esperimento: alzando alpha di un pesce lontano (non support vector) w cambia e la soluzione si guasta; all'ottimo solo i support vectors hanno una freccia."
+      ],
+      "interactions": ["manopole alpha_i per ogni pesce (da 0 a 1, passo 0.01)", "pulsante 'Ottimo' (le manopole scorrono ai valori ottimi in 600 ms)", "pulsante 'Azzera'", "hover su una freccia per vedere alpha_i y_i x_i con i numeri"],
+      "visual": "Scatter del pesce, catena di frecce colorate testa-coda, freccia risultante nera, bilancia animata, retta di confine, formula di w con i valori sostituiti.",
+      "aha": "Il vettore dei pesi non è un parametro libero: è una combinazione dei punti di training, e all'ottimo contribuiscono solo i support vectors, con masse bilanciate tra le due classi.",
+      "formulasShown": ["L(\\mathbf{w}, w_0, \\boldsymbol{\\alpha}) = \\frac{1}{2}\\|\\mathbf{w}\\|^2 - \\sum_{i=1}^{m}\\alpha_i\\left(y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) - 1\\right)", "\\mathbf{w} = \\sum_{i=1}^{m}\\alpha_i y_i \\mathbf{x}_i", "\\sum_{i=1}^{m}\\alpha_i y_i = 0", "\\mathbf{w} = 0.25\\,(+1)(3, 3) + 0.25\\,(-1)(1, 1) = (0.5, 0.5), \\qquad \\sum_i \\alpha_i y_i = 0.25 - 0.25 = 0"],
+      "challenge": "Senza premere 'Ottimo', regola le manopole in modo che la bilancia sia in equilibrio e w = (0.5, 0.5).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p08-dal-primale-al-duale",
+      "title": "Dal primale al duale, un termine alla volta",
+      "concepts": ["c46", "c51", "c52", "c53"],
+      "scenario": "medicina",
+      "realExample": "Screening di aritmie da ECG con due feature normalizzate (scostamento della frequenza cardiaca e della durata del QRS dai valori di riferimento): un battito normale in (0, 0) (y = -1) e due battiti aritmici in (2, 0) e (0, 2) (y = +1). Dati sintetici con soluzione esatta alpha = (1, 1/2, 1/2), w = (1, 1), w0 = -1, primale = duale = 1.",
+      "storyboard": [
+        "La Lagrangiana compare scritta per intero; sotto, tre manopole alpha_1, alpha_2, alpha_3 e il valore numerico di ogni termine calcolato live; a lato la mappa dei passi (primale, Lagrangiana, stazionarietà, sostituzione, duale).",
+        "Passo 1 ('Avanti', morph di 600 ms): w viene sostituito da sum alpha_i y_i x_i; il termine 1/2||w||^2 si trasforma nella doppia somma, mentre la matrice 3x3 dei prodotti scalari x_i^T x_j si illumina cella per cella (80 ms per cella).",
+        "Passo 2: l'espansione in quattro termini (+1/2 doppia somma, -doppia somma, -sum alpha_i y_i w0, +sum alpha_i), ciascuno in un colore e con il suo valore.",
+        "Passo 3: il termine con w0 si dissolve se sum alpha_i y_i = 0 (altrimenti lampeggia con l'avviso), e i due termini doppi si fondono: 1/2 - 1 = -1/2.",
+        "Passo 4: resta il duale sum alpha_i - 1/2 sum alpha_i alpha_j y_i y_j x_i^T x_j con i vincoli alpha_i >= 0 e sum alpha_i y_i = 0; con alpha = (1, 1/2, 1/2) vale 1, come il primale 1/2||w||^2 = 1."
+      ],
+      "interactions": ["pulsanti Avanti / Indietro tra i passi", "manopole alpha_1, alpha_2, alpha_3 da 0 a 3 (passo 0.05)", "pulsante 'alpha ottimi'", "hover su un termine per evidenziarne l'origine"],
+      "visual": "Formula a blocchi colorati che si trasforma con animazioni di morph, valori numerici sotto ogni blocco, matrice dei prodotti scalari, bilancia sum alpha_i y_i, confronto finale primale contro duale.",
+      "aha": "Eliminare w e w0 con le condizioni di stazionarietà lascia un problema nei soli alpha, in cui i dati entrano solo tramite prodotti scalari.",
+      "formulasShown": ["\\frac{1}{2}\\sum_{i,j=1}^{m}\\alpha_i\\alpha_j y_i y_j \\mathbf{x}_i^T\\mathbf{x}_j - \\sum_{i,j=1}^{m}\\alpha_i\\alpha_j y_i y_j \\mathbf{x}_i^T\\mathbf{x}_j - \\sum_{i=1}^{m}\\alpha_i y_i w_0 + \\sum_{i=1}^{m}\\alpha_i", "\\sum_{i=1}^{m}\\alpha_i - \\frac{1}{2}\\sum_{i,j=1}^{m}\\alpha_i\\alpha_j y_i y_j \\mathbf{x}_i^T\\mathbf{x}_j", "\\mathbf{x}_i^T\\mathbf{x}_j = \\begin{pmatrix} 0 & 0 & 0 \\\\ 0 & 4 & 0 \\\\ 0 & 0 & 4 \\end{pmatrix}, \\qquad 2 - \\frac{1}{2}\\left(\\left(\\tfrac{1}{2}\\right)^2\\cdot 4 + \\left(\\tfrac{1}{2}\\right)^2\\cdot 4\\right) = 1"],
+      "challenge": "Prova alpha = (2, 1, 1): i vincoli sono rispettati? Il duale vale di più o di meno di 1? (vincoli sì, duale = 0)",
+      "size": "L",
+      "tech": "html+motion"
+    },
+    {
+      "id": "p08-paesaggio-duale",
+      "title": "Il paesaggio del duale",
+      "concepts": ["c53", "c54", "c59"],
+      "scenario": "medicina",
+      "realExample": "Gli stessi tre battiti ECG (normale in (0, 0), aritmici in (2, 0) e (0, 2)). Il vincolo di uguaglianza fissa alpha_1 = alpha_2 + alpha_3, quindi il duale diventa una funzione di due sole variabili, 2 alpha_2 + 2 alpha_3 - 2 alpha_2^2 - 2 alpha_3^2, che si può disegnare e scalare. Dati sintetici.",
+      "storyboard": [
+        "Mappa a curve di livello del duale sul piano (alpha_2, alpha_3), con il quadrante alpha >= 0 evidenziato e la didascalia 'alpha_1 = alpha_2 + alpha_3 per il vincolo sum alpha_i y_i = 0'.",
+        "Un pallino parte da (0, 0) e sale per ascesa del gradiente proiettata sui vincoli, passo per passo, lasciando una scia; il valore del duale cresce fino a 1.",
+        "Il massimo in (1/2, 1/2) si illumina; accanto il primale 1/2||w||^2 calcolato con w = sum alpha_i y_i x_i coincide (1 = 1).",
+        "Toggle 'vincoli': da un lato i vincoli del duale (alpha_i >= 0 più una sola uguaglianza), dall'altro i tre vincoli del primale sui dati; didascalia 'vincoli più semplici'.",
+        "Clic sul piano dei dati per aggiungere un quarto battito aritmico lontano dal confine, ad esempio in (3, 3) con y = +1: un solver QP ricalcola l'ottimo, il pannello mostra alpha_4 = 0 e gli altri alpha invariati; la mappa resta la sezione alpha_4 = 0 del nuovo duale, con lo stesso massimo."
+      ],
+      "interactions": ["trascinare il pallino di partenza nel quadrante [0, 1.5] x [0, 1.5]", "Play / Passo dell'ascesa (passo 0.05, un passo ogni 150 ms)", "toggle 'vincoli'", "clic sul piano dei dati per aggiungere un battito"],
+      "visual": "Contour plot concavo con scia dell'ascesa, pannello del valore duale e primale, piccolo scatter dei battiti con il confine corrente.",
+      "aha": "Il duale è una ciotola rovesciata (concava) nei soli alpha, con vincoli semplici: un problema quadratico risolvibile con la programmazione quadratica standard.",
+      "formulasShown": ["\\max_{\\boldsymbol{\\alpha}\\in\\mathbb{R}^m} \\sum_{i=1}^{m}\\alpha_i - \\frac{1}{2}\\sum_{i,j=1}^{m}\\alpha_i\\alpha_j y_i y_j \\mathbf{x}_i^T\\mathbf{x}_j", "2\\alpha_2 + 2\\alpha_3 - 2\\alpha_2^2 - 2\\alpha_3^2", "\\alpha_1 = \\alpha_2 + \\alpha_3", "\\alpha_2 = \\alpha_3 = \\tfrac{1}{2}: \\;\\; 2\\cdot\\tfrac{1}{2} + 2\\cdot\\tfrac{1}{2} - 2\\cdot\\tfrac{1}{4} - 2\\cdot\\tfrac{1}{4} = 1 = \\tfrac{1}{2}\\|(1, 1)\\|^2"],
+      "challenge": "Trascina il pallino dove pensi sia il massimo prima di avviare l'ascesa; il punteggio è la distanza dall'ottimo.",
+      "size": "M",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "p08-gram-e-kernel",
+      "title": "Nel duale contano solo i prodotti scalari",
+      "concepts": ["c58", "c60", "c66"],
+      "scenario": "cifre",
+      "realExample": "Cifre scritte a mano 8x8 (64 feature), 0 contro 1. Nel duale non servono le 64 coordinate di ogni immagine ma solo la tabella dei prodotti scalari tra coppie di immagini (matrice di Gram), che misura quanto due cifre si somigliano. Sostituendo il prodotto scalare con un kernel si lavora in spazi enormi senza costruirli. Dati sintetici.",
+      "storyboard": [
+        "Una fila di 8 miniature di cifre (4 zeri, 4 uni) e sotto la matrice 8x8 dei prodotti scalari x_i^T x_j come heatmap.",
+        "Hover su una cella: le due immagini si sovrappongono pixel per pixel, i pixel accesi in comune brillano e compare la somma dei prodotti: 'prodotto scalare = similarità'.",
+        "Selettore 'kernel': lineare x_i^T x_j, polinomiale (x_i^T x_j + 1)^2, gaussiano; la matrice cambia colori con un morph di 500 ms, mentre la formula del duale resta identica con k(x_i, x_j) al posto di x_i^T x_j.",
+        "Contatore di costo: 'coordinate per immagine: 64' contro 'numeri usati dal duale: 8 x 8 prodotti'; con il polinomiale di grado 2 lo spazio implicito ha 2145 coordinate ma la matrice resta 8x8.",
+        "Anteprima: il confine appreso con il kernel polinomiale su due feature riassuntive si incurva (rimando al modulo p10)."
+      ],
+      "interactions": ["hover sulle celle della matrice", "selettore del kernel (lineare, polinomiale di grado 2, gaussiano)", "slider sigma del kernel gaussiano da 5 a 50 (intensità dei pixel da 0 a 16)", "clic su una miniatura per sostituirla con un'altra cifra"],
+      "visual": "Miniature 8x8 in scala di grigi, heatmap della matrice di Gram con colormap sequenziale, sovrapposizione delle immagini, formula del duale con il termine di similarità evidenziato, contatore dimensioni.",
+      "aha": "Il duale vede i dati solo attraverso le similarità a coppie: sostituire il prodotto scalare con un kernel porta la SVM in spazi ad alta (anche infinita) dimensione senza costruirli.",
+      "formulasShown": ["K_{ij} = \\mathbf{x}_i^T\\mathbf{x}_j", "\\sum_{i}\\alpha_i - \\frac{1}{2}\\sum_{i,j}\\alpha_i\\alpha_j y_i y_j\\, k(\\mathbf{x}_i, \\mathbf{x}_j)", "k(\\mathbf{x}_i, \\mathbf{x}_j) = \\left(\\mathbf{x}_i^T\\mathbf{x}_j + 1\\right)^2, \\qquad k(\\mathbf{x}_i, \\mathbf{x}_j) = \\exp\\left(-\\frac{\\|\\mathbf{x}_i - \\mathbf{x}_j\\|^2}{2\\sigma^2}\\right)", "\\binom{64 + 2}{2} = 2145"],
+      "challenge": "Trova nella matrice la coppia di cifre più simile e quella più diversa; poi prevedi come cambia la classifica con il kernel gaussiano.",
+      "size": "M",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "p08-primale-o-duale",
+      "title": "Primale o duale? Conta le variabili",
+      "concepts": ["c61", "c62", "c63"],
+      "scenario": "spam",
+      "realExample": "Sei progetti reali a confronto (numeri sintetici ma realistici): filtro spam con d = 50000 parole di vocabolario e m = 2000 email etichettate; sensori IoT con d = 6 e m = 5 milioni di letture; cifre 8x8 (d = 64, m = 1500) con kernel gaussiano; pixel iperspettrali con d = 200 bande e m = 150 pixel etichettati; antifrode lineare con d = 10 e m = 1 milione di transazioni; sentiment di recensioni con embedding d = 768 e m = 200000 recensioni, classificatore lineare. Per ciascuno si sceglie quale formulazione risolvere.",
+      "storyboard": [
+        "Due contenitori affiancati: 'Primale: (w, w0), d + 1 variabili' e 'Duale: alpha_1 ... alpha_m, m variabili', ciascuno con una colonna di celline che rappresentano le variabili.",
+        "Slider d (1-10^6, log) e m (10-10^7, log): le colonne crescono o si accorciano e il contenitore con meno variabili si illumina di verde 'più conveniente'.",
+        "Toggle 'uso un kernel non lineare': il contenitore primale si oscura con la scritta 'w vive nello spazio implicito delle feature (anche infinito)' e vince il duale.",
+        "Gioco: arrivano le 6 schede-progetto (spam, sensori, cifre con kernel, iperspettrale, antifrode, sentiment), ciascuna con d, m e 'kernel sì/no', da trascinare nel contenitore giusto.",
+        "Correzione (le schede sbagliate tremano per 300 ms e mostrano il motivo): spam duale, sensori primale, cifre con kernel duale, iperspettrale duale, antifrode primale, sentiment primale; regola 'd << m: primale', 'm << d oppure kernel: duale'."
+      ],
+      "interactions": ["slider d e m (scala log)", "toggle 'kernel non lineare'", "trascinare le schede-progetto nei contenitori", "pulsante 'Correggi'"],
+      "visual": "Due contenitori con colonne di celle proporzionali (scala log), contatori d + 1 e m, schede con icona dello scenario, feedback verde/rosso.",
+      "aha": "La scelta non è di gusto: si risolve il problema con meno incognite, e con i kernel il duale è obbligato.",
+      "formulasShown": ["(\\mathbf{w}, w_0) \\in \\mathbb{R}^{d+1}", "\\boldsymbol{\\alpha} \\in \\mathbb{R}^{m}", "d + 1 = 50001 \\;\\text{contro}\\; m = 2000 \\;\\Rightarrow\\; \\text{duale}"],
+      "challenge": "Classifica correttamente tutte e 6 le schede al primo tentativo.",
+      "size": "M",
+      "tech": "html+motion"
+    },
+    {
+      "id": "p08-voto-dei-support-vector",
+      "title": "Il voto pesato dei support vectors",
+      "concepts": ["c64", "c65", "c67"],
+      "scenario": "banca",
+      "realExample": "Antifrode: arriva una nuova transazione x (importo e frequenza normalizzati). L'SVM addestrata ha 3 support vectors: la transazione legittima x_1 = (1, 1) con y = -1 e alpha_1 = 1, le frodi x_2 = (3, 1) e x_3 = (1, 3) con y = +1 e alpha = 0.5; quindi w = (1, 1) e w0 = -3. La decisione f(x) = sum alpha_i y_i x_i^T x + w0 si legge come un voto: ogni support vector vota con peso alpha_i, verso y_i e somiglianza x_i^T x. Dati sintetici.",
+      "storyboard": [
+        "Piano con le transazioni di training sbiadite, i 3 support vectors evidenziati e una transazione di test trascinabile (stella).",
+        "Da ogni support vector parte un filo verso la stella; accanto, una barra per ciascuno lunga alpha_i y_i x_i^T x, verso destra se vota 'frode', verso sinistra se 'legittima'.",
+        "Trascinando la stella le barre cambiano in tempo reale; in fondo una barra fissa 'w0' e la somma totale f(x) con il suo segno, che decide l'etichetta 'frode' o 'legittima'.",
+        "Slider per l'alpha di un support vector (modalità esplorazione): aumentandolo la sua barra si allunga, il confine ruota e l'influenza sulla decisione cresce.",
+        "Confronto finale con la forma primale w^T x + w0: stesso numero, 'due modi di scrivere la stessa funzione'."
+      ],
+      "interactions": ["trascinare la transazione di test nel riquadro [0, 5] x [0, 5]", "slider dell'alpha di un support vector da 0 a 2 (fuori dall'ottimo: la bilancia sum alpha_i y_i si sbilancia)", "toggle 'forma primale'"],
+      "visual": "Scatter con fili tra support vectors e stella, barre orizzontali dei voti colorate per classe, barra w0, somma f(x) con segno, confine aggiornato.",
+      "aha": "Classificare un punto nuovo significa confrontarlo con i support vectors tramite prodotti scalari e sommare i loro voti pesati da alpha_i y_i.",
+      "formulasShown": ["f(\\mathbf{x}) = \\mathbf{w}^T\\mathbf{x} + w_0 = \\sum_{i=1}^{m}\\alpha_i y_i \\mathbf{x}_i^T\\mathbf{x} + w_0", "\\mathbf{x} = (2.5, 1.5): \\;\\; f(\\mathbf{x}) = 1\\cdot(-1)\\cdot 4 + 0.5\\cdot(+1)\\cdot 9 + 0.5\\cdot(+1)\\cdot 7 - 3 = 1 = \\mathbf{w}^T\\mathbf{x} + w_0"],
+      "challenge": "Posiziona la stella in modo che i voti si annullino esattamente (f(x) = 0): hai trovato un punto del confine (qui la retta x_1 + x_2 = 3).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p08-complementarita-kkt",
+      "title": "alpha_i (y_i f(x_i) - 1) = 0: uno dei due è zero",
+      "concepts": ["c55", "c68", "c69", "c70"],
+      "scenario": "telerilevamento",
+      "realExample": "SVM già addestrata su pixel di acqua e vegetazione (bande rosso e NIR). Per ogni pixel di training si leggono il moltiplicatore alpha_i restituito dal solver e la distanza dal vincolo y_i f(x_i) - 1: la complementarità KKT dice che almeno uno dei due è nullo. Dati sintetici.",
+      "storyboard": [
+        "Piano dei dati con l'SVM addestrata e la fascia di margine; accanto un grafico con ascissa y_i f(x_i) - 1 e ordinata alpha_i.",
+        "Tutti i punti del grafico cadono sui due assi, a forma di L: sull'asse verticale (y_i f(x_i) = 1, alpha_i > 0) i support vectors, sull'asse orizzontale (alpha_i = 0) tutti gli altri.",
+        "Hover su un pixel nel piano: il suo pallino nel grafico si illumina e compare il prodotto alpha_i (y_i f(x_i) - 1) = 0 con i numeri.",
+        "Trascinando un pixel non support vector verso la fascia: resta sull'asse orizzontale finché non la tocca; se ci entra, l'SVM si riaddestra (400 ms) e il punto salta sull'asse verticale diventando support vector.",
+        "Etichetta finale: 'support vectors = punti sugli iperpiani di minima confidenza, con alpha_i > 0: solo loro influenzano il classificatore'."
+      ],
+      "interactions": ["hover sui pixel", "trascinare un pixel (riaddestramento in 400 ms al rilascio)", "toggle 'nascondi le etichette' per indovinare"],
+      "visual": "Due pannelli collegati: scatter con fascia e support vectors cerchiati, grafico a L con pallini colorati per classe, formula del prodotto con i valori.",
+      "aha": "La complementarità divide i punti in due gruppi netti: o non contano nulla (alpha = 0) o stanno esattamente sul bordo del margine.",
+      "formulasShown": ["\\alpha_i\\left(y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) - 1\\right) = 0", "\\alpha_i > 0 \\Rightarrow y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) = 1", "\\alpha_4 = 0.37: \\;\\; 0.37\\cdot(1.00 - 1) = 0; \\qquad \\alpha_9 = 0: \\;\\; 0\\cdot(2.35 - 1) = 0"],
+      "challenge": "Con le etichette nascoste, prevedi quali pixel hanno alpha > 0 prima di attivare il grafico a L.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p08-togli-i-punti",
+      "title": "Togli i pesci: il confine non se ne accorge",
+      "concepts": ["c03", "c71", "c72", "c73"],
+      "scenario": "pesce",
+      "realExample": "Sessanta pesci etichettati sul nastro: l'SVM ne usa davvero solo pochi. Si verifica sperimentalmente che eliminare gli altri non cambia il classificatore, mentre eliminare un support vector sì. Dati sintetici.",
+      "storyboard": [
+        "60 pesci con l'SVM addestrata e il contatore 'support vectors: 3 su 60 (5%)'.",
+        "Clic su un pesce non support vector: esce dal nastro con una dissolvenza di 300 ms e il confine resta immobile; il contatore 'confine cambiato? no'.",
+        "Pulsante 'Elimina tutti i non-SV': 57 pesci spariscono in cascata e restano solo i 3 support vectors con la stessa retta: 'bastano loro'.",
+        "Clic su un support vector: l'SVM si riaddestra, il confine ruota in 500 ms, la fascia si allarga e nuovi support vectors si accendono.",
+        "Slider N da 20 a 2000 pesci: un piccolo grafico #SV contro N mostra che il numero di support vectors resta piccolo mentre N cresce: 'modello sparso'."
+      ],
+      "interactions": ["clic sui pesci per eliminarli", "pulsante 'Elimina tutti i non-SV' (cascata con stagger 30 ms)", "pulsante 'Ripristina'", "slider N da 20 a 2000 pesci"],
+      "visual": "Scatter con support vectors cerchiati in oro, animazioni di uscita, confine con indicatore di cambiamento, grafico #SV contro N.",
+      "aha": "Tutta l'informazione dell'SVM sta in pochi esempi critici, i più vicini al confine: gli altri possono sparire senza cambiare nulla.",
+      "formulasShown": ["\\alpha_i = 0 \\;\\Rightarrow\\; \\alpha_i y_i \\mathbf{x}_i^T\\mathbf{x} = 0", "|SV| \\ll m", "|SV| = 3, \\; m = 60 \\;\\Rightarrow\\; \\frac{|SV|}{m} = 5\\%"],
+      "challenge": "Con il minor numero di clic possibile, cambia il confine: quale pesce devi togliere?",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p08-riflettori-sui-sv",
+      "title": "Riflettori sui support vectors (figura di pag. 55)",
+      "concepts": ["c57", "c74"],
+      "scenario": "pesce",
+      "realExample": "Il solver dell'SVM del pesce al lavoro: minimizza 1/2||w||^2 e, senza mai calcolare esplicitamente il margine, lo allarga finché la fascia si appoggia sui support vectors, come nella figura di pag. 55. Dati sintetici.",
+      "storyboard": [
+        "Ricostruzione della figura di pag. 55: tutti i punti a colori pieni, confine e fascia ancora assenti.",
+        "Il solver parte da un separatore ammissibile con fascia stretta (||w|| grande) e fa 20 iterazioni animate (150 ms l'una): un contatore mostra ||w|| che scende mentre la fascia 2/||w|| si allarga attorno al confine e spinge contro i punti più vicini.",
+        "Quando la fascia tocca i punti, tre restano a colori pieni (due quadrati blu e un cerchio rosso sulle rette tratteggiate) e tutti gli altri sbiadiscono al 30% di opacità.",
+        "Grafico con due curve contro le iterazioni: 1/2||w||^2 in discesa e margine 1/||w|| in salita: il margine è massimizzato indirettamente.",
+        "Toggle 'figura originale' per confrontare la ricostruzione con la pagina degli appunti."
+      ],
+      "interactions": ["Play / Passo del solver (20 iterazioni)", "toggle 'figura originale'", "pulsante 'Ricomincia' con nuovi dati"],
+      "visual": "Scatter che sbiadisce progressivamente, fascia di margine animata, contatori ||w|| e 1/||w||, doppio grafico obiettivo/margine per iterazione.",
+      "aha": "Il solver non vede il margine: accorcia w e il margine si allarga da sé finché si appoggia sui support vectors.",
+      "formulasShown": ["\\min \\frac{1}{2}\\|\\mathbf{w}\\|^2 \\;\\Rightarrow\\; \\max \\frac{1}{\\|\\mathbf{w}\\|}", "\\text{iter } 12: \\;\\; \\|\\mathbf{w}\\| = 0.91, \\;\\; \\frac{1}{\\|\\mathbf{w}\\|} = 1.10"],
+      "challenge": "Prima di avviare il solver, clicca i punti che secondo te resteranno accesi.",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p08-calcola-w0",
+      "title": "Calcolare w0 dai support vectors e farne la media",
+      "concepts": ["c75", "c76"],
+      "scenario": "medicina",
+      "realExample": "Lo screening ECG addestrato con un solver QP numerico: gli alpha escono con una tolleranza (ad esempio 10^-3), quindi i 4 support vectors danno stime di w0 leggermente diverse. La media su tutti i support vectors è più stabile. Dati sintetici.",
+      "storyboard": [
+        "Tabella dei 4 support vectors con y_i, w^T x_i e la stima w0 = (1 - y_i w^T x_i)/y_i calcolata riga per riga con i numeri sostituiti.",
+        "Slider 'rumore numerico del solver' (0-0.05): le stime si sparpagliano come pallini su un asse attorno al valore vero, mentre la linea della media resta vicina al valore vero.",
+        "Nel piano dei battiti: rette parallele sottili, una per ogni stima singola di w0, e una retta spessa con la media.",
+        "Nota a margine animata: poiché y_i vale -1 o +1, dividere per y_i equivale a moltiplicare, quindi w0 = y_i - w^T x_i.",
+        "Pulsante 'Nuovo solver' ripetuto 100 volte: due istogrammi dell'errore su w0 (stima singola contro media), la media è più concentrata."
+      ],
+      "interactions": ["slider del rumore numerico del solver da 0 a 0.05", "pulsante 'Nuovo solver' (100 ripetizioni in 2 s)", "clic su una riga per evidenziare il support vector e la sua retta"],
+      "visual": "Tabella con formule sostituite, asse con pallini delle stime e linea della media, scatter con rette parallele, istogrammi degli errori.",
+      "aha": "Ogni support vector 'sa' dove sta il confine; fare la media delle loro risposte riduce l'instabilità numerica.",
+      "formulasShown": ["w_0 = \\frac{1 - y_i\\mathbf{w}^T\\mathbf{x}_i}{y_i}", "w_0 = \\frac{1}{|SV|}\\sum_{i \\in SV}\\left(y_i - \\mathbf{w}^T\\mathbf{x}_i\\right)"],
+      "challenge": "Calcola a mano w0 dal support vector con y = +1 e w^T x = 2.1, e da quello con y = -1 e w^T x = 0.08: quanto vale la media delle due stime? (-1.1 e -1.08, media -1.09)",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p08-campione-ribelle",
+      "title": "Un solo campione ribelle fa crollare il margine",
+      "concepts": ["c77", "c78"],
+      "scenario": "spam",
+      "realExample": "Filtro spam con due feature (numero di link e frequenza della parola 'gratis'): basta una spam che somiglia molto alle email legittime, o una email etichettata male dall'utente, per far crollare il margine dell'hard margin SVM o rendere il problema impossibile. Dati sintetici.",
+      "storyboard": [
+        "Dataset ben separato: spam (blu) in alto a destra, ham (rosso) in basso a sinistra; SVM con fascia larga e il valore del margine 2/||w|| in grande.",
+        "L'utente trascina un nuovo punto blu verso la zona rossa: a ogni spostamento l'SVM si riaddestra, la fascia si stringe e il contatore del margine scende.",
+        "Il confine ruota per continuare a classificare tutto correttamente: badge 'tutti corretti, ma margine minuscolo'.",
+        "Quando il punto entra nella regione rossa oltre ogni retta possibile la fascia sparisce e compare 'nessun iperpiano separatore: l'hard margin non ha soluzione'.",
+        "Anteprima del modulo p09: toggle 'permetti eccezioni' che ripristina il confine originale con il punto ribelle marcato come violazione."
+      ],
+      "interactions": ["trascinare il punto ribelle (numero di link da 0 a 20, frequenza di 'gratis' da 0 a 10; riaddestramento in 300 ms al rilascio)", "pulsante 'Rimuovi il ribelle'", "toggle 'permetti eccezioni' (anteprima soft margin)"],
+      "visual": "Scatter con fascia che si restringe, contatore del margine con grafico storico, messaggio di infattibilità, confronto con il confine originale.",
+      "aha": "L'hard margin è ostaggio del caso peggiore: un solo esempio anomalo decide il margine di tutti, o rende il problema impossibile.",
+      "formulasShown": ["\\text{margine} = \\frac{2}{\\|\\mathbf{w}\\|}", "y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) \\ge 1 \\;\\; \\forall i", "\\frac{2}{\\|\\mathbf{w}\\|}: \\;\\; 2.40 \\;\\to\\; 0.60"],
+      "challenge": "Trova una posizione del punto ribelle che dimezza il margine senza rendere i dati non separabili.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p08-orale-hard-margin",
+      "title": "Simulazione d'orale: hard margin SVM",
+      "concepts": ["c15", "c45", "c48", "c63", "c79"],
+      "scenario": "pesce",
+      "realExample": "Domande reali dell'orale di Passerini sull'SVM a margine rigido ('canonical hyperplane, why do we use kkt, why solution of dual is equal to primal', 'when should we opt for primal or dual formulation'), ciascuna ancorata al classificatore del pesce già visto negli altri widget.",
+      "storyboard": [
+        "Carta 1, 'canonical hyperplane': lo studente riordina 5 blocchi di risposta (invarianza di scala, grado di libertà, rho = 1, margine 1/||w||, conseguenza sul problema); il widget del pesce in miniatura mostra ogni blocco quando viene piazzato.",
+        "Carta 2, 'why do we use KKT': scelta tra 4 spiegazioni (una corretta: trasforma il problema vincolato in uno non vincolato senza cambiarne la soluzione, i vincoli violati rendono la Lagrangiana infinita, e porta al duale).",
+        "Carta 3, 'why is the dual solution equal to the primal': completamento di una frase con parole chiave trascinabili (punto di sella, min sulle primali, max sulle duali, problema convesso).",
+        "Carta 4, 'primal or dual': 3 scenari numerici (d, m, kernel sì/no) da assegnare.",
+        "Riepilogo: punteggio per carta, formule chiave da scrivere alla lavagna e rimando ai widget in cui ripassare le carte sbagliate."
+      ],
+      "interactions": ["riordinare i blocchi di risposta", "scelta multipla", "trascinare le parole chiave", "assegnare gli scenari", "pulsante 'Rivela la risposta modello'"],
+      "visual": "Mazzo di carte con fronte (domanda in inglese e traduzione italiana) e retro (risposta modello con formule), miniatura del pesce, barra di avanzamento.",
+      "aha": "Le quattro domande ricorrenti hanno risposte brevi e precise che si appoggiano a poche formule: rho = 1, la Lagrangiana, il punto di sella, il conteggio delle variabili.",
+      "formulasShown": ["\\rho = \\min_{(\\mathbf{x},y)\\in D} y f(\\mathbf{x}) = 1", "\\min_{\\mathbf{w}, w_0}\\max_{\\boldsymbol{\\alpha}\\ge 0} L(\\mathbf{w}, w_0, \\boldsymbol{\\alpha})", "d + 1 \\;\\text{contro}\\; m"],
+      "challenge": "Rispondi a tutte e 4 le carte in meno di 6 minuti totali, come all'orale.",
+      "size": "M",
+      "tech": "html+motion"
+    },
+    {
+      "id": "p08-verifica-kkt",
+      "title": "Le quattro spie KKT: è davvero l'ottimo?",
+      "concepts": ["c79", "c49", "c50", "c68"],
+      "scenario": "medicina",
+      "realExample": "Screening di aritmie da ECG con i tre battiti già usati per il duale: normale in (0, 0) con y = -1, aritmici in (2, 0) e (0, 2) con y = +1 (feature: scostamento della frequenza cardiaca e della durata del QRS dai valori di riferimento; dati sintetici). Un collega propone una soluzione (alpha, w, w0) uscita da un solver: prima di metterla in produzione si controlla che rispetti tutte le condizioni KKT, perché solo così si è certi che sia l'SVM a massimo margine e non un confine qualunque.",
+      "storyboard": [
+        "Pannello sinistro: i tre battiti nel piano con il confine proposto e la sua fascia; pannello destro: quattro spie grandi etichettate 'stazionarietà', 'ammissibilità primale', 'ammissibilità duale', 'complementarità', ciascuna con la sua formula sotto.",
+        "Proposta A = (alpha = (1, 1/2, 1/2), w = (1, 1), w0 = -1): le quattro spie si accendono una dopo l'altra in verde (stagger 250 ms), i tre battiti sono cerchiati come support vectors e compare il badge 'ottimo: 1/2||w||^2 = duale = 1'.",
+        "Proposta B = (alpha = (2, 1, 1), w = (2, 2), w0 = -1): stazionarietà verde (w = sum alpha_i y_i x_i, sum alpha_i y_i = -2 + 1 + 1 = 0), ammissibilità primale verde (y_i f(x_i) = 1, 3, 3), ammissibilità duale verde, complementarità rossa: alpha_2 (3 - 1) = 2 diverso da 0. I battiti x_2 e x_3 lampeggiano: hanno alpha positivo ma stanno fuori dalla fascia. La fascia è più stretta di quella di A (1/||w|| = 0.35 contro 0.71).",
+        "Proposta C = (alpha = (1, 1, 0), w = (2, 0), w0 = -1): il battito x_3 finisce dalla parte sbagliata (y_3 f(x_3) = -1), quindi si accende in rosso l'ammissibilità primale; per x_2 (alpha_2 = 1, y_2 f(x_2) = 3) è rossa anche la complementarità.",
+        "Modalità libera: slider alpha_1, alpha_2, alpha_3 e w0, con w calcolato dalla stazionarietà; con il toggle 'w libero' w_1 e w_2 hanno slider propri e la spia di stazionarietà mostra lo scarto ||w - sum alpha_i y_i x_i||. Spie e valori numerici si aggiornano live; quando tutte sono verdi il confine coincide con quello SVM e il valore del duale eguaglia 1/2||w||^2."
+      ],
+      "interactions": ["pulsanti per caricare le proposte A, B, C", "slider alpha_1, alpha_2, alpha_3 (da 0 a 3)", "slider w0 (da -3 a 1)", "toggle 'w libero' con slider per w_1 e w_2", "hover su una spia per vedere la condizione con i numeri sostituiti"],
+      "visual": "Scatter dei tre battiti con confine e fascia, battiti colorati per classe e contornati se alpha_i > 0; quattro spie verde/rosso con le formule; tabella per battito con y_i f(x_i), alpha_i e il prodotto alpha_i (y_i f(x_i) - 1); confronto live tra 1/2||w||^2 e valore del duale.",
+      "aha": "Una proposta è l'SVM ottima solo se passa tutte e quattro le verifiche: la stazionarietà lega w agli alpha, le due ammissibilità controllano vincoli e segni, la complementarità vieta moltiplicatori positivi ai punti fuori dal bordo del margine.",
+      "formulasShown": ["\\mathbf{w} = \\sum_{i}\\alpha_i y_i \\mathbf{x}_i, \\qquad \\sum_{i}\\alpha_i y_i = 0", "y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) \\ge 1", "\\alpha_i \\ge 0", "\\alpha_i\\left(y_i\\left(\\mathbf{w}^T\\mathbf{x}_i + w_0\\right) - 1\\right) = 0"],
+      "challenge": "Trova una proposta diversa da B che accenda esattamente tre spie verdi su quattro; poi spiega a voce quale condizione manca e perché quel confine non è quello a massimo margine. (Soluzioni possibili: alpha = (0, 0, 0) con 'w libero' = (1, 1) e w0 = -1 fa fallire solo la stazionarietà; alpha = (0, 0, 0), quindi w = (0, 0), con qualunque w0 fa fallire solo l'ammissibilità primale.)",
+      "size": "M",
+      "tech": "svg+motion",
+      "addedBy": "revisore"
+    }
+  ],
+  "exercises": [
+    {
+      "id": "es01",
+      "title": "Hard margin SVM con due punti, risolta a mano",
+      "type": "numerico",
+      "description": "Training set: x_1 = (1, 1) con y_1 = +1 e x_2 = (-1, -1) con y_2 = -1. (a) Scrivi il duale e risolvilo: dal vincolo alpha_1 - alpha_2 = 0 si ha alpha_1 = alpha_2 = alpha, w = alpha (x_1 - x_2) = (2 alpha, 2 alpha), duale = 2 alpha - 1/2 alpha^2 ||x_1 - x_2||^2 = 2 alpha - 4 alpha^2, massimo in alpha = 1/4. (b) Ricava w = (1/2, 1/2) e w0 = 1 - w^T x_1 = 0. (c) Margine 1/||w|| = sqrt(2), fascia 2 sqrt(2) (la distanza tra i due punti). (d) Verifica primale = duale: 1/2||w||^2 = 1/4 e 2(1/4) - 4(1/16) = 1/4. Parametri randomizzabili: x_+ = (a, b), x_- = (c, d) interi tra -4 e 4; soluzione generale alpha = 2/||x_+ - x_-||^2, w = 2(x_+ - x_-)/||x_+ - x_-||^2, w0 = -w^T(x_+ + x_-)/2.",
+      "concepts": ["c31", "c50", "c53", "c75"]
+    },
+    {
+      "id": "es02",
+      "title": "Portare un iperpiano in forma canonica",
+      "type": "numerico",
+      "description": "Dati: spigole (+1) in (3, 3) e (4, 2), salmoni (-1) in (1, 1) e (0, 1). Iperpiano w = (2, 2), w0 = -8. (a) Calcola y f(x) per ogni punto (4, 4, 4, 6) e rho = 4. (b) Calcola il margine geometrico rho/||w|| = 4/(2 sqrt(2)) = sqrt(2). (c) Riscala con alpha = 1/rho: w = (0.5, 0.5), w0 = -2; verifica rho = 1 e margine 1/||w|| = sqrt(2), invariato. Parametri randomizzabili: w e w0 moltiplicati per un fattore casuale tra 0.5 e 5; la soluzione si ottiene dividendo per il rho calcolato.",
+      "concepts": ["c11", "c12", "c14", "c15", "c17"]
+    },
+    {
+      "id": "es03",
+      "title": "Valutare il Margin Error Bound",
+      "type": "numerico",
+      "description": "Con c = 1 (valore illustrativo), m = 10^4, nu = 0.02, R = 1, Lambda = 5, rho = 0.5, delta = 0.05 calcola il bound nu + sqrt(c/m (R^2 Lambda^2/rho^2 ln^2 m + ln 1/delta)): R^2 Lambda^2/rho^2 = 100, ln^2(10^4) = 84.83, somma con ln 20 = 3.00 dà 8486, diviso 10^4 e sotto radice 0.921, bound circa 0.94. Poi: raddoppiando rho a 1 (con nu invariato) il bound scende a circa 0.48; quadruplicando m (4 * 10^4) scende a circa 0.55; con m = 10^6 a circa 0.16. Parametri randomizzabili: m tra 10^3 e 10^7, rho tra 0.2 e 2, nu tra 0 e 0.1; soluzione con la formula.",
+      "concepts": ["c21", "c22", "c23", "c24"]
+    },
+    {
+      "id": "es04",
+      "title": "Duale a tre punti: verifica dell'ottimo",
+      "type": "numerico",
+      "description": "Battiti ECG: x_1 = (0, 0) con y = -1, x_2 = (2, 0) e x_3 = (0, 2) con y = +1. (a) Verifica che alpha = (1, 1/2, 1/2) rispetta alpha_i >= 0 e sum alpha_i y_i = -1 + 1/2 + 1/2 = 0. (b) Calcola w = sum alpha_i y_i x_i = (1, 1). (c) Calcola w0 da un support vector: w0 = y_1 - w^T x_1 = -1 (stesso valore da x_2 e x_3). (d) Calcola il duale sum alpha_i - 1/2||w||^2 = 2 - 1 = 1 e il primale 1/2||w||^2 = 1: coincidono. (e) Margine 1/||w|| = 1/sqrt(2). Parametri randomizzabili: scala dei punti (x_2 = (s, 0), x_3 = (0, s)): alpha = (4/s^2, 2/s^2, 2/s^2), w = (2/s, 2/s), w0 = -1.",
+      "concepts": ["c49", "c50", "c53", "c75"]
+    },
+    {
+      "id": "es05",
+      "title": "w0 da più support vectors",
+      "type": "numerico",
+      "description": "Il solver restituisce w e tre support vectors con (y, w^T x): (+1, 2.10), (-1, 0.08), (+1, 2.12). Calcola le stime w0 = (1 - y w^T x)/y: -1.10, -1.08, -1.12, e la loro media -1.10. Spiega perché le stime non coincidono (tolleranza numerica del solver) e perché si fa la media. Parametri randomizzabili: w0 vero tra -3 e 3, rumore gaussiano con deviazione tra 0.005 e 0.05 aggiunto a w^T x; soluzione con la formula e la media.",
+      "concepts": ["c75", "c76"]
+    },
+    {
+      "id": "es06",
+      "title": "Classificare un punto con la forma duale",
+      "type": "numerico",
+      "description": "Con la soluzione di es01 (alpha_1 = alpha_2 = 1/4, x_1 = (1, 1) y = +1, x_2 = (-1, -1) y = -1, w0 = 0) classifica x = (2, 0) usando solo prodotti scalari: f(x) = 1/4 (+1)(x_1^T x) + 1/4 (-1)(x_2^T x) + 0 = 1/4 * 2 + 1/4 * 2 = 1, classe +1. Verifica con la forma primale w^T x + w0 = (1/2)(2) = 1. Parametri randomizzabili: punto di test con coordinate intere tra -3 e 3; soluzione sommando i due contributi.",
+      "concepts": ["c64", "c65", "c67"]
+    },
+    {
+      "id": "es07",
+      "title": "Perché ||w||^2 e perché 1/2",
+      "type": "concettuale",
+      "description": "Spiega perché nel problema dell'hard margin SVM si minimizza 1/2||w||^2 invece di massimizzare 1/||w||: (1) con rho = 1 il margine geometrico è 1/||w||; (2) 1/t è decrescente per t > 0; (3) il quadrato è monotono sui valori non negativi; (4) moltiplicare per 1/2 non cambia il minimizzatore e rende il gradiente uguale a w; (5) si ottiene un problema quadratico con vincoli lineari, convesso.",
+      "concepts": ["c25", "c29", "c30", "c32", "c33"]
+    },
+    {
+      "id": "es08",
+      "title": "Primale o duale? Cinque progetti",
+      "type": "concettuale",
+      "description": "Per ciascun progetto indica quale formulazione conviene e perché: (a) spam, d = 50000 parole, m = 2000 email; (b) sensori, d = 6, m = 5 * 10^6; (c) cifre 8x8 con kernel gaussiano; (d) iperspettrale, d = 200 bande, m = 150 pixel; (e) antifrode, d = 10, m = 10^6 senza kernel. Soluzione: duale, primale, duale (kernel), duale, primale; criterio: confronto tra d + 1 e m, e duale obbligato con i kernel.",
+      "concepts": ["c61", "c62", "c63"]
+    },
+    {
+      "id": "es09",
+      "title": "Derivazione completa del duale",
+      "type": "dimostrazione",
+      "description": "Partendo dal primale min 1/2||w||^2 s.t. y_i(w^T x_i + w0) >= 1: scrivi la Lagrangiana, annulla le derivate rispetto a w0 e w, sostituisci w = sum alpha_i y_i x_i, espandi nei quattro termini, usa sum alpha_i y_i = 0 e ricava il problema duale con i vincoli. Mostra che le feature compaiono solo nei prodotti scalari x_i^T x_j (domanda d'orale: 'write the dual derivation and show that features appears only in dot products').",
+      "concepts": ["c47", "c49", "c50", "c51", "c52", "c53"]
+    },
+    {
+      "id": "es10",
+      "title": "La Lagrangiana come muro",
+      "type": "dimostrazione",
+      "description": "Per il problema generico min f(z) s.t. g_i(z) >= 0, dimostra che max_{alpha >= 0} [f(z) - sum alpha_i g_i(z)] vale f(z) se tutti i vincoli sono soddisfatti e +infinito altrimenti, e deducine che min_z max_alpha L coincide con il minimo vincolato. Poi spiega perché al punto di sella alpha_i > 0 solo per i vincoli attivi. Verifica sull'esempio 1D: min 1/2 w^2 s.t. w >= 1 (soluzione w* = 1, alpha* = 1).",
+      "concepts": ["c39", "c42", "c43", "c44", "c45"]
+    },
+    {
+      "id": "es11",
+      "title": "Chi può essere support vector?",
+      "type": "concettuale",
+      "description": "All'ottimo di un hard margin SVM sei punti di training hanno y_i f(x_i) = 1.00, 1.00, 2.30, 1.70, 1.00, 4.20. Quali possono avere alpha_i > 0? Quali hanno sicuramente alpha_i = 0? Cosa succede alla funzione di decisione se si rimuovono i punti con valore 2.30, 1.70, 4.20? E se si rimuove uno dei punti con valore 1.00? Soluzione: solo quelli con valore 1 possono avere alpha > 0 (complementarità); gli altri hanno alpha = 0 e la loro rimozione non cambia nulla; rimuovere un support vector con alpha > 0 può cambiare il confine.",
+      "concepts": ["c68", "c69", "c70", "c72"]
+    },
+    {
+      "id": "es12",
+      "title": "Canonical hyperplane: la domanda d'orale",
+      "type": "concettuale",
+      "description": "Rispondi come all'orale: cos'è l'iperpiano canonico e perché si può fissare rho = 1? Punti da toccare: invarianza del confine per alpha(w^T x + w0) = 0, grado di libertà, rho = min y f(x) = 1 come scelta arbitraria ma comoda, margine geometrico 1/||w||, conseguenza: massimizzare il margine equivale a minimizzare ||w||, e i vincoli diventano y_i(w^T x_i + w0) >= 1.",
+      "concepts": ["c14", "c15", "c16", "c17", "c28"]
+    },
+    {
+      "id": "es13",
+      "title": "Leggere il Margin Error Bound",
+      "type": "concettuale",
+      "description": "Senza calcoli: (a) cosa succede al bound se si raddoppia m? (b) se si raddoppia rho lasciando invariato nu? (c) perché aumentare rho non è sempre gratuito (effetto su nu)? (d) il bound vale solo per distribuzioni gaussiane? (e) cosa rappresenta delta? (f) (aggiunta del revisore) il rho del teorema è lo stesso rho = min y f(x) di pag. 47? Cosa vale nu se si sceglie come soglia proprio il margine di confidenza, e cosa resta del bound con l'iperpiano canonico? Soluzione: (a) scende circa come sqrt(ln^2 m / m); (b) il termine R^2 Lambda^2/rho^2 si divide per 4; (c) più punti cadono dentro la fascia, nu cresce; (d) no, per qualunque P; (e) la probabilità che il training set estratto renda falso il bound; (f) no, nel teorema rho è una soglia scelta liberamente; con la soglia uguale al margine di confidenza nu = 0, e con rho = 1 (forma canonica) resta sqrt(c/m (R^2 Lambda^2 ln^2 m + ln 1/delta)), che si riduce riducendo il limite Lambda su ||w||.",
+      "concepts": ["c20", "c21", "c22", "c23", "c24", "c26", "c80"]
+    },
+    {
+      "id": "es14",
+      "title": "Un campione mal etichettato",
+      "type": "concettuale",
+      "description": "Un dataset separabile con margine 2/||w|| = 1.8 riceve un nuovo esempio etichettato per errore, vicino alla classe opposta. Descrivi i tre scenari possibili: (1) il punto è lontano dal confine dalla parte giusta: nessun effetto; (2) è dalla parte 'giusta' ma vicino: il margine si restringe e il confine ruota; (3) è oltre ogni separatore: il problema hard margin non ha soluzione. Spiega perché questo motiva il soft margin (p09).",
+      "concepts": ["c77", "c78", "c71"]
+    },
+    {
+      "id": "es15",
+      "title": "Quattro proposte, quattro condizioni KKT",
+      "type": "numerico",
+      "description": "Battiti ECG: x_1 = (0, 0) con y = -1, x_2 = (2, 0) e x_3 = (0, 2) con y = +1. Per ogni proposta verifica stazionarietà (w = sum alpha_i y_i x_i e sum alpha_i y_i = 0), ammissibilità primale (y_i(w^T x_i + w0) >= 1), ammissibilità duale (alpha_i >= 0) e complementarità (alpha_i(y_i(w^T x_i + w0) - 1) = 0). (A) alpha = (1, 1/2, 1/2), w = (1, 1), w0 = -1: y_i f(x_i) = 1, 1, 1, tutte soddisfatte, è l'ottimo (primale = duale = 1). (B) alpha = (2, 1, 1), w = (2, 2), w0 = -1: stazionarietà sì (sum alpha_i y_i = 0), y_i f(x_i) = 1, 3, 3, ammissibilità sì, complementarità no (alpha_2 (3 - 1) = 2); duale 4 - 4 = 0 contro primale 4. (C) alpha = (1, 1, 0), w = (2, 0), w0 = -1: y_3 f(x_3) = -1, ammissibilità primale violata, e complementarità violata per x_2 (alpha_2 (3 - 1) = 2). (D) alpha = (1, 1/2, 1/2), w = (1, 1), w0 = -1.5: y_i f(x_i) = 1.5, 0.5, 0.5, ammissibilità primale violata su x_2 e x_3 e complementarità violata su tutti e tre. Parametri randomizzabili: scala s dei punti positivi (x_2 = (s, 0), x_3 = (0, s)), con ottimo alpha = (4/s^2, 2/s^2, 2/s^2), w = (2/s, 2/s), w0 = -1; le proposte sbagliate si generano moltiplicando alpha per un fattore diverso da 1, azzerando un alpha o spostando w0.",
+      "concepts": ["c79", "c68", "c49", "c50"],
+      "addedBy": "revisore"
+    }
+  ],
+  "examQuestions": [
+    {
+      "text": "Learning Parameters  (ML with complete data, MAP), SVM (Hard Margin, Lagrangian, Soft Margin), NonLinear,  Kernel Machine, Perceptron)",
+      "prof": "Passerini",
+      "concepts": ["c28", "c31", "c47", "c49", "c50", "c53"]
+    },
+    {
+      "text": "SVM (when should we opt for primal or dual formulation)",
+      "prof": "Passerini",
+      "concepts": ["c61", "c62", "c63", "c60"]
+    },
+    {
+      "text": "Linear Classifiers. Questions: (1) when do we use (and why) primal or dual (2) meaning of adapting learning rate",
+      "prof": "Passerini",
+      "concepts": ["c61", "c62", "c63"]
+    },
+    {
+      "text": "soft SVM Q: why do we use kkt approach and why can we say that the solutions of primal and dual formulations are the same?",
+      "prof": "Passerini",
+      "concepts": ["c37", "c42", "c45", "c48", "c54", "c79"]
+    },
+    {
+      "text": "Hard or soft margin svm (choose one) + Learning bayesian network. Questions afterwards: canonical hyperplane, why do we use kkt, why solution of dual is equal to primal, disjoint cpd in BN, explain E-M in BN",
+      "prof": "Passerini",
+      "concepts": ["c15", "c16", "c17", "c31", "c37", "c45", "c48", "c53", "c79"]
+    },
+    {
+      "text": "Kernels and kernel machines: entire chapter and link to the dual problem, write the dual derivation and show that features appears only in dot products",
+      "prof": "Passerini",
+      "concepts": ["c51", "c52", "c53", "c60", "c64", "c65"]
+    },
+    {
+      "text": "He asked me to formulaize everything about linear regression for perceptron and linear classification for perceptron and svm. I wrote all the equations till i reached the soft case for svm so i stopped as i took too much time. He did not ask me any questions and that's all",
+      "prof": "Passerini",
+      "concepts": ["c11", "c12", "c15", "c31", "c47", "c53", "c64", "c75"]
+    },
+    {
+      "text": "Linear functions for both classification and regression: discriminant functions, classification concept, functional/geometric margin, perceptron, loss function for classification, gradient descent, regression, matrix inversion problem, pseudoinverse, loss function for regression.",
+      "prof": "Passerini",
+      "concepts": ["c10", "c11", "c12"]
+    },
+    {
+      "text": "Non-linear machines (non-linear SVM, SV regression, kernel machines)",
+      "prof": "Passerini",
+      "concepts": ["c05", "c58", "c60", "c64"]
+    },
+    {
+      "text": "Non-linear SVM and Kernel machines. Concept of feature map, example (homogeneous polynomial map), revisiting soft-margin SVM using feature maps, SVR definition and proof for Non-Linear soft margin SVM for classification, advantages of using feature maps; question: rule of constant C in soft-margin SVM (what happens if C=0 and if C->+infinity).",
+      "prof": "Passerini",
+      "concepts": ["c28", "c31", "c77", "c78"],
+      "addedBy": "revisore"
+    }
+  ],
+  "crossLinks": [
+    {"moduleId": "p06-discriminanti-perceptron", "why": "Definisce margine funzionale y f(x) e margine geometrico di un punto (distanza dall'iperpiano) usati a pag. 47; il perceptron trova un separatore qualsiasi, l'SVM quello a massimo margine."},
+    {"moduleId": "p07-regressione-multiclasse", "why": "Modulo precedente: si chiude a pag. 45 con i classificatori lineari generativi (Naive Bayes come modello log-lineare). Pag. 46 rientra negli intervalli di entrambi i moduli ma contiene solo l'apertura delle SVM (inventariata anche in p07, da deduplicare). Lo schema One-vs-All di p07 si applica anche alle SVM binarie."},
+    {"moduleId": "p09-svm-soft-margin", "why": "Continua da pag. 55: il campione mal etichettato che fa crollare il margine motiva le slack variables e la costante C; le stesse derivazioni KKT/duale si ripetono con i vincoli 0 <= alpha_i <= C. Per C che tende a +infinito le violazioni del margine diventano proibitive e si ritrova l'hard margin di questo modulo (domanda d'orale sul ruolo di C)."},
+    {"moduleId": "p10-kernel-trick", "why": "Il duale e la funzione di decisione contengono i dati solo nei prodotti scalari x_i^T x_j: sostituirli con un kernel dà le SVM non lineari annunciate a pag. 46 e 53."},
+    {"moduleId": "p11-kernel-machines", "why": "Le kernel machines generalizzano la forma duale f(x) = sum alpha_i y_i k(x_i, x) + w0 ricavata qui."},
+    {"moduleId": "m21-errore-generalizzazione", "why": "Il Margin Error Bound è una garanzia sull'errore di generalizzazione: collega errore empirico (nu) e termine di complessità, come la scomposizione errore di approssimazione/stima di Melgani."},
+    {"moduleId": "m19-funzioni-discriminanti", "why": "Funzioni discriminanti lineari e iperpiani di decisione nella parte di Melgani: stesso oggetto geometrico, criterio di scelta diverso."},
+    {"moduleId": "m15-lda", "why": "Anche LDA sceglie una direzione lineare ottimizzando un criterio (rapporto di Fisher); confronto utile tra massimo margine e massima separabilità delle medie."}
+  ],
+  "emptyPages": [],
+  "gaps": [
+    "part2 p54: la fonte scrive 'KTT conditions': è un refuso per KKT (Karush-Kuhn-Tucker); la condizione riportata alpha_i(y_i(w^T x_i + w0) - 1) = 0 è solo la complementarità (complementary slackness), una delle condizioni KKT (le altre, stazionarietà, ammissibilità primale e duale, sono sparse tra pag. 50-52).",
+    "part2 p53: i 'box constraints' del duale sono scritti come alpha_i > 0 e sum alpha_i y_i = 0; il vincolo corretto è alpha_i >= 0 (come a pag. 52). Inoltre nell'hard margin non c'è un limite superiore: il vero 'box' 0 <= alpha_i <= C compare solo nel soft margin (p09).",
+    "part2 p53 vs p54: a pag. 53 il duale 'allows efficient computation for large datasets', a pag. 54 è 'more appropriate for datasets where the number of training examples m is relatively small'. Le due frasi si conciliano leggendo 'large' come alta dimensionalità (d grande) o spazi di feature ottenuti con kernel; la regola d'esame resta quella di pag. 53-54 (d << m primale, m << d o kernel duale).",
+    "part2 p51-52: la fonte dice che la soluzione sta nel punto di sella della Lagrangiana ma non dimostra che i valori ottimi di primale e duale coincidono (dualità forte, garantita qui dalla convessità: obiettivo quadratico e vincoli lineari). La domanda d'orale 'why solution of dual is equal to primal' richiede di esplicitarlo; nel concetto c48 è segnalato come integrazione.",
+    "part2 p48: il teorema del Margin Error Bound usa f(x) = sign(w^T x) senza bias w0, non fissa la costante universale c e non è dimostrato; nu è definito a parole (frazione di esempi con margine minore di rho/||w||), la formula simbolica nel concetto c20 è una trascrizione.",
+    "part2 p49: 'To ensure the margin (rho) is exactly 1' ma il vincolo imposto è y f(x) >= 1 (margine almeno 1): il minimo vale esattamente 1 solo all'ottimo, perché minimizzando ||w|| almeno un vincolo diventa attivo.",
+    "part2 p46 vs p47-48: a pag. 46 il classificatore a massimo margine 'maximizes the sum of the margins'; a pag. 47 il margine geometrico canonico è 1/||w|| (per lato), mentre la figura di pag. 48 etichetta 2/||w|| (fascia completa). Non è una contraddizione ma va detto chiaramente all'orale quale delle due quantità si nomina.",
+    "part2 p47: nella formula dell'iperpiano canonico il pedice è scritto (X, y) con X maiuscola invece di (x, y): refuso tipografico.",
+    "part2 p55: la formula w0 = (1 - y_i w^T x_i)/y_i non viene semplificata; con y_i in {-1, +1} vale w0 = y_i - w^T x_i (esplicitato nei concetti c75 e der08).",
+    "part2 p55 (seconda metà): l'inizio della sezione Soft Margin SVM appartiene al modulo adiacente p09; è inventariato qui (c77, c78) per continuità, da deduplicare.",
+    "part2 p54 (revisore): 'Support Vectors are the training points x_i that lie on the minimum confidence hyperplanes, and so they have alpha_i > 0' inverte l'implicazione. La complementarità garantisce solo alpha_i > 0 => y_i f(x_i) = 1; un punto sul bordo può avere alpha_i = 0 (caso degenere). La definizione operativa usata nel resto della fonte (pag. 52-55) è 'support vector = esempio con alpha_i > 0'.",
+    "part2 p47 vs p48 (revisore): lo stesso simbolo rho indica a pag. 47 il margine di confidenza calcolato (min y f(x)) e a pag. 48 una soglia di margine scelta liberamente nel teorema; la nota di pag. 49 'If rho is fixed to 1' fonde le due letture. Chiarimento nel concetto c80.",
+    "part2 p46, p48, p55 (revisore): le tre figure usano lo stesso insieme di 21 punti (12 cerchi rossi, 9 quadrati blu), conteggio verificato ingrandendo le immagini; i support vectors sono 3 (due quadrati blu sulla retta +1, un cerchio rosso sulla retta -1). Nelle figure di pag. 48 e 55 la retta tratteggiata -1 passa praticamente per l'origine, da cui parte il vettore w (quindi nel disegno w0 vale circa -1): dettaglio grafico, non commentato dalla fonte.",
+    "part2 p49-p54 (revisore): le condizioni KKT complete (stazionarietà, ammissibilità primale e duale, complementarità) non sono mai elencate insieme; la sintesi è nel concetto c79, con l'integrazione (non scritta nella fonte) che per questo problema convesso soddisfarle tutte equivale a essere all'ottimo.",
+    "part2 p51 (verificatore): nel punto 'Maximizing alpha_i' la fonte scrive la condizione come g_i(z') >= 0 ma il termine come -alpha_i g_i(z) (senza apice): notazione incoerente, stessa quantità; nell'inventario (c43, der03) si usa z' in entrambi.",
+    "part2 p46-p55 (verificatore): tutte le formule dell'inventario sono state confrontate simbolo per simbolo con le immagini delle pagine ingrandite; nessuna formula della fonte risulta mancante. Le formule che non compaiono nella fonte e sono esplicitazioni dell'inventario sono segnalate nel detail dei concetti (c07, c08, c20, c41, c75, c76) o negli stepWhy delle derivazioni."
+  ]
+}

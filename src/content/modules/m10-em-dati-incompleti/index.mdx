@@ -1,0 +1,1039 @@
+## Panoramica
+
+Fino a questo punto del Cap. 2 hai stimato densità e parametri da campioni misurati per intero. La stima a massima verosimiglianza (*Maximum Likelihood*, ML), la stima bayesiana, il K-NN e le finestre di Parzen partono tutti da un training set in cui ogni $\mathbf{x}$ è noto in ogni sua componente. L'ultima sezione del capitolo, «Estimation with Incomplete Data», toglie questa ipotesi: il modello che genera i dati contiene grandezze che nessuno misura. Lo strumento per stimarne i parametri è l'algoritmo <Term en="Expectation-Maximization (EM) algorithm">Expectation-Maximization</Term> (EM). <SourceRef doc="ch2" page={67} /> <SourceRef doc="part1" page={45} />
+
+Il foglio segue le slide p67-77 e le note p45-50, che le accompagnano pagina per pagina:
+
+1. il contesto: variabili latenti, dati incompleti, approccio parametrico (slide p67);
+2. l'esempio tipico, una mistura di $M$ modi gaussiani, e i tre motivi per cui è un problema con dati incompleti (p68-69);
+3. la formulazione: dataset incompleto $\mathbf{X}$, dataset completo $\mathbf{Z} = (\mathbf{X}, \mathbf{Y})$, densità congiunta e due verosimiglianze (p70-71);
+4. l'algoritmo: aspettazione condizionata $Q$, E-step e M-step (p72-73);
+5. la convergenza: la log-verosimiglianza (*log-likelihood*) non scende mai, ma il massimo globale non è garantito (p74-75);
+6. le tre equazioni EM della mistura di gaussiane (p76);
+7. l'esempio con quattro punti, uno dei quali senza la componente $x_1$ (p77).
+
+Le note aggiungono il principio di usare tutta l'informazione disponibile, il confronto con l'approccio non parametrico, l'inizializzazione, il criterio di arresto e il motivo dei massimi locali. In fondo trovi la coda delle finestre di Parzen con cui si apre la pagina 45 delle note.
+
+<KeyIdea>
+EM resta una stima ML: cerca il massimo di $l(\boldsymbol{\theta} \mid \mathbf{X})$. Se conoscessi i dati mancanti $\mathbf{Y}$ la massimizzazione sarebbe facile; non li conosci, e allora alterni due passi. Nell'E-step, con i parametri correnti fermi, calcoli la distribuzione di $\mathbf{Y}$ e la media del logaritmo della verosimiglianza dei dati completi, la funzione $Q$. Nell'M-step massimizzi $Q$ rispetto ai parametri. Ripeti finché i parametri smettono di cambiare. La log-verosimiglianza dei dati osservati non scende mai, ma puoi fermarti su un massimo locale (*local maximum*) o su un punto di sella (*saddle point*).
+</KeyIdea>
+
+<Callout kind="intuizione">
+Nell'impianto di confezionamento del pesce la telecamera misura la luminosità di ogni pesce sul nastro. Nei moduli precedenti un operatore annotava la specie, salmone o spigola, e stimavi la densità di ciascuna classe con la ML. Oggi l'operatore non c'è. L'istogramma delle luminosità ha due gobbe, ma nessun pesce porta il cartellino: la specie continua a generare i dati, solo che non la vedi. EM ricostruisce le due densità e, come sottoprodotto, la probabilità che ogni pesce sia un salmone.
+</Callout>
+
+<Callout kind="esame">
+Melgani chiede testualmente «What is an EM algorithm and how does it work? Explain formula and both steps. Then Multi Gaussian example for EM algorithm». Ti servono tre pezzi: la definizione (metodo iterativo di stima ML con variabili latenti), la formula di $Q$ con i due passi, le equazioni della mistura con la loro interpretazione. Passerini riprende EM nel clustering (la formula dell'M-step della mistura gaussiana) e nelle reti bayesiane con dati incompleti. Le tredici domande della banca collegate a questo foglio sono raccolte nella sezione per l'orale.
+</Callout>
+
+## Dati incompleti e variabili latenti
+
+### Dalle variabili osservabili alle variabili latenti
+
+La slide p67 parte da un bilancio: finora hai considerato problemi di stima in cui il modello dipende completamente da <Term en="observable variables">variabili osservabili</Term>. Nella stima ML di una gaussiana, nella stima bayesiana, nel K-NN e in Parzen ogni campione era misurato per intero e il modello non conteneva grandezze nascoste. Le note ripetono la stessa premessa: problemi di stima che si basano interamente su variabili osservabili. <SourceRef doc="ch2" page={67} /> <SourceRef doc="part1" page={45} />
+
+La seconda riga della slide rimuove la premessa. In alcuni casi reali (le note dicono «in many real-world scenarios») il modello dipende anche da variabili latenti non osservate, scritte in rosso nella slide.
+
+<Definition term="Variabile latente non osservata" en="unobserved latent variable">
+Grandezza che fa parte del meccanismo che genera i dati ma che non viene misurata. Il modello la contiene, il dataset no.
+</Definition>
+
+In queste pagine ne incontri due. Nell'esempio guida la variabile latente è l'indice del modo gaussiano che ha generato ciascun campione: il campione è misurato, la sua origine no. Nell'esempio finale della slide p77 è il valore mancante di una feature. Latente non vuol dire assente dal modello: la specie del pesce continua a decidere la sua luminosità anche se nessuno la annota.
+
+### Usare tutta l'informazione, anche parziale
+
+Davanti alle variabili latenti hai due scorciatoie: ignorarle, oppure scartare i campioni incompleti. Le note osservano che la pratica statistica preferisce usare tutta l'informazione disponibile anche quando è parziale, perché quell'informazione ha valore. Presentando EM ripetono che l'idea centrale è sfruttare tutta l'informazione, anche se una parte dei dati manca o è nascosta. <SourceRef doc="part1" page={46} /> <SourceRef doc="part1" page={48} />
+
+La conseguenza pratica: non butti via un campione perché gli manca una coordinata, e non ignori la struttura nascosta. Costruisci uno stimatore che usa anche il pezzo di informazione che c'è. Un conto rapido mostra il prezzo dello scarto. Misuri la larghezza di 120 pesci, con deviazione standard stimata $\hat{\sigma} = 0.80$: l'errore standard della media è $0.80/\sqrt{120} = 0.073$. Se il sensore perde il 30% delle letture e scarti i pesci incompleti, ne restano 84 e l'errore sale a $0.80/\sqrt{84} = 0.087$, circa il 20% in più (fattore $\sqrt{120/84} \approx 1.195$).
+
+<Widget id="m10-nastro-senza-etichette" />
+
+### Due forme di dato incompleto
+
+La fonte usa l'espressione «incomplete data» per due situazioni diverse. <SourceRef doc="part1" page={46} /> <SourceRef doc="ch2" page={69} /> <SourceRef doc="ch2" page={77} />
+
+- **Feature mancanti** (*missing feature values*). Ad alcuni campioni manca il valore di qualche feature. Le note lo danno come esempio tipico di problema con dati incompleti, e la slide p77 lo mostra con quattro punti, uno dei quali senza la componente $x_1$.
+- **Appartenenza nascosta** (*hidden mode membership*). Nella mistura di gaussiane ogni campione è misurato per intero, ma per nessuno sai quale modo lo ha generato (slide p69). Le note p47 rappresentano questa informazione mancante con un vettore binario di appartenenza.
+
+In entrambi i casi chiami $\mathbf{Y}$ la quantità mancante, la tratti come variabile latente e la affianchi ai dati osservati $\mathbf{X}$ per formare il dataset completo:
+
+<Formula id="f-c06" />
+
+Per questo un solo algoritmo, EM, risolve entrambi i problemi: cambia soltanto che cosa c'è dentro $\mathbf{Y}$, un'etichetta di modo oppure il valore di una coordinata.
+
+### Approccio parametrico ed EM
+
+La terza riga della slide p67 dice che per i <Term en="problems with incomplete data">problemi con dati incompleti</Term> si usa di solito l'approccio parametrico. Le note lo ripetono con l'esempio delle feature mancanti in alcuni campioni. Il motivo, esplicitato a p47 delle note, è che ti serve un modello di struttura nota, cioè una forma funzionale della pdf con un vettore di parametri $\boldsymbol{\theta}$: la struttura è l'informazione a priori che compensa ciò che non osservi. <SourceRef doc="ch2" page={67} /> <SourceRef doc="part1" page={46} />
+
+La quarta riga nomina la soluzione: l'algoritmo EM, che le note chiamano una soluzione robusta per questa classe di problemi di stima. L'ultima riga annuncia «a typical example of estimation with incomplete data», la mistura di gaussiane delle pagine successive. Tieni presente la gerarchia. EM è uno strumento generale per la stima parametrica con variabili latenti; la mistura è il suo esempio più famoso, e la slide p77 ne mostra un secondo, con una feature mancante.
+
+<Check id="chk-01" />
+
+## L'esempio tipico: mistura di M modi gaussiani
+
+### N osservazioni i.i.d. in uno spazio a n dimensioni
+
+La slide p68 fissa il setup dell'esempio: hai $N$ osservazioni i.i.d. $\mathbf{x}_i$ definite in uno spazio $X$ a $n$ dimensioni. <SourceRef doc="ch2" page={68} /> <SourceRef doc="part1" page={46} />
+
+<Formula id="f-c07" />
+
+**I.i.d.** sta per indipendenti e identicamente distribuite (*independent and identically distributed*): tutti i campioni escono dalla stessa $p(\mathbf{x})$ e nessuno influenza gli altri. È l'ipotesi che, due slide più avanti, trasforma la verosimiglianza in un prodotto.
+
+<Callout kind="attenzione">
+Tre trappole di notazione. $N$ è il numero di campioni, $n$ la dimensione dello spazio delle feature. $X$ indica lo spazio e, dalla slide p70, anche l'insieme dei dati osservati $\mathbf{X}$. L'indice $i$ numera qui i campioni, ma nella stessa slide numera anche i modi ($P_i$, $\mathbf{m}_i$, $\Sigma_i$); dalla slide p76 i campioni passano all'indice $j$ e $i$ resta ai modi. In questo foglio, dove campioni e modi compaiono insieme, i campioni hanno l'indice $j$.
+</Callout>
+
+### La mistura di modi gaussiani
+
+Le osservazioni vengono da una distribuzione $p(\mathbf{x})$ definita come <Term en="mixture of M Gaussian modes">mistura di M modi gaussiani</Term>, scritto in rosso nella slide:
+
+<Formula id="f-c08" />
+
+La densità complessiva è la somma pesata di $M$ densità gaussiane, ognuna con il suo vettore media e la sua matrice di covarianza, pesate dalle probabilità a priori $P_i$. Ogni addendo è un **modo** (*mode*) o **componente** (*mixture component*). Le note chiamano il modello *Gaussian Mixture Model* (GMM) e scrivono la stessa formula con un punto di moltiplicazione e senza grassetto su $x$ e $m_i$: il contenuto è identico. È la formula da cui parte il «Multi Gaussian example» che Melgani chiede all'orale.
+
+Leggila come un meccanismo generativo a due stadi. Per produrre un campione scegli prima il modo $i$ con probabilità $P_i$, poi estrai $\mathbf{x}$ dalla gaussiana di quel modo. Il primo stadio è proprio quello che resta nascosto.
+
+<Figure id="fig01" />
+
+<Callout kind="intuizione">
+Luminosità dei pesci sul nastro: salmoni con $P_1 = 0.6$, $m_1 = 4$, $\sigma_1 = 1$; spigole con $P_2 = 0.4$, $m_2 = 7$, $\sigma_2 = 1.5$. Nel punto $x_0 = 5$ la mistura vale $p(5) = 0.6 \cdot \mathcal{N}(5 \mid 4, 1^2) + 0.4 \cdot \mathcal{N}(5 \mid 7, 1.5^2) = 0.6 \cdot 0.2420 + 0.4 \cdot 0.1093 = 0.1889$. I due addendi, 0.1452 e 0.0437, sono le altezze delle due campane pesate in quel punto: sommati danno la curva che osservi.
+</Callout>
+
+<Widget id="m10-costruttore-di-misture" />
+
+### Prior, medie e covarianze dei modi
+
+La slide completa la definizione: $P_i$, $\mathbf{m}_i$ e $\Sigma_i$ sono rispettivamente la <Term en="prior probability">probabilità a priori</Term>, il <Term en="mean vector">vettore media</Term> e la <Term en="covariance matrix">matrice di covarianza</Term> dell'$i$-esima componente della mistura. <SourceRef doc="ch2" page={68} />
+
+<Formula id="f-c09" />
+
+- $P_i$ dice quale frazione dei campioni proviene, in media, dal modo $i$: fissa il volume della campana pesata.
+- $\mathbf{m}_i$ dice dove è centrata la campana.
+- $\Sigma_i$ ne fissa forma e orientamento.
+
+Le note aggiungono un quarto punto: $p(\mathbf{x} \mid \mathbf{m}_i, \Sigma_i)$ rappresenta la distribuzione gaussiana. Queste pagine non la riscrivono. È la normale multivariata di <ModLink to="m06-modelli-pdf-gaussiana">modelli di pdf e gaussiana</ModLink>: ti serve per calcolare le equazioni EM, e Melgani la chiede anche da sola («the formula of the Gaussian curve in a multi dimensional space»). <SourceRef doc="part1" page={46} />
+
+<Formula id="f-c09-2" />
+
+Il vincolo sui prior non è scritto nella slide ma segue dalla definizione. Le $P_i$ sono le probabilità a priori di $M$ eventi mutuamente esclusivi ed esaustivi, perché ogni campione viene da uno e un solo modo; le note p49 le chiamano anche pesi della mistura (*mixing weights*). Devono quindi essere non negative e sommare a 1:
+
+<Formula id="f-c10" />
+
+Il vincolo garantisce che $p(\mathbf{x})$ sia una densità: ogni gaussiana integra a 1, quindi l'integrale della mistura vale $\sum_i P_i = 1$. Lo ritrovi nell'M-step. Massimizzando rispetto a $P_i$ con questo vincolo, il moltiplicatore di Lagrange (*Lagrange multiplier*) produce il fattore $1/N$ dell'aggiornamento dei prior. <SourceRef doc="part1" page={49} />
+
+### Il vettore dei parametri
+
+Tutte le incognite stanno in un unico vettore, «the vector of parameters to be estimated»: <SourceRef doc="ch2" page={68} />
+
+<Formula id="f-c11" />
+
+Le note elencano i tre gruppi di parametri che interessano: il contributo di ciascun modo alla mistura complessiva, la media di ciascun modo, la matrice di covarianza di ciascun modo. Il problema resta una stima parametrica: la forma del modello è nota, i valori di $\theta$ no. Nella slide p68 (e nelle note p46) $\theta$ non è in grassetto; dalla slide p70 in poi, nelle formule, il vettore dei parametri è in grassetto, mentre i vettori media $\mathbf{m}_i$ lo sono già qui. <SourceRef doc="part1" page={46} />
+
+Quanti numeri stai stimando? Per il vincolo di somma i prior liberi sono $M - 1$. Ogni media ha $n$ componenti. Ogni covarianza è simmetrica e ha $n(n+1)/2$ elementi distinti. In totale:
+
+$$
+(M - 1) + M\,n + M\,\frac{n(n+1)}{2}
+$$
+
+Con quattro coperture del suolo in un'immagine a due bande ($M = 4$, $n = 2$) sono $3 + 8 + 12 = 23$ parametri. Il termine delle covarianze cresce con il quadrato di $n$: è l'anticipo del problema dei pochi campioni in molte dimensioni, tema di <ModLink to="m11-hughes-feature-selection">effetto Hughes e selezione delle feature</ModLink>.
+
+### La figura della mistura
+
+Accanto alla formula la slide mostra, dentro un riquadro prospettico, la superficie di una densità bidimensionale fatta di quattro campane gaussiane: una rossa alta a sinistra, una grigio chiaro in primo piano, una grigio scuro più stretta sullo sfondo, una marrone larga e bassa a destra. Ogni campana ha altezza ($P_i$), posizione ($\mathbf{m}_i$) e forma ($\Sigma_i$) diverse, e le campane si sovrappongono in parte. Nelle zone di sovrapposizione non puoi dire a occhio da quale modo venga un punto: è la difficoltà che la slide successiva mette al centro. Le note riproducono la stessa figura sotto l'elenco dei simboli. <SourceRef doc="ch2" page={68} /> <SourceRef doc="part1" page={46} />
+
+<Reveal label="La stessa figura nelle note">
+
+<Figure id="fig07" />
+
+</Reveal>
+
+<Widget id="m10-superficie-mistura-e-theta" />
+
+<Check id="chk-02" />
+
+## Obiettivo e dati incompleti
+
+### Stimare ogni modo, non solo la somma
+
+La slide p69 fissa l'obiettivo: «to estimate the distribution of each Gaussian mode of p(x)». Le note lo dicono in termini di parametri: stimare i parametri della distribuzione $p(\mathbf{x})$, caratterizzata dai suoi modi gaussiani. Le due formulazioni si completano. Non ti basta la $p(\mathbf{x})$ complessiva, che otterresti anche con Parzen: vuoi i singoli modi, cioè $P_i$, $\mathbf{m}_i$ e $\Sigma_i$ per ogni $i$. <SourceRef doc="ch2" page={69} /> <SourceRef doc="part1" page={46} />
+
+### I tre motivi dell'incompletezza
+
+Il problema di stima è quindi con dati incompleti, per tre motivi; le parole chiave sono in rosso nella slide. <SourceRef doc="ch2" page={69} /> <SourceRef doc="part1" page={46} /> <SourceRef doc="part1" page={47} />
+
+1. **Hai solo le osservazioni dell'intera $p(\mathbf{x})$, non quelle dei singoli modi.** In rosso nella slide: *observations associated with the whole* $p(\mathbf{x})$. I campioni arrivano mescolati e non esiste un training set separato per ciascun modo. Le note: hai osservazioni della distribuzione complessiva e ti mancano dati individuali per ogni modo gaussiano.
+2. **Non sai a quale modo è associato ciascun campione**, cioè quali campioni usare per stimare ciascun modo (in rosso: *which are the samples to use for the estimation of each mode?*). È il cuore del problema. Se l'associazione campione-modo fosse nota, basterebbe una stima ML gaussiana separata per ogni modo. L'associazione mancante è esattamente la variabile latente $\mathbf{Y}$.
+3. **Sai soltanto che tra i modi nascosti c'è una relazione di tipo somma** (in rosso: *relationship of the summation type between the different (hidden) modes*). Le note aggiungono che le relazioni nascoste tra i modi complicano la stima. È poca informazione, ma è proprio l'informazione a priori che rende il problema parametrico e risolvibile con EM.
+
+<Figure id="fig02" />
+
+<Callout kind="attenzione">
+La tentazione è separare i modi con una soglia: sotto 5.5 salmoni, sopra spigole. Con modi sovrapposti l'assegnazione dura sbaglia i pesci della zona di mezzo e taglia le code delle due campane: le medie stimate risultano troppo distanti tra loro e le deviazioni standard troppo piccole. EM sostituisce la soglia con un'assegnazione morbida (*soft assignment*), una probabilità di appartenenza per ogni campione.
+</Callout>
+
+<Widget id="m10-detective-dei-modi" />
+
+<Check id="chk-03" />
+
+### Perché non un metodo non parametrico
+
+Le note confrontano i due approcci. Puoi assumere un modello non parametrico, ma è una scelta sub-ottima (*sub-optimal*): non sfrutta l'informazione a priori sulla struttura del modello, per esempio che si tratta di una mistura di gaussiane. Ignorando quell'informazione la stima diventa meno efficiente e meno accurata. Quando invece usi l'informazione a priori, il problema di stima diventa parametrico. <SourceRef doc="part1" page={47} />
+
+In pratica le <ModLink to="m09-parzen-windows">finestre di Parzen</ModLink> e il <ModLink to="m08-non-parametrica-knn">K-NN</ModLink> stimano soltanto la $p(\mathbf{x})$ complessiva. Non restituiscono i singoli modi, e con pochi campioni sono rumorosi perché non sanno che la forma è una somma di gaussiane. Il vantaggio del parametrico dipende però dalla correttezza dell'informazione a priori. Se i modi veri non sono gaussiani, la mistura stimata ha un errore sistematico che non scende al crescere di $N$, mentre Parzen continua a migliorare. La scelta tra i due approcci è il tema di <ModLink to="m03-stima-intro-parametrica">introduzione alla stima parametrica</ModLink>.
+
+<Callout kind="intuizione">
+Un drone fotografa un'area agricola e per ogni pixel calcola l'indice di vegetazione NDVI, senza verità a terra. L'istogramma ha tre modi: acqua attorno a 0.0, suolo nudo attorno a 0.25, vegetazione attorno a 0.65. Con cento pixel, Parzen disegna una curva nervosa e non ti dice quanta area è vegetazione. Una mistura di tre gaussiane stimata con EM ti dà le tre coperture separate, con i loro pesi.
+</Callout>
+
+<Widget id="m10-parametrico-batte-nonparametrico" />
+
+## Formulazione del problema
+
+### Il problema di stima ML
+
+La slide p70, «Problem Formulation», riparte dalla stima di <ModLink to="m05-max-likelihood">massima verosimiglianza</ModLink>: la stima ottima è il vettore di parametri che rende massima la verosimiglianza dei dati osservati $\mathbf{X}$. <SourceRef doc="ch2" page={70} />
+
+<Formula id="f-c18" />
+
+Le note scrivono lo stesso problema con la variabile di massimizzazione sotto l'argmax: <SourceRef doc="part1" page={47} />
+
+<Formula id="f-c18-2" />
+
+Sotto la parola «where» la slide definisce la <Term en="likelihood function">funzione di verosimiglianza</Term>:
+
+<Formula id="f-c19" />
+
+Il prodotto viene dall'ipotesi i.i.d.: l'indipendenza rende la densità congiunta il prodotto delle densità dei singoli campioni, l'identica distribuzione fa usare a ogni fattore la stessa $p(\cdot \mid \boldsymbol{\theta})$. Le note la descrivono come la verosimiglianza dei dati osservati $\mathbf{X}$ dati i parametri $\boldsymbol{\theta}$. Nella mistura ogni fattore $p(\mathbf{x}_i \mid \boldsymbol{\theta})$ è a sua volta la somma sugli $M$ modi. EM non cambia questo criterio: resta una stima ML, cambia solo il modo di cercarne il massimo.
+
+### Facile o difficile: il logaritmo di una somma
+
+La slide prosegue: a seconda della forma di $p(\mathbf{X} \mid \boldsymbol{\theta})$ il problema di stima ML può essere facile o difficile. Per molti problemi non trovi una soluzione analitica e devi ricorrere a tecniche più elaborate; l'algoritmo EM è una di queste. Le note precisano che la difficoltà va dal banale all'estremamente impegnativo e che per molti modelli complessi, in particolare con variabili latenti o misture, una soluzione analitica spesso non è praticabile. <SourceRef doc="ch2" page={70} /> <SourceRef doc="part1" page={47} />
+
+Il caso facile lo conosci: una sola gaussiana. Il logaritmo cancella l'esponenziale; la derivata rispetto alla media è lineare in $\mathbf{m}$, quella rispetto alla covarianza non lo è ma si risolve lo stesso in forma chiusa. Annullandole ottieni media e covarianza campionarie, $\hat{\mathbf{m}} = \frac{1}{N} \sum_j \mathbf{x}_j$ e $\hat{\Sigma} = \frac{1}{N} \sum_j (\mathbf{x}_j - \hat{\mathbf{m}})(\mathbf{x}_j - \hat{\mathbf{m}})^t$. Il caso difficile è la mistura. Sostituisci la mistura della slide p68 nella verosimiglianza della slide p70 e passa al logaritmo:
+
+<Formula id="f-c21" />
+
+Il logaritmo resta bloccato davanti alla somma sui modi e non si separa per componente. Se annulli la derivata rispetto a $\mathbf{m}_i$ compaiono le probabilità a posteriori (*posterior probabilities*) dei modi, che dipendono a loro volta da tutto $\boldsymbol{\theta}$, media $\mathbf{m}_i$ compresa. Ottieni equazioni accoppiate e implicite, senza soluzione in forma chiusa: ti serve una tecnica iterativa. Questo sviluppo è un'integrazione didattica, perché la fonte si limita a dire che la soluzione analitica non esiste. La dimostrazione seguente lo porta fino all'equazione a punto fisso (*fixed-point equation*), che anticipa l'aggiornamento EM delle medie.
+
+<Derivation id="der01" />
+
+<Widget id="m10-ml-facile-o-difficile" />
+
+<Check id="chk-04" />
+
+### Dataset incompleto e dataset completo
+
+La slide p71 fa due ipotesi («Let's make the following assumptions»). <SourceRef doc="ch2" page={71} /> <SourceRef doc="part1" page={47} />
+
+**Prima ipotesi.** $\mathbf{X}$ è osservato e generato da qualche distribuzione: è il <Term en="incomplete dataset">dataset incompleto</Term>. Le note precisano che la distribuzione che lo genera è ignota. $\mathbf{X}$ è tutto ciò che misuri davvero; lo chiami incompleto perché da solo non contiene l'informazione che renderebbe banale la stima.
+
+**Seconda ipotesi.** Esiste un <Term en="complete dataset">dataset completo</Term>
+
+<Formula id="f-c23" />
+
+dove $\mathbf{Y}$ rappresenta i dati mancanti (*missing data*; le note dicono *missing or latent data*). Postuli cioè una versione completa dei dati, ottenuta affiancando a $\mathbf{X}$ ciò che non hai potuto osservare. $\mathbf{Z}$ non è disponibile: è l'oggetto matematico su cui EM ragiona.
+
+Che cosa sia $\mathbf{Y}$ nella mistura lo dicono le note: spesso una variabile latente, per esempio un vettore binario che indica a quale modo gaussiano appartiene ciascun campione in un GMM. Il modello assume che $\mathbf{X}$ venga da una mistura di componenti, ma non sai quale componente (modo) ha generato ciascuna osservazione; questa informazione mancante è la variabile latente $\mathbf{Y}$.
+
+<Definition term="Vettore binario di appartenenza" en="binary membership vector, latent variable Y">
+Per ogni campione $\mathbf{x}_j$, $\mathbf{y}_j$ è un vettore binario lungo $M$ con un solo 1, nella posizione del modo che ha generato $\mathbf{x}_j$ (codifica *one-hot*). Con $M = 3$ e un campione generato dal modo 2, $\mathbf{y}_j = (0, 1, 0)$. La componente $y_{ji}$ vale 1 se $\mathbf{x}_j$ viene dal modo $i$ e 0 altrimenti; questa notazione non è nella fonte.
+</Definition>
+
+### La densità congiunta dei dati completi
+
+La slide scrive la <Term en="joint density function">densità congiunta</Term> dei dati completi:
+
+<Formula id="f-c25" />
+
+È la regola del prodotto (*product rule*) applicata alla coppia $(\mathbf{X}, \mathbf{Y})$: la densità dei dati completi si fattorizza nella densità condizionata dei dati mancanti, dati quelli osservati, per la densità dei dati osservati. Vale per qualunque coppia di variabili aleatorie, senza ipotesi sul modello. Il primo fattore a destra, $p(\mathbf{Y} \mid \mathbf{X}, \boldsymbol{\theta})$, è la distribuzione che l'E-step userà, calcolata con la stima corrente, per mediare su $\mathbf{Y}$. Passando al logaritmo e isolando $\ln p(\mathbf{X} \mid \boldsymbol{\theta})$, la stessa identità diventa il primo passo della dimostrazione di convergenza.
+
+<Callout kind="intuizione">
+Un sensore IoT registra la temperatura di un motore elettrico che lavora in due regimi mai annotati: normale ($P = 0.7$, media 65 °C, $\sigma = 4$) e sovraccarico ($P = 0.3$, media 80 °C, $\sigma = 6$). Per la lettura $x = 71$ °C la congiunta con il regime normale vale $0.7 \cdot \mathcal{N}(71 \mid 65, 4^2) = 0.7 \cdot 0.03238 = 0.02267$. La marginale è $p(71) = 0.02267 + 0.3 \cdot 0.02159 = 0.02914$, quindi $p(\text{normale} \mid 71) = 0.02267 / 0.02914 = 0.778$. La congiunta si scompone in «chi ha generato la lettura, data la lettura» per «quanto è plausibile la lettura»: $0.02267 = 0.778 \cdot 0.02914$.
+</Callout>
+
+<Widget id="m10-dataset-completo-z" />
+
+<Check id="chk-05" />
+
+### Le due verosimiglianze
+
+La <Term en="complete-data likelihood">verosimiglianza dei dati completi</Term> è la congiunta letta come funzione di $\boldsymbol{\theta}$:
+
+<Formula id="f-c26" />
+
+Le note la commentano: contiene sia i dati osservati $\mathbf{X}$ sia quelli mancanti $\mathbf{Y}$, quindi è più informativa; se conoscessi i valori di $\mathbf{Y}$ potresti risolvere direttamente il problema ML. Nella mistura, con $\mathbf{Y}$ noto, il log della congiunta diventa una somma di log di singole gaussiane e la ML si risolve modo per modo in forma chiusa. Nell'ultima formula della slide l'ultimo $\theta$ non è in grassetto: refuso tipografico senza conseguenze. <SourceRef doc="ch2" page={71} /> <SourceRef doc="part1" page={47} />
+
+Siccome $\mathbf{Y}$ non lo osservi, ti resta la <Term en="incomplete-data likelihood">verosimiglianza dei dati incompleti</Term>:
+
+<Formula id="f-c27" />
+
+Le note p48 la descrivono come la verosimiglianza basata sui soli dati osservati, più difficile da massimizzare proprio per i dati mancanti. È l'unica che puoi calcolare ed è quella che vuoi massimizzare. EM la fa crescere lavorando, in media, su quella dei dati completi. <SourceRef doc="part1" page={48} />
+
+La slide scrive le due verosimiglianze una sotto l'altra ma non il legame tra loro. Il legame viene dalla congiunta: la densità dei soli dati osservati si ottiene sommando, o integrando, la congiunta su tutti i valori possibili dei dati mancanti (marginalizzazione, *marginalization*).
+
+<Formula id="f-c65" />
+
+Nella mistura $\mathbf{y}_j$ può assumere $M$ valori. Vale $P(y_{ji} = 1 \mid \boldsymbol{\theta}) = P_i$ e, dato il modo, $\mathbf{x}_j$ è gaussiano con i parametri di quel modo. Sommando la congiunta sugli $M$ valori ritrovi esattamente la mistura della slide p68:
+
+<Formula id="f-c65-2" />
+
+La mistura di gaussiane è quindi un <Term en="latent-variable model">modello a variabile latente</Term>. La relazione di tipo somma tra i modi della slide p69 nasce da questa marginalizzazione, ed è anche la causa del logaritmo di una somma che blocca la ML diretta. Questi passaggi sono un'integrazione coerente con le slide p68 e p71 e con le note p47.
+
+<Derivation id="der02" />
+
+<Derivation id="der07" />
+
+<Widget id="m10-due-verosimiglianze" />
+
+## L'algoritmo EM
+
+### Che cos'è EM
+
+Le note danno la definizione: l'algoritmo EM è un metodo iterativo molto usato per la stima a massima verosimiglianza in modelli con variabili latenti o non osservate. Affronta i dati incompleti raffinando passo dopo passo le stime dei parametri, sulla base delle osservazioni disponibili e delle variabili latenti non osservate direttamente. La slide p70 lo colloca tra le «more elaborate techniques» a cui ricorri quando manca una soluzione analitica. <SourceRef doc="part1" page={48} /> <SourceRef doc="ch2" page={70} />
+
+<Definition term="Algoritmo EM" en="Expectation-Maximization algorithm">
+Metodo iterativo di stima ML per modelli con variabili latenti o non osservate: produce una successione di stime $\boldsymbol{\theta}^{(0)}, \boldsymbol{\theta}^{(1)}, \ldots$ alternando un passo di aspettazione (E) e un passo di massimizzazione (M).
+</Definition>
+
+Tre parole chiave per l'orale: è **iterativo** (produce una successione di stime), resta una **stima ML** (massimizza la verosimiglianza dei dati osservati), **alterna due passi**, E e M.
+
+### L'idea: mediare il log della verosimiglianza completa
+
+La slide p72 dice che l'algoritmo EM trova il valore atteso di $\log p(\mathbf{X}, \mathbf{Y} \mid \theta)$ con due precisazioni: rispetto a $\mathbf{y}$, e dati $\mathbf{X}$ e una **stima corrente** di $\theta$ (*current estimate of* $\theta$, in rosso nella slide). <SourceRef doc="ch2" page={72} />
+
+Il ragionamento: $\mathbf{Y}$ non è noto, quindi il log della verosimiglianza dei dati completi non lo puoi calcolare. Ne calcoli allora la media su tutti i valori possibili di $\mathbf{y}$, pesando ciascuno con quanto è plausibile alla luce dei dati osservati $\mathbf{X}$ e dell'ultima stima disponibile dei parametri. Le note: le variabili latenti vengono trattate come se conoscessi la loro distribuzione, ricavata dalla stima corrente dei parametri del modello. <SourceRef doc="part1" page={48} />
+
+### L'aspettazione condizionata Q
+
+La slide definisce così la cosiddetta <Term en="conditional expectation">aspettazione condizionata</Term>:
+
+<Formula id="f-c30" />
+
+$Q(\boldsymbol{\theta}, \boldsymbol{\theta}^{(k)})$ è il valore atteso del logaritmo della densità congiunta $p(\mathbf{X}, \mathbf{Y} \mid \boldsymbol{\theta})$, condizionato ai dati osservati e alla stima corrente. Le note: $\boldsymbol{\theta}^{(k)}$ è la stima dei parametri all'iterazione $k$, e l'aspettazione è presa sulle variabili latenti $\mathbf{Y}$, condizionata ai dati osservati $\mathbf{X}$ e alle stime correnti dei parametri. È la formula da scrivere quando all'orale ti chiedono «Explain formula».
+
+Una precisazione sulla barra. $\boldsymbol{\theta}$ non è una variabile aleatoria (la stima è ML, non bayesiana), quindi la barra davanti a $\mathbf{X}, \boldsymbol{\theta}^{(k)}$ non significa condizionare su $\boldsymbol{\theta}^{(k)}$ come su un evento. Significa che la media sui dati mancanti si calcola con la legge $p(\mathbf{y} \mid \mathbf{X}, \boldsymbol{\theta}^{(k)})$: i parametri correnti fissano la distribuzione con cui pesi. Lo rende esplicito la seconda formula, a cui la slide arriva con una freccia rossa verso il basso:
+
+<Figure id="fig03" />
+
+<Formula id="f-c31" />
+
+Leggi i simboli. Nella prima formula $\mathbf{Y}$ è maiuscola, la variabile aleatoria; nell'integrale $\mathbf{y}$ è minuscola, la variabile di integrazione. Il peso $p(\mathbf{y} \mid \mathbf{X}, \boldsymbol{\theta}^{(k)})$ usa la stima vecchia $\boldsymbol{\theta}^{(k)}$, il logaritmo usa l'incognita $\boldsymbol{\theta}$. Quando $\mathbf{Y}$ è discreta, come le etichette dei modi, l'integrale diventa una somma.
+
+Perché si chiama aspettazione condizionata: le note spiegano che media sui valori possibili delle variabili latenti $\mathbf{Y}$, dati i dati osservati e la stima corrente, e che mediando su $\mathbf{Y}$ «rimuove» l'incertezza legata alle variabili non osservate. Dopo l'integrazione $\mathbf{Y}$ è sparita: $Q$ è una funzione deterministica del solo $\boldsymbol{\theta}$, con $\boldsymbol{\theta}^{(k)}$ come costante nota. I due argomenti non sono intercambiabili. Il primo è la variabile che massimizzerai, il secondo fissa i pesi della media. <SourceRef doc="part1" page={48} />
+
+<Derivation id="der03" />
+
+La derivazione arriva alla forma di $Q$ per la mistura: una doppia somma, su campioni e modi, di $\ln P_i + \ln p(\mathbf{x}_j \mid \mathbf{m}_i, \Sigma_i)$ pesato dalla probabilità a posteriori del modo $i$ dato $\mathbf{x}_j$.
+
+<Callout kind="intuizione">
+Sei pesci con luminosità $2, 3, 4, 5, 7, 8$ e stima corrente $P = (0.5, 0.5)$, $m = (3, 6)$, $\sigma^2 = (1, 1)$. Il pesce con $x_j = 4$ è salmone con probabilità 0.818 e spigola con probabilità 0.182: sono i pesi fissati dalla stima corrente. Se provi il candidato $m_1 = 3.5$ (il resto invariato), il contributo di quel pesce a $Q$ è $0.818 \cdot (\ln 0.5 + \ln \mathcal{N}(4 \mid 3.5, 1)) + 0.182 \cdot (\ln 0.5 + \ln \mathcal{N}(4 \mid 6, 1)) = 0.818 \cdot (-1.737) + 0.182 \cdot (-3.612) = -2.079$. Cambiando il candidato cambiano i logaritmi; i pesi restano gli stessi.
+</Callout>
+
+<Widget id="m10-costruire-q" />
+
+<Check id="chk-06" />
+
+### E-step e M-step
+
+La slide p73 descrive EM in un riquadro verde a forma di pergamena. EM alterna un passo di aspettazione (*expectation (E) step*), che calcola un'aspettazione della verosimiglianza includendo le variabili latenti come se fossero osservate, e un passo di massimizzazione (*maximization (M) step*), che calcola le stime ML dei parametri massimizzando la verosimiglianza attesa trovata nell'E-step. I parametri trovati nell'M-step servono a iniziare un altro E-step, e il processo si ripete. <SourceRef doc="ch2" page={73} />
+
+<Figure id="fig04" />
+
+Sotto il riquadro la slide formalizza EM in due passi.
+
+<Formula id="f-c33" />
+
+**E-step.** Con i parametri fermi a $\boldsymbol{\theta}^{(k)}$ calcoli la distribuzione delle latenti e con essa la funzione $Q$. Le note: calcoli il valore atteso della log-verosimiglianza dei dati completi, con l'aspettazione presa rispetto alle variabili latenti non osservate; in pratica stimi la verosimiglianza come se le latenti fossero note. <SourceRef doc="part1" page={48} /> <SourceRef doc="part1" page={49} />
+
+<Callout kind="attenzione">
+Il riquadro verde parla di «expectation of the likelihood» e di «expected likelihood». La formula dell'E-step, e le note («expected value of the complete-data log-likelihood»), mostrano invece che la media è presa sul **logaritmo** della verosimiglianza dei dati completi, $\log p(\mathbf{X}, \mathbf{Y} \mid \boldsymbol{\theta})$, non sulla verosimiglianza stessa.
+</Callout>
+
+<Formula id="f-c34" />
+
+Le note scrivono l'M-step con $\theta$ sotto l'argmax:
+
+<Formula id="f-c34-2" />
+
+**M-step.** Con le distribuzioni delle latenti ferme (i pesi dell'E-step) muovi i parametri: aggiorni $\boldsymbol{\theta}$ massimizzando la log-verosimiglianza attesa. Le note: una volta calcolata l'aspettazione, aggiorni i parametri massimizzando la log-verosimiglianza attesa rispetto a $\theta$; il passo trova i valori dei parametri che massimizzano la verosimiglianza dei dati osservati, date le stime correnti delle variabili latenti; le nuove stime spiegano meglio i dati osservati, sulla base delle ipotesi fatte sulle latenti. È il passo in cui regoli i parametri per aumentare la verosimiglianza dei dati. A rigore l'M-step massimizza $Q$, la verosimiglianza attesa dei dati completi, e non direttamente la verosimiglianza dei dati osservati. Che anche questa non scenda lo garantisce la dimostrazione di convergenza. <SourceRef doc="part1" page={48} />
+
+**Alternanza.** L'uscita dell'M-step è l'ingresso dell'E-step successivo; la slide scrive in rosso «process is repeated». Ogni iterazione produce $\boldsymbol{\theta}^{(k+1)}$ a partire da $\boldsymbol{\theta}^{(k)}$.
+
+<Formula id="f-c35" />
+
+<Columns>
+<Col title="E-step">
+
+Fermi: i parametri $\boldsymbol{\theta}^{(k)}$.
+
+Calcoli: la distribuzione $p(\mathbf{y} \mid \mathbf{X}, \boldsymbol{\theta}^{(k)})$ e la funzione $Q(\cdot, \boldsymbol{\theta}^{(k)})$.
+
+Nella mistura: la probabilità che ogni campione venga da ciascun modo.
+
+</Col>
+<Col title="M-step">
+
+Fermi: i pesi calcolati nell'E-step.
+
+Calcoli: il massimo di $Q(\boldsymbol{\theta}, \boldsymbol{\theta}^{(k)})$ rispetto al primo argomento, cioè $\boldsymbol{\theta}^{(k+1)}$.
+
+Nella mistura: prior, medie e covarianze ristimati con i campioni pesati.
+
+</Col>
+</Columns>
+
+<Widget id="m10-em-passo-passo-1d" />
+
+<Check id="chk-07" />
+
+### Inizializzazione e criterio di arresto
+
+In fondo alla pagina 48 le note aprono il paragrafo «Initialization and Iteration». <SourceRef doc="part1" page={48} /> <SourceRef doc="part1" page={49} />
+
+**Inizializzazione** (*Initialization*). L'algoritmo parte inizializzando le stime dei parametri, scelte a caso oppure sulla base di conoscenza a priori:
+
+<Formula id="f-c36" />
+
+La scelta conta, perché EM dipende dal punto di partenza (lo vedi nella convergenza). Con il motore del sensore IoT puoi partire da temperature casuali oppure dalle temperature tipiche dei due regimi prese dal manuale: la seconda strada di solito converge in meno iterazioni e sulla soluzione sensata.
+
+**Iterazione** (*Iteration*). I passi E e M si alternano fino a convergenza, che di solito si dichiara quando i parametri $\boldsymbol{\theta}$ non cambiano più in modo significativo tra un'iterazione e la successiva. Il test pratico confronta due stime successive con una soglia $\varepsilon$ scelta da te; la soglia non è nella fonte, che dice solo «no longer change significantly».
+
+<Formula id="f-c37" />
+
+Le note concludono che così la verosimiglianza ha raggiunto un massimo locale. L'affermazione è più forte del necessario: parametri fermi indicano un **punto stazionario** (*stationary point*) della verosimiglianza, e la slide p75 ricorda che può essere anche un punto di sella. Il perché è nella dimostrazione [«punto fisso di EM e punto stazionario»](#derivation:der08), nella sezione sulla convergenza.
+
+### Che cosa fanno davvero i due passi
+
+Le note riassumono EM in due *key insights*. L'E-step incorpora le variabili latenti nel modello calcolando l'aspettazione condizionata, cioè stima la verosimiglianza come se le latenti fossero note. L'M-step massimizza questa verosimiglianza attesa e aggiorna i parametri in base alla comprensione raffinata delle latenti. Più sotto aggiungono che EM migliora le stime alternando l'**assegnazione di probabilità alle variabili latenti** (E-step) e l'**aggiornamento dei parametri** per adattarsi meglio ai dati (M-step); col tempo converge a un insieme di parametri che spiega al meglio i dati, data la struttura del modello. <SourceRef doc="part1" page={49} />
+
+Nella mistura la lettura è concreta. L'E-step dà a ogni campione una probabilità di appartenere a ciascun modo, un'assegnazione morbida. L'M-step ristima ogni modo con tutti i campioni, ciascuno pesato con quella probabilità.
+
+Le note aggiungono un punto sui prior. In alcuni modelli, come le misture, ci sono parametri in più, le probabilità a priori: nel GMM sono i pesi della mistura. Anche questi si stimano in modo iterativo nell'M-step, e EM offre un modo sistematico di aggiornarli, che migliora la capacità del modello di cogliere la struttura dei dati. Le $P_i$ non si fissano a mano, per esempio a $1/M$: fanno parte di $\boldsymbol{\theta}$ e hanno la loro equazione di aggiornamento. Con il motore IoT, EM impara da solo che i due regimi occupano il 70% e il 30% del tempo.
+
+<Widget id="m10-inizializza-e-ferma" />
+
+<Check id="chk-08" />
+
+## Convergenza di EM
+
+### La log-verosimiglianza non scende mai
+
+La slide p74, «Convergence of EM Algorithm», afferma che si può dimostrare che la successione di stime generata da EM fa crescere a ogni iterazione il valore della funzione di log-verosimiglianza (*log-likelihood function*) $l(\theta)$: <SourceRef doc="ch2" page={74} />
+
+<Formula id="f-c40" />
+
+<Formula id="f-c40-2" />
+
+Qui $l(\theta)$ è la log-verosimiglianza dei dati osservati. L'indice di iterazione nella disuguaglianza è $i$, mentre la successione è scritta con $k$ tra parentesi quadre; le note scrivono la successione con le tonde, $\theta^{(k)}$. Le note: la verosimiglianza dei dati osservati, date le stime correnti, aumenta o resta uguale; è uno dei punti di forza di EM, perché garantisce un progresso a ogni passo. <SourceRef doc="part1" page={49} />
+
+Ipotesi e portata. Il risultato non usa né la forma gaussiana né l'ipotesi i.i.d.: vale per qualunque modello con variabili latenti, purché l'M-step non faccia diminuire $Q$. Riguarda i valori $l(\boldsymbol{\theta}^{(k)})$ e non dice che i parametri convergano. Se $l$ è limitata superiormente, la successione dei valori converge; per la mistura con covarianze libere, come vedrai più sotto, $l$ non è limitata.
+
+<Figure id="fig05" />
+
+Accanto alla disuguaglianza la slide mostra una superficie grigia a maglia, con asse verticale $Q(\cdot,\cdot)$, sopra due assi orizzontali: uno etichettato $\theta$ con le tacche $\theta^1$ e $\theta^3$, l'altro con le tacche $\theta^0$, $\theta^2$ e $\theta^4$. I due assi sono i due argomenti di $Q$. Una linea rossa spessa sale sulla superficie fino alla cresta; la sua proiezione sul pavimento è una spezzata a gradini, con ogni tratto parallelo a uno dei due assi.
+
+<Formula id="f-c41" />
+
+Leggi i gradini così. La spezzata ha quattro tratti, e ogni tratto finisce su una tacca con un nome nuovo: ogni tratto è un'iterazione di EM e produce una stima nuova. Tieni fermo un argomento sulla stima corrente, che fissa i pesi (E-step), e massimizzi $Q$ lungo l'altro asse (M-step). Il punto trovato è la nuova stima e diventa l'argomento fisso del tratto successivo, che per questo è disegnato lungo l'altro asse. Da $\theta^0$ fisso trovi $\theta^1$ sull'asse $\theta$; poi $\theta^1$ resta fisso e trovi $\theta^2$ sull'altro asse; poi $\theta^3$ e $\theta^4$. Il disegno può alternare gli assi perché la figura mostra $Q$ simmetrica nei due argomenti: massimizzare $Q(\theta^1, \cdot)$ lungo il secondo asse equivale a massimizzare $Q(\cdot, \theta^1)$ lungo il primo, cioè all'M-step. Quindi $\theta^0 \to \theta^1 \to \theta^2 \to \theta^3 \to \theta^4$ sono quattro stime successive. A ogni gradino il valore sale o resta uguale, e gli ultimi gradini sono sempre più corti. Tre osservazioni.
+
+1. La slide affianca la disuguaglianza su $l$, la log-verosimiglianza dei dati osservati, a una figura il cui asse verticale è $Q$, una funzione di due argomenti: ciò che la figura mostra salire è $Q$. Il legame tra la salita di $Q$ e quella di $l$ è la dimostrazione qui sotto.
+2. La figura viene dal testo di Duda-Hart-Stork, la cui didascalia (non riportata nella slide) sottolinea che ogni M-step salta direttamente al massimo di $Q$ lungo $\theta$ con il secondo argomento fisso: $\theta^1$ è l'ottimo globale della sezione con $\theta^0$ fissato; poi $\theta^1$ resta fisso e si trova il $\theta^2$ che ottimizza $Q$, e così via finché nessun valore fa più crescere $Q$. È diverso da una ricerca per gradiente, che quel punto potrebbe non trovarlo. La stessa didascalia avverte che la simmetria di $Q$ nei due argomenti vale solo nel disegno, non in generale.
+3. Nel primo tratto la linea spessa attraversa un avvallamento prima di risalire. I punti intermedi di un tratto non contano: EM non li percorre, salta all'estremo del tratto. La garanzia di non discesa riguarda solo le stime successive, non la linea disegnata sulla superficie.
+
+Le note riproducono la stessa figura sotto la disuguaglianza.
+
+<Reveal label="La figura nelle note">
+
+<Figure id="fig08" />
+
+</Reveal>
+
+<Widget id="m10-salita-monotona-q" />
+
+### Perché la salita è garantita
+
+La slide dice solo «it can be shown», le note «it can be proven». La dimostrazione standard è breve e all'orale fa la differenza. Parti dalla congiunta della slide p71, $p(\mathbf{X}, \mathbf{y} \mid \boldsymbol{\theta}) = p(\mathbf{y} \mid \mathbf{X}, \boldsymbol{\theta}) \, p(\mathbf{X} \mid \boldsymbol{\theta})$, prendi il logaritmo e medialo con $p(\mathbf{y} \mid \mathbf{X}, \boldsymbol{\theta}^{(k)})$. Ottieni $l(\boldsymbol{\theta}) = Q(\boldsymbol{\theta}, \boldsymbol{\theta}^{(k)}) - H(\boldsymbol{\theta}, \boldsymbol{\theta}^{(k)})$, dove $H$ è la media di $\ln p(\mathbf{y} \mid \mathbf{X}, \boldsymbol{\theta})$. L'M-step fa salire $Q$. La <Term en="Jensen's inequality">disuguaglianza di Jensen</Term> dice che $H$ è massima quando i due argomenti coincidono, quindi spostandoti da $\boldsymbol{\theta}^{(k)}$ la $H$ può solo scendere. Due contributi non negativi: $l$ non scende.
+
+<Derivation id="der04" />
+
+Dalla stessa scomposizione esce un'immagine geometrica. $Q(\cdot, \boldsymbol{\theta}^{(k)})$, spostata di una costante, è un <Term en="lower bound">minorante</Term> della log-verosimiglianza che la tocca esattamente nella stima corrente:
+
+<Formula id="f-c66" />
+
+L'M-step sale al massimo del minorante. Il minorante sta sotto $l$ ovunque e coincide con $l$ nel punto di partenza, quindi nel nuovo punto $l$ vale almeno quanto valeva in $\boldsymbol{\theta}^{(k)}$: è la disuguaglianza della slide p74. Ogni E-step costruisce un nuovo minorante attaccato al nuovo punto. Basterebbe anche un M-step parziale che aumenti $Q$ senza massimizzarla: è l'idea dell'EM generalizzato (*generalized EM*), che la fonte non tratta. Minorante e dimostrazione sono integrazioni, coerenti con la slide p74 e con le note p49.
+
+<Widget id="m10-minorante-q" />
+
+### Nessuna garanzia di massimo globale
+
+La slide p75 scrive che non è garantito che EM converga a un massimo globale di $L(\theta)$, cioè alla stima ML di $\theta$ («global maximum» in rosso). Il massimo globale della verosimiglianza è per definizione la stima ML: EM la cerca ma non garantisce di trovarla. Le note: la log-verosimiglianza cresce a ogni iterazione, ma la convergenza al massimo globale della funzione di verosimiglianza $L(\theta)$ non è garantita. La crescita monotona assicura solo che non peggiori, non che tu arrivi in cima alla collina più alta. <SourceRef doc="ch2" page={75} /> <SourceRef doc="part1" page={49} />
+
+La slide aggiunge che EM può soffrire di <Term en="local minima">minimi locali</Term> e di <Term en="saddle points">punti di sella</Term>, entrambi in rosso. Le note scrivono invece massimo locale (*local maximum*) o punto di sella. Poiché EM massimizza, il termine coerente è massimo locale: la slide usa il gergo generico dell'ottimizzazione. Il rischio concreto è fermarti su un massimo locale della verosimiglianza, oppure su un punto stazionario che non è un massimo. Un esempio di sella: inizializzi due componenti identiche, con $P$, $m$ e $\sigma$ uguali. Le posterior dei due modi coincidono per ogni campione, gli aggiornamenti sono identici e le due componenti restano identiche per sempre, anche se i dati hanno due gobbe.
+
+Perché succede, secondo le note: la log-verosimiglianza può avere più picchi, e EM procede con aggiornamenti simili a una salita del gradiente (*gradient ascent-like updates*), sensibili al punto di partenza dei parametri. EM è una salita locale: da ogni inizializzazione $\boldsymbol{\theta}^{(0)}$ raggiunge la cima del proprio bacino di attrazione (*basin of attraction*). Il rimedio pratico, implicito nella fonte, è inizializzare con conoscenza a priori, oppure ripetere EM da più punti di partenza e tenere la soluzione con la verosimiglianza più alta. <SourceRef doc="part1" page={50} />
+
+<Callout kind="attenzione">
+«Gradient ascent-like» è un'analogia. EM non calcola gradienti e non ha un passo (*learning rate*) da tarare: l'M-step massimizza $Q$ esattamente, spesso in forma chiusa come nelle equazioni della slide p76. Per le medie della mistura l'analogia ha però un contenuto esatto. Nel punto corrente $Q$ e $l$ hanno lo stesso gradiente, e l'aggiornamento EM della media si riscrive così:
+
+$$
+\mathbf{m}_i^{[k+1]} = \mathbf{m}_i^{[k]} + \frac{\Sigma_i^{[k]}}{N_i^{[k]}} \, \frac{\partial \ln l}{\partial \mathbf{m}_i}\bigg|_{\boldsymbol{\theta}^{[k]}}
+$$
+
+Qui $N_i^{[k]}$ è la somma delle posterior del modo $i$. È un passo di salita del gradiente la cui «matrice di passo» $\Sigma_i/N_i$ è fissata dal modello ed è sempre definita positiva.
+</Callout>
+
+La stessa idea giustifica il criterio di arresto. Se EM si ferma, $\boldsymbol{\theta}^{(k)}$ è il massimo di $Q(\cdot, \boldsymbol{\theta}^{(k)})$, quindi lì il gradiente di $Q$ è nullo, e con esso quello di $l$. Un punto fisso (*fixed point*) di EM è un punto stazionario della log-verosimiglianza: massimo globale, massimo locale o punto di sella. Verifica numerica sui sei pesci dell'esempio svolto più avanti: nella stima iniziale la derivata di $\ln l$ rispetto a $m_1$ vale 0.1853, $N_1 = 2.989$ e $\sigma_1^2 = 1$. Il passo di gradiente dà $3 + 0.1853/2.989 = 3.062$, esattamente la media EM dopo la prima iterazione.
+
+<Derivation id="der08" />
+
+<Widget id="m10-massimi-locali-e-selle" />
+
+<Check id="chk-09" />
+
+<Check id="chk-10" />
+
+### Quando la verosimiglianza non ha massimo
+
+Un caso limite precisa le ipotesi delle slide p74-75 e mostra che per la mistura la situazione è ancora più delicata. È un'integrazione, non presente nella fonte. <SourceRef doc="ch2" page={75} />
+
+**Una campana che collassa.** Centra un modo su un campione ($\mathbf{m}_i = \mathbf{x}_j$) e restringi la sua covarianza ($\Sigma_i = \sigma^2 I$, $\sigma \to 0$). Il termine di quel campione cresce come $\ln[P_i/(2\pi\sigma^2)^{n/2}]$, mentre gli altri campioni restano spiegati dagli altri modi, con pesi positivi: la log-verosimiglianza tende a $+\infty$.
+
+<Formula id="f-c67" />
+
+Con covarianze libere il massimo globale di $L(\theta)$ della slide p75 non esiste nemmeno. Queste soluzioni degeneri non hanno significato: una campana su un solo punto, *overfitting* estremo. La crescita monotona non ti protegge. Se EM parte vicino a una di esse, ogni passo fa salire $l$ proprio verso la degenerazione, fino a una $\Sigma_i$ singolare. I rimedi pratici sono una nuova inizializzazione oppure un minimo imposto alle varianze (per esempio $\Sigma_i + \varepsilon I$). La stima ML utile è quindi un massimo locale non degenere, coerente con le note, che parlano di convergenza a un massimo locale della verosimiglianza. Con venti pesci, se la seconda campana ($P_2 = 0.5$) si stringe sulla spigola isolata a 8.9, passare da $\sigma_2 = 0.01$ a $\sigma_2 = 0.001$ porta quel termine da 2.99 a 5.30: $\ln 10 = 2.30$ in più a ogni fattore 10.
+
+**Il limite k-means.** Se tutti i modi hanno la stessa covarianza fissa $\sigma^2 I$ e $\sigma \to 0$, i fattori di normalizzazione si semplificano nel rapporto e le posterior diventano 0 oppure 1:
+
+<Formula id="f-c67-2" />
+
+Ogni campione va al modo con la media più vicina, e i prior non contano più purché positivi. L'M-step delle medie diventa la media dei campioni assegnati: EM si riduce all'algoritmo k-means, ad assegnazione dura (*hard assignment*), del <ModLink to="p12-clustering">clustering</ModLink> di Passerini. È il caso simmetrico di quello con etichette note che incontrerai con le equazioni della mistura: lì le etichette sono date, qui le assegnazioni diventano dure perché le campane sono strettissime.
+
+<Widget id="m10-collasso-sigma-zero" />
+
+<Check id="chk-11" />
+
+### EM funziona bene sulle misture
+
+Nonostante massimi locali e punti di sella, la slide p75 conclude che EM si è dimostrato particolarmente efficace nella stima dei parametri delle componenti di una mistura. Le note lo ribadiscono: nei GMM, dove i dati sono generati da una combinazione di più gaussiane, EM stima bene media, varianza e peso di ciascuna componente anche quando le vere etichette, cioè la componente da cui viene ogni dato, sono ignote. <SourceRef doc="ch2" page={75} /> <SourceRef doc="part1" page={50} />
+
+<Callout kind="esame">
+Alla domanda «EM converge?» rispondi in tre tempi. Sì, nel senso che $l(\boldsymbol{\theta}^{(i+1)}) \ge l(\boldsymbol{\theta}^{(i)})$ a ogni iterazione, e sai dimostrarlo con la scomposizione $Q - H$ e la disuguaglianza di Jensen. No, nel senso che il massimo globale non è garantito: massimi locali, punti di sella, dipendenza da $\boldsymbol{\theta}^{(0)}$. Comunque sulle misture funziona molto bene, soprattutto con più ripartenze.
+</Callout>
+
+## Le equazioni EM per la mistura di gaussiane
+
+La slide p76 torna alla mistura di modi gaussiani: si può dimostrare che le equazioni EM per stimare i parametri di ciascun modo sono tre, una per i prior, una per le medie, una per le covarianze. Le note le introducono dicendo che nel GMM EM stima in modo efficiente media, covarianza e peso di ciascuna componente, e le ricopiano identiche. <SourceRef doc="ch2" page={76} /> <SourceRef doc="part1" page={50} />
+
+### Il termine che si ripete: la posterior del modo
+
+In tutte e tre le equazioni compare lo stesso rapporto:
+
+<Formula id="f-c46" />
+
+Al numeratore c'è il prior corrente del modo $i$ per la gaussiana del modo $i$ valutata in $\mathbf{x}_j$; al denominatore $p(\mathbf{x}_j \mid \boldsymbol{\theta}^{[k]})$. Per il teorema di Bayes (<ModLink to="m07-stima-bayesiana">stima bayesiana</ModLink>) è la <Term en="posterior probability">probabilità a posteriori</Term> che $\mathbf{x}_j$ sia stato generato dal modo $i$, calcolata con i parametri correnti. La fonte non le dà un nome; in letteratura si chiama <Term en="responsibility">responsabilità</Term> del modo $i$ per il campione $j$. È il risultato dell'E-step per la mistura, la distribuzione $p(\mathbf{y} \mid \mathbf{X}, \boldsymbol{\theta}^{(k)})$ della slide p72.
+
+<Formula id="f-c46-2" />
+
+Vale tra 0 e 1 e, per ogni campione, somma a 1 sugli $M$ modi. Il denominatore comune è la mistura corrente valutata nel campione, cioè la somma su tutti i modi dei numeratori:
+
+<Formula id="f-c47" />
+
+È l'evidenza (*evidence*) del teorema di Bayes: normalizza i numeratori perché le posterior sommino a 1. Graficamente il numeratore è l'altezza della campana pesata del modo $i$ in $\mathbf{x}_j$, il denominatore l'altezza della curva somma nello stesso punto. Attento all'indice: la somma del denominatore corre su un indice muto $l$, diverso dal modo $i$ del numeratore.
+
+Il legame con $\mathbf{Y}$ chiude il cerchio. Se $y_{ji}$ vale 1 quando $\mathbf{x}_j$ viene dal modo $i$ e 0 altrimenti, il suo valore atteso condizionato è proprio la posterior:
+
+<Formula id="f-c46-3" />
+
+L'E-step della mistura sostituisce l'indicatore binario sconosciuto con la sua media: è l'«assigning probabilities to the latent variables» delle note p49.
+
+<Callout kind="intuizione">
+Un pixel dell'immagine da drone ha NDVI $x_j = 0.38$. Le coperture possibili sono acqua, suolo nudo e vegetazione, con prior correnti 0.2, 0.3 e 0.5 e densità in $x_j$ pari a 0.000, 1.332 e 1.219. Il denominatore vale $0.2 \cdot 0.000 + 0.3 \cdot 1.332 + 0.5 \cdot 1.219 = 1.009$ e $P(\text{veg.} \mid x_j) = 0.609/1.009 = 0.604$. Il suolo nudo ha la densità più alta in quel punto, ma il prior maggiore fa vincere la vegetazione.
+</Callout>
+
+<Widget id="m10-responsabilita-bayes" />
+
+<Check id="chk-12" />
+
+### Aggiornamento dei prior
+
+<Formula id="f-c48" />
+
+Il nuovo prior del modo $i$ è la media, sugli $N$ campioni, delle posterior del modo $i$: la frazione morbida di campioni attribuiti al modo. Se sui sei pesci dell'esempio svolto la somma delle posterior del modo 1 fa 2.989, il nuovo prior è $2.989/6 = 0.498$. Il fattore $1/N$ viene dal vincolo $\sum_i P_i = 1$ imposto con un moltiplicatore di Lagrange, che vale $N$ perché per ogni campione le posterior sommano a 1. Nell'immagine della slide, ripresa identica nelle note, il prior al numeratore ha pedice $j$, $P_j^{[k]}$: è un refuso, il pedice corretto è $i$ come nelle altre due equazioni. La fonte non ricava l'equazione («it can be shown»).
+
+<Check id="chk-13" />
+
+### Aggiornamento delle medie
+
+<Formula id="f-c49" />
+
+La nuova media del modo $i$ è la media pesata di tutti i campioni $\mathbf{x}_j$, con peso pari alla posterior del modo $i$ dato $\mathbf{x}_j$, calcolata con i parametri dell'iterazione $k$. Il denominatore, somma dei pesi, normalizza. Tutti i campioni contribuiscono a tutte le medie, ma quelli lontani dal modo $i$ pesano quasi zero: è la versione morbida della media campionaria. Con quattro pixel nel piano (rosso, infrarosso vicino) $(0.10, 0.40)$, $(0.12, 0.45)$, $(0.30, 0.20)$, $(0.28, 0.25)$ e posterior del modo 1 pari a 0.9, 0.8, 0.1 e 0.2, la nuova media è $(0.272, 0.790)/2.0 = (0.136, 0.395)$, e il nuovo prior è $2.0/4 = 0.5$.
+
+<Check id="chk-14" />
+
+### Aggiornamento delle covarianze
+
+<Formula id="f-c50" />
+
+La nuova covarianza del modo $i$ è la media pesata dei prodotti esterni (*outer products*) degli scarti $(\mathbf{x}_j - \mathbf{m}_i^{[k+1]})(\mathbf{x}_j - \mathbf{m}_i^{[k+1]})^t$, normalizzata dalla somma dei pesi; l'apice $t$ indica il trasposto. Gli scarti sono calcolati rispetto alla media **già aggiornata** $\mathbf{m}_i^{[k+1]}$: aggiorni prima le medie, poi le covarianze. I pesi sono le stesse posterior dell'E-step usate per $P_i$ e $\mathbf{m}_i$, con la gaussiana valutata in $\mathbf{m}_i^{[k]}$ e $\Sigma_i^{[k]}$.
+
+La slide, e le note che la ricopiano, scrivono invece la gaussiana dentro il peso con $\mathbf{m}_i^{[k+1]}$ (e $\Sigma_i^{[k]}$):
+
+<Formula id="f-c50-2" />
+
+Con quel numeratore e il denominatore $p(\mathbf{x}_j \mid \boldsymbol{\theta}^{[k]})$ i pesi non sono più posterior, perché non sommano a 1 sui modi: consideralo un refuso. Vicino alla convergenza $\mathbf{m}_i^{[k+1]} \approx \mathbf{m}_i^{[k]}$ e le due forme danno quasi lo stesso risultato.
+
+<Check id="chk-15" />
+
+### Stime ML pesate: il caso con etichette note
+
+Le tre equazioni hanno la forma delle stime ML della gaussiana dei moduli precedenti (frequenza relativa, media campionaria, covarianza campionaria), con una differenza: ogni campione conta a frazioni, in proporzione alla sua posterior. Se le appartenenze fossero note, le posterior varrebbero 0 oppure 1 e le equazioni EM si ridurrebbero esattamente alle stime ML per classe, dove $N_i$ è il numero di campioni del modo $i$:
+
+<Formula id="f-c51" />
+
+È il modo più rapido per ricordare le formule all'orale: scrivi le stime ML per classe e sostituisci «appartiene al modo $i$» con «posterior del modo $i$». È anche la dimostrazione della frase delle note p47, se conoscessi $\mathbf{Y}$ potresti risolvere il problema ML direttamente. La log-verosimiglianza dei dati completi è lineare negli $y_{ji}$ e i suoi coefficienti non contengono latenti. Il valore atteso dell'E-step si ottiene quindi sostituendo ogni $y_{ji}$ con la sua posterior, e $N_i$ con il conteggio morbido $\sum_j P(i \mid \mathbf{x}_j, \boldsymbol{\theta}^{[k]})$. Questa lettura è un'integrazione coerente con le formule della slide.
+
+<Derivation id="der09" />
+
+La derivazione completa delle tre equazioni applica E-step e M-step alla mistura: posterior di Bayes, $Q$ come somma pesata, moltiplicatore di Lagrange per i prior, derivata rispetto a $\mathbf{m}_i$ e rispetto a $\Sigma_i^{-1}$.
+
+<Derivation id="der05" />
+
+<Widget id="m10-m-step-medie-pesate" />
+
+<Check id="chk-16" />
+
+### Refusi e notazione delle slide
+
+Sei punti per non confonderti davanti alle slide p68-76. <SourceRef doc="ch2" page={76} /> <SourceRef doc="part1" page={50} />
+
+1. Nella prima equazione della slide p76 il prior al numeratore è scritto $P_j^{[k]}$: refuso per $P_i^{[k]}$ ($j$ è l'indice dei campioni, non dei modi). La trascrizione letterale è qui sotto.
+2. Nell'equazione di $\Sigma_i$ la gaussiana dentro il peso è scritta con $\mathbf{m}_i^{[k+1]}$; nella forma corretta i pesi sono le posterior dell'E-step, con $\mathbf{m}_i^{[k]}$.
+3. L'indice di iterazione cambia grafia: $(k)$ tra tonde alle p72-73, $[k]$ tra quadre alle p74 e p76, $(i)$ nella disuguaglianza di p74, apice semplice $\theta^0, \ldots, \theta^4$ nella figura di p74.
+4. La verosimiglianza è $l(\boldsymbol{\theta} \mid \mathbf{X})$ alle p70-71, «log-likelihood function $l(\theta)$» a p74 e $L(\theta)$ a p75.
+5. $\theta$ è in grassetto nelle formule delle slide p70-74 e p76: anche nella disuguaglianza di p74 e nei denominatori $p(\mathbf{x}_j \mid \boldsymbol{\theta}^{[k]})$ di p76. Non è in grassetto nella slide p68, nel testo delle slide p70, p72, p74 e p75 e nella figura di p74; dentro le formule fa eccezione solo l'ultimo $\theta$ di $p(\mathbf{X}, \mathbf{Y} \mid \theta)$ a p71.
+6. L'indice $i$ ha tre significati: numera i campioni ($\mathbf{x}_i$, slide p68 e p70), i modi ($P_i$, $\mathbf{m}_i$, $\Sigma_i$, slide p68 e p76) e le iterazioni ($\boldsymbol{\theta}^{(i)}$, slide p74). Dalla slide p76 i campioni si numerano con $j$.
+
+<Formula id="f-c52" />
+
+<Figure id="fig09" />
+
+### La procedura completa
+
+Mettendo insieme la slide p73, la slide p76 e le note p49-50 ottieni la procedura operativa. <SourceRef doc="ch2" page={73} /> <SourceRef doc="ch2" page={76} /> <SourceRef doc="part1" page={49} />
+
+1. **Inizializzazione.** Scegli $M$ e fissa $\boldsymbol{\theta}^{[0]}$, cioè $P_i$, $\mathbf{m}_i$ e $\Sigma_i$ per ogni $i$, a caso o con conoscenza a priori.
+2. **E-step.** Per ogni campione $\mathbf{x}_j$ e ogni modo $i$ calcola la posterior $P_i^{[k]} p(\mathbf{x}_j \mid \mathbf{m}_i^{[k]}, \Sigma_i^{[k]}) / p(\mathbf{x}_j \mid \boldsymbol{\theta}^{[k]})$.
+3. **M-step.** Aggiorna nell'ordine i prior $P_i^{[k+1]}$, le medie $\mathbf{m}_i^{[k+1]}$ e le covarianze $\Sigma_i^{[k+1]}$, che usano le medie nuove.
+4. **Arresto.** Se i parametri non cambiano più in modo significativo ti fermi; altrimenti poni $k \leftarrow k+1$ e torni al passo 2.
+
+A ogni giro la log-verosimiglianza non decresce. Un dettaglio sul passo 3: tutte e tre le equazioni usano le posterior del passo 2, calcolate con $\boldsymbol{\theta}^{[k]}$, e non le ricalcoli dopo aver aggiornato $P_i$ o $\mathbf{m}_i$. L'unica grandezza già aggiornata che entra in un'altra equazione è $\mathbf{m}_i^{[k+1]}$, negli scarti della covarianza. Le note chiudono dicendo che gli aggiornamenti iterativi di media, covarianza e pesi della mistura migliorano le stime nel tempo e convergono a un massimo locale della verosimiglianza. <SourceRef doc="part1" page={50} />
+
+<Callout kind="intuizione">
+Su un'immagine multispettrale da drone, senza verità a terra, ogni pixel è un vettore (rosso, infrarosso vicino). Adatti una mistura di $M$ gaussiane con EM e colori ogni pixel con il modo a posterior massima: ottieni una mappa di copertura del suolo. EM sulla mistura fa da classificatore non supervisionato, e la regola del modo a posterior massima è il criterio MAP di <ModLink to="m17-bayes-map-ml">criteri MAP e ML</ModLink>.
+</Callout>
+
+<Widget id="m10-em-gmm-mappa-satellitare" />
+
+### La mistura dall'inizio alla fine
+
+L'esempio tipico della fonte attraversa tutte le slide p68-76. La fonte non fornisce numeri: è lo schema da saper esporre come «Multi Gaussian example».
+
+<Example id="ex01" title="Esempio tipico della fonte: stimare i modi di una mistura di M gaussiane">
+
+<Step title="Dati e modello">
+
+Hai $N$ osservazioni i.i.d. $\mathbf{x}_j$, $j = 1, \ldots, N$, in uno spazio a $n$ dimensioni, estratte da una mistura di $M$ modi gaussiani:
+
+$$
+p(\mathbf{x}) = \sum_{i=1}^{M} P_i \, p(\mathbf{x} \mid \mathbf{m}_i, \Sigma_i)
+$$
+
+$P_i$, $\mathbf{m}_i$ e $\Sigma_i$ sono prior, vettore media e matrice di covarianza dell'$i$-esimo modo.
+
+</Step>
+
+<Step title="Incognite e obiettivo">
+
+Le incognite formano il vettore
+
+$$
+\boldsymbol{\theta} = [P_1, \ldots, P_M; \; \mathbf{m}_1, \ldots, \mathbf{m}_M; \; \Sigma_1, \ldots, \Sigma_M]
+$$
+
+L'obiettivo è la distribuzione di ciascun modo, non solo la $p(\mathbf{x})$ complessiva.
+
+</Step>
+
+<Step title="Perché i dati sono incompleti">
+
+Hai solo le osservazioni dell'intera $p(\mathbf{x})$, non quelle dei singoli modi. Non sai a quale modo è associato ciascun campione, quindi non sai quali campioni usare per stimare ciascun modo. Sai soltanto che tra i modi nascosti c'è una relazione di tipo somma.
+
+</Step>
+
+<Step title="Formulazione">
+
+$\mathbf{X}$ è il dataset incompleto. $\mathbf{Y}$ raccoglie i vettori binari di appartenenza $\mathbf{y}_j$, i dati mancanti. $\mathbf{Z} = (\mathbf{X}, \mathbf{Y})$ è il dataset completo. Con $\mathbf{Y}$ noto la stima sarebbe una ML gaussiana per ogni modo.
+
+</Step>
+
+<Step title="E-step: i pesi">
+
+Con i parametri dell'iterazione $k$ calcoli per ogni campione e ogni modo la posterior
+
+$$
+w_{ij} = \frac{P_i^{[k]} \, p(\mathbf{x}_j \mid \mathbf{m}_i^{[k]}, \Sigma_i^{[k]})}{p(\mathbf{x}_j \mid \boldsymbol{\theta}^{[k]})}
+$$
+
+Per ogni $j$ i pesi sommano a 1 sui modi.
+
+</Step>
+
+<Step title="M-step: le tre equazioni">
+
+$$
+P_i^{[k+1]} = \frac{1}{N} \sum_{j=1}^{N} w_{ij}, \qquad \mathbf{m}_i^{[k+1]} = \frac{\sum_{j=1}^{N} w_{ij} \, \mathbf{x}_j}{\sum_{j=1}^{N} w_{ij}}
+$$
+
+$$
+\Sigma_i^{[k+1]} = \frac{\sum_{j=1}^{N} w_{ij} \, (\mathbf{x}_j - \mathbf{m}_i^{[k+1]})(\mathbf{x}_j - \mathbf{m}_i^{[k+1]})^{t}}{\sum_{j=1}^{N} w_{ij}}
+$$
+
+</Step>
+
+<Step title="Ripeti e fermati">
+
+Ripeti E-step e M-step finché i parametri non cambiano più in modo significativo. La log-verosimiglianza non scende mai (cresce o resta uguale); il punto finale è un punto stazionario, di solito un massimo locale ma talvolta una sella (slide p75), e dipende dall'inizializzazione.
+
+</Step>
+
+</Example>
+
+### Una iterazione a mano su sei pesci
+
+Per verificare a mano le tre equazioni nel caso scalare serve un esempio con i numeri. Questo è costruito per l'app e non compare nella fonte: i valori sono stati calcolati e controllati.
+
+<Example id="ex03" title="Esempio costruito per l'app: una iterazione di EM su sei luminosità">
+
+<Step title="Dati e stima iniziale">
+
+Luminosità di sei pesci senza etichetta: $X = (2, 3, 4, 5, 7, 8)$. Mistura 1-D con $M = 2$ (salmone, spigola). Stima iniziale: $P = (0.5, 0.5)$, $m = (3, 6)$, $\sigma^2 = (1, 1)$. La log-verosimiglianza dei dati osservati vale $-13.2575$.
+
+</Step>
+
+<Step title="E-step: il conto per x = 4">
+
+$\mathcal{N}(4 \mid 3, 1) = 0.24197$ e $\mathcal{N}(4 \mid 6, 1) = 0.05399$. Numeratori: $0.5 \cdot 0.24197 = 0.12099$ e $0.5 \cdot 0.05399 = 0.02700$. Denominatore: $0.12099 + 0.02700 = 0.14798$.
+
+$$
+P(1 \mid 4) = \frac{0.12099}{0.14798} = 0.8176, \qquad P(2 \mid 4) = 0.1824
+$$
+
+</Step>
+
+<Step title="E-step: tutte le posterior">
+
+| $x_j$ | 2 | 3 | 4 | 5 | 7 | 8 |
+|---|---|---|---|---|---|---|
+| modo 1 | 0.9994 | 0.9890 | 0.8176 | 0.1824 | 0.0006 | 0.0000 |
+| modo 2 | 0.0006 | 0.0110 | 0.1824 | 0.8176 | 0.9994 | 1.0000 |
+
+Ogni colonna somma a 1.
+
+</Step>
+
+<Step title="M-step: prior">
+
+Le somme dei pesi sono 2.989 per il modo 1 e 3.011 per il modo 2, quindi $P^{[1]} = (2.989/6, \, 3.011/6) = (0.4982, \, 0.5018)$.
+
+</Step>
+
+<Step title="M-step: medie">
+
+$$
+m_1^{[1]} = \frac{9.152}{2.989} = 3.062, \qquad m_2^{[1]} = \frac{19.848}{3.011} = 6.592
+$$
+
+La media del modo 2 sale da 6 a 6.592: i pesci a 7 e 8 stanno sopra 6 e pesano quasi per intero sul modo 2, mentre quelli a 4 e 5, sotto 6, pesano solo in parte.
+
+</Step>
+
+<Step title="M-step: varianze">
+
+Con gli scarti dalle medie nuove:
+
+$$
+\sigma_1^{2\,[1]} = \frac{2.545}{2.989} = 0.851, \qquad \sigma_2^{2\,[1]} = \frac{5.600}{3.011} = 1.860
+$$
+
+</Step>
+
+<Step title="La log-verosimiglianza sale">
+
+Da $-13.2575$ a $-12.3273$ dopo la prima iterazione, poi $-12.3091$, $-12.2913$, $-12.2701$: sempre crescente, come afferma la slide p74.
+
+</Step>
+
+</Example>
+
+## Esempio: quattro punti e un valore mancante
+
+### Quattro punti, uno senza la componente x1
+
+L'ultima slide del capitolo, «EM Algorithm: Example», mostra un esempio con quattro punti, uno dei quali senza il valore della componente $x_1$. Le note: un piccolo dataset di quattro punti, a uno dei quali manca il valore di una feature; EM gestisce questo scenario trattando i valori mancanti come variabili latenti. Qui il dato incompleto non è un'etichetta di modo ma una coordinata: stimi una sola gaussiana 2-D, e la variabile latente $\mathbf{Y}$ è il valore mancante $x_1$ del quarto punto. <SourceRef doc="ch2" page={77} /> <SourceRef doc="part1" page={50} />
+
+<Figure id="fig06" />
+
+Nel piano $(x_1, x_2)$ la figura mostra tre punti rossi completi, in $(0, 2)$, $(1, 0)$ e $(2, 2)$, e una retta rossa orizzontale all'altezza $x_2 = 4$. La retta è il quarto punto: ne conosci solo $x_2 = 4$, quindi può trovarsi ovunque lungo la retta. Le ellissi numerate 0, 1, 2, 3 sono i contorni della gaussiana stimata alle iterazioni successive. La 0, grigio chiaro, è un cerchio centrato nell'origine: la stima iniziale. La 1 è già spostata verso il centro dei dati. La 2 e la 3 sono quasi sovrapposte, centrate circa in $(1, 2)$ e allungate lungo $x_2$. Bastano pochissime iterazioni, e il punto incompleto contribuisce comunque alla stima attraverso la coordinata nota.
+
+Un controllo quantitativo sulla figura. L'ellisse 1 è centrata circa in $(0.75, 2)$, con semiassi circa 0.97 lungo $x_1$ e 1.41 lungo $x_2$, cioè $\sqrt{0.938}$ e $\sqrt{2}$: le ellissi sono i contorni a una deviazione standard (distanza di Mahalanobis 1) delle stime successive, e il cerchio 0 ha raggio 1 perché la stima iniziale ha varianze unitarie.
+
+### L'E-step con una feature mancante
+
+La slide mostra solo la figura. I conti vengono dall'esempio classico di Duda-Hart-Stork da cui la figura proviene, coerenti con i punti letti sul grafico. Modello: gaussiana 2-D a covarianza diagonale, $\boldsymbol{\theta} = (\mu_1, \mu_2, \sigma_1^2, \sigma_2^2)$, stima iniziale $\boldsymbol{\theta}^0 = (0, 0, 1, 1)$. I tre punti completi entrano in $Q$ con il loro $\ln p(\mathbf{x}_k \mid \boldsymbol{\theta})$. Per il quarto integri sul valore mancante $x_{41}$, pesandolo con la sua densità condizionata a $x_{42} = 4$ e alla stima corrente:
+
+<Formula id="f-c56" />
+
+Con covarianza diagonale $x_1$ e $x_2$ sono indipendenti, quindi sapere $x_{42} = 4$ non dice nulla su $x_{41}$: la sua densità è la marginale corrente $\mathcal{N}(\mu_1^0, \sigma_1^{2,0}) = \mathcal{N}(0, 1)$. Ti servono solo i primi due momenti, $E[x_{41}] = 0$ e $E[x_{41}^2] = 1$, e $Q$ si scrive in forma chiusa:
+
+<Formula id="f-c56-2" />
+
+EM non indovina il valore mancante: ne usa l'intera distribuzione.
+
+### Il risultato numerico
+
+Anche i numeri sono una ricostruzione, non scritti nella slide. M-step alla prima iterazione:
+
+- $\mu_1 = (0 + 1 + 2 + 0)/4 = 0.75$, dove il valore mancante è sostituito dal suo valore atteso 0;
+- $\mu_2 = (2 + 0 + 2 + 4)/4 = 2$, con tutti e quattro i valori osservati;
+- $\sigma_1^2 = [0.5625 + 0.0625 + 1.5625 + (1 + 0.5625)]/4 = 0.938$, dove per il punto incompleto il quadrato dello scarto è sostituito dal suo valore atteso, varianza corrente (1) più scarto quadratico tra media vecchia e media nuova (0.5625);
+- $\sigma_2^2 = (0 + 4 + 0 + 4)/4 = 2$.
+
+Quindi $\boldsymbol{\theta}^1 = (0.75, 2.0, 0.938, 2.0)$. Poi $\boldsymbol{\theta}^2 = (0.938, 2.0, 0.746, 2.0)$ e $\boldsymbol{\theta}^3 = (0.984, 2.0, 0.687, 2.0)$; al limite:
+
+<Formula id="f-c57" />
+
+Sono il centro e gli assi delle ellissi 2 e 3 della figura. La ricorsione su $\mu_1$ è $\mu_1 \leftarrow (3 + \mu_1)/4$, con punto fisso 1; per $\sigma_1^2$ il punto fisso soddisfa $\sigma_1^2 = (2 + \sigma_1^2)/4$, cioè $\sigma_1^2 = 2/3$. La convergenza è asintotica: il testo di riferimento dice che l'algoritmo converge in tre iterazioni, ma dopo tre iterazioni $\sigma_1^2$ vale 0.687 e dopo quattro 0.672, non ancora 0.667. Per questo le ellissi 2 e 3 sono solo quasi sovrapposte.
+
+Due letture del risultato.
+
+1. Dalla prima iterazione $\mu_2 = 2$ e $\sigma_2^2 = 2$ non cambiano più: $x_2$ è osservata in tutti e quattro i punti e la sua stima è la normale ML.
+2. Il limite di $x_1$, $\mu_1 = 1$ e $\sigma_1^2 = 2/3$, coincide con la stima ML calcolata sui soli tre valori di $x_1$ osservati. Con covarianza diagonale $x_1$ e $x_2$ sono indipendenti e il quarto punto non porta informazione su $x_1$. Con una covarianza piena, invece, la correlazione ti permetterebbe di prevedere $x_{41}$ da $x_{42} = 4$.
+
+Il confronto con lo scarto mostra che cosa guadagni. Buttando via il punto incompleto otterresti $\mu_2 = 1.33$ e $\sigma_2^2 = 0.89$: l'informazione $x_2 = 4$ andrebbe persa.
+
+<Derivation id="der06" />
+
+<Example id="ex02" title="Esempio della slide p77: quattro punti, uno senza il valore di x1">
+
+<Step title="Dati e modello">
+
+Punti letti dalla figura: $(0, 2)$, $(1, 0)$, $(2, 2)$ e $(\ast, 4)$, con $x_1$ del quarto punto ignoto. Modello: gaussiana 2-D a covarianza diagonale, $\boldsymbol{\theta} = (\mu_1, \mu_2, \sigma_1^2, \sigma_2^2)$, stima iniziale $\boldsymbol{\theta}^0 = (0, 0, 1, 1)$ (il cerchio 0 della figura).
+
+</Step>
+
+<Step title="E-step">
+
+Il valore mancante $x_{41}$ ha densità $\mathcal{N}(\mu_1^k, \sigma_1^{2,k})$, che con covarianza diagonale non dipende da $x_{42} = 4$. Quindi $E[x_{41}] = \mu_1^k$ ed $E[(x_{41} - \mu_1)^2] = \sigma_1^{2,k} + (\mu_1^k - \mu_1)^2$. Alla prima iterazione $E[x_{41}] = 0$.
+
+</Step>
+
+<Step title="M-step, prima iterazione: medie">
+
+$$
+\mu_1^1 = \frac{0 + 1 + 2 + 0}{4} = 0.75, \qquad \mu_2^1 = \frac{2 + 0 + 2 + 4}{4} = 2.0
+$$
+
+</Step>
+
+<Step title="M-step, prima iterazione: varianze">
+
+$$
+\sigma_1^{2,1} = \frac{0.5625 + 0.0625 + 1.5625 + (1 + 0.5625)}{4} = 0.9375 \approx 0.938, \qquad \sigma_2^{2,1} = \frac{0 + 4 + 0 + 4}{4} = 2.0
+$$
+
+Risultato: $\boldsymbol{\theta}^1 = (0.75, 2.0, 0.938, 2.0)$, l'ellisse 1.
+
+</Step>
+
+<Step title="Iterazioni successive">
+
+$\boldsymbol{\theta}^2 = (0.9375, 2.0, 0.7461, 2.0)$, $\boldsymbol{\theta}^3 = (0.9844, 2.0, 0.6873, 2.0)$, $\boldsymbol{\theta}^4 = (0.9961, 2.0, 0.6719, 2.0)$. Limite: $\boldsymbol{\mu} = (1.0, 2.0)$ e $\Sigma = \mathrm{diag}(0.667, 2.0)$.
+
+</Step>
+
+<Step title="Confronto con lo scarto del punto incompleto">
+
+Scartando il quarto punto: $\boldsymbol{\mu} = (1.0, 1.333)$, $\sigma_1^2 = 0.667$, $\sigma_2^2 = 0.889$. La stima di $x_1$ coincide al limite; quella di $x_2$ perde l'informazione $x_2 = 4$.
+
+</Step>
+
+</Example>
+
+<Widget id="m10-quattro-punti-x1-mancante" />
+
+<Check id="chk-17" />
+
+### EM per i dati mancanti in pratica
+
+Il paragrafo conclusivo delle note tira le fila: EM è molto efficace nella stima dei parametri dei GMM e si estende ai dati mancanti; per i GMM gli aggiornamenti iterativi di media, covarianza e pesi della mistura migliorano le stime nel tempo e convergono a un massimo locale della verosimiglianza; la capacità di incorporare dati latenti o mancanti rende EM utile nelle applicazioni pratiche con dataset incompleti. Tre messaggi: EM serve sia per le misture sia per i valori mancanti; converge a un punto stazionario, che le note chiamano massimo locale (la slide p75 aggiunge i punti di sella); ha valore applicativo perché i dataset reali sono spesso incompleti. <SourceRef doc="part1" page={50} />
+
+<Callout kind="intuizione">
+In un archivio di cartelle cardiologiche ogni paziente ha frequenza cardiaca a riposo (FC) e intervallo QT dall'ECG, ma per un quarto dei pazienti il QT non è stato refertato. Scartare quei pazienti spreca dati. Sostituire il QT mancante con la media della popolazione schiaccia varianza e correlazione. EM usa la correlazione tra le due misure. Se la coppia è gaussiana, con media QT 400 ms, $\sigma_{QT} = 25$ ms, media FC 70 bpm, $\sigma_{FC} = 10$ bpm e correlazione $-0.6$, per un paziente con FC 85 il QT atteso è $400 + (-0.6) \cdot (25/10) \cdot 15 = 377.5$ ms, con deviazione condizionata $25\sqrt{1 - 0.36} = 20$ ms. L'E-step usa proprio questi due momenti.
+</Callout>
+
+Lo stesso schema, con i conteggi attesi al posto dei conteggi, serve ad apprendere i parametri di una rete bayesiana con dati incompleti nella parte di Passerini (<ModLink to="p05-apprendimento-reti">apprendimento delle reti bayesiane</ModLink>).
+
+<Widget id="m10-dati-mancanti-in-pratica" />
+
+## Coda delle note: il kernel gaussiano di Parzen
+
+La pagina 45 delle note si apre con la fine del discorso sulle finestre di Parzen, prima del titolo «Estimation with Incomplete Data». Il contenuto appartiene a <ModLink to="m09-parzen-windows">finestre di Parzen</ModLink>, dove lo trovi insieme alle slide p65-66; qui lo riprendi per non perdere nulla della pagina. <SourceRef doc="part1" page={45} />
+
+### La distanza euclidea nel kernel sferico
+
+La pagina riparte dall'ultimo punto dell'elenco dei simboli della stima di Parzen con kernel gaussiano a simmetria sferica (metodo di Specht): $\Vert \mathbf{x} - \mathbf{x}_k \Vert$ è la <Term en="Euclidean distance">distanza euclidea</Term> tra il punto $\mathbf{x}$ e il campione di training $\mathbf{x}_k$.
+
+<Formula id="f-c59" />
+
+La formula a cui si riferisce l'elenco è a p44 delle note, fuori da queste pagine; la riporti qui per leggibilità:
+
+<Formula id="f-c59-2" />
+
+Il kernel dipende dal campione di training solo attraverso questa distanza. Tutti i punti alla stessa distanza da $\mathbf{x}_k$ ricevono lo stesso contributo: le curve di livello sono ipersfere, da cui il nome «simmetria sferica». La somma di $N$ gaussiane con pesi uguali $1/N$ è una mistura con una componente per campione; EM stima invece una mistura con poche componenti e parametri liberi.
+
+### Il ruolo di sigma
+
+Le note: il parametro $\sigma$, la <Term en="standard deviation">deviazione standard</Term>, controlla la levigatezza (*smoothness*) della stima di densità. Se $\sigma$ è troppo grande, il kernel liscia troppo i dati (*over-smoothing*) e porta a *underfitting*: campane larghe cancellano i dettagli, per esempio fondono due modi in uno. Se $\sigma$ è troppo piccolo, la stima è molto variabile e può portare a *overfitting*: un picco stretto su ogni campione, quasi zero altrove, e una curva che cambia molto da un training set all'altro. <SourceRef doc="part1" page={45} />
+
+### Normalizzare le feature
+
+In questa formulazione del kernel gaussiano assumi che tutte le feature abbiano la stessa varianza. Per rendere vera l'ipotesi devi **normalizzare** le feature prima di stimare la pdf. La normalizzazione fa contribuire ogni feature in egual misura al calcolo della distanza, e permette al kernel di formare forme ipersferiche corrette attorno ai campioni. A quel punto l'unico iperparametro (*hyperparameter*) da tarare è $\sigma$. <SourceRef doc="part1" page={45} />
+
+Con un solo $\sigma$ per tutte le direzioni, una feature con scala numerica molto più grande domina la distanza euclidea. Luminosità tra 0 e 10 e lunghezza in millimetri tra 200 e 600: senza normalizzare, una differenza di 50 mm pesa quanto 50 unità di luminosità, cinque volte l'intero asse della luminosità. Con la standardizzazione (media 400 mm, deviazione 80 mm) un salmone lungo 450 mm diventa $z = (450 - 400)/80 = 0.625$, confrontabile con la luminosità standardizzata.
+
+<Widget id="m10-sigma-kernel-e-normalizzazione" />
+
+### Sigma adattivo con gli L vicini
+
+Puoi anche adattare la larghezza del kernel, assegnando un $\sigma_k$ diverso a ciascun campione di training $\mathbf{x}_k$, per $k = 1, \ldots, N$. Le note propongono di definire $\sigma_k$ come la distanza euclidea media tra $\mathbf{x}_k$ e i suoi $L$ campioni di training più vicini $\mathbf{y}_1, \ldots, \mathbf{y}_L$: <SourceRef doc="part1" page={45} />
+
+<Formula id="f-c62" />
+
+La strategia adattiva regola il parametro di smoothing sulla densità locale dei campioni. Dove i campioni sono fitti i vicini sono a breve distanza e $\sigma_k$ è piccolo; dove sono radi $\sigma_k$ è grande. Il nuovo iperparametro è $L$. Con $L = 3$ e distanze dai tre vicini 0.21, 0.34 e 0.40, per esempio, $\sigma_k = 0.95/3 = 0.317$. L'idea di vicinato è la stessa del <ModLink to="m08-non-parametrica-knn">K-NN</ModLink>.
+
+Le note spiegano perché conviene. Uno dei vantaggi del kernel gaussiano è che si adatta bene a molti tipi di densità, grazie alla sua levigatezza; un aspetto essenziale del suo uso è l'**adattività**. Conviene un $\sigma$ più piccolo dove ci sono molti campioni, perché l'obiettivo è un'interpolazione accurata: con campioni fitti ci sono meno buchi da riempire, e una varianza grande non serve. Per stimare la varianza localmente analizzi la densità dei campioni: dove sono molti usi una varianza piccola, che rifletta bene la densità della regione; dove sono pochi una varianza più grande tiene conto dell'incertezza maggiore. Questo adattamento locale migliora l'accuratezza della stima.
+
+<Widget id="m10-sigma-adattivo" />
+
+<Check id="chk-18" />
+
+### Metodo di Specht e PNN
+
+Il metodo di Specht, che usa il kernel gaussiano a simmetria sferica, si implementa con le <Term en="Probabilistic Neural Networks (PNNs)">reti neurali probabilistiche</Term> (PNN). Le note: l'approccio permette di modellare densità complesse in modo flessibile ed è adatto a molte applicazioni di machine learning e statistica. <SourceRef doc="part1" page={45} />
+
+Una PNN è la stima di Parzen disegnata come rete. Uno strato ha un'unità gaussiana per ogni campione di training. Uno strato somma (media) le unità di ciascuna classe e dà $\hat{p}(\mathbf{x} \mid \omega_c)$. L'uscita sceglie la classe con la densità, pesata dal prior, più alta. Non impara pesi con la discesa del gradiente: l'unico iperparametro è $\sigma$.
+
+<Widget id="m10-pnn-parzen-come-rete" />
+
+## Collegamenti
+
+- <ModLink to="m05-max-likelihood">Stima a massima verosimiglianza</ModLink>: EM resta una stima ML. La slide p70 riparte da $\boldsymbol{\theta}^* = \arg\max \, l(\boldsymbol{\theta} \mid \mathbf{X})$ e dalla verosimiglianza come prodotto sui campioni i.i.d.; EM è il modo di cercarne il massimo quando manca la soluzione analitica.
+- <ModLink to="m06-modelli-pdf-gaussiana">Modelli di pdf e gaussiana</ModLink>: ogni modo della mistura è una gaussiana multivariata; le equazioni EM sono media e covarianza campionarie della gaussiana pesate dalle posterior.
+- <ModLink to="m03-stima-intro-parametrica">Introduzione alla stima parametrica</ModLink>: con dati incompleti la fonte indica l'approccio parametrico, perché sfrutta la struttura nota del modello.
+- <ModLink to="m09-parzen-windows">Finestre di Parzen</ModLink>: l'alternativa non parametrica che le note definiscono sub-ottima per la mistura; la pagina 45 delle note ne contiene la coda (kernel sferico, $\sigma$, normalizzazione, $\sigma_k$ adattivo, PNN).
+- <ModLink to="m08-non-parametrica-knn">Stima non parametrica e K-NN</ModLink>: il $\sigma_k$ adattivo usa gli $L$ vicini, la stessa idea del K-NN; K-NN e Parzen stimano la $p(\mathbf{x})$ complessiva ma non i singoli modi.
+- <ModLink to="m07-stima-bayesiana">Stima bayesiana</ModLink>: il termine che si ripete nelle equazioni EM è una probabilità a posteriori ottenuta con il teorema di Bayes, prior del modo per verosimiglianza diviso evidenza.
+- <ModLink to="m17-bayes-map-ml">Criteri MAP e ML</ModLink>: assegnare un campione al modo con posterior massima è il criterio MAP; i prior stimati da EM spostano i confini tra i modi come i prior di classe spostano la soglia MAP rispetto a ML.
+- <ModLink to="p12-clustering">Clustering</ModLink>: nella parte di Passerini il GMM stimato con EM è un metodo di clustering, e k-means ne è la versione ad assegnazione dura; all'orale è stata chiesta la formula dell'M-step della mistura.
+- <ModLink to="p05-apprendimento-reti">Apprendimento delle reti bayesiane</ModLink>: con dati incompleti i parametri si stimano con lo stesso schema E-step e M-step, con i conteggi attesi al posto dei conteggi.
+- <ModLink to="d11-autoencoder-vae">Autoencoder e VAE</ModLink>: anche nei VAE il modello dipende da variabili latenti non osservate e si ottimizza un limite inferiore della log-verosimiglianza, la stessa idea del minorante di EM.
+- <ModLink to="m11-hughes-feature-selection">Effetto Hughes e selezione delle feature</ModLink>: il numero di parametri di una mistura cresce con il quadrato della dimensione $n$, per via delle covarianze, e anticipa il problema dei pochi campioni in spazi a molte feature.
+
+## Per l'orale
+
+Le tredici domande della banca che toccano questo foglio: quattro di EM con Melgani e Passerini, tre sulle reti bayesiane con dati incompleti, sei che usano pezzi di questo foglio dentro domande su ML, gaussiana multivariata e Parzen. Qui trovi il testo originale e lo scheletro della risposta; le risposte complete sono nella scheda dell'orale.
+
+### Che cos'è EM e come funziona
+
+<Callout kind="esame" title="Melgani">
+«What is an EM algorithm and how does it work? Explain formula and both steps. Then Multi Gaussian example for EM algorithm. KNN and KNN example.»
+</Callout>
+
+Parto dal contesto: variabili latenti non osservate, dati incompleti, approccio parametrico, EM come soluzione. Formulo il problema: $\mathbf{X}$ incompleto, $\mathbf{Z} = (\mathbf{X}, \mathbf{Y})$ completo, densità congiunta, verosimiglianza dei dati completi e dei dati incompleti. Scrivo $Q(\boldsymbol{\theta}, \boldsymbol{\theta}^{(k)})$ come valore atteso e come integrale, spiego che il primo argomento è libero e il secondo fissa i pesi. Descrivo E-step e M-step, l'alternanza, l'inizializzazione e il criterio di arresto. Dico che la log-verosimiglianza non scende mai ma il massimo globale non è garantito. Per il «Multi Gaussian example» scrivo la mistura, $\boldsymbol{\theta}$, i tre motivi di incompletezza e le tre equazioni della slide p76, spiegando la posterior come teorema di Bayes. La parte sul K-NN appartiene a <ModLink to="m08-non-parametrica-knn">stima non parametrica e K-NN</ModLink>.
+
+### EM per la mistura gaussiana nel clustering
+
+<Callout kind="esame" title="Passerini">
+«Unsupervised learning (everything I knew) + gaussian kernel related to gaussian distance (he said something during lessons, nothing in slides about that). During the oral part he asked me to explain better the mechanism of EM used for gaussian mixture and to explain the result then he asked me what are kernels and when we use them»
+</Callout>
+
+<Callout kind="esame" title="Passerini">
+«Unsupervised learning Q: what's the formula of the EM-algo, M-step for the Gaussian mixture model (because I wrote the e step formula but not the m step one)»
+</Callout>
+
+<Callout kind="esame" title="Passerini">
+«Unsupervised learning: entire chapter»
+</Callout>
+
+Il meccanismo: l'E-step assegna a ogni campione le posterior dei modi (assegnazione morbida), l'M-step ristima prior, medie e covarianze come stime ML pesate. Scrivo l'M-step completo: $P_i$ come media delle posterior, $\mathbf{m}_i$ come media pesata, $\Sigma_i$ come covarianza pesata attorno alla media nuova. Il risultato: con posterior 0 o 1 ritrovo le stime ML per classe; con covarianza comune $\sigma^2 I$ e $\sigma \to 0$ ritrovo k-means. Aggiungo la mistura come modello a variabile latente e il rischio di soluzioni degeneri. Il resto del capitolo sul clustering è in <ModLink to="p12-clustering">clustering</ModLink>.
+
+### EM nelle reti bayesiane
+
+<Callout kind="esame" title="Passerini">
+«Bayesian networks: formalization (DAG, local independencies, various case of d-separation criterion, general d-separation criterion and global independencies) and learning of the parameters (ML with complete data, MAP with prior knowledge, EM with incomplete data)»
+</Callout>
+
+<Callout kind="esame" title="Passerini">
+«Hard or soft margin svm (choose one) + Learning bayesian network. Questions afterwards: canonical hyperplane, why do we use kkt, why solution of dual is equal to primal, disjoint cpd in BN, explain E-M in BN»
+</Callout>
+
+<Callout kind="esame" title="Passerini">
+«- Problem of missing data in Bayesian Networks»
+</Callout>
+
+Con dati completi stimo le tabelle di probabilità condizionata per ML contando le configurazioni. Con dati mancanti le variabili non osservate sono latenti, $\mathbf{Z} = (\mathbf{X}, \mathbf{Y})$: nell'E-step calcolo, con i parametri correnti, la distribuzione dei valori mancanti e i conteggi attesi; nell'M-step ristimo le tabelle con i conteggi attesi al posto dei conteggi. La verosimiglianza non scende, il massimo globale non è garantito. Formalizzazione e d-separazione sono in <ModLink to="p03-reti-bayesiane">reti bayesiane</ModLink>, l'apprendimento in <ModLink to="p05-apprendimento-reti">apprendimento delle reti bayesiane</ModLink>.
+
+### Massima verosimiglianza
+
+<Callout kind="esame" title="Melgani">
+«What is the formula of Maximum Likelihood, why we can use the separate products of the probabilities and what the Likelihood describe. How we can describe the goodness of an estimation and Is Maximum Likelihood Estimation a good estimator? Is it better or not with respect to the Bayesian Estimation? Why? Then he asked me to apply Maximum Likelihood estimation on an exercise. Last question was: In which case ML and Bayesian are the same?»
+</Callout>
+
+<Callout kind="esame" title="Melgani">
+«Explain ML estimation, develop the first derivative for a gaussian and explain the meaning of the result.»
+</Callout>
+
+Da questo foglio uso la formulazione della slide p70: $\boldsymbol{\theta}^* = \arg\max \, l(\boldsymbol{\theta} \mid \mathbf{X})$, con il prodotto giustificato dall'ipotesi i.i.d. Distinguo il caso facile (una gaussiana: la derivata del log si annulla nella media campionaria, in forma chiusa) dal caso difficile (la mistura: logaritmo di una somma, equazioni implicite, serve EM). Bontà dello stimatore e confronto con la stima bayesiana sono in <ModLink to="m05-max-likelihood">stima a massima verosimiglianza</ModLink> e <ModLink to="m04-bonta-stimatori">bontà degli stimatori</ModLink>.
+
+### Gaussiana multivariata
+
+<Callout kind="esame" title="Melgani">
+«How does the Minimum risk criterium work, comparison with MAP and ML classification. Which is the best one (minimum risk). He also asked me the formula of the Gaussian curve in a multi dimensional space (with mean vector and covariance matrix).»
+</Callout>
+
+La formula della gaussiana multivariata è quella di ogni modo della mistura: $\frac{1}{(2\pi)^{n/2} \vert \Sigma_i \vert^{1/2}} \exp\lbrace -\frac{1}{2} (\mathbf{x} - \mathbf{m}_i)^t \Sigma_i^{-1} (\mathbf{x} - \mathbf{m}_i) \rbrace$, con vettore media e matrice di covarianza. Il criterio del rischio minimo è in <ModLink to="m18-rischio-minimo">rischio minimo</ModLink>.
+
+### Parzen e stima non parametrica
+
+<Callout kind="esame" title="Melgani">
+«Parzen Windows: general context (what we want to do, why they are non parametric estimation), gaussian kernel with spherical symmetry with formula and some drawing to represent it, How the choice of the width impacts our estimate? Is it a good estimate? (Bias, variance and consideration about the characteristics of the width to have a consistent estimate)»
+</Callout>
+
+<Callout kind="esame" title="Melgani">
+«Parzen Window Estimation: context, properties etc. Which is the most common window function (write the formula)? Is Parzen a good estimator (bias/variance)? Graphical representation of how the counting/interpolation works with  a couple of samples.»
+</Callout>
+
+<Callout kind="esame" title="Melgani">
+«Explain non-parametric estimation, what non-parametric means and why we use it, explain both KNN and Parzen windows, do they tend to the optimal solution?»
+</Callout>
+
+Da questo foglio prendo la coda di Parzen: il kernel gaussiano sferico con la distanza euclidea, il ruolo di $\sigma$ (troppo grande liscia, troppo piccolo produce aghi), la normalizzazione delle feature, il $\sigma_k$ adattivo con gli $L$ vicini e la PNN. Per la domanda sul non parametrico aggiungo il rovescio della medaglia: quando conosci la struttura del modello, come nella mistura con dati incompleti, il non parametrico è sub-ottimo. Contesto, bias, varianza e consistenza sono in <ModLink to="m09-parzen-windows">finestre di Parzen</ModLink>.
+
+### Schema della risposta su EM
+
+1. **Contesto.** Il modello dipende da variabili latenti non osservate; con dati incompleti si usa l'approccio parametrico; EM è la soluzione.
+2. **Formulazione.** $\mathbf{X}$ osservato (incompleto), $\mathbf{Y}$ mancante, $\mathbf{Z} = (\mathbf{X}, \mathbf{Y})$ completo; $p(\mathbf{Z} \mid \boldsymbol{\theta}) = p(\mathbf{Y} \mid \mathbf{X}, \boldsymbol{\theta}) \, p(\mathbf{X} \mid \boldsymbol{\theta})$; $l(\boldsymbol{\theta} \mid \mathbf{Z})$ facile ma incalcolabile, $l(\boldsymbol{\theta} \mid \mathbf{X})$ calcolabile ma difficile.
+3. **Formula.** $Q(\boldsymbol{\theta}, \boldsymbol{\theta}^{(k)})$ come valore atteso del log della congiunta e come integrale pesato da $p(\mathbf{y} \mid \mathbf{X}, \boldsymbol{\theta}^{(k)})$.
+4. **Due passi.** E-step calcola $Q$ con i parametri fermi; M-step pone $\boldsymbol{\theta}^{(k+1)} = \arg\max Q$; si ripete da $\boldsymbol{\theta}^{(0)}$ finché i parametri non cambiano più.
+5. **Convergenza.** $l(\boldsymbol{\theta}^{(i+1)}) \ge l(\boldsymbol{\theta}^{(i)})$ (dimostrazione con $Q - H$ e Jensen); massimo globale non garantito, massimi locali e punti di sella.
+6. **Mistura.** Posterior del modo come teorema di Bayes, tre equazioni per $P_i$, $\mathbf{m}_i$, $\Sigma_i$, lettura come stime ML pesate.

@@ -1,0 +1,537 @@
+{
+  "c01": [
+    "#panoramica",
+    "#perché-ml-è-ovunque",
+    "widget:m05-ml-nei-problemi-reali"
+  ],
+  "c02": [
+    "#la-definizione-di-stima-ml",
+    "#formula-prodotto-e-likelihood",
+    "formula:f-c02",
+    "widget:m05-argmax-likelihood-salmoni",
+    "widget:m05-simulatore-orale-ml",
+    "widget:m05-due-ml-stima-e-decisione",
+    "quiz:chk-01"
+  ],
+  "c03": [
+    "#la-likelihood-dei-dati-osservati",
+    "#formula-prodotto-e-likelihood",
+    "formula:f-c03",
+    "derivation:der02",
+    "widget:m05-pdf-contro-likelihood",
+    "widget:m05-simulatore-orale-ml",
+    "quiz:chk-02",
+    "quiz:chk-04"
+  ],
+  "c04": [
+    "#variare-i-parametri-e-confrontare-le-pdf",
+    "widget:m05-argmax-likelihood-salmoni",
+    "quiz:chk-01"
+  ],
+  "c05": [
+    "#variare-i-parametri-e-confrontare-le-pdf",
+    "widget:m05-argmax-likelihood-salmoni",
+    "quiz:chk-01"
+  ],
+  "c06": [
+    "#massimizzare-la-probabilità-dei-dati-osservati",
+    "example:ex04",
+    "derivation:der14",
+    "widget:m05-argmax-likelihood-salmoni",
+    "quiz:chk-02"
+  ],
+  "c07": [
+    "#la-log-likelihood",
+    "example:ex04",
+    "formula:f-c07",
+    "derivation:der01",
+    "widget:m05-log-likelihood-prodotti-somme",
+    "quiz:chk-03",
+    "quiz:chk-04"
+  ],
+  "c08": [
+    "#il-logaritmo-non-sposta-il-massimo",
+    "#formula-prodotto-e-likelihood",
+    "formula:f-c08",
+    "formula:f-c08-2",
+    "derivation:der01",
+    "widget:m05-log-likelihood-prodotti-somme",
+    "quiz:chk-03"
+  ],
+  "c09": [
+    "#dai-prodotti-alle-somme",
+    "#formula-prodotto-e-likelihood",
+    "example:ex04",
+    "formula:f-c09",
+    "derivation:der02",
+    "derivation:der14",
+    "widget:m05-log-likelihood-prodotti-somme",
+    "widget:m05-officina-esercizi-ml",
+    "quiz:chk-04"
+  ],
+  "c10": [
+    "#le-equazioni-di-verosimiglianza",
+    "#da-una-osservazione-a-n-campioni",
+    "#sviluppare-la-derivata-e-applicare-ml",
+    "example:ex03",
+    "example:ex04",
+    "formula:f-c10",
+    "formula:f-c10-2",
+    "derivation:der02",
+    "derivation:der03",
+    "derivation:der04",
+    "derivation:der05",
+    "derivation:der13",
+    "derivation:der14",
+    "widget:m05-derivata-nulla-molle",
+    "widget:m05-officina-esercizi-ml",
+    "quiz:chk-05",
+    "quiz:chk-09"
+  ],
+  "c11": [
+    "#massimo-minimo-o-bordo",
+    "formula:f-c11",
+    "formula:f-c11-2",
+    "derivation:der03",
+    "derivation:der04",
+    "derivation:der13",
+    "derivation:der14",
+    "widget:m05-massimo-o-trappola",
+    "widget:m05-officina-esercizi-ml",
+    "quiz:chk-05",
+    "quiz:chk-06"
+  ],
+  "c67": [
+    "#invarianza-rispetto-alla-parametrizzazione",
+    "formula:f-c67",
+    "derivation:der13",
+    "widget:m05-officina-esercizi-ml"
+  ],
+  "c12": [
+    "#lesempio-della-fonte-una-sola-osservazione",
+    "example:ex01",
+    "formula:f-c12",
+    "derivation:der03",
+    "widget:m05-ml-search-una-osservazione",
+    "figure:fig01",
+    "figure:fig02",
+    "quiz:chk-07"
+  ],
+  "c13": [
+    "#la-ricerca-ml",
+    "example:ex01",
+    "widget:m05-ml-search-una-osservazione",
+    "figure:fig01",
+    "figure:fig02"
+  ],
+  "c14": [
+    "#la-likelihood-letta-sulla-verticale-di-x0",
+    "example:ex01",
+    "widget:m05-ml-search-una-osservazione",
+    "figure:fig01",
+    "figure:fig02",
+    "quiz:chk-07"
+  ],
+  "c15": [
+    "#il-risultato-la-media-stimata-è-losservazione",
+    "example:ex01",
+    "formula:f-c15",
+    "derivation:der03",
+    "widget:m05-ml-search-una-osservazione",
+    "widget:m05-due-ml-stima-e-decisione",
+    "figure:fig01",
+    "figure:fig02",
+    "quiz:chk-07"
+  ],
+  "c16": [
+    "#la-likelihood-come-funzione-della-media",
+    "example:ex01",
+    "formula:f-c16",
+    "derivation:der03",
+    "derivation:der15",
+    "widget:m05-pdf-contro-likelihood",
+    "figure:fig01",
+    "quiz:chk-08"
+  ],
+  "c17": [
+    "#pdf-e-likelihood-stessa-formula-due-letture",
+    "#formula-prodotto-e-likelihood",
+    "formula:f-c17",
+    "derivation:der15",
+    "widget:m05-pdf-contro-likelihood",
+    "widget:m05-simulatore-orale-ml",
+    "quiz:chk-08"
+  ],
+  "c18": [
+    "#da-una-osservazione-a-n-campioni",
+    "#sviluppare-la-derivata-e-applicare-ml",
+    "example:ex02",
+    "formula:f-c18",
+    "formula:f-c18-2",
+    "derivation:der04",
+    "derivation:der15",
+    "widget:m05-derivata-nulla-molle",
+    "widget:m05-officina-esercizi-ml",
+    "quiz:chk-09",
+    "quiz:chk-12"
+  ],
+  "c19": [
+    "#il-significato-del-risultato",
+    "#sviluppare-la-derivata-e-applicare-ml",
+    "example:ex02",
+    "formula:f-c19",
+    "formula:f-c19-2",
+    "formula:f-c19-3",
+    "derivation:der04",
+    "derivation:der06",
+    "derivation:der15",
+    "widget:m05-derivata-nulla-molle",
+    "quiz:chk-09"
+  ],
+  "c20": [
+    "#richiamo-la-stima-efficiente",
+    "formula:f-c20",
+    "derivation:der06",
+    "derivation:der07",
+    "widget:m05-teorema-efficienza-ml"
+  ],
+  "c21": [
+    "#se-esiste-una-stima-efficiente-è-quella-ml",
+    "#bontà-della-stima-e-confronto-con-bayes",
+    "derivation:der06",
+    "derivation:der07",
+    "derivation:der13",
+    "derivation:der14",
+    "widget:m05-teorema-efficienza-ml",
+    "quiz:chk-10"
+  ],
+  "c22": [
+    "#le-ipotesi-sottintese",
+    "derivation:der07",
+    "derivation:der17",
+    "widget:m05-teorema-efficienza-ml",
+    "quiz:chk-06"
+  ],
+  "c23": [
+    "#tre-proprietà-asintotiche",
+    "#bontà-della-stima-e-confronto-con-bayes",
+    "derivation:der17",
+    "widget:m05-cruscotto-asintotico-ml",
+    "widget:m05-simulatore-orale-ml",
+    "quiz:chk-10"
+  ],
+  "c24": [
+    "#tre-proprietà-asintotiche",
+    "formula:f-c24",
+    "derivation:der05",
+    "derivation:der06",
+    "derivation:der16",
+    "derivation:der17",
+    "widget:m05-cruscotto-asintotico-ml",
+    "quiz:chk-10",
+    "quiz:chk-11"
+  ],
+  "c25": [
+    "#tre-proprietà-asintotiche",
+    "formula:f-c25",
+    "derivation:der06",
+    "derivation:der17",
+    "widget:m05-cruscotto-asintotico-ml",
+    "quiz:chk-10"
+  ],
+  "c26": [
+    "#tre-proprietà-asintotiche",
+    "formula:f-c26",
+    "derivation:der06",
+    "derivation:der16",
+    "derivation:der17",
+    "widget:m05-cruscotto-asintotico-ml",
+    "quiz:chk-10"
+  ],
+  "c27": [
+    "#perché-ml-è-ovunque",
+    "widget:m05-ml-nei-problemi-reali"
+  ],
+  "c28": [
+    "#con-pochi-campioni-ml-può-essere-distorta",
+    "#bontà-della-stima-e-confronto-con-bayes",
+    "example:ex02",
+    "formula:f-c28",
+    "formula:f-c28-2",
+    "formula:f-c28-3",
+    "derivation:der05",
+    "widget:m05-varianza-ml-distorta",
+    "quiz:chk-11",
+    "quiz:chk-12"
+  ],
+  "c29": [
+    "#la-scelta-del-modello-statistico",
+    "widget:m05-catena-di-acquisizione-sar",
+    "quiz:chk-15"
+  ],
+  "c30": [
+    "#il-fenomeno-il-rumore-le-elaborazioni",
+    "widget:m05-catena-di-acquisizione-sar"
+  ],
+  "c31": [
+    "#il-fenomeno-il-rumore-le-elaborazioni",
+    "widget:m05-catena-di-acquisizione-sar"
+  ],
+  "c32": [
+    "#il-fenomeno-il-rumore-le-elaborazioni",
+    "widget:m05-catena-di-acquisizione-sar",
+    "quiz:chk-15"
+  ],
+  "c33": [
+    "#il-fenomeno-il-rumore-le-elaborazioni",
+    "widget:m05-catena-di-acquisizione-sar"
+  ],
+  "c34": [
+    "#i-modelli-statistici-più-diffusi",
+    "widget:m05-indovina-il-modello"
+  ],
+  "c35": [
+    "#il-modello-gaussiano-della-galleria",
+    "formula:f-c35",
+    "derivation:der12",
+    "widget:m05-gaussiana-e-gaussiana-generalizzata",
+    "figure:fig03"
+  ],
+  "c36": [
+    "#il-modello-gaussiano-generalizzato",
+    "formula:f-c36",
+    "widget:m05-gaussiana-e-gaussiana-generalizzata",
+    "figure:fig04"
+  ],
+  "c37": [
+    "#il-modello-gamma",
+    "formula:f-c37",
+    "widget:m05-gamma-e-chi-quadro",
+    "figure:fig05",
+    "quiz:chk-16"
+  ],
+  "c38": [
+    "#il-modello-di-rayleigh",
+    "example:ex03",
+    "formula:f-c38",
+    "derivation:der13",
+    "widget:m05-rayleigh-ampiezza-radar",
+    "figure:fig06",
+    "quiz:chk-15"
+  ],
+  "c39": [
+    "#il-modello-chi-quadro",
+    "formula:f-c39",
+    "widget:m05-gamma-e-chi-quadro",
+    "figure:fig07",
+    "quiz:chk-16"
+  ],
+  "c40": [
+    "#il-modello-log-normale",
+    "formula:f-c40",
+    "widget:m05-lognormale-importi",
+    "figure:fig08"
+  ],
+  "c41": [
+    "#i-modelli-statistici-più-diffusi",
+    "widget:m05-indovina-il-modello",
+    "figure:fig03",
+    "figure:fig04",
+    "figure:fig05",
+    "figure:fig06",
+    "figure:fig07",
+    "figure:fig08"
+  ],
+  "c42": [
+    "#le-parentele-tra-i-modelli",
+    "formula:f-c42",
+    "formula:f-c42-2",
+    "formula:f-c42-3",
+    "widget:m05-parentele-tra-modelli",
+    "quiz:chk-15",
+    "quiz:chk-16"
+  ],
+  "c43": [
+    "#scegliere-il-modello-non-è-banale",
+    "#i-modelli-statistici-più-diffusi",
+    "widget:m05-indovina-il-modello"
+  ],
+  "c44": [
+    "#ml-sceglie-i-parametri-non-la-famiglia",
+    "widget:m05-indovina-il-modello"
+  ],
+  "c45": [
+    "#il-modello-gaussiano",
+    "widget:m05-limite-centrale-consumi"
+  ],
+  "c46": [
+    "#il-teorema-del-limite-centrale",
+    "formula:f-c46",
+    "derivation:der17",
+    "widget:m05-limite-centrale-consumi",
+    "quiz:chk-17"
+  ],
+  "c47": [
+    "#perché-la-gaussiana-è-ovunque",
+    "widget:m05-limite-centrale-consumi",
+    "quiz:chk-17"
+  ],
+  "c48": [
+    "#perché-la-gaussiana-è-ovunque",
+    "widget:m05-limite-centrale-consumi"
+  ],
+  "c49": [
+    "#la-gaussiana-multivariata",
+    "#gaussiana-multivariata-e-covarianza",
+    "example:ex05",
+    "formula:f-c49",
+    "derivation:der10",
+    "derivation:der12",
+    "derivation:der18",
+    "widget:m05-formula-gaussiana-multivariata"
+  ],
+  "c50": [
+    "#i-simboli-della-formula",
+    "formula:f-c50",
+    "derivation:der12",
+    "derivation:der18",
+    "widget:m05-formula-gaussiana-multivariata"
+  ],
+  "c51": [
+    "#la-distanza-di-mahalanobis",
+    "example:ex05",
+    "formula:f-c51",
+    "derivation:der11",
+    "widget:m05-formula-gaussiana-multivariata",
+    "quiz:chk-19"
+  ],
+  "c52": [
+    "#il-ruolo-dei-due-parametri",
+    "widget:m05-formula-gaussiana-multivariata"
+  ],
+  "c53": [
+    "#la-gaussiana-bivariata",
+    "formula:f-c53",
+    "widget:m05-campana-bivariata-3d",
+    "figure:fig09"
+  ],
+  "c54": [
+    "#il-ruolo-dei-due-parametri",
+    "formula:f-c54",
+    "widget:m05-campana-bivariata-3d",
+    "quiz:chk-18"
+  ],
+  "c55": [
+    "#il-vettore-medio",
+    "example:ex07",
+    "formula:f-c55",
+    "derivation:der08",
+    "widget:m05-campana-bivariata-3d"
+  ],
+  "c56": [
+    "#definizione-e-due-forme-equivalenti",
+    "#gaussiana-multivariata-e-covarianza",
+    "example:ex07",
+    "formula:f-c56",
+    "derivation:der08",
+    "widget:m05-costruisci-la-covarianza"
+  ],
+  "c57": [
+    "#definizione-e-due-forme-equivalenti",
+    "example:ex07",
+    "formula:f-c57",
+    "derivation:der19",
+    "widget:m05-costruisci-la-covarianza"
+  ],
+  "c58": [
+    "#simmetria",
+    "example:ex07",
+    "formula:f-c58",
+    "derivation:der09",
+    "widget:m05-costruisci-la-covarianza",
+    "quiz:chk-18"
+  ],
+  "c59": [
+    "#semidefinita-positiva",
+    "example:ex06",
+    "formula:f-c59",
+    "derivation:der09",
+    "widget:m05-semidefinita-positiva-proiezioni",
+    "quiz:chk-21"
+  ],
+  "c60": [
+    "#feature-indipendenti",
+    "example:ex05",
+    "formula:f-c60",
+    "derivation:der10",
+    "derivation:der19",
+    "widget:m05-indipendenza-e-fattorizzazione",
+    "figure:fig10",
+    "quiz:chk-19",
+    "quiz:chk-20"
+  ],
+  "c61": [
+    "#feature-indipendenti",
+    "example:ex05",
+    "formula:f-c61",
+    "derivation:der10",
+    "derivation:der19",
+    "widget:m05-indipendenza-e-fattorizzazione",
+    "quiz:chk-19"
+  ],
+  "c62": [
+    "#la-forma-della-gaussiana-2-d",
+    "formula:f-c62",
+    "derivation:der18",
+    "widget:m05-campana-bivariata-3d",
+    "figure:fig09"
+  ],
+  "c63": [
+    "#gli-isolivelli-sono-ellissi",
+    "example:ex06",
+    "formula:f-c63",
+    "derivation:der11",
+    "widget:m05-ellissi-e-autovettori"
+  ],
+  "c64": [
+    "#gli-assi-seguono-gli-autovettori",
+    "example:ex06",
+    "formula:f-c64",
+    "derivation:der11",
+    "widget:m05-ellissi-e-autovettori",
+    "quiz:chk-21"
+  ],
+  "c65": [
+    "#lasse-maggiore-e-la-massima-varianza",
+    "example:ex06",
+    "formula:f-c65",
+    "derivation:der09",
+    "derivation:der11",
+    "widget:m05-ellissi-e-autovettori",
+    "quiz:chk-21"
+  ],
+  "c66": [
+    "#le-lunghezze-degli-assi",
+    "example:ex06",
+    "formula:f-c66",
+    "derivation:der11",
+    "widget:m05-ellissi-e-autovettori",
+    "quiz:chk-21"
+  ],
+  "c68": [
+    "#ml-e-stima-bayesiana",
+    "#bontà-della-stima-e-confronto-con-bayes",
+    "formula:f-c68",
+    "formula:f-c68-2",
+    "formula:f-c68-3",
+    "widget:m05-ml-contro-bayesiana",
+    "quiz:chk-13"
+  ],
+  "c69": [
+    "#stima-ml-e-criterio-ml-di-classificazione",
+    "formula:f-c69",
+    "formula:f-c69-2",
+    "widget:m05-due-ml-stima-e-decisione",
+    "quiz:chk-14"
+  ]
+}

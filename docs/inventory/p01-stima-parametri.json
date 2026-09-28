@@ -1,0 +1,1718 @@
+{
+  "moduleId": "p01-stima-parametri",
+  "title": "Stima ML e bayesiana dei parametri, statistiche sufficienti, prior coniugati",
+  "stages": {"inventario": "done", "completezza": "done", "formule": "done"},
+  "pagesReviewed": [
+    {"doc": "part2", "from": 1, "to": 5},
+    {"doc": "examq", "from": 1, "to": 6}
+  ],
+  "overview": "Il modulo apre la Parte 2 del corso (prof. Passerini, appunti di Alessio Novel) e fissa i due modi di imparare i parametri θ di una distribuzione condizionata alla classe a partire da un dataset i.i.d.: la stima a massima verosimiglianza (θ fisso ma ignoto, θ* = argmax p(D|θ), log-verosimiglianza, gradiente nullo e controllo dell'Hessiana) e la stima bayesiana (θ variabile aleatoria con prior noto, predizione come integrale p(x|D) = ∫ p(x|θ)p(θ|D)dθ, posterior via teorema di Bayes con evidenza p(D)). Introduce poi le statistiche sufficienti (P(D|s,θ) = P(D|s), da cui p(θ|D) = p(θ|s): comprimere i dati senza perdere informazione su θ) e i prior coniugati (posterior nella stessa famiglia del prior, esempio gaussiana-gaussiana e tabella Binomiale-Beta, Multinomiale-Dirichlet, Normale-Normale). Come completamento il modulo aggiunge la stima MAP e i casi in cui Bayes si riduce a ML (prior piatto, molti dati). Conta per l'orale perché è il mattone dell'apprendimento dei parametri nelle reti bayesiane (ML con dati completi, MAP, EM), dei classificatori generativi e della mistura di gaussiane; la domanda ricorrente è «perché la posterior di una media gaussiana è ancora gaussiana?». La pagina 5 è condivisa con p02 (Bernoulli).",
+  "concepts": [
+    {
+      "id": "c01",
+      "name": "Indice della Parte 2 e posto del modulo nel corso",
+      "nameEn": "Machine Learning I - Part 2, Notes by Alessio Novel - Professor: A. Passerini (table of contents)",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 1}, {"doc": "part2", "page": 2}],
+      "detail": "La pagina 1 è la copertina delle note della Parte 2 («Machine Learning I - Part 2, Notes by Alessio Novel - Professor: A. Passerini») con l'indice, che prosegue in cima a pagina 2. Il primo capitolo, «Maximum-Likelihood and Bayesian Parameter Estimation» (p. 2), ha due blocchi: Settings (Maximum Likelihood Estimation p. 2, Bayesian Estimation p. 3, Sufficient Statistics p. 4, Conjugate Priors p. 4) e Applications (Bernoulli Distribution p. 5, Multinomial Distribution p. 8). Seguono Bayesian networks (p. 11: Definition p. 12, d-separation p. 16), Learning in Graphical Models (p. 24: Maximum Likelihood Estimation p. 25, Maximum-a-Posteriori Estimation p. 27, Incomplete Data p. 27), Linear Discriminant Functions (p. 31: Linear binary Classifier p. 32, Perceptron p. 35, Perceptron Regression p. 40, Multiclass Classification p. 42, Generative Linear Classifiers p. 44), Support Vector Machines (p. 46: Hard Margin SVM p. 49, Soft Margin SVM p. 55, Large Scale SVM p. 60), Kernel Machines (p. 62: Kernel Trick p. 64, Valid Kernels p. 66, Kernel Machines p. 68, Kernels p. 69), Unsupervised Learning (p. 75: k-Means Clustering p. 75, Gaussian Mixture Model p. 76, Number of Clusters p. 80, Hierarchical Clustering p. 82) e Reinforcement Learning (p. 84: Sequential Decision Making p. 85, Compute the Optimal Policy p. 90, Learning p. 92 con Policy Evaluation p. 93 e Policy Learning p. 95, Scaling to Large State Spaces p. 99). Questo modulo copre i Settings; gli stessi strumenti (ML, stima bayesiana, prior coniugati) tornano nell'apprendimento dei modelli grafici (p. 24-27), nei classificatori lineari generativi (p. 44) e nella mistura di gaussiane (p. 76).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c02",
+      "name": "Due impostazioni per stimare i parametri: ML e bayesiana",
+      "nameEn": "Settings: Maximum Likelihood Estimation vs Bayesian Estimation",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "part2", "page": 2}, {"doc": "part2", "page": 3}],
+      "detail": "Sotto il titolo «Settings» le note presentano due impostazioni per imparare i parametri di una distribuzione dai dati di una classe. Nella stima a massima verosimiglianza (Maximum Likelihood Estimation) il vettore dei parametri θ ha un valore fisso ma ignoto (fixed but unknown value) e si cerca un solo valore θ* che massimizza la verosimiglianza dei dati di training. Nella stima bayesiana (Bayesian Estimation) i parametri sono variabili aleatorie (random variables) con una distribuzione a priori nota p(θ), e la predizione su un nuovo esempio integra su tutti i valori possibili dei parametri invece di sceglierne uno. ML restituisce una stima puntuale; l'approccio bayesiano restituisce una distribuzione (la posterior p(θ|D)) e una densità predittiva che media su tutti i modelli. In entrambe le impostazioni si lavora sul dataset di una sola classe target y.",
+      "latex": [
+        "\\boldsymbol{\\theta}^{*}=\\operatorname{argmax}_{\\boldsymbol{\\theta}}\\,p(D\\,|\\,\\boldsymbol{\\theta})",
+        "p(\\mathbf{x}\\,|\\,D)=\\int p(\\mathbf{x}\\,|\\,\\boldsymbol{\\theta})\\,p(\\boldsymbol{\\theta}\\,|\\,D)\\,d\\boldsymbol{\\theta}"
+      ],
+      "symbols": [
+        {"s": "\\boldsymbol{\\theta}", "meaning": "vettore dei parametri della distribuzione della classe"},
+        {"s": "\\boldsymbol{\\theta}^{*}", "meaning": "stima puntuale ML"},
+        {"s": "D", "meaning": "dataset di training della classe target"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c03",
+      "name": "Dataset di training i.i.d. per la classe target",
+      "nameEn": "A training dataset D = {x_1, …, x_n} of i.i.d. (independent and identically distributed) examples for the target class y is available",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 2}],
+      "detail": "Primo punto del setting ML: è disponibile un dataset di training D di n esempi x_1, …, x_n della classe target y, indipendenti e identicamente distribuiti (i.i.d., independent and identically distributed). Identicamente distribuiti: tutti gli esempi vengono dalla stessa distribuzione p(x|θ). Indipendenti: una volta fissata la distribuzione, ogni esempio non dice nulla sugli altri. Il dataset contiene solo esempi della classe y, quindi ciò che si stima è la densità condizionata alla classe; con più classi si ripete la stima classe per classe. L'ipotesi i.i.d. è quella che permette di scrivere la probabilità congiunta del dataset come prodotto (c06).",
+      "latex": ["D=\\{\\mathbf{x}_1,\\dots,\\mathbf{x}_n\\}"],
+      "symbols": [
+        {"s": "D", "meaning": "dataset di training della classe target"},
+        {"s": "\\mathbf{x}_j", "meaning": "j-esimo esempio (vettore di feature)"},
+        {"s": "n", "meaning": "numero di esempi"},
+        {"s": "y", "meaning": "classe target di cui si stimano i parametri"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c04",
+      "name": "Parametri fissi ma ignoti (visione ML)",
+      "nameEn": "The parameter vector θ is assumed to have a fixed but unknown value",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 2}],
+      "detail": "Secondo punto del setting ML: il vettore dei parametri θ si assume abbia un valore fisso ma ignoto (fixed but unknown value). θ non è una variabile aleatoria e non ha una distribuzione: esiste un valore vero, che non conosciamo, e il compito è stimarlo con un singolo valore θ*. È la differenza di fondo con la stima bayesiana (c12), dove θ è trattato come variabile aleatoria con un prior.",
+      "latex": ["\\boldsymbol{\\theta}"],
+      "symbols": [{"s": "\\boldsymbol{\\theta}", "meaning": "vettore dei parametri, costante ignota nella visione ML"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c05",
+      "name": "Stima ML: massimizzare la verosimiglianza",
+      "nameEn": "The goal is to estimate θ by maximizing its likelihood with respect to the training data",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 2}],
+      "detail": "L'obiettivo è stimare θ massimizzando la sua verosimiglianza (likelihood, in grassetto nelle note) rispetto ai dati di training: θ* è il valore di θ che rende più probabile il dataset osservato. La verosimiglianza è p(D|θ) letta come funzione di θ con D fissato (i dati sono dati, varia il parametro). Grazie all'ipotesi i.i.d. la massimizzazione si scrive sul prodotto delle densità dei singoli esempi, con l'indice j da 1 a n. È la formula chiesta all'orale insieme al perché del prodotto.",
+      "latex": ["\\boldsymbol{\\theta}^{*}=\\operatorname{argmax}_{\\boldsymbol{\\theta}}\\,p(D\\,|\\,\\boldsymbol{\\theta})=\\operatorname{argmax}_{\\boldsymbol{\\theta}}\\prod_{j=1}^{n}p(\\mathbf{x}_j\\,|\\,\\boldsymbol{\\theta})"],
+      "symbols": [
+        {"s": "p(D\\,|\\,\\boldsymbol{\\theta})", "meaning": "verosimiglianza (likelihood) del dataset in funzione di θ"},
+        {"s": "\\operatorname{argmax}_{\\boldsymbol{\\theta}}", "meaning": "valore di θ che massimizza l'espressione"},
+        {"s": "p(\\mathbf{x}_j\\,|\\,\\boldsymbol{\\theta})", "meaning": "densità del singolo esempio dato θ"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c06",
+      "name": "Fattorizzazione della verosimiglianza per esempi i.i.d.",
+      "nameEn": "the joint probability p(D|θ) decomposes into a product since the examples are i.i.d., implying independence given the distribution",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 2}],
+      "detail": "La probabilità congiunta p(D|θ) = p(x_1, …, x_n|θ) si scompone nel prodotto delle densità dei singoli esempi perché gli esempi sono i.i.d.: le note precisano che questo implica indipendenza data la distribuzione (independence given the distribution), cioè indipendenza condizionata a θ, non indipendenza assoluta. Se gli esempi non fossero indipendenti (letture ripetute dello stesso oggetto, campioni correlati nel tempo) il prodotto non sarebbe la probabilità congiunta e conterebbe più volte la stessa informazione. È la risposta alla domanda d'esame «why we can use the separate products of the probabilities».",
+      "latex": ["p(D\\,|\\,\\boldsymbol{\\theta})=p(\\mathbf{x}_1,\\dots,\\mathbf{x}_n\\,|\\,\\boldsymbol{\\theta})=\\prod_{j=1}^{n}p(\\mathbf{x}_j\\,|\\,\\boldsymbol{\\theta})"],
+      "symbols": [{"s": "\\prod_{j=1}^{n}", "meaning": "prodotto sugli n esempi"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c07",
+      "name": "Log-verosimiglianza",
+      "nameEn": "maximize the logarithm of the likelihood rather than the likelihood itself",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 2}],
+      "detail": "Di solito conviene massimizzare il logaritmo della verosimiglianza (maximize the logarithm of the likelihood, in grassetto) invece della verosimiglianza stessa. Il massimizzatore θ* è lo stesso e il logaritmo del prodotto diventa la somma dei logaritmi delle densità dei singoli esempi, con j da 1 a n. Nelle note il logaritmo è naturale (ln) e l'argomento è scritto tra parentesi: ln(p(D|θ)).",
+      "latex": ["\\boldsymbol{\\theta}^{*}=\\operatorname{argmax}_{\\boldsymbol{\\theta}}\\ln\\big(p(D\\,|\\,\\boldsymbol{\\theta})\\big)=\\operatorname{argmax}_{\\boldsymbol{\\theta}}\\sum_{j=1}^{n}\\ln\\big(p(\\mathbf{x}_j\\,|\\,\\boldsymbol{\\theta})\\big)"],
+      "symbols": [{"s": "\\ln", "meaning": "logaritmo naturale"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c08",
+      "name": "Perché il logaritmo: somma al posto del prodotto, monotonia preservata",
+      "nameEn": "the logarithm simplifies the product into a summation, which is computationally and mathematically more manageable while preserving monotonicity",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 2}],
+      "detail": "Le note danno due ragioni. Il logaritmo trasforma il prodotto in una somma, più maneggevole sia computazionalmente sia matematicamente (la derivata di una somma è la somma delle derivate, mentre derivare un prodotto di n fattori richiede la regola del prodotto). Il logaritmo preserva la monotonia (preserving monotonicity): è strettamente crescente, quindi a < b se e solo se ln a < ln b, e l'argmax non cambia. Estensione non scritta nelle note: in pratica il prodotto di centinaia di densità minori di 1 va in underflow in doppia precisione, la somma dei logaritmi no.",
+      "latex": [
+        "\\ln\\Big(\\prod_{j=1}^{n}p(\\mathbf{x}_j\\,|\\,\\boldsymbol{\\theta})\\Big)=\\sum_{j=1}^{n}\\ln\\big(p(\\mathbf{x}_j\\,|\\,\\boldsymbol{\\theta})\\big)",
+        "a<b\\iff\\ln a<\\ln b\\quad(a,b>0)"
+      ],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c09",
+      "name": "Condizione necessaria: gradiente nullo della log-verosimiglianza",
+      "nameEn": "Necessary conditions for the maximum θ* can be derived by setting the gradient of the log-likelihood with respect to θ to zero",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 2}],
+      "detail": "Le condizioni necessarie per il massimo θ* si ottengono ponendo a zero il gradiente della log-verosimiglianza rispetto a θ: è un sistema di equazioni, una per componente di θ, con il vettore nullo in grassetto a destra. La condizione è solo necessaria: ogni massimo interno ha gradiente nullo, ma non ogni punto a gradiente nullo è un massimo (c10, c11). Grazie alla somma, il gradiente è la somma dei gradienti dei contributi dei singoli esempi. Per una gaussiana con varianza nota questa equazione dà come stima della media la media campionaria (der07).",
+      "latex": ["\\nabla_{\\boldsymbol{\\theta}}\\sum_{j=1}^{n}\\ln\\big(p(\\mathbf{x}_j\\,|\\,\\boldsymbol{\\theta})\\big)=\\mathbf{0}"],
+      "symbols": [
+        {"s": "\\nabla_{\\boldsymbol{\\theta}}", "meaning": "gradiente rispetto ai parametri"},
+        {"s": "\\mathbf{0}", "meaning": "vettore nullo"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c10",
+      "name": "Gradiente nullo: massimi locali o globali secondo la forma della distribuzione",
+      "nameEn": "Points where the gradient is zero may correspond to local or global maxima, depending on the form of the probability distribution",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 2}],
+      "detail": "I punti in cui il gradiente si annulla possono essere massimi locali o globali, e quale dei due dipende dalla forma della distribuzione di probabilità. Per una gaussiana la log-verosimiglianza nella media è una parabola rivolta verso il basso con un solo massimo; per modelli più complessi, come una mistura di gaussiane (Gaussian Mixture Model, p. 76 delle note), la superficie ha più massimi (per esempio simmetrici per scambio delle etichette) e punti di sella, e risolvere ∇ = 0 può portare a un massimo solo locale.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c11",
+      "name": "Condizioni del secondo ordine: la matrice Hessiana",
+      "nameEn": "Additional second-order conditions (e.g., checking the Hessian matrix) may be required to determine whether these points are maxima, minima or saddle points",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 2}, {"doc": "part2", "page": 3}],
+      "detail": "La frase inizia a pagina 2 e finisce in cima a pagina 3: possono servire condizioni aggiuntive del secondo ordine, per esempio il controllo della matrice Hessiana (Hessian matrix), per stabilire se i punti a gradiente nullo sono massimi, minimi o punti di sella (saddle points). La matrice Hessiana raccoglie le derivate seconde della log-verosimiglianza rispetto alle componenti di θ (la formula di H riportata sotto è un completamento: le note nominano la matrice ma non la scrivono). Criterio standard, non scritto nelle note: Hessiana definita negativa (tutti gli autovalori negativi) indica un massimo locale, definita positiva un minimo locale, autovalori di segno diverso un punto di sella.",
+      "latex": ["\\mathbf{H}=\\nabla^{2}_{\\boldsymbol{\\theta}}\\sum_{j=1}^{n}\\ln\\big(p(\\mathbf{x}_j\\,|\\,\\boldsymbol{\\theta})\\big)"],
+      "symbols": [{"s": "\\mathbf{H}", "meaning": "matrice Hessiana: derivate seconde della log-verosimiglianza"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c12",
+      "name": "Setting bayesiano: parametri come variabili aleatorie con prior noto",
+      "nameEn": "Bayesian estimation assumes that the parameters θ_i are random variables with a known prior distribution p(θ)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 3}],
+      "detail": "La stima bayesiana (Bayesian Estimation) assume che i parametri θ_i siano variabili aleatorie (random variables) con una distribuzione a priori (prior distribution) p(θ) nota. Il pedice i indica la classe: ogni classe y_i ha i suoi parametri θ_i. Il prior codifica ciò che si sa o si crede sui parametri prima di vedere i dati; i dati di training lo aggiornano nella posterior p(θ|D). È il contrario della visione ML, in cui θ è una costante fissa ma ignota (c04).",
+      "latex": ["p(\\boldsymbol{\\theta})"],
+      "symbols": [
+        {"s": "\\theta_i", "meaning": "parametri della classe y_i, trattati come variabili aleatorie"},
+        {"s": "p(\\boldsymbol{\\theta})", "meaning": "distribuzione a priori (prior) dei parametri, nota"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c13",
+      "name": "Predizione bayesiana: integrare su tutti i valori dei parametri",
+      "nameEn": "Predictions for new examples are made by integrating over all possible values of the parameters",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 3}],
+      "detail": "Nella stima bayesiana la predizione su un nuovo esempio non usa un singolo valore dei parametri: integra su tutti i valori possibili dei parametri θ_i della classe. La densità di x data la classe y_i e il suo dataset D_i è l'integrale (marginalizzazione) della congiunta di x e θ_i sull'intero spazio di θ_i. Nella formula x è l'esempio, y_i l'etichetta di classe e D_i il dataset della classe y_i (così dicono le note, sotto la formula). Completamento non scritto qui: la densità così ottenuta è la densità condizionata alla classe che entra nella regola di decisione di Bayes, P(y_i|x, D) ∝ p(x|y_i, D_i)P(y_i) (modulo m17).",
+      "latex": ["p(\\mathbf{x}\\,|\\,y_i,D_i)=\\int_{\\theta_i}p(\\mathbf{x},\\theta_i\\,|\\,y_i,D_i)\\,d\\theta_i"],
+      "symbols": [
+        {"s": "\\mathbf{x}", "meaning": "nuovo esempio da valutare"},
+        {"s": "y_i", "meaning": "etichetta di classe"},
+        {"s": "D_i", "meaning": "dataset della classe y_i"},
+        {"s": "\\theta_i", "meaning": "parametri della classe y_i, variabile di integrazione"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c14",
+      "name": "Semplificazione: una classe alla volta",
+      "nameEn": "if the probability of x given a class y_i is independent of other classes y_j, the expression can often be simplified",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 3}],
+      "detail": "Per semplicità, se la probabilità di x data una classe y_i è indipendente dalle altre classi y_j, l'espressione si semplifica: si toglie il condizionamento esplicito alla classe e si scrive p(x|D), dove D è il dataset di una classe specifica y e θ sono i parametri della sua distribuzione. In pratica ogni classe si stima separatamente, usando solo i propri dati; la freccia della formula indica questo passaggio di notazione, non un'uguaglianza. Le note non precisano l'ipotesi esatta: serve che i dati delle altre classi non portino informazione sui parametri della classe y_i.",
+      "latex": ["p(\\mathbf{x}\\,|\\,y_i,D_i)\\;\\rightarrow\\;p(\\mathbf{x}\\,|\\,D)=\\int_{\\boldsymbol{\\theta}}p(\\mathbf{x},\\boldsymbol{\\theta}\\,|\\,D)\\,d\\boldsymbol{\\theta}"],
+      "symbols": [
+        {"s": "D", "meaning": "dataset di una classe specifica y"},
+        {"s": "\\boldsymbol{\\theta}", "meaning": "parametri della distribuzione di quella classe"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c15",
+      "name": "La densità predittiva come media pesata dalla posterior",
+      "nameEn": "The conditional probability p(x|D) can be rewritten as ∫ p(x|θ) p(θ|D) dθ",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 3}],
+      "detail": "La probabilità condizionata p(x|D) si riscrive fattorizzando la congiunta: p(x, θ|D) = p(x|θ, D) p(θ|D), e p(x|θ, D) = p(x|θ) perché, noto θ, la distribuzione di x è completamente determinata e il dataset non aggiunge nulla (le note saltano questo passaggio intermedio). Si ottiene p(x|D) = ∫ p(x|θ) p(θ|D) dθ: la predizione bayesiana è una media dei modelli p(x|θ) pesata dalla posterior p(θ|D). I valori di θ molto credibili dopo aver visto i dati pesano di più, quelli poco credibili quasi nulla.",
+      "latex": ["p(\\mathbf{x}\\,|\\,D)=\\int_{\\boldsymbol{\\theta}}p(\\mathbf{x},\\boldsymbol{\\theta}\\,|\\,D)\\,d\\boldsymbol{\\theta}=\\int p(\\mathbf{x}\\,|\\,\\boldsymbol{\\theta})\\,p(\\boldsymbol{\\theta}\\,|\\,D)\\,d\\boldsymbol{\\theta}"],
+      "symbols": [
+        {"s": "p(\\mathbf{x}\\,|\\,D)", "meaning": "densità predittiva della classe dati i suoi campioni"},
+        {"s": "p(\\boldsymbol{\\theta}\\,|\\,D)", "meaning": "posterior dei parametri, fa da peso"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c16",
+      "name": "p(x|θ) si calcola direttamente: forma e parametri noti",
+      "nameEn": "p(x|θ) can often be directly computed, since the form and parameters of the distribution are known (e.g., Gaussian)",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 3}],
+      "detail": "Nell'integrale predittivo il primo fattore p(x|θ) si può spesso calcolare direttamente, perché la forma della distribuzione è nota per ipotesi e, dentro l'integrale, θ è fissato: per esempio con una gaussiana basta sostituire media e varianza nella formula della densità. La parte difficile della stima bayesiana è quindi il secondo fattore, la posterior p(θ|D), che si ricava con il teorema di Bayes (c17).",
+      "latex": ["p(\\mathbf{x}\\,|\\,\\boldsymbol{\\theta})"],
+      "symbols": [{"s": "p(\\mathbf{x}\\,|\\,\\boldsymbol{\\theta})", "meaning": "densità di forma nota (es. gaussiana) con parametri fissati"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c17",
+      "name": "Posterior dei parametri con il teorema di Bayes",
+      "nameEn": "The posterior distribution p(θ|D) (the parameter posterior density given the training set)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 3}],
+      "detail": "La distribuzione a posteriori p(θ|D), cioè la densità a posteriori dei parametri dato il training set (the parameter posterior density given the training set), si ottiene con il teorema di Bayes: verosimiglianza per prior, diviso l'evidenza. È la distribuzione aggiornata di θ dopo aver visto i dati e fa da peso nell'integrale predittivo (c15). Con esempi i.i.d. la verosimiglianza al numeratore è il prodotto delle densità dei singoli esempi (c06).",
+      "latex": ["p(\\boldsymbol{\\theta}\\,|\\,D)=\\frac{p(D\\,|\\,\\boldsymbol{\\theta})\\,p(\\boldsymbol{\\theta})}{p(D)}"],
+      "symbols": [{"s": "p(\\boldsymbol{\\theta}\\,|\\,D)", "meaning": "posterior dei parametri dato il training set"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c18",
+      "name": "Verosimiglianza, prior ed evidenza",
+      "nameEn": "p(D|θ): Likelihood of the data given the parameters; p(θ): Prior distribution of the parameters; p(D): Marginal likelihood or evidence",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 3}],
+      "detail": "I tre ingredienti della formula di Bayes per i parametri: p(D|θ) è la verosimiglianza dei dati dati i parametri (likelihood of the data given the parameters); p(θ) è la distribuzione a priori dei parametri (prior distribution of the parameters); p(D) è la verosimiglianza marginale o evidenza (marginal likelihood or evidence). La verosimiglianza è la stessa quantità che ML massimizza; il prior è ciò che ML non ha; l'evidenza è la probabilità dei dati mediata su tutti i valori di θ.",
+      "latex": [
+        "p(D\\,|\\,\\boldsymbol{\\theta})",
+        "p(\\boldsymbol{\\theta})",
+        "p(D)"
+      ],
+      "symbols": [
+        {"s": "p(D\\,|\\,\\boldsymbol{\\theta})", "meaning": "likelihood"},
+        {"s": "p(\\boldsymbol{\\theta})", "meaning": "prior"},
+        {"s": "p(D)", "meaning": "marginal likelihood / evidence"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c19",
+      "name": "L'evidenza p(D) non influenza la decisione",
+      "nameEn": "p(D) is a constant independent of θ, so it does not influence the final Bayesian decision",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 3}],
+      "detail": "p(D) è una costante che non dipende da θ: divide allo stesso modo tutti i valori di p(D|θ)p(θ), quindi cambia la scala della posterior ma non la sua forma né la posizione del massimo. Per questo non influenza la decisione bayesiana finale (final Bayesian decision): per confrontare valori di θ, o per scegliere il più probabile, basta il prodotto verosimiglianza per prior.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c20",
+      "name": "Calcolo esplicito dell'evidenza",
+      "nameEn": "if the full posterior distribution or exact probability values are required (not only decision), p(D) can be computed explicitly",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 3}],
+      "detail": "Se servono la posterior completa o valori esatti di probabilità (non solo una decisione), p(D) si calcola esplicitamente marginalizzando θ: è l'integrale su tutto lo spazio dei parametri di verosimiglianza per prior. È la costante di normalizzazione che rende la posterior una densità con area 1. In generale è un integrale difficile; i prior coniugati (c28) permettono di evitarlo perché la posterior ha forma nota.",
+      "latex": ["p(D)=\\int_{\\boldsymbol{\\theta}}p(D\\,|\\,\\boldsymbol{\\theta})\\,p(\\boldsymbol{\\theta})\\,d\\boldsymbol{\\theta}"],
+      "symbols": [{"s": "p(D)", "meaning": "evidenza, costante di normalizzazione della posterior"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c21",
+      "name": "Statistica",
+      "nameEn": "Statistic: Any function computed on a set of samples D",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 4}],
+      "detail": "Una statistica (statistic) è qualunque funzione calcolata su un insieme di campioni D. Esempio delle note: la media è una statistica perché riassume i dati in un solo valore. Formalmente una statistica è una funzione s = φ(D), dove φ mappa il dataset in un valore o in un insieme di valori specifico (s è in grassetto: può essere un vettore). Media, mediana, massimo, conteggi, somma dei quadrati sono tutte statistiche.",
+      "latex": ["\\mathbf{s}=\\phi(D)"],
+      "symbols": [
+        {"s": "\\mathbf{s}", "meaning": "statistica: valore o vettore di valori calcolato sul dataset"},
+        {"s": "\\phi", "meaning": "funzione che mappa il dataset nella statistica"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c22",
+      "name": "Statistica sufficiente",
+      "nameEn": "Sufficient Statistic: A statistic s = φ(D) is sufficient for a parameters θ if P(D|s, θ) = P(D|s)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 4}],
+      "detail": "Una statistica s = φ(D) è sufficiente per i parametri θ se la probabilità del dataset data la statistica non dipende da θ: P(D|s, θ) = P(D|s). Significa che, noto s, il dataset D non fornisce ulteriore informazione sul parametro θ (the dataset D provides no additional information about the parameter θ): tutto ciò che D dice su θ passa attraverso s, e il resto dei dettagli del dataset è rumore rispetto a θ. Nelle note le probabilità del dataset sono scritte con la P maiuscola e c'è il refuso «for a parameters».",
+      "latex": ["P(D\\,|\\,\\mathbf{s},\\boldsymbol{\\theta})=P(D\\,|\\,\\mathbf{s})"],
+      "symbols": [{"s": "P(D\\,|\\,\\mathbf{s},\\boldsymbol{\\theta})", "meaning": "probabilità del dataset data la statistica e i parametri"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c23",
+      "name": "Con θ aleatorio, la posterior dipende solo dalla statistica sufficiente",
+      "nameEn": "If θ is treated as a random variable, the sufficient statistic contains all the information that D provides for estimating θ",
+      "kind": "teorema",
+      "sourcePages": [{"doc": "part2", "page": 4}],
+      "detail": "Se θ è trattato come variabile aleatoria (visione bayesiana), la statistica sufficiente contiene tutta l'informazione che D fornisce per stimare θ. Le note lo mostrano con il teorema di Bayes: p(θ|D, s) = P(D|θ, s)p(θ|s)p(s) / (P(D|s)p(s)); per la sufficienza P(D|θ, s) = P(D|s), i fattori si semplificano e resta p(θ|s). Quindi, una volta noto s, la posterior p(θ|D) dipende solo da s e non direttamente dall'intero dataset D. Il passaggio p(θ|D) = p(θ|D, s) vale perché s = φ(D) è funzione di D, quindi condizionare anche su s non aggiunge nulla (le note lo danno per implicito).",
+      "latex": ["p(\\boldsymbol{\\theta}\\,|\\,D,\\mathbf{s})=\\frac{P(D\\,|\\,\\boldsymbol{\\theta},\\mathbf{s})\\,p(\\boldsymbol{\\theta}\\,|\\,\\mathbf{s})\\,p(\\mathbf{s})}{P(D\\,|\\,\\mathbf{s})\\,p(\\mathbf{s})}=p(\\boldsymbol{\\theta}\\,|\\,\\mathbf{s})"],
+      "symbols": [
+        {"s": "p(\\boldsymbol{\\theta}\\,|\\,\\mathbf{s})", "meaning": "posterior dei parametri data solo la statistica"},
+        {"s": "p(\\mathbf{s})", "meaning": "distribuzione marginale della statistica"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c24",
+      "name": "Una statistica sufficiente è tutta l'informazione che serve da D",
+      "nameEn": "So, a sufficient statistic is all the information you need from D to estimate the parameter θ",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 4}],
+      "detail": "Frase di sintesi delle note: una statistica sufficiente è tutta l'informazione di cui si ha bisogno da D per stimare il parametro θ. Vale sia in ML (la verosimiglianza, come funzione di θ, dipende dai dati solo tramite s) sia nella stima bayesiana (la posterior dipende solo da s, c23). Due dataset diversi con la stessa statistica sufficiente portano alla stessa stima di θ.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c25",
+      "name": "Uso: compressione dei dati",
+      "nameEn": "Compression of Data: A sufficient statistic allows compressing a large dataset D into fewer values while preserving the information necessary for estimating θ",
+      "kind": "applicazione",
+      "sourcePages": [{"doc": "part2", "page": 4}],
+      "detail": "Uso indicato dalle note: compressione dei dati (compression of data). Una statistica sufficiente permette di comprimere un dataset grande D in pochi valori preservando l'informazione necessaria a stimare θ. Esempio pratico: un dispositivo con poca memoria che riceve un flusso di misure può tenere solo pochi accumulatori (numero di campioni, somma, somma dei quadrati) invece di tutte le misure, e stimare ugualmente i parametri.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c26",
+      "name": "Esempio: media e covarianza campionarie sono sufficienti per la gaussiana",
+      "nameEn": "The sample mean and sample covariance are sufficient statistics for estimating the true mean and covariance of a Gaussian (normal) distribution",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "part2", "page": 4}],
+      "detail": "Esempio delle note: la media campionaria e la covarianza campionaria sono statistiche sufficienti per stimare la media e la covarianza vere di una distribuzione gaussiana (normale). La ragione (der06, non nelle note) è che la verosimiglianza gaussiana dipende dai dati solo tramite n, la somma dei campioni e la somma dei prodotti esterni x_j x_jᵀ, da cui media e covarianza campionarie si ricavano. Qualunque dataset con la stessa media e la stessa covarianza campionaria dà la stessa stima dei parametri gaussiani.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c27",
+      "name": "La statistica sufficiente dipende dalla forma della distribuzione",
+      "nameEn": "In general, the choice of a sufficient statistic depends on the specific form of the probability distribution associated with θ",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 4}],
+      "detail": "In generale la scelta della statistica sufficiente dipende dalla forma specifica della distribuzione di probabilità associata a θ. Media e covarianza bastano per la gaussiana ma non per altre famiglie. Esempi che non sono nelle note: per una Bernoulli basta il numero di successi (le note lo mostrano più avanti, p. 7, con i conteggi di teste e croci, modulo p02); per una uniforme su [0, θ] basta il massimo del campione; per una Laplace non esiste una statistica di dimensione fissa più piccola del campione ordinato.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c28",
+      "name": "Prior coniugato",
+      "nameEn": "A conjugate prior refers to a prior distribution p(θ) that, when combined with a likelihood function p(x|θ), yields a posterior distribution p(θ|x) of the same family as the prior",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 4}],
+      "detail": "Un prior coniugato (conjugate prior, in grassetto) è una distribuzione a priori p(θ) che, combinata con una funzione di verosimiglianza p(x|θ), dà una distribuzione a posteriori p(θ|x) della stessa famiglia del prior. La coniugatezza è una proprietà della coppia prior-verosimiglianza, non del prior da solo: la stessa famiglia può essere coniugata per una verosimiglianza e non per un'altra. In questa sezione le note scrivono θ e x non in grassetto (caso scalare).",
+      "latex": ["p(\\theta)\\ \\text{prior},\\qquad p(x\\,|\\,\\theta)\\ \\text{likelihood},\\qquad p(\\theta\\,|\\,x)\\ \\text{posterior}"],
+      "symbols": [
+        {"s": "p(\\theta)", "meaning": "prior"},
+        {"s": "p(x\\,|\\,\\theta)", "meaning": "funzione di verosimiglianza"},
+        {"s": "p(\\theta\\,|\\,x)", "meaning": "posterior"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c29",
+      "name": "Definizione formale di coniugatezza",
+      "nameEn": "Formally, if: p(θ) and p(x|θ) ⇒ p(θ|x) which is in the same family as p(θ), then p(θ) is a conjugate prior for p(x|θ)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 4}],
+      "detail": "Formulazione delle note: se da p(θ) e p(x|θ) si ottiene (⇒) una p(θ|x) che è nella stessa famiglia di p(θ), allora p(θ) è un prior coniugato (conjugate prior) per p(x|θ). La freccia indica l'applicazione del teorema di Bayes: la posterior è proporzionale a p(x|θ)p(θ). «Stessa famiglia» significa stessa forma funzionale in θ con valori diversi degli iperparametri (per esempio una normale con media e varianza aggiornate).",
+      "latex": ["p(\\theta)\\ \\text{and}\\ p(x\\,|\\,\\theta)\\quad\\Rightarrow\\quad p(\\theta\\,|\\,x)\\ \\text{which is in the same family as}\\ p(\\theta)"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c30",
+      "name": "Esempio: verosimiglianza gaussiana con media ignota",
+      "nameEn": "Example: Gaussian Likelihood with Gaussian Prior. Suppose the likelihood function is Gaussian: x ∼ N(μ, σ²), where μ is the unknown mean",
+      "kind": "esempio",
+      "sourcePages": [{"doc": "part2", "page": 4}],
+      "detail": "Esempio delle note (Gaussian Likelihood with Gaussian Prior): la funzione di verosimiglianza è gaussiana, x ∼ N(μ, σ²), dove μ è la media ignota. Implicitamente la varianza σ² è nota: il parametro da stimare è solo μ. È il caso più semplice di coniugatezza ed è quello chiesto all'orale di Passerini («why do we obtain a Gaussian also as posterior?»).",
+      "latex": ["x\\sim N(\\mu,\\sigma^{2})"],
+      "symbols": [
+        {"s": "\\mu", "meaning": "media ignota (il parametro θ)"},
+        {"s": "\\sigma^{2}", "meaning": "varianza, supposta nota"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c31",
+      "name": "Prior gaussiano sulla media: la posterior resta gaussiana",
+      "nameEn": "If the prior on μ is also Gaussian, e.g., μ ∼ N(μ0, σ0²), the posterior p(μ|x) will remain Gaussian. In this case, the Gaussian prior is conjugate to the Gaussian likelihood",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 4}],
+      "detail": "Se anche il prior su μ è gaussiano, per esempio μ ∼ N(μ0, σ0²), la posterior p(μ|x) resta gaussiana; in questo caso il prior gaussiano è coniugato alla verosimiglianza gaussiana (the Gaussian prior is conjugate to the Gaussian likelihood). Il perché (der05, non nelle note): verosimiglianza e prior sono esponenziali di forme quadratiche in μ, il loro prodotto è l'esponenziale di una somma di quadratiche, cioè ancora di una quadratica in μ, e completando il quadrato si riconosce una gaussiana in μ.",
+      "latex": [
+        "\\mu\\sim N(\\mu_0,\\sigma_0^{2})",
+        "p(\\mu\\,|\\,x)"
+      ],
+      "symbols": [
+        {"s": "\\mu_0", "meaning": "media del prior (valore atteso a priori di μ)"},
+        {"s": "\\sigma_0^{2}", "meaning": "varianza del prior (incertezza a priori su μ)"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c32",
+      "name": "Parametri della posterior gaussiana (completamento dal Cap. 2)",
+      "nameEn": "Posterior mean and variance of μ for Gaussian likelihood with Gaussian prior",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 4}, {"doc": "ch2", "page": 37}, {"doc": "ch2", "page": 39}, {"doc": "part1", "page": 28}],
+      "detail": "Completamento: la nota di Passerini afferma che la posterior resta gaussiana ma non ne scrive i parametri. Li dà il Cap. 2 di Melgani (slide 37, note part1 p. 28, modulo m07), qui con la notazione n di Passerini al posto di N e con μ̂_n al posto della media campionaria X̄ delle slide. Dopo n campioni i.i.d. con media campionaria μ̂_n la posterior è N(μ_n, σ_n²): la precisione a posteriori è la somma delle precisioni (1/σ_n² = n/σ² + 1/σ0²) e μ_n è una media pesata di media campionaria e media a priori, con peso dei dati che cresce con n. La posterior dipende dai dati solo tramite n e μ̂_n, che sono quindi statistiche sufficienti per μ (collegamento con c22). La predittiva è N(μ_n, σ² + σ_n²) (Cap. 2 slide 39: p(x|X) ∼ N(μ_N, σ² + σ_N²)).",
+      "latex": [
+        "p(\\mu\\,|\\,D)=N(\\mu_n,\\sigma_n^{2})",
+        "\\mu_n=\\frac{n\\sigma_0^{2}}{n\\sigma_0^{2}+\\sigma^{2}}\\,\\hat{\\mu}_n+\\frac{\\sigma^{2}}{n\\sigma_0^{2}+\\sigma^{2}}\\,\\mu_0,\\qquad\\hat{\\mu}_n=\\frac{1}{n}\\sum_{j=1}^{n}x_j",
+        "\\sigma_n^{2}=\\frac{\\sigma_0^{2}\\sigma^{2}}{n\\sigma_0^{2}+\\sigma^{2}}\\qquad\\Longleftrightarrow\\qquad\\frac{1}{\\sigma_n^{2}}=\\frac{n}{\\sigma^{2}}+\\frac{1}{\\sigma_0^{2}}",
+        "p(x\\,|\\,D)=N(\\mu_n,\\sigma^{2}+\\sigma_n^{2})"
+      ],
+      "symbols": [
+        {"s": "\\mu_n", "meaning": "media a posteriori dopo n campioni"},
+        {"s": "\\sigma_n^{2}", "meaning": "varianza a posteriori dopo n campioni"},
+        {"s": "\\hat{\\mu}_n", "meaning": "media campionaria (stima ML)"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c33",
+      "name": "Utilità dei coniugati: forma funzionale conservata, soluzioni analitiche",
+      "nameEn": "Simplifies Computation: The posterior distribution retains the same functional form as the prior, making analytical solutions possible",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 4}, {"doc": "part2", "page": 5}],
+      "detail": "Prima ragione per cui i prior coniugati sono utili (Why Conjugate Priors Are Useful, fine di p. 4): semplificano il calcolo (Simplifies Computation). La posterior conserva la stessa forma funzionale del prior, quindi si possono ottenere soluzioni analitiche: invece di calcolare una funzione arbitraria di θ basta aggiornare pochi iperparametri con formule chiuse (per la gaussiana μ0, σ0² diventano μ_n, σ_n²).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c34",
+      "name": "Niente integrali complessi per l'inferenza",
+      "nameEn": "You don't need to compute complex integrals for inference, which simplifies Bayesian updates",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "detail": "Seconda frase dello stesso punto: con un prior coniugato non serve calcolare integrali complessi per l'inferenza, e questo semplifica gli aggiornamenti bayesiani (Bayesian updates). L'integrale evitato è soprattutto l'evidenza p(D) = ∫ p(D|θ)p(θ)dθ (c20): la costante di normalizzazione della posterior è quella nota della famiglia (per la normale 1/(√(2π)σ_n)). Senza coniugatezza servono integrazione numerica o approssimazioni.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c35",
+      "name": "Coerenza tra aggiornamenti successivi",
+      "nameEn": "Consistency Across Updates: Repeated updates using new data x will still yield posteriors of the same form, allowing for iterative Bayesian updates",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "detail": "Seconda ragione (Consistency Across Updates): aggiornamenti ripetuti con nuovi dati x producono sempre posterior della stessa forma, quindi si possono fare aggiornamenti bayesiani iterativi. La posterior dopo un dato diventa il prior per il dato successivo e resta nella famiglia coniugata a ogni passo; con dati i.i.d. il risultato dopo n aggiornamenti sequenziali coincide con l'aggiornamento su tutto il batch. È ciò che rende naturale l'apprendimento online su flussi di dati.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c36",
+      "name": "Intuizione: prior, verosimiglianza e posterior sullo stesso θ",
+      "nameEn": "Key Intuition: The relationship between the prior, likelihood, and posterior operates on the same parameter θ",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "detail": "Prima intuizione chiave (Key Intuition): la relazione tra prior, verosimiglianza e posterior opera sullo stesso parametro θ. Tutte e tre si leggono come funzioni di θ sullo stesso asse: il prior è una densità in θ, la verosimiglianza p(x|θ) è letta come funzione di θ con x fissato (non è una densità in θ), la posterior è il loro prodotto normalizzato. La coniugatezza riguarda la forma di queste funzioni in θ, non in x.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c37",
+      "name": "Intuizione: la «forma» del prior resta, cambiano i parametri",
+      "nameEn": "A conjugate prior ensures that the \"shape\" of the prior distribution remains consistent, even as new data updates the parameters",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "detail": "Seconda intuizione chiave: un prior coniugato garantisce che la «forma» (shape, tra virgolette nelle note) della distribuzione a priori resti coerente anche quando i nuovi dati ne aggiornano i parametri. I dati spostano e stringono la distribuzione ma non la trasformano in qualcosa di diverso: una campana resta una campana, una Beta resta una Beta, cambiano solo gli iperparametri.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c38",
+      "name": "Tabella degli esempi di prior coniugati",
+      "nameEn": "Examples: Likelihood / Parameters / Conjugate prior",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "detail": "«Common examples are the following»: la tabella (riquadro «Examples» ripreso dalle slide, intestazione blu scuro e fondo lilla) ha tre colonne, Likelihood, Parameters e Conjugate prior, e quattro righe: Binomial con p (probability) e prior Beta; Multinomial con p in grassetto (probability vector) e prior Dirichlet; Normal con μ (mean) e prior Normal; Multivariate normal con μ_i in grassetto (mean vector) e prior Normal. Le prime due righe sono sviluppate subito dopo nelle Applications (Bernoulli p. 5, Multinomial p. 8, modulo p02); le ultime due generalizzano l'esempio gaussiano di pagina 4.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c39",
+      "name": "Binomiale e prior Beta",
+      "nameEn": "Binomial - p (probability) - Beta",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "detail": "Prima riga della tabella: verosimiglianza binomiale (Binomial), parametro p (probabilità di successo, uno scalare tra 0 e 1), prior coniugato Beta. Con un prior Beta sulla probabilità di successo, osservare successi e insuccessi dà ancora una Beta, con i conteggi aggiunti agli iperparametri (dettagli nel modulo p02, dove le note usano la Bernoulli, binomiale con una sola prova).",
+      "latex": ["p\\ (\\text{probability})"],
+      "symbols": [{"s": "p", "meaning": "probabilità di successo, parametro della binomiale"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c40",
+      "name": "Multinomiale e prior Dirichlet",
+      "nameEn": "Multinomial - p (probability vector) - Dirichlet",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "detail": "Seconda riga: verosimiglianza multinomiale (Multinomial), parametro p in grassetto (vettore di probabilità: una probabilità per ciascuna delle k categorie, non negative e a somma 1), prior coniugato Dirichlet. La Dirichlet è la generalizzazione della Beta a più di due esiti; sviluppo nel modulo p02 (Multinomial Distribution, p. 8).",
+      "latex": ["\\mathbf{p}\\ (\\text{probability vector})"],
+      "symbols": [{"s": "\\mathbf{p}", "meaning": "vettore delle probabilità delle categorie"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c41",
+      "name": "Normale e prior Normale sulla media",
+      "nameEn": "Normal - μ (mean) - Normal",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "detail": "Terza riga: verosimiglianza normale (Normal), parametro μ (la media), prior coniugato normale. È l'esempio di pagina 4 (c30-c31): il parametro in tabella è solo la media, quindi la coniugatezza normale-normale vale con varianza nota.",
+      "latex": ["\\mu\\ (\\text{mean})"],
+      "symbols": [{"s": "\\mu", "meaning": "media della normale"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c42",
+      "name": "Normale multivariata e prior Normale sul vettore medio",
+      "nameEn": "Multivariate normal - μ_i (mean vector) - Normal",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "detail": "Quarta riga: verosimiglianza normale multivariata (Multivariate normal), parametro μ_i in grassetto (il vettore medio, con pedice i di classe), prior coniugato normale (multivariato). Anche qui il parametro è solo il vettore medio, con matrice di covarianza nota; la posterior del vettore medio è un'ellisse gaussiana che si stringe con i dati. Completamento non nelle note: Σ_n = (Σ0⁻¹ + nΣ⁻¹)⁻¹ e μ_n = Σ_n(Σ0⁻¹μ0 + nΣ⁻¹μ̂_n).",
+      "latex": ["\\boldsymbol{\\mu}_i\\ (\\text{mean vector})"],
+      "symbols": [{"s": "\\boldsymbol{\\mu}_i", "meaning": "vettore medio della classe i"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c43",
+      "name": "Distribuzione di Bernoulli: esperimento con due esiti",
+      "nameEn": "The Bernoulli distribution is a discrete probability distribution that represents a random experiment with two possible outcomes, often referred to as \"success\" and \"failure\"",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "detail": "Inizio delle Applications (seconda metà di p. 5, condivisa con il modulo p02). La distribuzione di Bernoulli (Bernoulli distribution, in grassetto) è una distribuzione di probabilità discreta che rappresenta un esperimento aleatorio con due esiti possibili, chiamati di solito «successo» e «fallimento». È la prima applicazione delle impostazioni ML e bayesiana alla riga Binomial-Beta della tabella.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c44",
+      "name": "Bernoulli come binomiale con una sola prova",
+      "nameEn": "It is a special case of the binomial distribution with only one trial (sample)",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "detail": "La Bernoulli è un caso particolare della distribuzione binomiale con una sola prova (only one trial, sample). La binomiale conta i successi su più prove di Bernoulli indipendenti con lo stesso p: per questo la tabella dei coniugati parla di Binomial mentre le Applications partono dalla Bernoulli.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c45",
+      "name": "I due esiti: x = 1 successo, x = 0 fallimento",
+      "nameEn": "Two possible outcomes: x = 1 (success), x = 0 (failure)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "detail": "Gli esiti possibili sono codificati come x = 1 (successo, success) e x = 0 (fallimento, failure). Questa codifica numerica 0/1 permette di scrivere la PMF in forma compatta e di calcolare media e varianza (pagina 6, modulo p02).",
+      "latex": ["x=1\\ (\\text{success})", "x=0\\ (\\text{failure})"],
+      "symbols": [{"s": "x", "meaning": "variabile aleatoria di Bernoulli con valori 0 o 1"}],
+      "examRelevance": 1
+    },
+    {
+      "id": "c46",
+      "name": "Parametro p: probabilità di successo",
+      "nameEn": "The Bernoulli distribution has a single parameter: p: Probability of success (i.e., P(x = 1) = p)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "detail": "La Bernoulli ha un solo parametro, p, la probabilità di successo: P(x = 1) = p. È il θ da stimare quando si applicano ML o la stima bayesiana (le note, da p. 6, lo rinominano θ).",
+      "latex": ["P(x=1)=p"],
+      "symbols": [{"s": "p", "meaning": "probabilità di successo"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c47",
+      "name": "Probabilità di fallimento 1 − p",
+      "nameEn": "Therefore, the probability of failure is P(x = 0) = 1 − p",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "detail": "Di conseguenza la probabilità di fallimento è P(x = 0) = 1 − p: i due esiti esauriscono le possibilità e le probabilità sommano a 1. Basta quindi un solo numero per descrivere tutta la distribuzione.",
+      "latex": ["P(x=0)=1-p"],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c48",
+      "name": "Vincolo 0 ≤ p ≤ 1",
+      "nameEn": "The parameter p lies within the range 0 ≤ p ≤ 1",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "detail": "Il parametro p sta nell'intervallo 0 ≤ p ≤ 1, come ogni probabilità. Il vincolo conta nella stima: un prior su p deve avere supporto in [0, 1] (per questo il coniugato è una Beta e non una gaussiana) e la stima ML, la frequenza dei successi, cade sempre nell'intervallo.",
+      "latex": ["0\\le p\\le 1"],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c49",
+      "name": "Funzione di massa di probabilità (PMF) della Bernoulli",
+      "nameEn": "The probability mass function (PMF) of a Bernoulli random variable x is defined as",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 5}, {"doc": "part2", "page": 6}],
+      "detail": "L'ultima frase di pagina 5 introduce la funzione di massa di probabilità (probability mass function, PMF, in grassetto) di una variabile aleatoria di Bernoulli x; la formula è in cima a pagina 6 (modulo p02) in un riquadro delle slide: P(x; p) vale p se x = 1 e 1 − p se x = 0. A pagina 6 le note danno anche la forma compatta P(x|θ) = θ^x (1 − θ)^(1−x), con x ∈ {0, 1}, che riunisce i due casi in una sola espressione ed è quella che si usa per scrivere la verosimiglianza.",
+      "latex": [
+        "P(x;p)=\\begin{cases}p & \\text{if } x=1\\\\ 1-p & \\text{if } x=0\\end{cases}",
+        "P(x\\,|\\,\\theta)=\\theta^{x}(1-\\theta)^{1-x}"
+      ],
+      "symbols": [{"s": "P(x;p)", "meaning": "PMF della Bernoulli con parametro p"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c50",
+      "name": "Stima MAP: il punto di massimo della posterior (completamento)",
+      "nameEn": "Maximum-a-Posteriori (MAP) estimate: θ_MAP = argmax_θ p(θ|D) = argmax_θ p(D|θ) p(θ)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "part2", "page": 3}],
+      "detail": "Completamento: le pagine 2-5 non scrivono la stima MAP, ma l'indice la annuncia (Maximum-a-Posteriori Estimation, p. 27, modulo p05) e l'osservazione di p. 3 che p(D) non influenza la decisione la rende immediata. Se della posterior si vuole un solo valore, si prende il suo punto di massimo (stima MAP, maximum a posteriori): poiché p(D) non dipende da θ basta massimizzare verosimiglianza per prior e, passando al logaritmo come a p. 2, la log-verosimiglianza di ML riceve un solo termine in più, ln p(θ), che tira la stima verso i valori plausibili a priori (fa da regolarizzatore). Con verosimiglianza gaussiana a varianza nota e prior gaussiano sulla media il massimo coincide con la media a posteriori μ_n (la gaussiana è simmetrica: moda = media), quindi μ_MAP è una media pesata di media campionaria e media a priori (der09). MAP resta una stima puntuale: rispetto alla stima bayesiana completa perde l'incertezza su θ, cioè la larghezza della posterior che allarga la predittiva (c15).",
+      "latex": [
+        "\\boldsymbol{\\theta}_{MAP}=\\operatorname{argmax}_{\\boldsymbol{\\theta}}\\,p(\\boldsymbol{\\theta}\\,|\\,D)=\\operatorname{argmax}_{\\boldsymbol{\\theta}}\\,p(D\\,|\\,\\boldsymbol{\\theta})\\,p(\\boldsymbol{\\theta})",
+        "\\boldsymbol{\\theta}_{MAP}=\\operatorname{argmax}_{\\boldsymbol{\\theta}}\\Big[\\sum_{j=1}^{n}\\ln\\big(p(\\mathbf{x}_j\\,|\\,\\boldsymbol{\\theta})\\big)+\\ln p(\\boldsymbol{\\theta})\\Big]",
+        "\\mu_{MAP}=\\mu_n=\\frac{n\\sigma_0^{2}}{n\\sigma_0^{2}+\\sigma^{2}}\\,\\hat{\\mu}_n+\\frac{\\sigma^{2}}{n\\sigma_0^{2}+\\sigma^{2}}\\,\\mu_0"
+      ],
+      "symbols": [
+        {"s": "\\boldsymbol{\\theta}_{MAP}", "meaning": "stima a massima probabilità a posteriori (maximum a posteriori)"},
+        {"s": "\\ln p(\\boldsymbol{\\theta})", "meaning": "logaritmo del prior: l'unico termine che distingue MAP da ML"}
+      ],
+      "examRelevance": 3,
+      "addedBy": "revisore"
+    },
+    {
+      "id": "c51",
+      "name": "Quando stima bayesiana e ML coincidono (completamento)",
+      "nameEn": "In which case ML and Bayesian are the same? Flat prior (MAP = ML) and n → ∞ (posterior collapses on the ML estimate)",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "part2", "page": 2}, {"doc": "part2", "page": 3}, {"doc": "part2", "page": 4}],
+      "detail": "Completamento per la domanda d'orale «In which case ML and Bayesian are the same?» (banca domande, Melgani; trattato nel Cap. 2, modulo m07), costruito sulle due impostazioni di p. 2-3 e sull'esempio gaussiano di p. 4. (1) Prior piatto: con un prior uniforme, o gaussiano con σ0 → ∞, il termine ln p(θ) è costante e la stima MAP coincide con la stima ML (c50); nell'esempio gaussiano μ_n → μ̂_n e σ_n² → σ²/n. La predittiva bayesiana però resta più larga di quella ML, N(μ̂_n, σ² + σ²/n) contro N(μ̂_n, σ²), perché conserva l'incertezza su θ: stesso punto, incertezza diversa. (2) Molti dati: per n → ∞ la verosimiglianza domina qualunque prior che non escluda il valore vero, la posterior si concentra in un picco sempre più stretto (σ_n² → 0) sulla stima ML e tende a una delta di Dirac; l'integrale predittivo restituisce allora p(x|θ̂_ML) e le due impostazioni danno lo stesso risultato. (3) Con pochi dati e un prior informativo le stime differiscono: Bayes tira verso μ0 e fornisce anche l'incertezza, ML si fida solo dei dati. È anche la risposta a «Is it better or not with respect to the Bayesian Estimation?»: Bayes sfrutta la conoscenza a priori e l'incertezza (utile con pochi dati) al prezzo di un integrale e della scelta del prior; ML è più semplice e con molti dati dà lo stesso risultato.",
+      "latex": [
+        "\\sigma_0\\to\\infty:\\quad\\mu_n\\to\\hat{\\mu}_n,\\qquad\\sigma_n^{2}\\to\\frac{\\sigma^{2}}{n}",
+        "p(\\boldsymbol{\\theta})=\\text{cost.}\\ \\Rightarrow\\ \\boldsymbol{\\theta}_{MAP}=\\boldsymbol{\\theta}^{*}",
+        "n\\to\\infty:\\quad p(\\boldsymbol{\\theta}\\,|\\,D)\\to\\delta(\\boldsymbol{\\theta}-\\boldsymbol{\\theta}^{*})\\ \\Rightarrow\\ p(\\mathbf{x}\\,|\\,D)=\\int p(\\mathbf{x}\\,|\\,\\boldsymbol{\\theta})\\,p(\\boldsymbol{\\theta}\\,|\\,D)\\,d\\boldsymbol{\\theta}\\to p(\\mathbf{x}\\,|\\,\\boldsymbol{\\theta}^{*})"
+      ],
+      "symbols": [
+        {"s": "\\delta(\\cdot)", "meaning": "delta di Dirac: posterior concentrata in un solo punto"},
+        {"s": "\\boldsymbol{\\theta}^{*}", "meaning": "stima a massima verosimiglianza di p. 2"}
+      ],
+      "examRelevance": 3,
+      "addedBy": "revisore"
+    }
+  ],
+  "derivations": [
+    {
+      "id": "der01",
+      "title": "Dalla verosimiglianza alla condizione di stazionarietà (ML)",
+      "sourcePages": [{"doc": "part2", "page": 2}, {"doc": "part2", "page": 3}],
+      "goal": "Ricavare le equazioni che il massimizzatore θ* deve soddisfare, partendo dalla definizione di stima ML e usando l'ipotesi i.i.d., il logaritmo e il gradiente; poi il controllo del secondo ordine.",
+      "steps": [
+        "\\boldsymbol{\\theta}^{*}=\\operatorname{argmax}_{\\boldsymbol{\\theta}}\\,p(D\\,|\\,\\boldsymbol{\\theta})",
+        "p(D\\,|\\,\\boldsymbol{\\theta})=p(\\mathbf{x}_1,\\dots,\\mathbf{x}_n\\,|\\,\\boldsymbol{\\theta})=\\prod_{j=1}^{n}p(\\mathbf{x}_j\\,|\\,\\boldsymbol{\\theta})",
+        "\\boldsymbol{\\theta}^{*}=\\operatorname{argmax}_{\\boldsymbol{\\theta}}\\prod_{j=1}^{n}p(\\mathbf{x}_j\\,|\\,\\boldsymbol{\\theta})",
+        "\\ln\\Big(\\prod_{j=1}^{n}p(\\mathbf{x}_j\\,|\\,\\boldsymbol{\\theta})\\Big)=\\sum_{j=1}^{n}\\ln\\big(p(\\mathbf{x}_j\\,|\\,\\boldsymbol{\\theta})\\big)",
+        "\\boldsymbol{\\theta}^{*}=\\operatorname{argmax}_{\\boldsymbol{\\theta}}\\ln\\big(p(D\\,|\\,\\boldsymbol{\\theta})\\big)=\\operatorname{argmax}_{\\boldsymbol{\\theta}}\\sum_{j=1}^{n}\\ln\\big(p(\\mathbf{x}_j\\,|\\,\\boldsymbol{\\theta})\\big)",
+        "\\nabla_{\\boldsymbol{\\theta}}\\sum_{j=1}^{n}\\ln\\big(p(\\mathbf{x}_j\\,|\\,\\boldsymbol{\\theta})\\big)=\\mathbf{0}",
+        "\\mathbf{H}(\\boldsymbol{\\theta}^{*})=\\nabla^{2}_{\\boldsymbol{\\theta}}\\sum_{j=1}^{n}\\ln\\big(p(\\mathbf{x}_j\\,|\\,\\boldsymbol{\\theta})\\big)\\Big|_{\\boldsymbol{\\theta}^{*}}\\ \\text{definita negativa}\\ \\Rightarrow\\ \\text{massimo locale}"
+      ],
+      "stepWhy": [
+        "Definizione della stima ML: θ ha un valore fisso ma ignoto e si sceglie il valore che rende più probabile il dataset osservato (likelihood letta come funzione di θ).",
+        "Gli esempi sono i.i.d.: indipendenti data la distribuzione (dato θ), quindi la congiunta è il prodotto delle marginali, tutte con la stessa forma p(·|θ).",
+        "Si sostituisce la fattorizzazione nella definizione: è la prima formula di pagina 2.",
+        "Il logaritmo di un prodotto è la somma dei logaritmi: più maneggevole sia computazionalmente sia matematicamente.",
+        "ln è strettamente crescente (preserva la monotonia), quindi massimizzare ln p(D|θ) dà lo stesso argmax di p(D|θ): è la seconda formula di pagina 2.",
+        "Condizione necessaria del primo ordine: in un massimo interno la derivata rispetto a ogni componente di θ si annulla; il gradiente di una somma è la somma dei gradienti.",
+        "Completamento del cenno delle note a p. 2-3: il gradiente nullo può dare massimi locali o globali, minimi o selle; con la matrice Hessiana definita negativa nel punto stazionario si ha un massimo locale (autovalori di segno misto indicano una sella)."
+      ],
+      "concepts": ["c05", "c06", "c07", "c08", "c09", "c10", "c11"]
+    },
+    {
+      "id": "der02",
+      "title": "Predittiva bayesiana: dalla marginalizzazione a ∫ p(x|θ) p(θ|D) dθ",
+      "sourcePages": [{"doc": "part2", "page": 3}],
+      "goal": "Esprimere la densità di un nuovo esempio data la classe e i suoi dati come media dei modelli p(x|θ) pesata dalla posterior.",
+      "steps": [
+        "p(\\mathbf{x}\\,|\\,y_i,D_i)=\\int_{\\theta_i}p(\\mathbf{x},\\theta_i\\,|\\,y_i,D_i)\\,d\\theta_i",
+        "p(\\mathbf{x}\\,|\\,y_i,D_i)\\;\\rightarrow\\;p(\\mathbf{x}\\,|\\,D)=\\int_{\\boldsymbol{\\theta}}p(\\mathbf{x},\\boldsymbol{\\theta}\\,|\\,D)\\,d\\boldsymbol{\\theta}",
+        "p(\\mathbf{x},\\boldsymbol{\\theta}\\,|\\,D)=p(\\mathbf{x}\\,|\\,\\boldsymbol{\\theta},D)\\,p(\\boldsymbol{\\theta}\\,|\\,D)",
+        "p(\\mathbf{x}\\,|\\,\\boldsymbol{\\theta},D)=p(\\mathbf{x}\\,|\\,\\boldsymbol{\\theta})",
+        "p(\\mathbf{x}\\,|\\,D)=\\int_{\\boldsymbol{\\theta}}p(\\mathbf{x},\\boldsymbol{\\theta}\\,|\\,D)\\,d\\boldsymbol{\\theta}=\\int p(\\mathbf{x}\\,|\\,\\boldsymbol{\\theta})\\,p(\\boldsymbol{\\theta}\\,|\\,D)\\,d\\boldsymbol{\\theta}"
+      ],
+      "stepWhy": [
+        "I parametri θ_i sono variabili aleatorie: si introducono nella congiunta con x e si eliminano integrando su tutti i loro valori (marginalizzazione): «integrating over all possible values of the parameters».",
+        "Se la probabilità di x data la classe y_i non dipende dalle altre classi, si lavora una classe alla volta con il suo dataset D e si toglie il pedice: la freccia è un cambio di notazione.",
+        "Regola del prodotto applicata alla congiunta, tutto condizionato a D (passaggio implicito nelle note).",
+        "Noto θ, la distribuzione di x è completamente determinata perché la sua forma è nota: il dataset non aggiunge informazione su x (passaggio implicito nelle note).",
+        "Sostituendo si ottiene la formula di pagina 3: il primo fattore si calcola direttamente (es. gaussiana), il secondo è la posterior."
+      ],
+      "concepts": ["c13", "c14", "c15", "c16"]
+    },
+    {
+      "id": "der03",
+      "title": "Posterior dei parametri ed evidenza",
+      "sourcePages": [{"doc": "part2", "page": 3}],
+      "goal": "Ottenere p(θ|D) con il teorema di Bayes, scrivere l'evidenza come integrale e mostrare che non cambia la decisione.",
+      "steps": [
+        "p(\\boldsymbol{\\theta},D)=p(D\\,|\\,\\boldsymbol{\\theta})\\,p(\\boldsymbol{\\theta})=p(\\boldsymbol{\\theta}\\,|\\,D)\\,p(D)",
+        "p(\\boldsymbol{\\theta}\\,|\\,D)=\\frac{p(D\\,|\\,\\boldsymbol{\\theta})\\,p(\\boldsymbol{\\theta})}{p(D)}",
+        "p(D)=\\int_{\\boldsymbol{\\theta}}p(D,\\boldsymbol{\\theta})\\,d\\boldsymbol{\\theta}=\\int_{\\boldsymbol{\\theta}}p(D\\,|\\,\\boldsymbol{\\theta})\\,p(\\boldsymbol{\\theta})\\,d\\boldsymbol{\\theta}",
+        "p(\\boldsymbol{\\theta}\\,|\\,D)\\propto p(D\\,|\\,\\boldsymbol{\\theta})\\,p(\\boldsymbol{\\theta})=p(\\boldsymbol{\\theta})\\prod_{j=1}^{n}p(\\mathbf{x}_j\\,|\\,\\boldsymbol{\\theta})",
+        "\\operatorname{argmax}_{\\boldsymbol{\\theta}}\\,p(\\boldsymbol{\\theta}\\,|\\,D)=\\operatorname{argmax}_{\\boldsymbol{\\theta}}\\,p(D\\,|\\,\\boldsymbol{\\theta})\\,p(\\boldsymbol{\\theta})"
+      ],
+      "stepWhy": [
+        "Regola del prodotto scritta nei due ordini possibili per la congiunta di parametri e dati.",
+        "Si divide per p(D): è la formula di pagina 3, con likelihood, prior ed evidenza.",
+        "L'evidenza è la marginale dei dati: si integra la congiunta su tutti i valori di θ. Le note la scrivono per quando servono la posterior completa o probabilità esatte.",
+        "p(D) non dipende da θ, quindi la posterior è proporzionale a verosimiglianza per prior; con esempi i.i.d. la verosimiglianza è il prodotto dei singoli termini (stessa ipotesi di ML).",
+        "Dividere per una costante positiva non sposta il massimo: p(D) non influenza la decisione bayesiana finale (osservazione di p. 3)."
+      ],
+      "concepts": ["c17", "c18", "c19", "c20"]
+    },
+    {
+      "id": "der04",
+      "title": "La posterior dipende solo dalla statistica sufficiente",
+      "sourcePages": [{"doc": "part2", "page": 4}],
+      "goal": "Dimostrare che, se s = φ(D) è sufficiente per θ, allora p(θ|D) = p(θ|s).",
+      "steps": [
+        "P(D\\,|\\,\\mathbf{s},\\boldsymbol{\\theta})=P(D\\,|\\,\\mathbf{s})",
+        "p(\\boldsymbol{\\theta}\\,|\\,D,\\mathbf{s})=\\frac{p(D,\\boldsymbol{\\theta},\\mathbf{s})}{p(D,\\mathbf{s})}",
+        "p(D,\\boldsymbol{\\theta},\\mathbf{s})=P(D\\,|\\,\\boldsymbol{\\theta},\\mathbf{s})\\,p(\\boldsymbol{\\theta}\\,|\\,\\mathbf{s})\\,p(\\mathbf{s}),\\qquad p(D,\\mathbf{s})=P(D\\,|\\,\\mathbf{s})\\,p(\\mathbf{s})",
+        "p(\\boldsymbol{\\theta}\\,|\\,D,\\mathbf{s})=\\frac{P(D\\,|\\,\\boldsymbol{\\theta},\\mathbf{s})\\,p(\\boldsymbol{\\theta}\\,|\\,\\mathbf{s})\\,p(\\mathbf{s})}{P(D\\,|\\,\\mathbf{s})\\,p(\\mathbf{s})}",
+        "p(\\boldsymbol{\\theta}\\,|\\,D,\\mathbf{s})=\\frac{P(D\\,|\\,\\mathbf{s})\\,p(\\boldsymbol{\\theta}\\,|\\,\\mathbf{s})\\,p(\\mathbf{s})}{P(D\\,|\\,\\mathbf{s})\\,p(\\mathbf{s})}=p(\\boldsymbol{\\theta}\\,|\\,\\mathbf{s})",
+        "\\mathbf{s}=\\phi(D)\\ \\Rightarrow\\ p(\\boldsymbol{\\theta}\\,|\\,D)=p(\\boldsymbol{\\theta}\\,|\\,D,\\mathbf{s})=p(\\boldsymbol{\\theta}\\,|\\,\\mathbf{s})"
+      ],
+      "stepWhy": [
+        "Definizione di statistica sufficiente: noto s, la probabilità del dataset non dipende più da θ.",
+        "Definizione di probabilità condizionata: congiunta di θ, D, s divisa per la congiunta di D e s.",
+        "Regola della catena applicata a numeratore (D dato θ e s, poi θ dato s, poi s) e denominatore (D dato s, poi s): sono i fattori che compaiono nella formula delle note.",
+        "Si sostituiscono le due fattorizzazioni: è la frazione scritta a pagina 4.",
+        "Per la sufficienza (passo 1) P(D|θ, s) diventa P(D|s): numeratore e denominatore condividono P(D|s)p(s), che si semplifica, e resta p(θ|s).",
+        "Poiché s è una funzione di D, condizionare su D e s equivale a condizionare su D (passaggio implicito nelle note): la posterior dato l'intero dataset coincide con quella data la sola statistica."
+      ],
+      "concepts": ["c22", "c23", "c24"]
+    },
+    {
+      "id": "der05",
+      "title": "Perché la posterior della media gaussiana è gaussiana (completamento del quadrato)",
+      "sourcePages": [{"doc": "part2", "page": 4}, {"doc": "ch2", "page": 37}, {"doc": "ch2", "page": 39}],
+      "goal": "Completamento dell'esempio di pagina 4 (le note affermano il risultato senza dimostrarlo): con verosimiglianza N(μ, σ²), σ² nota, e prior N(μ0, σ0²), la posterior di μ dopo n campioni i.i.d. è gaussiana, con parametri espliciti.",
+      "steps": [
+        "p(\\mu\\,|\\,D)\\propto p(D\\,|\\,\\mu)\\,p(\\mu)=\\prod_{j=1}^{n}\\frac{1}{\\sqrt{2\\pi}\\,\\sigma}e^{-\\frac{(x_j-\\mu)^2}{2\\sigma^2}}\\cdot\\frac{1}{\\sqrt{2\\pi}\\,\\sigma_0}e^{-\\frac{(\\mu-\\mu_0)^2}{2\\sigma_0^2}}",
+        "p(\\mu\\,|\\,D)\\propto\\exp\\Big[-\\frac{1}{2}\\Big(\\sum_{j=1}^{n}\\frac{(x_j-\\mu)^2}{\\sigma^2}+\\frac{(\\mu-\\mu_0)^2}{\\sigma_0^2}\\Big)\\Big]",
+        "p(\\mu\\,|\\,D)\\propto\\exp\\Big[-\\frac{1}{2}\\Big(\\Big(\\frac{n}{\\sigma^2}+\\frac{1}{\\sigma_0^2}\\Big)\\mu^2-2\\Big(\\frac{1}{\\sigma^2}\\sum_{j=1}^{n}x_j+\\frac{\\mu_0}{\\sigma_0^2}\\Big)\\mu\\Big)\\Big]",
+        "\\frac{1}{\\sigma_n^2}=\\frac{n}{\\sigma^2}+\\frac{1}{\\sigma_0^2},\\qquad\\frac{\\mu_n}{\\sigma_n^2}=\\frac{n\\hat{\\mu}_n}{\\sigma^2}+\\frac{\\mu_0}{\\sigma_0^2},\\qquad\\hat{\\mu}_n=\\frac{1}{n}\\sum_{j=1}^{n}x_j",
+        "p(\\mu\\,|\\,D)\\propto\\exp\\Big[-\\frac{(\\mu-\\mu_n)^2}{2\\sigma_n^2}\\Big]\\ \\Rightarrow\\ p(\\mu\\,|\\,D)=N(\\mu_n,\\sigma_n^2)",
+        "\\mu_n=\\frac{n\\sigma_0^2}{n\\sigma_0^2+\\sigma^2}\\,\\hat{\\mu}_n+\\frac{\\sigma^2}{n\\sigma_0^2+\\sigma^2}\\,\\mu_0,\\qquad\\sigma_n^2=\\frac{\\sigma_0^2\\sigma^2}{n\\sigma_0^2+\\sigma^2}",
+        "p(x\\,|\\,D)=\\int p(x\\,|\\,\\mu)\\,p(\\mu\\,|\\,D)\\,d\\mu=N(\\mu_n,\\sigma^2+\\sigma_n^2)"
+      ],
+      "stepWhy": [
+        "Teorema di Bayes (der03) con p(D) come costante: verosimiglianza i.i.d. (prodotto di n gaussiane in x_j con media μ) per il prior gaussiano su μ.",
+        "Le costanti moltiplicative non dipendono da μ e si assorbono nel simbolo ∝; il prodotto di esponenziali è l'esponenziale della somma degli esponenti.",
+        "Si sviluppano i quadrati e si raccolgono i termini in μ² e in μ; i termini senza μ (Σx_j², μ0²) sono costanti moltiplicative dopo l'esponenziale e si assorbono in ∝. L'esponente è una parabola in μ con coefficiente di μ² positivo.",
+        "Si confronta con lo sviluppo di (μ − μ_n)²/σ_n² = μ²/σ_n² − 2μμ_n/σ_n² + cost.: il coefficiente di μ² dà la precisione a posteriori, quello di μ dà μ_n. I dati entrano solo tramite n e Σx_j (statistica sufficiente, c22).",
+        "Completato il quadrato, l'esponente è quello di una gaussiana in μ: la costante di normalizzazione è quindi nota senza calcolare p(D). È la risposta a «why do we obtain a Gaussian also as posterior?»: il prodotto di esponenziali di quadratiche è esponenziale di una quadratica.",
+        "Si risolvono le due equazioni del passo 4: la media a posteriori è una media pesata di media campionaria e media a priori, la varianza a posteriori è minore sia di σ0² sia di σ²/n. Sono le formule di Melgani, Cap. 2 slide 37.",
+        "Integrale predittivo (der02) di due gaussiane: la predittiva ha la varianza intrinseca σ² più l'incertezza residua su μ, σ_n² (Cap. 2 slide 39, modulo m07)."
+      ],
+      "concepts": ["c30", "c31", "c32", "c33", "c34"]
+    },
+    {
+      "id": "der06",
+      "title": "Media e covarianza campionarie sono sufficienti per la gaussiana (completamento)",
+      "sourcePages": [{"doc": "part2", "page": 4}],
+      "goal": "Giustificare l'esempio di pagina 4: la verosimiglianza di una gaussiana multivariata dipende dal dataset solo tramite n, Σx_j e Σx_j x_jᵀ, cioè tramite media e covarianza campionarie.",
+      "steps": [
+        "p(D\\,|\\,\\boldsymbol{\\mu},\\boldsymbol{\\Sigma})=\\prod_{j=1}^{n}\\frac{1}{(2\\pi)^{d/2}|\\boldsymbol{\\Sigma}|^{1/2}}\\exp\\Big[-\\frac{1}{2}(\\mathbf{x}_j-\\boldsymbol{\\mu})^{T}\\boldsymbol{\\Sigma}^{-1}(\\mathbf{x}_j-\\boldsymbol{\\mu})\\Big]",
+        "\\sum_{j=1}^{n}(\\mathbf{x}_j-\\boldsymbol{\\mu})^{T}\\boldsymbol{\\Sigma}^{-1}(\\mathbf{x}_j-\\boldsymbol{\\mu})=\\operatorname{tr}\\Big(\\boldsymbol{\\Sigma}^{-1}\\sum_{j=1}^{n}\\mathbf{x}_j\\mathbf{x}_j^{T}\\Big)-2\\boldsymbol{\\mu}^{T}\\boldsymbol{\\Sigma}^{-1}\\sum_{j=1}^{n}\\mathbf{x}_j+n\\,\\boldsymbol{\\mu}^{T}\\boldsymbol{\\Sigma}^{-1}\\boldsymbol{\\mu}",
+        "\\mathbf{s}=\\phi(D)=\\Big(n,\\ \\sum_{j=1}^{n}\\mathbf{x}_j,\\ \\sum_{j=1}^{n}\\mathbf{x}_j\\mathbf{x}_j^{T}\\Big)",
+        "\\hat{\\boldsymbol{\\mu}}=\\frac{1}{n}\\sum_{j=1}^{n}\\mathbf{x}_j,\\qquad\\hat{\\boldsymbol{\\Sigma}}=\\frac{1}{n}\\sum_{j=1}^{n}\\mathbf{x}_j\\mathbf{x}_j^{T}-\\hat{\\boldsymbol{\\mu}}\\hat{\\boldsymbol{\\mu}}^{T}",
+        "p(D\\,|\\,\\boldsymbol{\\mu},\\boldsymbol{\\Sigma})=g(\\mathbf{s};\\boldsymbol{\\mu},\\boldsymbol{\\Sigma})\\ \\Rightarrow\\ p(\\boldsymbol{\\mu},\\boldsymbol{\\Sigma}\\,|\\,D)=p(\\boldsymbol{\\mu},\\boldsymbol{\\Sigma}\\,|\\,\\mathbf{s})"
+      ],
+      "stepWhy": [
+        "Verosimiglianza i.i.d. (c06) di una gaussiana multivariata in d dimensioni con media μ e covarianza Σ (modello gaussiano del Cap. 2, m06).",
+        "Ogni forma quadratica è uno scalare, quindi uguale alla sua traccia; sviluppando il prodotto e usando la linearità della traccia la somma si scrive con Σx_j x_jᵀ, Σx_j e n soltanto.",
+        "La verosimiglianza, come funzione dei parametri, dipende dal dataset solo tramite questi tre accumulatori: sono una statistica s = φ(D) (c21).",
+        "Media e covarianza campionarie (stime ML) sono funzioni invertibili di s una volta noto n: sapere (n, μ̂, Σ̂) equivale a sapere s.",
+        "La verosimiglianza dipende da D solo tramite s: con il teorema di Bayes la posterior dipende solo da s (der04), cioè s è sufficiente. Criterio di fattorizzazione di Fisher-Neyman, non nominato nelle note."
+      ],
+      "concepts": ["c21", "c25", "c26", "c27"]
+    },
+    {
+      "id": "der07",
+      "title": "ML della media gaussiana: gradiente nullo e controllo del secondo ordine (completamento)",
+      "sourcePages": [{"doc": "part2", "page": 2}],
+      "goal": "Applicare la condizione ∇ = 0 di pagina 2 al caso più semplice (gaussiana con varianza nota) e verificare con la derivata seconda che il punto trovato è un massimo. È la domanda d'esame «develop the first derivative for a gaussian».",
+      "steps": [
+        "\\ln p(D\\,|\\,\\mu)=\\sum_{j=1}^{n}\\ln N(x_j\\,|\\,\\mu,\\sigma^2)=-\\frac{n}{2}\\ln(2\\pi\\sigma^2)-\\sum_{j=1}^{n}\\frac{(x_j-\\mu)^2}{2\\sigma^2}",
+        "\\frac{\\partial}{\\partial\\mu}\\ln p(D\\,|\\,\\mu)=\\sum_{j=1}^{n}\\frac{x_j-\\mu}{\\sigma^2}=0",
+        "\\mu^{*}=\\frac{1}{n}\\sum_{j=1}^{n}x_j",
+        "\\frac{\\partial^2}{\\partial\\mu^2}\\ln p(D\\,|\\,\\mu)=-\\frac{n}{\\sigma^2}<0"
+      ],
+      "stepWhy": [
+        "Log-verosimiglianza i.i.d. (c07) con la densità gaussiana: il logaritmo toglie l'esponenziale e separa la costante di normalizzazione.",
+        "Condizione necessaria di pagina 2: derivata rispetto al parametro uguale a zero; la costante non dipende da μ e sparisce.",
+        "Si risolve l'equazione lineare: la stima ML della media è la media campionaria, cioè il punto che bilancia gli scarti positivi e negativi dei campioni.",
+        "Controllo del secondo ordine (c11): la derivata seconda è negativa per ogni μ, la log-verosimiglianza è una parabola rivolta verso il basso e il punto stazionario è l'unico massimo, quindi globale."
+      ],
+      "concepts": ["c09", "c10", "c11"]
+    },
+    {
+      "id": "der08",
+      "title": "Aggiornamento bayesiano ricorsivo: la posterior diventa il prior (completamento)",
+      "sourcePages": [{"doc": "part2", "page": 4}, {"doc": "part2", "page": 5}],
+      "goal": "Giustificare la «Consistency Across Updates» di p. 5 (le note la affermano senza dimostrarla): aggiornare un dato alla volta, usando la posterior come nuovo prior, dà la stessa posterior del calcolo in blocco, e con un prior coniugato ogni passo resta nella stessa famiglia, per cui basta aggiornare gli iperparametri.",
+      "steps": [
+        "D_k=\\{x_1,\\dots,x_k\\},\\qquad p(\\theta\\,|\\,D_k)\\propto p(\\theta)\\prod_{j=1}^{k}p(x_j\\,|\\,\\theta)",
+        "p(\\theta\\,|\\,D_k)\\propto\\Big[p(\\theta)\\prod_{j=1}^{k-1}p(x_j\\,|\\,\\theta)\\Big]\\,p(x_k\\,|\\,\\theta)\\propto p(\\theta\\,|\\,D_{k-1})\\,p(x_k\\,|\\,\\theta)",
+        "p(\\theta\\,|\\,D_k)=\\frac{p(x_k\\,|\\,\\theta)\\,p(\\theta\\,|\\,D_{k-1})}{\\int p(x_k\\,|\\,\\theta)\\,p(\\theta\\,|\\,D_{k-1})\\,d\\theta}",
+        "p(\\theta\\,|\\,D_{k-1})\\in\\mathcal{F}\\ \\Rightarrow\\ p(\\theta\\,|\\,D_k)\\propto p(x_k\\,|\\,\\theta)\\,p(\\theta\\,|\\,D_{k-1})\\in\\mathcal{F}",
+        "\\frac{1}{\\sigma_k^{2}}=\\frac{1}{\\sigma_{k-1}^{2}}+\\frac{1}{\\sigma^{2}},\\qquad\\mu_k=\\sigma_k^{2}\\Big(\\frac{\\mu_{k-1}}{\\sigma_{k-1}^{2}}+\\frac{x_k}{\\sigma^{2}}\\Big)",
+        "\\frac{1}{\\sigma_n^{2}}=\\frac{1}{\\sigma_0^{2}}+\\frac{n}{\\sigma^{2}},\\qquad\\mu_n=\\sigma_n^{2}\\Big(\\frac{\\mu_0}{\\sigma_0^{2}}+\\frac{1}{\\sigma^{2}}\\sum_{j=1}^{n}x_j\\Big)"
+      ],
+      "stepWhy": [
+        "Teorema di Bayes con esempi i.i.d. (der03): la posterior dopo k dati è prior per verosimiglianza, a meno della costante p(D_k) che non dipende da θ.",
+        "Si isola l'ultimo fattore: la parte tra parentesi quadre è, a meno di una costante, la posterior dopo k − 1 dati. La posterior di ieri fa da prior per il dato di oggi.",
+        "Normalizzazione esplicita: il denominatore è la probabilità del solo nuovo dato dato il passato, p(x_k|D_{k−1}), cioè la densità predittiva di c15 valutata nel nuovo dato.",
+        "𝓕 è la famiglia coniugata alla verosimiglianza p(x|θ). Per la definizione di coniugatezza (c29) applicata con p(θ|D_{k−1}) nel ruolo del prior, anche la nuova posterior sta in 𝓕; per induzione su k (partendo dal prior p(θ) ∈ 𝓕) tutte le posterior restano nella famiglia: è la «Consistency Across Updates» di p. 5 e la «forma» che resta coerente della Key Intuition.",
+        "Caso gaussiano con σ² nota (der05 con n = 1 e prior N(μ_{k−1}, σ_{k−1}²)): la precisione cresce di 1/σ² a ogni dato e la nuova media è una media pesata della vecchia media e del nuovo dato. Due operazioni per dato, nessun integrale da calcolare («You don't need to compute complex integrals», p. 5).",
+        "Srotolando la ricorrenza da k = 1 a n si ottengono esattamente le formule in blocco di der05: il risultato non dipende dall'ordine dei dati. Verifica numerica in ex01: 4.64 → 4.489 → 4.677 → 4.659 → 4.705, uguale al calcolo in blocco."
+      ],
+      "concepts": ["c33", "c34", "c35", "c37"],
+      "addedBy": "revisore"
+    },
+    {
+      "id": "der09",
+      "title": "Da ML a MAP alla stima bayesiana completa: quando coincidono (completamento)",
+      "sourcePages": [{"doc": "part2", "page": 2}, {"doc": "part2", "page": 3}],
+      "goal": "Mostrare che la stima MAP aggiunge alla log-verosimiglianza di ML il solo termine ln p(θ), ricavarla per la media gaussiana e far vedere i due casi limite in cui la stima bayesiana si riduce a ML (prior piatto, n → ∞). Serve per la domanda «In which case ML and Bayesian are the same?».",
+      "steps": [
+        "\\boldsymbol{\\theta}_{MAP}=\\operatorname{argmax}_{\\boldsymbol{\\theta}}\\,p(\\boldsymbol{\\theta}\\,|\\,D)=\\operatorname{argmax}_{\\boldsymbol{\\theta}}\\,\\frac{p(D\\,|\\,\\boldsymbol{\\theta})\\,p(\\boldsymbol{\\theta})}{p(D)}=\\operatorname{argmax}_{\\boldsymbol{\\theta}}\\,p(D\\,|\\,\\boldsymbol{\\theta})\\,p(\\boldsymbol{\\theta})",
+        "\\boldsymbol{\\theta}_{MAP}=\\operatorname{argmax}_{\\boldsymbol{\\theta}}\\Big[\\sum_{j=1}^{n}\\ln\\big(p(\\mathbf{x}_j\\,|\\,\\boldsymbol{\\theta})\\big)+\\ln p(\\boldsymbol{\\theta})\\Big]",
+        "\\frac{\\partial}{\\partial\\mu}\\Big[-\\sum_{j=1}^{n}\\frac{(x_j-\\mu)^2}{2\\sigma^2}-\\frac{(\\mu-\\mu_0)^2}{2\\sigma_0^2}\\Big]=\\sum_{j=1}^{n}\\frac{x_j-\\mu}{\\sigma^2}-\\frac{\\mu-\\mu_0}{\\sigma_0^2}=0",
+        "\\mu_{MAP}=\\frac{\\frac{1}{\\sigma^2}\\sum_{j=1}^{n}x_j+\\frac{\\mu_0}{\\sigma_0^2}}{\\frac{n}{\\sigma^2}+\\frac{1}{\\sigma_0^2}}=\\mu_n",
+        "\\sigma_0\\to\\infty\\ \\Rightarrow\\ \\frac{\\mu-\\mu_0}{\\sigma_0^2}\\to 0\\ \\Rightarrow\\ \\mu_{MAP}\\to\\frac{1}{n}\\sum_{j=1}^{n}x_j=\\mu^{*}",
+        "n\\to\\infty\\ \\Rightarrow\\ \\sigma_n^{2}=\\frac{\\sigma_0^{2}\\sigma^{2}}{n\\sigma_0^{2}+\\sigma^{2}}\\to 0,\\quad\\mu_n\\to\\hat{\\mu}_n\\ \\Rightarrow\\ p(x\\,|\\,D)=N(\\mu_n,\\sigma^{2}+\\sigma_n^{2})\\to N(\\hat{\\mu}_n,\\sigma^{2})"
+      ],
+      "stepWhy": [
+        "Definizione di MAP (completamento; nelle note compare a p. 27 per le reti bayesiane): massimo della posterior. p(D) è una costante positiva indipendente da θ e non sposta l'argmax (osservazione di p. 3).",
+        "Il logaritmo è strettamente crescente (stesso argomento di p. 2 per ML) e la verosimiglianza i.i.d. diventa una somma: rispetto alla log-verosimiglianza di ML c'è solo il termine in più ln p(θ).",
+        "Caso gaussiano: log-verosimiglianza di der07 più log-prior N(μ0, σ0²); le costanti di normalizzazione non dipendono da μ e spariscono derivando. È la condizione del primo ordine di p. 2 con un termine in più.",
+        "Si risolve l'equazione lineare in μ: il risultato coincide con la media a posteriori μ_n di der05 (per una gaussiana moda e media coincidono). La derivata seconda −n/σ² − 1/σ0² < 0 conferma che è un massimo.",
+        "Prior piatto (σ0 → ∞): il contributo del prior alla derivata sparisce e resta l'equazione di ML di der07, quindi MAP = ML.",
+        "Molti dati: la varianza a posteriori tende a 0, la posterior collassa sulla stima ML e la predittiva bayesiana diventa la densità con i parametri ML sostituiti: ML e Bayes coincidono. Con prior piatto ma n finito, invece, la predittiva conserva varianza σ² + σ²/n > σ²: stima puntuale uguale, incertezza diversa."
+      ],
+      "concepts": ["c50", "c51", "c15", "c19"],
+      "addedBy": "revisore"
+    }
+  ],
+  "workedExamples": [
+    {
+      "id": "ex01",
+      "title": "Verosimiglianza gaussiana con prior gaussiano (esempio della fonte più istanza numerica)",
+      "sourcePages": [{"doc": "part2", "page": 4}],
+      "description": "Testo della fonte (Example: Gaussian Likelihood with Gaussian Prior): la verosimiglianza è gaussiana, x ∼ N(μ, σ²), con μ media ignota; se il prior su μ è anch'esso gaussiano, μ ∼ N(μ0, σ0²), la posterior p(μ|x) resta gaussiana; il prior gaussiano è coniugato alla verosimiglianza gaussiana. La fonte non ha numeri. Istanza numerica sintetica (scenario sensori, calcolata con le formule di der05): sensore di temperatura di una cella frigorifera con rumore noto σ = 0.5 °C (σ² = 0.25), prior dalla scheda tecnica μ ∼ N(4, 1²). Letture: 4.8, 4.3, 5.1, 4.6, 4.9 (n = 5, Σx = 23.7, μ̂ = 4.74). Precisione a posteriori 1/σ_5² = 5/0.25 + 1/1 = 21, quindi σ_5² = 0.0476 (σ_5 = 0.218). Media a posteriori μ_5 = (23.7/0.25 + 4/1)/21 = 98.8/21 = 4.705. Intervallo di credibilità al 95%: 4.705 ± 1.96·0.218 = [4.28, 5.13]. Aggiornamento sequenziale, dato per dato, con la posterior che fa da prior: (μ, σ²) = (4.64, 0.200) → (4.489, 0.111) → (4.677, 0.0769) → (4.659, 0.0588) → (4.705, 0.0476), identico al calcolo in blocco. Predittiva della prossima lettura: N(4.705, 0.25 + 0.0476 = 0.298), deviazione standard 0.546.",
+      "concepts": ["c30", "c31", "c32", "c35"]
+    },
+    {
+      "id": "ex02",
+      "title": "Statistiche sufficienti per la gaussiana: due dataset con la stessa statistica",
+      "sourcePages": [{"doc": "part2", "page": 4}],
+      "description": "Testo della fonte: la media campionaria e la covarianza campionaria sono statistiche sufficienti per stimare media e covarianza vere di una gaussiana; in generale la statistica sufficiente dipende dalla forma della distribuzione. Illustrazione numerica sintetica (σ = 2 nota): D1 = {3, 5, 7} e D2 = {2.6972, 6, 6.3028} hanno la stessa statistica (n, Σx, Σx²) = (3, 15, 83). Le log-verosimiglianze coincidono per ogni μ: in μ = 4, 5, 6 valgono −6.2113, −5.8363, −6.2113 per entrambi, quindi stessa stima ML (μ* = 5) e stessa posterior con qualunque prior. D3 = {1, 5, 5.5} ha la stessa mediana (5) di D1 ma log-verosimiglianze −6.3675, −6.8675, −8.1175 negli stessi punti e stima ML 3.83: la mediana non è sufficiente per la media gaussiana.",
+      "concepts": ["c21", "c22", "c24", "c26", "c27"]
+    },
+    {
+      "id": "ex03",
+      "title": "Tabella dei prior coniugati",
+      "sourcePages": [{"doc": "part2", "page": 5}],
+      "description": "Riquadro «Examples» di pagina 5: Likelihood | Parameters | Conjugate prior. Binomial | p (probability) | Beta. Multinomial | p (probability vector) | Dirichlet. Normal | μ (mean) | Normal. Multivariate normal | μ_i (mean vector) | Normal. Istanze sintetiche per lo scenario spam (non nella fonte): prior Beta(2, 2) sulla probabilità che un'email di spam contenga «gratis»; dopo 10 email di spam di cui 7 con la parola, posterior Beta(9, 5) con media 9/14 = 0.643. Prior Dirichlet(1, 1, 1) sulle categorie di parole {offerta, riunione, fattura}; conteggi (5, 2, 3) danno Dirichlet(6, 3, 4) con media (0.462, 0.231, 0.308).",
+      "concepts": ["c38", "c39", "c40", "c41", "c42"]
+    },
+    {
+      "id": "ex04",
+      "title": "Posterior ed evidenza su griglia: frequenza cardiaca media da Holter (completamento)",
+      "sourcePages": [{"doc": "part2", "page": 3}],
+      "description": "Istanza sintetica (scenario medicina) delle formule di pagina 3. θ = frequenza cardiaca media a riposo di un paziente (bpm), letture Holter con rumore noto σ = 8 bpm: D = {88, 92, 85}. Prior di popolazione N(70, 10²). Integrando numericamente su una griglia θ ∈ [30, 130] con passo 0.01: p(D) = ∫ p(D|θ)p(θ)dθ = 1.07·10⁻⁵ (densità in bpm⁻³), posterior con massimo in 85.11 bpm e valore di picco 0.0951. In forma chiusa (coniugato): 1/σ_n² = 3/64 + 1/100 = 0.0569, σ_n² = 17.58 (σ_n = 4.19), μ_n = 85.11, coincidente con la griglia. Probabilità esatta (serve p(D)): P(θ > 80|D) = 0.889. Con un prior bimodale 0.5·N(65, 5²) + 0.5·N(95, 5²) l'evidenza vale 2.16·10⁻⁵ e il massimo della posterior si sposta a 91.4 bpm: il prior bimodale spiega meglio questi dati (evidenza maggiore) e la posterior non è più gaussiana.",
+      "concepts": ["c17", "c18", "c19", "c20"]
+    },
+    {
+      "id": "ex05",
+      "title": "Prodotto contro somma dei logaritmi: underflow (completamento)",
+      "sourcePages": [{"doc": "part2", "page": 2}],
+      "description": "Istanza sintetica (scenario pesce): luminosità di salmoni da N(12, 2²), valutate in θ = 12. Prodotto delle densità e somma dei logaritmi al crescere di n: n = 10 prodotto 2.23·10⁻⁹, somma −19.92; n = 100 prodotto 8.36·10⁻⁹⁰, somma −205.11; n = 300 prodotto 1.87·10⁻²⁷², somma −625.68; dal campione n = 356 il prodotto in doppia precisione diventa esattamente 0 (underflow) mentre la somma dei log a n = 1000 vale −2064.87, perfettamente rappresentabile. Con i 4 salmoni 12.1, 13.4, 11.2, 13.3 e σ = 2: in θ = 10 i fattori sono 0.1149, 0.0470, 0.1666, 0.0511 (prodotto 4.60·10⁻⁵, somma dei log −9.99); in θ = 12.5 (= media campionaria, stima ML) 0.1955, 0.1803, 0.1615, 0.1841 (prodotto 1.05·10⁻³, somma −6.86); in θ = 14 prodotto 3.40·10⁻⁴, somma −7.99. Stesso argmax per prodotto e somma.",
+      "concepts": ["c05", "c06", "c07", "c08"]
+    },
+    {
+      "id": "ex06",
+      "title": "Punti stazionari di una verosimiglianza di mistura: massimi e sella (completamento)",
+      "sourcePages": [{"doc": "part2", "page": 2}, {"doc": "part2", "page": 3}],
+      "description": "Istanza sintetica (scenario telerilevamento) per le osservazioni di pagina 2-3 su massimi locali o globali e Hessiana. 120 pixel di riflettanza nel vicino infrarosso (NIR): 60 di acqua attorno a 0.05 e 60 di vegetazione attorno a 0.45, σ = 0.08 nota. Modello: mistura 0.5·N(μ1, σ²) + 0.5·N(μ2, σ²), parametri θ = (μ1, μ2). Il gradiente della log-verosimiglianza si annulla in tre punti: (0.056, 0.436) e (0.436, 0.056), log-verosimiglianza 64.44, autovalori dell'Hessiana −9393 e −8815 (entrambi negativi: massimi, globali e simmetrici per scambio delle etichette); (0.248, 0.248), log-verosimiglianza −192.09, autovalori −9375 e +50766 (segno misto: punto di sella). Con una sola gaussiana (μ, σ) sugli stessi dati la log-verosimiglianza ha un unico massimo in μ = 0.248, σ = 0.203 (valore 21.30), con Hessiana diagonale −2923 e −5846: lì il gradiente nullo basta.",
+      "concepts": ["c09", "c10", "c11"]
+    },
+    {
+      "id": "ex07",
+      "title": "ML, MAP e prior piatto sulla frequenza cardiaca (completamento)",
+      "sourcePages": [{"doc": "part2", "page": 3}],
+      "description": "Istanza sintetica (scenario medicina, stessi dati di ex04) per c50-c51. Letture Holter 88, 92, 85 bpm, rumore noto σ = 8 (σ² = 64). Stima ML: μ* = 265/3 = 88.33 bpm. Prior di popolazione N(70, 10²): stima MAP = media a posteriori μ_3 = 85.11 bpm (σ_3² = 17.58), tirata di 3.2 bpm verso la media di popolazione. Effetto della larghezza del prior (n = 3): σ0² = 1 → MAP 70.82; σ0² = 25 → 79.89; σ0² = 100 → 85.11; σ0² = 400 → 87.41; σ0² = 10⁴ → 88.29; prior piatto → 88.33 = ML, con varianza a posteriori σ²/n = 21.33. Effetto del numero di dati (prior N(70, 100), media campionaria fissa 88.33): n = 10 → 87.23 (σ_n² = 6.02); n = 30 → 87.95 (2.09); n = 100 → 88.22 (0.64); n = 300 → 88.29 (0.21); n = 1000 → 88.32 (0.064). Distanza MAP-ML: |μ_n − μ̂| = σ²/(nσ0² + σ²)·|μ̂ − μ0| = 64/(100n + 64)·18.33; scende sotto 0.5 bpm dal campione n = 23 (0.496; con n = 22 vale 0.518). Predittive con prior piatto e n = 3: Bayes N(88.33, 64 + 21.33 = 85.33), ML N(88.33, 64): stesso centro, Bayes più larga.",
+      "concepts": ["c50", "c51"],
+      "addedBy": "revisore"
+    }
+  ],
+  "figures": [
+    {
+      "id": "fig01",
+      "doc": "part2",
+      "page": 1,
+      "description": "Copertina e indice delle note della Parte 2 (Machine Learning I - Part 2, Notes by Alessio Novel - Professor: A. Passerini): capitoli e sottosezioni con numeri di pagina da Maximum-Likelihood and Bayesian Parameter Estimation (p. 2) a Hierarchical Clustering (p. 82); l'indice prosegue in cima a pagina 2 con Reinforcement Learning.",
+      "region": "pagina intera",
+      "concepts": ["c01"],
+      "importance": 1
+    },
+    {
+      "id": "fig02",
+      "doc": "part2",
+      "page": 5,
+      "description": "Riquadro «Examples» con intestazione blu e fondo lilla, ripreso dalle slide: tabella a tre colonne Likelihood / Parameters / Conjugate prior con le righe Binomial - p (probability) - Beta, Multinomial - p (probability vector) - Dirichlet, Normal - μ (mean) - Normal, Multivariate normal - μ_i (mean vector) - Normal.",
+      "region": "metà superiore, riquadro centrato sotto «Common examples are the following»",
+      "concepts": ["c38", "c39", "c40", "c41", "c42"],
+      "importance": 3
+    },
+    {
+      "id": "fig03",
+      "doc": "part2",
+      "page": 2,
+      "description": "Fine dell'indice (Reinforcement Learning, p. 84-99) e apertura del capitolo con i titoli Maximum-Likelihood and Bayesian Parameter Estimation, Settings, Maximum Likelihood Estimation; seguono le formule di argmax della verosimiglianza, della log-verosimiglianza e del gradiente nullo.",
+      "region": "pagina intera; indice nel primo quarto, formule nella metà inferiore",
+      "concepts": ["c01", "c05", "c07", "c09"],
+      "importance": 1
+    }
+  ],
+  "widgets": [
+    {
+      "id": "p01-mappa-della-parte-2",
+      "title": "La stima dei parametri, motore della Parte 2",
+      "concepts": ["c01"],
+      "scenario": "spam",
+      "realExample": "Un filtro antispam (dati sintetici) deve imparare dalle email etichettate quanto è probabile che la parola «gratis» compaia in un'email di spam: è un parametro θ da stimare. Lo stesso gesto, stimare θ con ML o in modo bayesiano, ritorna nelle reti bayesiane (naive Bayes è una rete bayesiana, p. 24-27 delle note), nei classificatori lineari generativi (p. 44) e nella mistura di gaussiane del clustering (p. 76). La mappa mostra dove, partendo dall'indice delle note.",
+      "storyboard": [
+        "[Caricamento, 600 ms] L'indice della Parte 2 appare come colonna di 8 capitoli con le etichette inglesi e i numeri di pagina delle note (Maximum-Likelihood and Bayesian Parameter Estimation p. 2, Bayesian networks p. 11, Learning in Graphical Models p. 24, Linear Discriminant Functions p. 31, Support Vector Machines p. 46, Kernel Machines p. 62, Unsupervised Learning p. 75, Reinforcement Learning p. 84). Il primo capitolo ha il badge «sei qui» e si apre nelle sottosezioni Settings (MLE p. 2, Bayesian Estimation p. 3, Sufficient Statistics p. 4, Conjugate Priors p. 4) e Applications (Bernoulli p. 5, Multinomial p. 8).",
+        "[Automatico, 800 ms] Da «Maximum Likelihood Estimation» parte un filo verde che si disegna fino a «Learning in Graphical Models › Maximum Likelihood Estimation p. 25»; da «Bayesian Estimation» e «Conjugate Priors» un filo arancione fino a «Maximum-a-Posteriori Estimation p. 27»; un filo grigio fino a «Incomplete Data p. 27» e «Gaussian Mixture Model p. 76»; un filo blu fino a «Generative Linear Classifiers p. 44».",
+        "[Clic su un filo, 300 ms] Il pannello a destra mostra una scheda: cosa si stima in quel capitolo (p. 25: le tabelle di probabilità condizionata di una rete bayesiana per conteggio; p. 76: pesi, medie e covarianze delle componenti) e lo stesso gesto nel filtro antispam, per esempio θ = P(«gratis»|spam) stimato come 310/1000 = 0.31 (dati sintetici).",
+        "[Toggle «Percorso spam», 400 ms a capitolo] I capitoli si accendono in sequenza con una didascalia: p. 2-4 «stimo θ di una parola con ML o Bayes», p. 5-8 «Bernoulli/Beta e Multinomiale/Dirichlet per le parole», p. 24-27 «naive Bayes come rete bayesiana: ML e MAP per ogni tabella, EM se mancano etichette», p. 44 «classificatore generativo». Un contatore in alto conta quante volte ricompare θ* = argmax p(D|θ).",
+        "[Sfida] Le quattro sottosezioni MLE, MAP, Incomplete Data e GMM diventano tessere da trascinare sul capitolo dove ricompaiono; ogni tessera corretta si aggancia con una molla, un errore la fa tornare indietro."
+      ],
+      "interactions": [
+        "clic su un capitolo o una sottosezione per espanderla",
+        "clic su un filo per aprire la scheda del collegamento",
+        "toggle «Percorso spam»",
+        "trascinamento delle tessere nella sfida"
+      ],
+      "visual": "Colonna verticale di schede capitolo in SVG con numeri di pagina allineati a destra; fili curvi (path con stroke-dashoffset animato) colorati per ruolo: verde ML, arancione bayesiano/MAP, grigio dati incompleti e misture, blu classificatori generativi. Pannello scheda a destra con formula di esempio e numeri dello scenario spam.",
+      "aha": "Stimare i parametri non è un capitolo isolato: è il mattone che torna nelle reti bayesiane, nei classificatori generativi e nel clustering.",
+      "formulasShown": ["\\boldsymbol{\\theta}^{*}=\\operatorname{argmax}_{\\boldsymbol{\\theta}}\\,p(D\\,|\\,\\boldsymbol{\\theta})", "p(\\boldsymbol{\\theta}\\,|\\,D)\\propto p(D\\,|\\,\\boldsymbol{\\theta})\\,p(\\boldsymbol{\\theta})", "\\theta^{*}=\\hat{P}(\\text{gratis}\\,|\\,\\text{spam})=\\frac{310}{1000}=0.31"],
+      "challenge": "Trascina MLE, MAP, Incomplete Data e GMM sul capitolo in cui ricompaiono: 4 su 4 senza errori sblocca il badge «mappa completa».",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p01-due-visioni-di-theta",
+      "title": "θ fisso o θ aleatorio: ML e Bayes sullo stesso sensore",
+      "concepts": ["c02", "c04", "c12"],
+      "scenario": "sensori",
+      "realExample": "Calibrazione di un sensore IoT di temperatura in una cella frigorifera (dati sintetici): θ è la temperatura media vera, il costruttore dichiara 4 °C. ML tratta θ come una costante ignota e restituisce un solo numero; la stima bayesiana parte dal prior della scheda tecnica, N(4, 1²), e lo aggiorna a ogni lettura. Rumore del sensore noto, σ = 0.5 °C. Serve per decidere se la cella è fuori specifica.",
+      "storyboard": [
+        "[Caricamento, 600 ms] Due pannelli affiancati con lo stesso asse θ da 2 a 7 °C. A sinistra «Maximum Likelihood: θ fixed but unknown», con un lucchetto e un punto interrogativo sull'asse e nessuna curva. A destra «Bayesian: θ random variable, known prior p(θ)», con la campana viola del prior N(4, 1²) che si traccia da sinistra a destra (500 ms).",
+        "[Clic «Leggi il sensore», 700 ms] Una goccia di lettura scende dal sensore e cade come pallino blu sull'asse dei dati sotto i pannelli: prima lettura 4.8 °C. A sinistra l'ago verde di θ* salta con una molla su 4.8; a destra la campana si trasforma (morph 400 ms) nella posterior arancione N(4.64, 0.20).",
+        "[Clic successivi, 700 ms ciascuno: letture 4.3, 5.1, 4.6, 4.9] A ogni goccia l'ago ML salta sulla nuova media campionaria (4.55, 4.73, 4.70, 4.74) e la campana si stringe: N(4.489, 0.111) → N(4.677, 0.0769) → N(4.659, 0.0588) → N(4.705, 0.0476), σ finale 0.218. I numeri live sotto i pannelli (n, θ*, μ_n, σ_n) contano verso il nuovo valore in 300 ms.",
+        "[Toggle «Cosa ottengo», 500 ms] Si evidenziano i due risultati: a sinistra un solo numero (θ* = 4.74) in un riquadro verde; a destra la curva intera con l'area ombreggiata del 95% di credibilità [4.28, 5.13] che si riempie da sinistra a destra e l'area oltre la soglia di specifica 5 °C colorata di rosso: P(θ > 5 °C|D) = 0.088. A sinistra la stessa domanda riceve solo «θ* = 4.74 < 5: in specifica», senza probabilità.",
+        "[Slider σ0, aggiornamento continuo con transizione 150 ms] Con σ0 = 0.1 (scheda tecnica molto sicura) la posterior resta inchiodata vicino a 4.12; con σ0 = 5 (prior vago) la media a posteriori è 4.74, praticamente l'ago ML: compare la didascalia «prior vago o molti dati: Bayes si avvicina a ML»."
+      ],
+      "interactions": [
+        "pulsante «Leggi il sensore» (una lettura per clic, massimo 40)",
+        "Auto-play con velocità 0.5×-4×",
+        "slider μ0 da 2 a 7 °C (default 4) e σ0 da 0.1 a 5 (default 1)",
+        "toggle «Cosa ottengo»",
+        "Reset con nuovo seed (θ vero uniforme tra 3.5 e 5.5, nascosto)"
+      ],
+      "visual": "Due grafici SVG con lo stesso asse orizzontale; ago verde (ML) a sinistra, curva viola del prior e arancione della posterior a destra, pallini blu dei dati sull'asse comune in basso. Etichette in inglese come nelle note («fixed but unknown value», «random variables with a known prior distribution»). Formule con i numeri sostituiti sotto ciascun pannello.",
+      "aha": "La differenza tra ML e Bayes non è nel calcolo ma in cosa è θ: una costante da trovare oppure una quantità incerta descritta da una distribuzione.",
+      "formulasShown": [
+        "\\theta^{*}=\\hat{\\mu}_n=\\frac{1}{n}\\sum_{j=1}^{n}x_j",
+        "p(\\theta\\,|\\,D)=N(\\mu_n,\\sigma_n^{2})",
+        "\\theta^{*}=\\frac{4.8+4.3+5.1+4.6+4.9}{5}=4.74",
+        "\\frac{1}{\\sigma_5^{2}}=\\frac{5}{0.25}+\\frac{1}{1}=21,\\qquad\\mu_5=\\frac{23.7/0.25+4/1}{21}=4.705"
+      ],
+      "challenge": "Scegli σ0 in modo che, dopo le 5 letture, la media a posteriori disti meno di 0.05 °C dalla stima ML (la distanza vale 0.74·σ²/(nσ0² + σ²) = 0.185/(5σ0² + 0.25): serve σ0 > 0.83).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p01-prodotto-dei-campioni-iid",
+      "title": "La verosimiglianza come prodotto di altezze",
+      "concepts": ["c03", "c05", "c06"],
+      "scenario": "pesce",
+      "realExample": "Nell'impianto di confezionamento si stima la luminosità media θ dei salmoni per il classificatore salmone/spigola (esempio del Cap. 1 di Melgani, dati sintetici). Si misurano 4 salmoni, 12.1, 13.4, 11.2, 13.3, con modello N(θ, 2²). Ogni pesce vota per i valori di θ con l'altezza della curva nel suo punto, e la verosimiglianza è il prodotto dei voti.",
+      "storyboard": [
+        "[Caricamento, 600 ms] Un nastro trasportatore porta 4 salmoni sotto il sensore; ognuno lascia un pallino blu sull'asse x della luminosità (8-18). Badge «i.i.d.: stessa distribuzione, estrazioni indipendenti dato θ».",
+        "[Trascina θ] Un cursore θ sposta la campana p(x|θ) = N(θ, 4). Da ogni pallino sale una barra verticale fino alla curva: la sua altezza è p(x_j|θ). Per θ = 10: 0.1149, 0.0470, 0.1666, 0.0511.",
+        "[Automatico mentre si trascina] Nel grafico inferiore, con asse θ, un punto traccia il prodotto delle 4 altezze e lascia la scia della curva di verosimiglianza L(θ): in θ = 10 vale 4.60·10⁻⁵, in θ = 12.5 vale 1.05·10⁻³ (massimo, uguale alla media campionaria), in θ = 14 vale 3.40·10⁻⁴.",
+        "[Pulsante «Mostra θ*», 500 ms] Una linea verticale verde cade sul massimo 12.5 e la formula argmax si illumina con i valori sostituiti.",
+        "[Toggle «Rompi l'i.i.d.»] Il sensore rilegge altre tre volte lo stesso salmone da 13.4: sul punto 13.4 si impilano quattro pallini (l'originale più tre copie) e il prodotto li tratta come 7 campioni indipendenti. L'argmax si sposta da 12.5 a 90.2/7 = 12.89. Didascalia: «il prodotto vale solo se i campioni sono indipendenti dato θ: qui la stessa informazione è contata quattro volte»."
+      ],
+      "interactions": [
+        "trascinamento del cursore θ (6-18, passo 0.05)",
+        "clic sull'asse x per aggiungere un salmone (massimo 12)",
+        "pulsante «Mostra θ*»",
+        "toggle «Rompi l'i.i.d.»",
+        "Reset"
+      ],
+      "visual": "Grafico superiore: asse x luminosità, campana blu p(x|θ), barre verticali arancioni con il valore numerico sopra. Grafico inferiore: asse θ, curva L(θ) tracciata progressivamente in verde, punto corrente evidenziato. Formula del prodotto con i quattro fattori numerici aggiornati live.",
+      "aha": "Ogni campione pesa la stessa ipotesi θ con la sua altezza: il prodotto è grande solo se θ spiega bene tutti i campioni insieme, e il prodotto è lecito solo perché sono indipendenti dato θ.",
+      "formulasShown": [
+        "p(D\\,|\\,\\theta)=\\prod_{j=1}^{4}p(x_j\\,|\\,\\theta)",
+        "\\theta^{*}=\\operatorname{argmax}_{\\theta}\\prod_{j=1}^{n}p(x_j\\,|\\,\\theta)",
+        "p(D\\,|\\,\\theta=12.5)=0.1955\\cdot0.1803\\cdot0.1615\\cdot0.1841=1.05\\cdot10^{-3}"
+      ],
+      "challenge": "Trascina θ fino al massimo della verosimiglianza: entro ±0.1 dal valore vero (12.5) vinci; poi aggiungi un salmone e prevedi da che parte si sposterà il massimo.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p01-logaritmo-e-underflow",
+      "title": "Il logaritmo salva il massimo (e il computer)",
+      "concepts": ["c07", "c08"],
+      "scenario": "pesce",
+      "realExample": "Con una linea di confezionamento che misura migliaia di salmoni al giorno (dati sintetici, luminosità N(12, 2²), seed fisso; i primi 4 pesci sono 12.1, 13.4, 11.2, 13.3), il prodotto delle densità diventa troppo piccolo per il computer: con il campione di ex05 dal 356° pesce vale esattamente 0 in doppia precisione (in media ogni pesce aggiunge −2.11 al logaritmo e il più piccolo double positivo è circa e^−744, quindi la soglia cade attorno a n ≈ 350). La somma dei logaritmi resta leggibile e ha lo stesso argmax.",
+      "storyboard": [
+        "[Caricamento, 600 ms] Due grafici impilati con lo stesso asse θ (8-16): sopra L(θ) = ∏ p(x_j|θ), sotto ln L(θ) = Σ ln p(x_j|θ). Con 4 salmoni entrambi hanno il picco in 12.5, collegati da una linea tratteggiata verticale comune.",
+        "[Slider n, scala logaritmica 4-1000] Il picco della curva superiore crolla di ordini di grandezza, con l'etichetta dell'esponente live: n = 10 circa 10⁻⁹, n = 100 circa 10⁻⁹⁰, n = 300 circa 10⁻²⁷². A n = 356 la curva superiore diventa piatta a 0 e appare un banner rosso «underflow: il prodotto è 0 in doppia precisione». La curva inferiore resta pulita (a n = 1000 la somma in θ = 12 vale −2064.87) e il suo massimo è ancora al centro.",
+        "[Pannello «Monotonia»] Una curva ln(u) con due punti trascinabili u1 < u2: le frecce mostrano che l'ordine si conserva (ln u1 < ln u2). Didascalia dalle note: «preserving monotonicity».",
+        "[Animazione «Torre», 1.2 s] A sinistra una torre di moltiplicazioni: ogni fattore rimpicciolisce il blocco precedente. A destra una pila di blocchi che si sommano: ogni blocco ha altezza ln p(x_j|θ) negativa e la pila scende in modo regolare.",
+        "[Sfida] Tre trasformazioni da applicare a L(θ): ×1000, radice quadrata, 1 − L. Lo studente prevede se l'argmax cambia; le curve trasformate si disegnano e confermano (le prime due no, la terza trasforma il massimo in minimo)."
+      ],
+      "interactions": [
+        "slider n (4-1000, scala logaritmica)",
+        "trascinamento di θ con lettura dei due valori",
+        "due punti trascinabili nel pannello Monotonia",
+        "pulsante «Torre»",
+        "scelta delle trasformazioni nella sfida"
+      ],
+      "visual": "Due grafici SVG impilati con asse θ condiviso; curva superiore blu con etichetta dell'ordine di grandezza, curva inferiore verde; banner rosso di underflow; pannello laterale con ln(u); torre animata di blocchi.",
+      "aha": "Il logaritmo non cambia dove sta il massimo perché è crescente, ma trasforma un prodotto ingestibile in una somma facile da derivare e da calcolare.",
+      "formulasShown": [
+        "\\ln\\prod_{j=1}^{n}p(x_j\\,|\\,\\theta)=\\sum_{j=1}^{n}\\ln p(x_j\\,|\\,\\theta)",
+        "\\theta^{*}=\\operatorname{argmax}_{\\theta}\\sum_{j=1}^{n}\\ln p(x_j\\,|\\,\\theta)",
+        "\\ln(1.05\\cdot10^{-3})=\\ln0.1955+\\ln0.1803+\\ln0.1615+\\ln0.1841=-6.86",
+        "n=1000:\\quad\\prod_{j=1}^{1000}p(x_j\\,|\\,12)=0\\ (\\text{underflow}),\\qquad\\sum_{j=1}^{1000}\\ln p(x_j\\,|\\,12)=-2064.87"
+      ],
+      "challenge": "Prevedi per quali trasformazioni di L(θ) l'argmax resta lo stesso: ×1000, √L, 1 − L. Tre risposte giuste sbloccano la spiegazione «funzione strettamente crescente».",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p01-gradiente-nullo-non-basta",
+      "title": "Gradiente nullo: massimo, sella o trappola?",
+      "concepts": ["c09", "c10", "c11"],
+      "scenario": "telerilevamento",
+      "realExample": "Immagine da satellite con pixel di acqua e vegetazione (120 riflettanze NIR sintetiche, acqua attorno a 0.05, vegetazione attorno a 0.45, σ = 0.08). Si stimano le medie delle due classi senza etichette con una mistura 0.5·N(μ1) + 0.5·N(μ2): la log-verosimiglianza in (μ1, μ2) ha due massimi simmetrici e una sella, quindi ∇ = 0 da solo non basta. Con una sola gaussiana, invece, il massimo è unico.",
+      "storyboard": [
+        "[Caricamento, 700 ms] A sinistra l'istogramma bimodale delle 120 riflettanze NIR. A destra la mappa di calore con curve di livello della log-verosimiglianza sul piano (μ1, μ2) ∈ [0, 0.6]².",
+        "[Clic su un punto di partenza] Una pallina parte dal punto cliccato e sale il gradiente (frecce ∇ disegnate ogni 80 ms) fino a fermarsi dove la norma del gradiente scende sotto 10⁻³; badge «∇ = 0». Da quasi ogni partenza arriva in (0.056, 0.436) o nel simmetrico (0.436, 0.056), log-verosimiglianza 64.44.",
+        "[Partenza sulla diagonale μ1 = μ2] La pallina scivola lungo la diagonale e si ferma in (0.248, 0.248): anche qui ∇ = 0, ma la log-verosimiglianza vale −192.09. Si apre il pannello Hessiana con la matrice 2×2 e gli autovalori −9375 e +50766: etichetta «punto di sella».",
+        "[Clic su un massimo] Il pannello Hessiana mostra autovalori −9393 e −8815, tutti negativi: «massimo locale»; il confronto dei valori (64.44 in entrambi) dice che sono globali e simmetrici per scambio delle etichette acqua/vegetazione.",
+        "[Toggle modello «una sola gaussiana (μ, σ)»] La mappa si ridisegna: un'unica collina con cima in μ = 0.248, σ = 0.203; l'Hessiana è diagonale (−2923, −5846) e ogni pallina arriva lì. Didascalia: «dipende dalla forma della distribuzione».",
+        "[Slider distanza d tra le medie delle classi, da 0 a 0.5, ricalcolo della mappa in 250 ms] I dati si rigenerano con lo stesso seed e medie delle classi 0.25 ∓ d/2 (default d = 0.40: acqua 0.05, vegetazione 0.45). Il punto diagonale (x̄, x̄) resta sempre stazionario; il pannello mostra la varianza campionaria S dei 120 pixel e i due autovalori in forma chiusa, λ lungo (1, 1) = −n/(2σ²) = −9375 (fisso) e λ lungo (1, −1) = n(S − σ²)/(2σ⁴). Con i dati di default S = 0.04106 e λ = +50766: sella. Abbassando d i due massimi scivolano verso la diagonale e l'autovalore positivo si riduce; quando S scende sotto σ² = 0.0064 (classi sovrapposte, d vicino a 0) diventa negativo, la sella sparisce e il punto diagonale è l'unico massimo."
+      ],
+      "interactions": [
+        "clic sulla mappa per scegliere il punto di partenza",
+        "pulsante Passo / Play della salita del gradiente (passo 80 ms, arresto quando la norma del gradiente è < 10⁻³)",
+        "toggle del modello: mistura (μ1, μ2) oppure gaussiana singola (μ, σ)",
+        "slider della distanza d tra le medie delle classi (0-0.5, passo 0.01, default 0.40): la sella esiste finché la varianza dei dati S supera σ²",
+        "clic su un punto stazionario per aprire l'Hessiana"
+      ],
+      "visual": "Canvas 2D con mappa di calore e curve di livello, traiettoria della pallina con frecce del gradiente, marcatori dei punti stazionari (triangolo verde massimo, croce arancione sella); pannello laterale con istogramma dei dati, vettore gradiente numerico e matrice Hessiana con autovalori colorati per segno.",
+      "aha": "Il gradiente nullo è una condizione necessaria, non sufficiente: servono il segno degli autovalori dell'Hessiana e il confronto tra i massimi trovati.",
+      "formulasShown": [
+        "\\nabla_{\\boldsymbol{\\theta}}\\sum_{j=1}^{n}\\ln p(x_j\\,|\\,\\boldsymbol{\\theta})=(g_1,g_2)",
+        "\\mathbf{H}=\\begin{pmatrix}h_{11}&h_{12}\\\\h_{21}&h_{22}\\end{pmatrix},\\ \\lambda_1,\\lambda_2",
+        "\\mathbf{H}(0.248,0.248)=\\begin{pmatrix}20696&-30071\\\\-30071&20696\\end{pmatrix},\\quad\\lambda_1=-9375,\\ \\lambda_2=+50766\\ \\Rightarrow\\ \\text{sella}",
+        "\\lambda_{(1,1)}=-\\frac{n}{2\\sigma^{2}}=-\\frac{120}{2\\cdot0.0064}=-9375,\\qquad\\lambda_{(1,-1)}=\\frac{n\\,(S-\\sigma^{2})}{2\\sigma^{4}}=\\frac{120\\,(0.04106-0.0064)}{2\\cdot0.0064^{2}}\\approx+50766"
+      ],
+      "challenge": "Trova un punto con ∇ = 0 che non sia un massimo e classificalo leggendo il segno degli autovalori dell'Hessiana. Poi prevedi con quale distanza d tra le classi la sella diventa un massimo (quando S ≤ σ²) e verifica con lo slider.",
+      "size": "L",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "p01-predittiva-come-media-pesata",
+      "title": "La predizione bayesiana è una media di modelli",
+      "concepts": ["c13", "c14", "c15", "c16"],
+      "scenario": "pesce",
+      "realExample": "Prevedere la luminosità del prossimo salmone sul nastro (dati sintetici): ogni classe (salmone, spigola) ha il suo dataset D_i e i suoi parametri θ_i. Con σ = 2 nota, prior N(10, 3²) e 4 salmoni (12.1, 13.4, 11.2, 13.3) la posterior della media è N(12.25, 0.9); la predittiva bayesiana N(12.25, 4.9) è più larga della predizione ML N(12.5, 4) perché tiene conto dell'incertezza su θ.",
+      "storyboard": [
+        "[Caricamento, 600 ms] In alto il selettore di classe y_i: salmone (4 pallini blu: 12.1, 13.4, 11.2, 13.3; prior N(10, 3²)) o spigola, più chiara (5 pallini arancioni: 15.8, 16.9, 15.2, 17.1, 16.5; prior N(16, 3²)). Scegliendo salmone i dati della spigola si ingrigiscono (dissolvenza 300 ms): «p(x|y_i, D_i) usa solo D_i»; la freccia p(x|y_i, D_i) → p(x|D) si disegna sotto il selettore e l'indice i sparisce dalla formula.",
+        "[Automatico, 500 ms] Pannello sinistro: la posterior p(θ|D) sull'asse θ (salmone N(12.25, 0.9); spigola N(16.28, 0.735)), suddivisa in 25 strisce verticali colorate per altezza.",
+        "[Play «Integra», 80 ms per striscia] Per ogni striscia θ_k, da sinistra a destra, nel pannello destro nasce una gaussiana sottile p(x|θ_k) = N(θ_k, 4) con opacità proporzionale a p(θ_k|D)Δθ; una curva arancione spessa accumula la somma pesata e diventa la predittiva p(x|D). Hover su una gaussiana sottile: tooltip «p(x|θ_k) si calcola direttamente: forma gaussiana nota, θ_k fissato» con la formula della densità e i numeri sostituiti.",
+        "[Fine integrazione, 400 ms] Compare tratteggiata in verde la predizione ML N(12.5, 4): la predittiva è più bassa e larga (varianza 4.9 contro 4). Numeri live: P(x > 15) = 0.107 (Bayes) contro 0.106 (ML); con un solo salmone la differenza sale (0.086 contro 0.074).",
+        "[Slider n da 1 a 100] Le gaussiane sottili si concentrano, la predittiva converge alla curva ML: varianza 6.77 con n = 1, 4.9 con n = 4, circa 4.04 con n = 100."
+      ],
+      "interactions": [
+        "selettore di classe salmone / spigola",
+        "pulsante Play «Integra» e Passo (una striscia alla volta)",
+        "slider n (1-100) e slider del numero di strisce (5-60)",
+        "hover su una gaussiana sottile per leggerne il peso p(θ_k|D)Δθ",
+        "toggle «mostra predizione ML»"
+      ],
+      "visual": "Due grafici SVG affiancati: a sinistra la posterior come istogramma a strisce, a destra la famiglia di gaussiane sottili semitrasparenti e la curva accumulata arancione, con la curva ML verde tratteggiata. Formula della somma di Riemann con i valori della striscia corrente.",
+      "aha": "Bayes non sceglie un modello: li media tutti, pesando ciascuno per quanto è credibile dopo i dati; con molti dati la media si concentra su un solo modello e la predizione torna quella di ML.",
+      "formulasShown": [
+        "p(x\\,|\\,D)\\approx\\sum_{k}p(x\\,|\\,\\theta_k)\\,p(\\theta_k\\,|\\,D)\\,\\Delta\\theta",
+        "p(x\\,|\\,D)=\\int p(x\\,|\\,\\theta)\\,p(\\theta\\,|\\,D)\\,d\\theta=N(\\mu_n,\\sigma^{2}+\\sigma_n^{2})",
+        "p(x\\,|\\,D_{\\text{salmone}})=N(12.25,\\ 4+0.9)=N(12.25,\\ 4.9)\\quad\\text{vs ML}\\ N(12.5,\\ 4)",
+        "p(x\\,|\\,\\theta_k)=\\frac{1}{\\sqrt{2\\pi}\\cdot2}\\,e^{-\\frac{(x-\\theta_k)^2}{2\\cdot4}}"
+      ],
+      "challenge": "Con quanti salmoni la deviazione standard della predittiva bayesiana supera quella ML di meno del 5%? (risposta: n = 10)",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p01-bayes-sui-parametri-evidenza",
+      "title": "Prior × verosimiglianza ÷ evidenza",
+      "concepts": ["c17", "c18", "c19", "c20"],
+      "scenario": "medicina",
+      "realExample": "Stima della frequenza cardiaca media a riposo θ di un paziente da un Holter ECG (dati sintetici): letture 88, 92, 85 bpm con rumore noto σ = 8, prior di popolazione N(70, 10²). La posterior serve a decidere se θ supera la soglia di tachicardia e a dare una probabilità esatta al medico, P(θ > 80|D) = 0.889, che richiede l'evidenza p(D).",
+      "storyboard": [
+        "[Caricamento, 700 ms] Tre righe con lo stesso asse θ (40-130 bpm): prior p(θ) in viola, verosimiglianza p(D|θ) in blu con la sua scala (valori dell'ordine di 10⁻⁴: massimo 1.02·10⁻⁴ in θ = 88.33, la media delle letture), prodotto p(D|θ)p(θ) come area grigia. Le etichette in inglese: likelihood, prior, marginal likelihood or evidence.",
+        "[Pulsante «Calcola p(D)», 1.5 s] L'area grigia si riempie di strisce verticali di larghezza 1 bpm, da sinistra a destra, mentre un contatore somma le aree fino a p(D) = 1.07·10⁻⁵.",
+        "[Pulsante «Normalizza», 600 ms] L'area grigia viene scalata verticalmente di 1/p(D) e diventa la posterior arancione con area 1. La linea verticale del massimo (85.1 bpm) non si muove durante la scalatura: badge «p(D) non cambia la decisione».",
+        "[Modalità «Disegna il prior»] Lo studente disegna con il mouse un prior diverso, per esempio bimodale; posterior ed evidenza si ricalcolano sulla griglia: con 0.5·N(65, 5²) + 0.5·N(95, 5²) il massimo passa a 91.4 bpm e p(D) = 2.16·10⁻⁵.",
+        "[Domanda «probabilità esatta»] Uno slider soglia (default 80 bpm) colora l'area della posterior oltre la soglia e mostra P(θ > soglia|D); il valore esatto richiede la normalizzazione, il confronto tra valori di θ no."
+      ],
+      "interactions": [
+        "pulsanti «Calcola p(D)» e «Normalizza»",
+        "modalità disegno del prior a mano libera, più preset (gaussiano, piatto, bimodale)",
+        "clic per aggiungere o togliere letture Holter (1-10 letture, valori tra 50 e 130 bpm)",
+        "slider della soglia per P(θ > soglia|D) (60-110 bpm, passo 1, default 80)",
+        "slider σ del rumore (4-15 bpm)"
+      ],
+      "visual": "Tre grafici SVG impilati con asse θ condiviso, colori per ruolo (viola prior, blu likelihood, grigio prodotto, arancione posterior); strisce di Riemann animate con contatore numerico dell'evidenza; linea verticale del massimo fissa durante la normalizzazione.",
+      "aha": "L'evidenza è solo il numero che rende l'area 1: non sposta il massimo, ma serve quando vuoi probabilità vere o confrontare prior diversi.",
+      "formulasShown": [
+        "p(\\theta\\,|\\,D)=\\frac{p(D\\,|\\,\\theta)\\,p(\\theta)}{p(D)}",
+        "p(D)=\\int p(D\\,|\\,\\theta)\\,p(\\theta)\\,d\\theta\\approx\\sum_k p(D\\,|\\,\\theta_k)\\,p(\\theta_k)\\,\\Delta\\theta",
+        "p(D)\\approx\\sum_{k}p(88,92,85\\,|\\,\\theta_k)\\,N(\\theta_k;70,10^2)\\,\\Delta\\theta=1.07\\cdot10^{-5},\\qquad P(\\theta>80\\,|\\,D)=0.889"
+      ],
+      "challenge": "Quale prior spiega meglio i dati del paziente, quello di popolazione o quello bimodale? Rispondi guardando p(D), poi disegna un prior che batte entrambi.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p01-statistica-sufficiente-o-no",
+      "title": "Quale riassunto non perde nulla?",
+      "concepts": ["c21", "c22", "c25"],
+      "scenario": "sensori",
+      "realExample": "Un sensore IoT con poca memoria e poca banda deve mandare al cloud un riassunto delle letture di temperatura invece di tutte le misure (dati sintetici). Con modello gaussiano e σ nota il cloud stima la temperatura media θ: quale riassunto φ(D) permette la stessa stima che si avrebbe con tutti i dati?",
+      "storyboard": [
+        "[Caricamento, 600 ms] A sinistra il dataset D = {3, 5, 7} (pallini sull'asse). Al centro un imbuto «φ(D)» con il selettore della statistica: media, (n, Σx), (n, Σx, Σx²), mediana, massimo, primo campione. In uscita una scheda con il valore di s.",
+        "[Pulsante «Genera un gemello», 800 ms] Il widget costruisce un altro dataset D′ con la stessa statistica: per (n, Σx, Σx²) i pallini si spostano fino a {2.70, 6.00, 6.30}; per la mediana fino a {1, 5, 5.5}.",
+        "[Automatico, 500 ms] A destra le curve di verosimiglianza di D e D′ sull'asse θ: con (n, Σx, Σx²) si sovrappongono esattamente (log-verosimiglianze −6.21, −5.84, −6.21 in θ = 4, 5, 6 per entrambi) e compare «sufficiente ✓»; con la mediana si separano (D′: −6.37, −6.87, −8.12) e compare «non sufficiente ✗».",
+        "[Pannello «Definizione», pulsante «Campiona», 2 s] Il widget genera 100000 dataset di 3 letture da N(4, 2²) e altrettanti da N(6, 2²) e tiene solo quelli con la statistica scelta vicina a 5 (|s − 5| < 0.05, rejection sampling: circa 2300 dataset accettati per lato con la media, circa 2200 con la mediana). Due istogrammi della prima lettura x_1 dei dataset accettati (blu θ = 4, arancione θ = 6) crescono a barre mentre i campioni arrivano. Con s = media campionaria (σ nota) i due istogrammi si sovrappongono (medie di x_1 circa 5.08 e 5.05, differenza dovuta solo al rumore di campionamento): è P(D|s, θ) = P(D|s), i dati con s fissata non dicono più nulla su θ. Con s = mediana si separano (medie di x_1 circa 4.71 per θ = 4 e 5.26 per θ = 6): la mediana lascia informazione su θ nel dataset.",
+        "[Toggle «σ ignota», 500 ms] Il modello diventa N(θ, σ²) con θ e σ entrambi da stimare. Il gemello costruito con la sola (n, Σx) = (3, 15), per esempio {4, 5, 6}, ha la stessa media ma Σx² = 77 invece di 83: le curve di verosimiglianza in σ si separano (stima ML di σ² 0.667 contro 2.667) e il badge diventa «(n, Σx) non basta: serve anche Σx²». Con (n, Σx, Σx²) il gemello {2.70, 6.00, 6.30} torna a sovrapporsi.",
+        "[Barra memoria, 600 ms] Con 1000 letture la barra «tutti i dati» segna 8000 byte, la barra «s = (n, Σx, Σx²)» 24 byte: compressione senza perdita di informazione su θ (Compression of Data)."
+      ],
+      "interactions": [
+        "selettore della statistica: media, (n, Σx), (n, Σx, Σx²), mediana, massimo, primo campione",
+        "pulsante «Genera un gemello»",
+        "trascinamento dei pallini del dataset (asse 0-10 °C, passo 0.1) con ricalcolo live di s e delle curve",
+        "toggle σ nota (σ = 2) / σ ignota",
+        "pulsante «Campiona» del pannello Definizione (100000 dataset per θ, soglia |s − 5| regolabile da 0.01 a 0.2)",
+        "slider del numero di letture per la barra memoria (10-10000, scala logaritmica)"
+      ],
+      "visual": "Tre colonne SVG: dataset, imbuto animato con la scheda di s, curve di verosimiglianza sovrapposte (D blu, D′ arancione tratteggiato) con i valori della log-verosimiglianza in θ = 4, 5, 6; pannello inferiore con i due istogrammi della prima lettura x_1 dei dataset accettati (blu θ = 4, arancione θ = 6) e le barre di memoria.",
+      "aha": "Una statistica è sufficiente quando tutti i dataset con lo stesso valore di s sono indistinguibili per θ: il resto dei dettagli è rumore.",
+      "formulasShown": [
+        "\\mathbf{s}=\\phi(D)",
+        "P(D\\,|\\,\\mathbf{s},\\theta)=P(D\\,|\\,\\mathbf{s})",
+        "\\phi(\\{3,5,7\\})=\\phi(\\{2.70,6.00,6.30\\})=(n,\\textstyle\\sum x,\\sum x^2)=(3,15,83)"
+      ],
+      "challenge": "Il sensore può mandare pochi numeri: quali scegli se σ è nota (n e Σx) e quali se σ è ignota (serve anche Σx²)?",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p01-posterior-da-s-streaming",
+      "title": "Due pipeline, stessa posterior",
+      "concepts": ["c23", "c24"],
+      "scenario": "sensori",
+      "realExample": "Monitoraggio continuo di una cella frigorifera (dati sintetici): il pipeline A conserva tutte le letture e ricalcola la posterior della temperatura media su tutto il dataset; il pipeline B tiene solo i contatori n e Σx. Con modello gaussiano a σ nota e prior N(4, 1²) le due posterior coincidono sempre, e B usa memoria costante.",
+      "storyboard": [
+        "[Caricamento, 700 ms] In alto la dimostrazione di pagina 4 come frazione: p(θ|D, s) = P(D|θ, s)p(θ|s)p(s) / (P(D|s)p(s)).",
+        "[Passo 1, 600 ms] Il fattore P(D|θ, s) lampeggia e si trasforma in P(D|s) con l'etichetta «sufficienza».",
+        "[Passo 2, 600 ms] I fattori P(D|s)p(s) al numeratore e al denominatore si colorano uguali e vengono barrati con un tratto animato; resta p(θ|s). Poi appare «s = φ(D) ⇒ p(θ|D) = p(θ|s)».",
+        "[Play flusso, 150 ms per lettura] Sotto, due nastri paralleli ricevono le stesse letture (le prime cinque sono 4.8, 4.3, 5.1, 4.6, 4.9 °C, poi letture sintetiche da N(4.7, 0.5²) con seed fisso). A: la lista dei dati cresce e la posterior si ricalcola da D con il prodotto delle n verosimiglianze. B: due contatori (n, Σx) si incrementano e la posterior si calcola da s con 1/σ_n² = n/σ² + 1/σ0² e μ_n = σ_n²(Σx/σ² + μ0/σ0²). Dopo 5 letture entrambe valgono N(4.705, 0.0476); le curve si sovrappongono e un indicatore mostra la differenza massima tra le due densità, sempre 0.000.",
+        "[Dopo 200 letture, 600 ms] Le barre di memoria: A a 1600 byte (8 byte per lettura) e in crescita, B fermo a 16 byte. Didascalia: «a sufficient statistic is all the information you need from D».",
+        "[Toggle «solo l'ultimo valore», 400 ms] B tiene solo l'ultima lettura invece di (n, Σx): la sua curva arancione si stacca da quella di A (dopo 5 letture B usa solo x_5 = 4.9 e calcola N(4.72, 0.2), contro N(4.705, 0.0476) di A: stessa zona ma quattro volte più larga, e la distanza cresce con le letture successive) e l'indicatore della differenza diventa rosso: «statistica non sufficiente»."
+      ],
+      "interactions": [
+        "pulsanti Passo / Indietro / Play della dimostrazione (600 ms per passo)",
+        "Play / Pausa del flusso di letture, velocità 1-20 letture al secondo",
+        "pulsante «Cancella i dati grezzi di A» (A non può più aggiornare, B continua)",
+        "toggle della statistica di B: (n, Σx) oppure solo l'ultimo valore (non sufficiente: le curve si separano)",
+        "slider del prior μ0 (2-7 °C) e σ0 (0.1-5): le due curve restano sovrapposte per ogni prior"
+      ],
+      "visual": "Formula KaTeX animata con barrature; due pipeline orizzontali con icone di memoria; grafico SVG unico con le due posterior sovrapposte (blu continua A, arancione tratteggiata B) e indicatore numerico della differenza.",
+      "aha": "Una volta noto s, il dataset non aggiunge nulla: la posterior dipende solo dal riassunto, per questo si può buttare il dato grezzo senza perdere nulla su θ.",
+      "formulasShown": [
+        "p(\\theta\\,|\\,D,\\mathbf{s})=\\frac{P(D\\,|\\,\\theta,\\mathbf{s})\\,p(\\theta\\,|\\,\\mathbf{s})\\,p(\\mathbf{s})}{P(D\\,|\\,\\mathbf{s})\\,p(\\mathbf{s})}=p(\\theta\\,|\\,\\mathbf{s})",
+        "\\mathbf{s}=(n,\\textstyle\\sum x)=(5,\\ 23.7)\\ \\Rightarrow\\ \\frac{1}{\\sigma_5^{2}}=\\frac{5}{0.25}+\\frac{1}{1}=21,\\quad\\mu_5=\\frac{23.7/0.25+4/1}{21}=4.705"
+      ],
+      "challenge": "Riordina i 6 passaggi della dimostrazione (definizione, probabilità condizionata, regola della catena, sostituzione, semplificazione, s funzione di D) e indica per ciascuno la giustificazione.",
+      "size": "M",
+      "tech": "html+motion"
+    },
+    {
+      "id": "p01-sufficienza-dipende-dal-modello",
+      "title": "Media e covarianza bastano... per la gaussiana",
+      "concepts": ["c26", "c27"],
+      "scenario": "telerilevamento",
+      "realExample": "Pixel di vegetazione in due bande (riflettanza nel rosso e nel vicino infrarosso NIR) da un'immagine satellitare (dati sintetici, seed fisso): 300 pixel con media campionaria (0.080, 0.400) e covarianza campionaria con varianze 0.0004 (rosso) e 0.0025 (NIR) e covarianza 0.0003. Se la classe si modella con una gaussiana 2D questi 5 numeri bastano a stimarla (sono statistiche sufficienti); se la stessa classe si modella con un'uniforme su un rettangolo o con una Laplace per banda, gli stessi 5 numeri non bastano più e servono minimi/massimi o mediane.",
+      "storyboard": [
+        "[Caricamento, 700 ms] I 300 pixel verdi compaiono a gruppi di 30 ogni 70 ms nel piano (rosso da 0 a 0.2, NIR da 0.2 a 0.7). A destra la scheda dei 5 numeri si riempie contando: μ̂ = (0.080, 0.400); Σ̂ con 0.0004, 0.0025 e 0.0003.",
+        "[Modello «gaussiana 2D», 600 ms] L'ellisse al 95% stimata da tutti i punti (linea continua) e quella ricostruita dai soli 5 numeri della scheda (tratteggiata) si disegnano sovrapposte con stroke-dashoffset: coincidono. Badge «5 numeri, nessuna perdita».",
+        "[Pulsante «Rimescola», 900 ms] Ogni punto scivola (interpolazione lineare delle posizioni) verso una nuova nuvola a forma di banana costruita con la stessa media e la stessa covarianza campionarie (sbiancamento e ricolorazione con la Cholesky di Σ̂). La scheda dei 5 numeri non cambia di una cifra e l'ellisse gaussiana resta ferma: per il modello gaussiano i due dataset sono indistinguibili.",
+        "[Toggle modello «uniforme su un rettangolo», 500 ms] Su ciascuna nuvola si disegna il rettangolo ML, cioè [min, max] per banda: nuvola gaussiana rosso [0.010, 0.137], NIR [0.278, 0.538]; nuvola a banana rosso [0.024, 0.133], NIR [0.343, 0.629]. I due rettangoli, sovrapposti in trasparenza, sono diversi pur con media e covarianza identiche: badge rosso «media e covarianza non sufficienti: per l'uniforme servono minimo e massimo».",
+        "[Toggle modello «Laplace per banda», 500 ms] La stima ML della posizione di una Laplace è la mediana: croce viola sulla nuvola gaussiana in (0.080, 0.402), sulla banana in (0.079, 0.384). Le croci non coincidono; didascalia dalle note: «the choice of a sufficient statistic depends on the specific form of the probability distribution»."
+      ],
+      "interactions": [
+        "toggle del modello: gaussiana 2D, uniforme sul rettangolo, Laplace per banda",
+        "pulsante «Rimescola» (nuova forma con la stessa media e covarianza campionarie: banana, anello, due gruppi)",
+        "trascinamento di singoli pixel con ricalcolo live dei 5 numeri, del rettangolo e delle mediane",
+        "slider del numero di pixel (20-1000, default 300)"
+      ],
+      "visual": "Grafico a dispersione SVG con i pixel verdi della vegetazione; ellisse gaussiana al 95% (continua da tutti i dati, tratteggiata dai 5 numeri), rettangoli ML dell'uniforme (blu per la nuvola corrente, grigio trasparente per quella precedente), croci viola delle mediane per la Laplace; scheda laterale con i valori numerici di μ̂, Σ̂, minimi, massimi e mediane delle due nuvole affiancati, con le cifre diverse evidenziate in rosso.",
+      "aha": "La sufficienza non è una proprietà della statistica da sola ma della coppia statistica-modello.",
+      "formulasShown": [
+        "\\hat{\\boldsymbol{\\mu}}=\\frac{1}{n}\\sum_{j}\\mathbf{x}_j,\\qquad\\hat{\\boldsymbol{\\Sigma}}=\\frac{1}{n}\\sum_{j}(\\mathbf{x}_j-\\hat{\\boldsymbol{\\mu}})(\\mathbf{x}_j-\\hat{\\boldsymbol{\\mu}})^{T}",
+        "\\hat{\\boldsymbol{\\mu}}=\\begin{pmatrix}0.080\\\\0.400\\end{pmatrix},\\qquad\\hat{\\boldsymbol{\\Sigma}}=\\begin{pmatrix}0.0004&0.0003\\\\0.0003&0.0025\\end{pmatrix}\\quad\\text{(uguali per le due nuvole)}",
+        "\\text{uniforme: }[\\min_j x_{j},\\ \\max_j x_{j}]_{\\text{NIR}}=[0.278,\\ 0.538]\\ \\text{vs}\\ [0.343,\\ 0.629]"
+      ],
+      "challenge": "Abbina modello e statistica sufficiente: gaussiana ↔ media e covarianza, uniforme ↔ minimo e massimo, Bernoulli ↔ numero di successi (anticipazione del modulo p02). Bonus: trascina un solo pixel in modo che il rettangolo dell'uniforme cambi ma la stima gaussiana quasi no, poi il contrario.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p01-famiglia-chiusa-sotto-aggiornamento",
+      "title": "Il prior che resta sé stesso",
+      "concepts": ["c28", "c29", "c36", "c37"],
+      "scenario": "pesce",
+      "realExample": "Stima bayesiana della luminosità media θ dei salmoni (dati sintetici, σ = 2 nota). Il responsabile di linea può scegliere il prior: gaussiano N(10, 3²), uniforme su [8, 14] o triangolare. Solo con quello gaussiano la posterior resta nella stessa famiglia e si aggiorna con due numeri; con gli altri servono calcoli numerici.",
+      "storyboard": [
+        "[Caricamento, 600 ms] Un solo asse θ (4-18) su cui convivono le tre funzioni: prior (viola), verosimiglianza del nuovo dato letta come funzione di θ (blu), posterior (arancione). Etichetta «same parameter θ». Sopra, lo schema formale p(θ) e p(x|θ) ⇒ p(θ|x) con una casella «stessa famiglia?».",
+        "[Clic «Aggiungi un salmone», 700 ms] Il dato (il primo è 12.1) cade sull'asse x; la sua verosimiglianza in θ, N(θ; 12.1, 4) letta come funzione di θ, si disegna, si moltiplica punto per punto con il prior (animazione verticale) e il risultato normalizzato diventa la posterior.",
+        "[Test di famiglia, 400 ms] Il widget adatta alla posterior la migliore curva della famiglia del prior e mostra lo scarto massimo: con il prior gaussiano lo scarto è 0 e la casella si illumina «✓ Normale»; la scheda degli iperparametri passa da (μ0, σ0²) = (10, 9) a (11.45, 2.77).",
+        "[Cambio prior: uniforme su [8, 14]] Dopo un dato la posterior è una gaussiana troncata ai bordi 8 e 14: lo scarto dalla migliore uniforme è grande e la casella diventa «✗ fuori famiglia». Compare l'avviso «per continuare serve integrare numericamente».",
+        "[Auto-play 10 dati] Con il prior gaussiano la «forma» resta una campana che si sposta e si stringe (le schede degli iperparametri scorrono come una catena); con il triangolare la forma cambia a ogni passo."
+      ],
+      "interactions": [
+        "selettore del prior: gaussiano, uniforme, triangolare",
+        "pulsante «Aggiungi un salmone» (primo dato 12.1, poi letture sintetiche da N(12.5, 2²) con seed fisso) e Auto-play (600 ms per dato, massimo 30 dati)",
+        "slider degli iperparametri: gaussiano μ0 da 4 a 16 e σ0 da 0.5 a 6 (default 10 e 3); uniforme estremi a e b da 4 a 18 (default 8 e 14); triangolare con estremi 6 e 16 e vertice trascinabile (default 10)",
+        "toggle «mostra la migliore curva della famiglia» con lo scarto massimo in valore numerico"
+      ],
+      "visual": "Grafico SVG con asse θ unico e tre curve colorate per ruolo; schema della definizione formale in alto con casella di esito; catena di schede degli iperparametri che scorre a destra a ogni aggiornamento.",
+      "aha": "Coniugato vuol dire che i dati cambiano i numeri del prior ma non la sua forma: la posterior è un membro della stessa famiglia.",
+      "formulasShown": [
+        "p(\\theta)\\ \\text{and}\\ p(x\\,|\\,\\theta)\\ \\Rightarrow\\ p(\\theta\\,|\\,x)\\ \\text{same family as}\\ p(\\theta)",
+        "p(\\theta\\,|\\,x)\\propto p(x\\,|\\,\\theta)\\,p(\\theta)",
+        "N(10,\\,9)\\ \\xrightarrow{\\ x=12.1\\ }\\ \\frac{1}{\\sigma_1^{2}}=\\frac{1}{9}+\\frac{1}{4}=0.361,\\quad\\sigma_1^{2}=2.77,\\quad\\mu_1=2.77\\Big(\\frac{10}{9}+\\frac{12.1}{4}\\Big)=11.45"
+      ],
+      "challenge": "Tra tre prior proposti per la media di una gaussiana, scegli quello che rende l'aggiornamento una formula chiusa, poi prevedi i nuovi iperparametri dopo un dato (con x = 12.1 e prior N(10, 9): μ1 = 11.45, σ1² = 2.77).",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p01-completa-il-quadrato",
+      "title": "Perché la posterior è ancora gaussiana: completa il quadrato",
+      "concepts": ["c30", "c31", "c32"],
+      "scenario": "sensori",
+      "realExample": "Calibrazione del sensore della cella frigorifera (dati sintetici): σ = 0.5 °C, prior N(4, 1²), 5 letture con media 4.74. Il widget mostra algebricamente e graficamente perché la posterior della media resta gaussiana, la domanda chiesta da Passerini all'orale.",
+      "storyboard": [
+        "[Caricamento, 600 ms] In alto il prodotto verosimiglianza × prior scritto come esponenziali; sotto, il grafico degli esponenti in funzione di μ: 5 parabole blu (una per lettura) e una parabola viola (prior).",
+        "[Passo «Somma gli esponenti», 800 ms] Le 6 parabole si sommano in una sola parabola arancione (animazione di somma verticale). Nella formula i termini si raccolgono in μ² e μ, con i coefficienti numerici 21 e 98.8.",
+        "[Passo «Completa il quadrato», 800 ms] La parabola arancione trasla fino a rendere evidente il vertice: μ_5 = 98.8/21 = 4.705 e curvatura 1/σ_5² = 21. La formula diventa −(μ − 4.705)²/(2·0.0476) + cost.",
+        "[Passo «Torna agli esponenziali», 600 ms] L'esponenziale della parabola si disegna come campana: N(4.705, 0.0476). Badge «Gaussian prior conjugate to Gaussian likelihood».",
+        "[Pannello precisioni] Due barre impilate: precisione dei dati n/σ² = 20 e precisione del prior 1/σ0² = 1, totale 21. Un cursore tra μ0 = 4 e μ̂ = 4.74 mostra μ_n come media pesata (pesi 0.95 e 0.05)."
+      ],
+      "interactions": [
+        "pulsanti Passo / Indietro dei 4 passaggi (800 ms per passaggio)",
+        "slider n (0-50, default 5), σ (0.1-2, default 0.5), σ0 (0.1-5, default 1), μ0 (2-7, default 4): coefficienti, vertice e campane si ricalcolano con transizione di 150 ms",
+        "trascinamento della media campionaria μ̂",
+        "toggle «mostra i termini costanti»"
+      ],
+      "visual": "Metà superiore con la formula KaTeX che evolve passo per passo con colori per termine; metà inferiore con il grafico degli esponenti (parabole) e sotto il grafico delle densità (campane). Barre delle precisioni e cursore della media pesata sul lato destro.",
+      "aha": "Il prodotto di esponenziali di parabole è l'esponenziale di una parabola, quindi di nuovo una gaussiana; le precisioni si sommano e la media è una media pesata.",
+      "formulasShown": [
+        "\\frac{1}{\\sigma_n^{2}}=\\frac{n}{\\sigma^{2}}+\\frac{1}{\\sigma_0^{2}}",
+        "\\mu_n=\\frac{n\\sigma_0^{2}}{n\\sigma_0^{2}+\\sigma^{2}}\\,\\hat{\\mu}_n+\\frac{\\sigma^{2}}{n\\sigma_0^{2}+\\sigma^{2}}\\,\\mu_0",
+        "-\\frac{1}{2}\\Big[\\Big(\\frac{5}{0.25}+\\frac{1}{1}\\Big)\\mu^{2}-2\\Big(\\frac{23.7}{0.25}+\\frac{4}{1}\\Big)\\mu\\Big]=-\\frac{1}{2}\\big[21\\mu^{2}-2\\cdot98.8\\,\\mu\\big]=-\\frac{(\\mu-4.705)^{2}}{2\\cdot0.0476}+\\text{cost.}",
+        "\\mu_5=\\frac{5\\cdot1}{5\\cdot1+0.25}\\cdot4.74+\\frac{0.25}{5\\cdot1+0.25}\\cdot4=0.952\\cdot4.74+0.048\\cdot4=4.705"
+      ],
+      "challenge": "Senza calcolatrice: raddoppiando n la varianza a posteriori circa si dimezza? Verifica con lo slider, poi scrivi la risposta d'orale «why do we obtain a Gaussian also as posterior?» componendo tre frasi da tessere.",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p01-aggiornamenti-in-catena",
+      "title": "La posterior di oggi è il prior di domani",
+      "concepts": ["c33", "c34", "c35"],
+      "scenario": "sensori",
+      "realExample": "Un nodo edge aggiorna online la stima della temperatura media della cella frigorifera a ogni lettura (dati sintetici): con il prior coniugato bastano due operazioni per lettura invece di un integrale numerico su una griglia di 1000 punti.",
+      "storyboard": [
+        "[Caricamento, 600 ms] Una fila di schede vuote. La prima è il prior N(4, 1).",
+        "[Lettura 4.8, 700 ms] La scheda del prior e il dato entrano in un ingranaggio «Bayes» ed esce la scheda N(4.64, 0.200); una freccia curva la riporta all'ingresso come nuovo prior.",
+        "[Letture 4.3, 5.1, 4.6, 4.9] La catena prosegue: N(4.489, 0.111) → N(4.677, 0.0769) → N(4.659, 0.0588) → N(4.705, 0.0476). Ogni scheda mostra la stessa forma a campana.",
+        "[Confronto «batch», 600 ms] A destra lo stesso calcolo fatto in blocco sulle 5 letture dà N(4.705, 0.0476): le due curve finali si sovrappongono e appare «stesso risultato».",
+        "[Contatore di costo] Due contatori crescono in parallelo: forma chiusa 2 operazioni per lettura (10 in tutto); griglia numerica 1000 valutazioni della verosimiglianza più una somma per la normalizzazione a ogni lettura (5000 in tutto). Didascalia: «you don't need to compute complex integrals»."
+      ],
+      "interactions": [
+        "pulsante «Nuova lettura» e Auto-play",
+        "campo per inserire una lettura a mano (0-10 °C, un decimale; fuori intervallo viene rifiutata)",
+        "toggle «forma chiusa / griglia numerica» con contatore di costo",
+        "slider del rumore σ del sensore (0.1-2 °C, default 0.5) e del prior μ0 (2-7), σ0 (0.1-5)",
+        "slider della risoluzione della griglia (100-10000 punti)"
+      ],
+      "visual": "Catena orizzontale di schede-campana in SVG collegate da frecce curve, ingranaggio animato al centro; grafico finale con confronto sequenziale contro batch; contatori numerici del costo.",
+      "aha": "Con un prior coniugato l'apprendimento bayesiano diventa un aggiornamento di pochi numeri che si può ripetere all'infinito sul flusso dei dati.",
+      "formulasShown": [
+        "\\frac{1}{\\sigma_{k}^{2}}=\\frac{1}{\\sigma_{k-1}^{2}}+\\frac{1}{\\sigma^{2}},\\qquad\\mu_{k}=\\sigma_{k}^{2}\\Big(\\frac{\\mu_{k-1}}{\\sigma_{k-1}^{2}}+\\frac{x_k}{\\sigma^{2}}\\Big)",
+        "k=1:\\quad\\frac{1}{\\sigma_1^{2}}=\\frac{1}{1}+\\frac{1}{0.25}=5,\\quad\\mu_1=0.2\\Big(\\frac{4}{1}+\\frac{4.8}{0.25}\\Big)=4.64"
+      ],
+      "challenge": "Prevedi la media a posteriori dopo una sesta lettura di 4.2 °C (risposta 4.624, varianza 0.04), poi verifica.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p01-tabella-dei-coniugati",
+      "title": "Abbina verosimiglianza e prior coniugato",
+      "concepts": ["c38", "c39", "c40"],
+      "scenario": "spam",
+      "realExample": "Filtro antispam (dati sintetici): la presenza della parola «gratis» nelle email di spam è un esperimento binomiale con prior Beta; la categoria di parola più frequente tra {offerta, riunione, fattura} è multinomiale con prior Dirichlet. La tabella di pagina 5 diventa un gioco di abbinamento con un'animazione per riga.",
+      "storyboard": [
+        "[Caricamento, 600 ms] La tabella «Examples» con le colonne Likelihood, Parameters, Conjugate prior; la colonna dei prior è vuota e le quattro tessere Beta, Dirichlet, Normal, Normal sono mescolate sotto.",
+        "[Trascina una tessera] Se l'abbinamento è giusto la tessera si aggancia e la riga si apre in una mini animazione; se è sbagliato torna indietro con un indizio sul tipo di parametro (scalare, vettore di probabilità, media).",
+        "[Riga Binomial-Beta] Arrivano 10 email di spam, 7 contengono «gratis»: la curva Beta(2, 2) si trasforma in Beta(9, 5) con media 0.643; il contatore successi/insuccessi si aggiorna a ogni email.",
+        "[Riga Multinomial-Dirichlet] Un triangolo (simplesso) colorato come mappa di calore della Dirichlet(1, 1, 1) piatta; le parole arrivano e la massa si concentra verso la media (0.462, 0.231, 0.308) con conteggi (5, 2, 3).",
+        "[Tabella completa] Una didascalia collega le righe Normal al widget della media gaussiana e le prime due al modulo p02."
+      ],
+      "interactions": [
+        "trascinamento delle tessere dei prior",
+        "clic su una riga per rigiocare la sua animazione (Beta: 300 ms per email; Dirichlet: 250 ms per parola)",
+        "slider della percentuale vera di email di spam con la parola (0-100%, passo 5%, default 70%) che genera le email sintetiche",
+        "slider degli iperparametri del prior Beta α e β (0.5-20, default 2 e 2)",
+        "pulsante «Nuova email» (una email per clic, fino a 200)"
+      ],
+      "visual": "Tabella HTML ripresa dal riquadro viola delle slide; sotto, un pannello animato per riga: curva Beta in SVG per la binomiale, triangolo del simplesso in canvas con mappa di calore per la Dirichlet.",
+      "aha": "Il prior coniugato ha lo stesso tipo di parametro della verosimiglianza: una probabilità si abbina alla Beta, un vettore di probabilità alla Dirichlet, una media alla Normale.",
+      "formulasShown": [
+        "\\text{Beta}(\\alpha,\\beta)\\ \\xrightarrow{\\ h\\ \\text{successi},\\ t\\ \\text{insuccessi}\\ }\\ \\text{Beta}(\\alpha+h,\\beta+t)",
+        "\\text{Dir}(\\alpha_1,\\dots,\\alpha_k)\\ \\xrightarrow{\\ N_1,\\dots,N_k\\ }\\ \\text{Dir}(\\alpha_1+N_1,\\dots,\\alpha_k+N_k)",
+        "\\text{Beta}(2,2)\\ \\xrightarrow{\\ h=7,\\ t=3\\ }\\ \\text{Beta}(9,5),\\qquad E[p\\,|\\,D]=\\frac{9}{9+5}=0.643",
+        "\\text{Dir}(1,1,1)\\ \\xrightarrow{\\ (5,2,3)\\ }\\ \\text{Dir}(6,3,4),\\qquad E[\\mathbf{p}\\,|\\,D]=\\Big(\\frac{6}{13},\\frac{3}{13},\\frac{4}{13}\\Big)=(0.462,\\ 0.231,\\ 0.308)"
+      ],
+      "challenge": "Completa la tabella al primo tentativo; bonus: prevedi la media della Beta dopo 3 email in più tutte con la parola (12/17 = 0.706).",
+      "size": "M",
+      "tech": "html+motion"
+    },
+    {
+      "id": "p01-media-coniugata-1d-e-2d",
+      "title": "Normale e normale multivariata: la media che si stringe",
+      "concepts": ["c41", "c42"],
+      "scenario": "telerilevamento",
+      "realExample": "Stima del vettore medio della classe acqua nelle bande (rosso, NIR) di un'immagine satellitare, con covarianza del rumore nota (dati sintetici). Prior sul vettore medio N((0.08, 0.10), 0.01·I); rumore dei pixel con covarianza nota Σ = 0.03²·I (σ = 0.03 per banda); arrivano pixel d'acqua con media campionaria (0.05, 0.03), il primo vale (0.049, 0.030). In 1D è la riga Normal-Normal, in 2D la riga Multivariate normal-Normal della tabella.",
+      "storyboard": [
+        "[Caricamento, 600 ms] Toggle 1D/2D. In 2D il piano (rosso, NIR) con l'ellisse viola del prior sul vettore medio μ_i, larga e centrata in (0.08, 0.10).",
+        "[Clic «Aggiungi pixel», 500 ms] Un pixel d'acqua cade nel piano; l'ellisse arancione della posterior si sposta e si restringe: dopo 1 pixel centro (0.052, 0.036) con varianza a posteriori 8.3·10⁻⁴ per banda, dopo 10 pixel (0.050, 0.031) con 8.9·10⁻⁵, dopo 50 pixel (0.050, 0.030) con 1.8·10⁻⁵ (Σ_n = (Σ0⁻¹ + nΣ⁻¹)⁻¹ con Σ0⁻¹ = 100·I e Σ⁻¹ = 1111·I).",
+        "[Toggle 1D, 500 ms] L'ellisse si schiaccia sull'asse NIR e diventa la campana della riga Normal-Normal: prior N(0.10, 0.01), rumore σ² = 0.0009. Dopo 1 pixel (NIR 0.030) N(0.036, 8.3·10⁻⁴), dopo 10 pixel (media 0.03) N(0.031, 8.9·10⁻⁵): stessi numeri della seconda componente in 2D, perché con covarianze diagonali le bande si aggiornano separatamente.",
+        "[Slider correlazione ρ del rumore ≠ 0, 300 ms] Le ellissi della posterior si inclinano: con Σ non diagonale le bande non si aggiornano più indipendentemente e un pixel con rosso alto sposta anche la stima del NIR. Didascalia: «parametro: solo il vettore medio μ_i; covarianza Σ nota» e la formula della posterior multivariata segnata come completamento (non è nelle note)."
+      ],
+      "interactions": [
+        "toggle 1D / 2D",
+        "pulsante «Aggiungi pixel» (pixel sintetici da N((0.05, 0.03), Σ) con seed fisso, il primo è (0.049, 0.030)) e Auto-play (500 ms per pixel, fino a 200)",
+        "slider della correlazione ρ tra le bande nel rumore (da −0.8 a 0.8, passo 0.1, default 0)",
+        "trascinamento del centro del prior μ0 nel riquadro [0, 0.2] × [0, 0.2] e slider della sua varianza (0.001-0.1, default 0.01)"
+      ],
+      "visual": "Grafico a dispersione SVG con pixel blu, ellisse viola del prior e ellisse arancione della posterior sul vettore medio; in 1D campane sull'asse NIR; numeri live di μ_n e degli elementi di Σ_n.",
+      "aha": "La coniugatezza normale-normale vale anche per un vettore medio: la posterior resta un'ellisse gaussiana che si stringe con i dati.",
+      "formulasShown": [
+        "\\boldsymbol{\\Sigma}_n=(\\boldsymbol{\\Sigma}_0^{-1}+n\\boldsymbol{\\Sigma}^{-1})^{-1},\\qquad\\boldsymbol{\\mu}_n=\\boldsymbol{\\Sigma}_n(\\boldsymbol{\\Sigma}_0^{-1}\\boldsymbol{\\mu}_0+n\\boldsymbol{\\Sigma}^{-1}\\hat{\\boldsymbol{\\mu}}_n)",
+        "n=1:\\quad\\boldsymbol{\\Sigma}_1=(100\\,\\mathbf{I}+1111\\,\\mathbf{I})^{-1}=8.3\\cdot10^{-4}\\,\\mathbf{I},\\qquad\\boldsymbol{\\mu}_1=8.3\\cdot10^{-4}\\Big[100\\begin{pmatrix}0.08\\\\0.10\\end{pmatrix}+1111\\begin{pmatrix}0.049\\\\0.030\\end{pmatrix}\\Big]=\\begin{pmatrix}0.052\\\\0.036\\end{pmatrix}"
+      ],
+      "challenge": "Prima di premere Play prevedi dove finirà il centro dell'ellisse dopo 50 pixel: vicino al prior o alla media campionaria?",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p01-bernoulli-due-esiti",
+      "title": "Spam o no: un esperimento con due esiti",
+      "concepts": ["c43", "c44", "c45"],
+      "scenario": "spam",
+      "realExample": "Per ogni email di spam si registra x = 1 se contiene la parola «gratis» (successo) e x = 0 altrimenti (fallimento), dati sintetici. Una singola email è una prova di Bernoulli; contare le email con la parola su n email è una binomiale.",
+      "storyboard": [
+        "[Caricamento, 500 ms] Una busta di spam arriva in una casella; un timbro verde «1» (contiene «gratis», success) o grigio «0» (failure) la marca con un piccolo rimbalzo (200 ms).",
+        "[Auto-play, 300 ms per email] Le buste si impilano in due colonne 1 e 0; sopra, un grafico a barre con due barre mostra le frequenze relative, aggiornate a ogni email (dopo 100 email sintetiche con probabilità vera nascosta 0.31: 31 con «gratis» e 69 senza, frequenze 0.31 e 0.69).",
+        "[Slider «numero di prove per esperimento» n, ridisegno 400 ms] Con n = 1 il grafico ha due barre: è la Bernoulli. Con n = 10 ogni esperimento conta i successi su 10 email e le barre si moltiplicano nell'istogramma della binomiale su 0-10 (con p = 0.31: P(k = 3) = 0.266, il valore più probabile); la curva teorica si sovrappone in tratteggio all'istogramma empirico. Tornando a n = 1 le barre si fondono in due e compare la didascalia «Bernoulli = binomiale con una sola prova (only one trial)».",
+        "[Pulsante «Scegli tu il successo», 400 ms] Lo studente ridefinisce il successo (email con allegato, email inviata di notte): i timbri si riscrivono, la codifica resta x = 1 / x = 0 e cambia solo la frequenza delle due barre."
+      ],
+      "interactions": [
+        "Auto-play / Passo delle email (velocità 1-10 email al secondo)",
+        "slider n delle prove per esperimento (1-20, passo 1, default 1)",
+        "pulsante per ridefinire il successo (tre definizioni predefinite)",
+        "slider della probabilità vera nascosta (0-1, passo 0.01, default 0.31, rivelabile con un clic)"
+      ],
+      "visual": "Buste animate in HTML con timbri 0/1; grafico a barre SVG che si trasforma da 2 barre a istogramma binomiale; etichette success/failure in inglese.",
+      "aha": "La Bernoulli è il caso più piccolo possibile: un'unica prova con due esiti codificati come 1 e 0.",
+      "formulasShown": [
+        "x\\in\\{0,1\\}",
+        "x=1\\ (\\text{success}),\\quad x=0\\ (\\text{failure})",
+        "\\text{frequenza di }x=1:\\ \\frac{31}{100}=0.31,\\qquad\\text{frequenza di }x=0:\\ \\frac{69}{100}=0.69",
+        "n=10:\\quad P(k=3)=\\binom{10}{3}\\,0.31^{3}\\,0.69^{7}=0.266\\qquad(n=1:\\ \\text{Bernoulli})"
+      ],
+      "challenge": "Riconosci quali esperimenti sono Bernoulli: email spam/ham (sì), numero di parole di un'email (no), cliente che fa frode sì/no (sì), temperatura (no).",
+      "size": "S",
+      "tech": "html+motion"
+    },
+    {
+      "id": "p01-bernoulli-parametro-p",
+      "title": "Il parametro p e la PMF della Bernoulli",
+      "concepts": ["c46", "c47", "c48", "c49"],
+      "scenario": "spam",
+      "realExample": "La probabilità p che un'email di spam contenga «gratis» è l'unico parametro della Bernoulli e il θ che il filtro antispam dovrà stimare nel modulo p02 (dati sintetici).",
+      "storyboard": [
+        "[Caricamento, 500 ms] Due barre crescono dal basso, P(x = 1) = p in verde e P(x = 0) = 1 − p in grigio, con p = 0.3 (probabilità che un'email di spam contenga «gratis»); sopra, la PMF a tratti del riquadro delle slide con i valori sostituiti (0.3 se x = 1, 0.7 se x = 0).",
+        "[Trascina p, aggiornamento continuo] Le barre si scambiano altezza in modo complementare; un indicatore mostra che la somma resta 1.00 e la riga attiva della PMF si illumina.",
+        "[Tentativo fuori intervallo, 300 ms] Se lo studente trascina oltre 1 o sotto 0 lo slider rimbalza con una molla e compare «0 ≤ p ≤ 1: è una probabilità»; nel campo numerico un valore come 1.2 viene rifiutato con lo stesso messaggio.",
+        "[Toggle «forma compatta», 600 ms] La PMF a tratti si trasforma (morph del testo) nella forma di pagina 6, θ^x(1 − θ)^(1−x), con θ = p: con x = 1 il fattore (1 − θ)^0 diventa 1 e resta 0.3, con x = 0 il fattore θ^0 diventa 1 e resta 0.7; le due righe dei casi si evidenziano a turno ogni 800 ms."
+      ],
+      "interactions": [
+        "slider p (0-1, passo 0.01) con rimbalzo ai bordi",
+        "campo numerico per p (valori fuori intervallo rifiutati con spiegazione)",
+        "toggle «forma compatta»",
+        "selettore x = 0 / x = 1 per valutare la PMF"
+      ],
+      "visual": "Grafico a barre SVG con due barre complementari; formula KaTeX della PMF con evidenziazione del caso attivo; indicatore della somma.",
+      "aha": "Un solo numero p descrive tutta la Bernoulli: il fallimento è 1 − p e p deve stare tra 0 e 1.",
+      "formulasShown": [
+        "P(x=1)=p,\\qquad P(x=0)=1-p,\\qquad 0\\le p\\le 1",
+        "P(x;p)=\\begin{cases}p & \\text{if } x=1\\\\ 1-p & \\text{if } x=0\\end{cases}",
+        "p=0.3:\\quad P(x=1)=0.3,\\quad P(x=0)=1-0.3=0.7,\\quad 0.3+0.7=1",
+        "P(x\\,|\\,\\theta)=\\theta^{x}(1-\\theta)^{1-x}:\\quad 0.3^{1}\\cdot0.7^{0}=0.3,\\qquad 0.3^{0}\\cdot0.7^{1}=0.7"
+      ],
+      "challenge": "Con p = 0.3, quanto vale P(x = 0)? E con la forma compatta, quanto vale θ^x(1 − θ)^(1−x) per x = 1 e θ = 0.3?",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p01-quando-bayes-diventa-ml",
+      "title": "ML, MAP e Bayes: quando si toccano",
+      "concepts": ["c50", "c51"],
+      "scenario": "medicina",
+      "realExample": "Holter ECG di un paziente (dati sintetici, gli stessi di ex04): letture 88, 92, 85 bpm con rumore noto σ = 8 e prior di popolazione N(70, 10²) sulla frequenza cardiaca media a riposo θ. Il cardiologo vuole sapere quanto la stima dipende dal prior: con 3 letture la MAP (85.11) è tirata verso la popolazione rispetto alla ML (88.33); con un prior piatto o con molte letture le due stime si sovrappongono. Serve a rispondere all'orale a «In which case ML and Bayesian are the same?».",
+      "storyboard": [
+        "[Caricamento, 600 ms] Asse θ da 40 a 130 bpm. Si disegnano in sequenza (200 ms l'una) il prior N(70, 100) in viola, la verosimiglianza delle 3 letture in blu (riscalata per stare nel grafico) e la posterior N(85.11, 17.58) in arancione. Tre marcatori verticali con etichetta: media del prior 70 (viola), θ_MAP = 85.11 (arancione), θ* ML = 88.33 (verde). Sotto: θ_MAP = argmax p(D|θ)p(θ) con i numeri sostituiti.",
+        "[Toggle «log-posterior», 500 ms] Il grafico passa ai logaritmi: la parabola verde Σ ln p(x_j|θ) più la parabola viola ln p(θ) si sommano (animazione di somma verticale) nella parabola arancione della log-posterior; il vertice arancione è spostato rispetto a quello verde dal solo termine ln p(θ).",
+        "[Slider σ0², scala logaritmica 1-10⁶] Il prior si allarga e si appiattisce; il marcatore MAP scorre verso ML: σ0² = 1 → 70.82, 25 → 79.89, 100 → 85.11, 400 → 87.41, 10⁴ → 88.29. Al fondo scala (pulsante «prior piatto») i marcatori MAP e ML si fondono in uno solo con il badge «p(θ) costante: MAP = ML». Nel pannello inferiore delle predittive restano però due curve: Bayes N(88.33, 85.33) più larga, ML N(88.33, 64): didascalia «stesso punto, incertezza diversa».",
+        "[Slider n, scala logaritmica 3-1000, media campionaria fissa 88.33, prior di popolazione] La posterior si stringe in un picco (σ_n² = 6.02 con n = 10, 0.64 con n = 100, 0.064 con n = 1000) e il marcatore MAP raggiunge ML (87.23, 88.22, 88.32). La predittiva bayesiana diventa indistinguibile da quella ML (varianza 64.06 contro 64). Badge «n → ∞: la posterior diventa una delta sulla stima ML».",
+        "[Riepilogo, 400 ms] Una tabella a tre righe si compila da sola: pochi dati e prior informativo (stime diverse), prior piatto (stesso punto, predittive diverse), molti dati (tutto coincide)."
+      ],
+      "interactions": [
+        "slider σ0² (1-10⁶, scala logaritmica) e pulsante «prior piatto»",
+        "slider n (3-1000, scala logaritmica) con media campionaria fissa oppure letture generate da θ vero nascosto",
+        "slider μ0 del prior (50-100 bpm)",
+        "toggle «log-posterior»",
+        "toggle «mostra predittive»"
+      ],
+      "visual": "Grafico SVG principale con asse θ: prior viola, verosimiglianza blu, posterior arancione, marcatori verticali (viola prior, arancione MAP, verde ML) con i valori numerici live; pannello inferiore con le due densità predittive sull'asse x (bpm) e la loro varianza; formula di μ_MAP = μ_n con i pesi nσ0²/(nσ0² + σ²) e σ²/(nσ0² + σ²) aggiornati live.",
+      "aha": "MAP è ML più il logaritmo del prior: se il prior è piatto coincidono nel punto, ma solo con molti dati la posterior collassa e anche la predizione bayesiana diventa quella di ML.",
+      "formulasShown": [
+        "\\theta_{MAP}=\\operatorname{argmax}_{\\theta}\\Big[\\sum_{j=1}^{n}\\ln p(x_j\\,|\\,\\theta)+\\ln p(\\theta)\\Big]",
+        "\\mu_{MAP}=\\mu_n=\\frac{n\\sigma_0^{2}}{n\\sigma_0^{2}+\\sigma^{2}}\\,\\hat{\\mu}_n+\\frac{\\sigma^{2}}{n\\sigma_0^{2}+\\sigma^{2}}\\,\\mu_0",
+        "n\\to\\infty:\\ p(\\theta\\,|\\,D)\\to\\delta(\\theta-\\theta^{*})"
+      ],
+      "challenge": "Con il prior di popolazione N(70, 100), da quante letture (media 88.33) la MAP dista meno di 0.5 bpm dalla ML? Prevedi, poi verifica con lo slider (risposta: n = 23).",
+      "size": "M",
+      "tech": "svg+motion",
+      "addedBy": "revisore"
+    },
+    {
+      "id": "p01-orale-stima-parametri",
+      "title": "Simulazione d'orale: stima dei parametri",
+      "concepts": ["c02", "c05", "c06", "c09", "c19", "c22", "c28", "c31", "c32", "c51"],
+      "scenario": "pesce",
+      "realExample": "Mazzo di domande reali dell'orale (banca domande degli studenti) su ML, stima bayesiana e prior coniugati, con risposte guidate che richiamano l'esempio dei salmoni e del sensore. Serve a ripetere a voce la catena argomentativa del modulo.",
+      "storyboard": [
+        "[Caricamento, 400 ms] La carta si gira (rotazione 3D di 400 ms) e mostra la domanda verbatim in inglese, il professore che l'ha posta e la traduzione italiana sotto in grigio. Il mazzo ha 6 carte prese dalla banca domande: (1) «What is the formula of Maximum Likelihood, why we can use the separate products of the probabilities and what the Likelihood describe.»; (2) «Explain ML estimation, develop the first derivative for a gaussian and explain the meaning of the result.»; (3) «Example of estimation of Gaussian parameters: why do we obtain a Gaussian also as posterior?»; (4) «Last question was: In which case ML and Bayesian are the same?»; (5) «How we can describe the goodness of an estimation and Is Maximum Likelihood Estimation a good estimator? Is it better or not with respect to the Bayesian Estimation? Why?»; (6) «How to use parameter estimation in Bayesian Networks».",
+        "[Clic «Rispondi»] Sotto la carta compaiono 8 tessere mescolate, di cui 3-5 corrette e le altre distrattori. Sequenze corrette: carta 1 = θ* = argmax ∏ p(x_j|θ) → esempi i.i.d., indipendenti dato θ → la likelihood misura quanto θ spiega i dati; carta 2 = log-verosimiglianza → derivata Σ(x_j − μ)/σ² = 0 → μ* = media campionaria → derivata seconda −n/σ² < 0; carta 3 = verosimiglianza gaussiana → prior gaussiano → prodotto di esponenziali di quadratiche → completamento del quadrato → N(μ_n, σ_n²); carta 4 = prior piatto: MAP = ML → n → ∞: posterior a delta sulla stima ML → predittive diverse con n finito; carta 5 = ML è una stima puntuale → Bayes usa prior e incertezza → con pochi dati Bayes aiuta, con molti dati coincidono; carta 6 = ogni tabella di probabilità condizionata si stima separatamente → ML con conteggi (dati completi) → MAP con prior coniugati → EM con dati incompleti. Distrattori tipici: «p(D) sposta il massimo», «il prodotto vale per qualsiasi campione», «la posterior è gaussiana per ogni prior».",
+        "[Verifica, 500 ms] Le tessere corrette nell'ordine giusto diventano verdi una alla volta (stagger 80 ms), quelle nell'ordine sbagliato gialle, i distrattori scelti rossi con una riga di spiegazione; le tessere mancanti compaiono tratteggiate con il rimando al widget del modulo che le spiega (per esempio carta 3 → «Perché la posterior è ancora gaussiana: completa il quadrato»).",
+        "[Fine mazzo, 600 ms] Una barra riassume la percentuale di tessere corrette al primo tentativo per ogni carta; le carte sotto l'80% tornano in fondo al mazzo."
+      ],
+      "interactions": [
+        "pulsanti Rispondi / Prossima / Mescola",
+        "trascinamento delle tessere di risposta nella fila ordinata (massimo 5 slot)",
+        "timer facoltativo di 2 minuti per risposta (on/off)",
+        "toggle «mostra traduzione italiana»"
+      ],
+      "visual": "Carte HTML con testo della domanda verbatim, tessere di concetti colorate per argomento, barra di avanzamento del mazzo.",
+      "aha": "Le domande d'orale richiedono catene di ragionamento, non singole formule: il modulo fornisce gli anelli.",
+      "formulasShown": [
+        "\\boldsymbol{\\theta}^{*}=\\operatorname{argmax}_{\\boldsymbol{\\theta}}\\prod_{j=1}^{n}p(\\mathbf{x}_j\\,|\\,\\boldsymbol{\\theta})",
+        "p(\\mu\\,|\\,D)=N(\\mu_n,\\sigma_n^{2})",
+        "\\frac{\\partial}{\\partial\\mu}\\ln p(D\\,|\\,\\mu)=\\sum_{j=1}^{n}\\frac{x_j-\\mu}{\\sigma^2}=0\\ \\Rightarrow\\ \\mu^{*}=\\frac{12.1+13.4+11.2+13.3}{4}=12.5"
+      ],
+      "challenge": "Completa il mazzo con almeno l'80% di tessere corrette al primo tentativo.",
+      "size": "M",
+      "tech": "html+motion"
+    }
+  ],
+  "exercises": [
+    {
+      "id": "es01",
+      "title": "Stima ML della media e della varianza gaussiane",
+      "type": "numerico",
+      "description": "Dati n campioni scalari x_1, …, x_n da una gaussiana, scrivere la log-verosimiglianza, imporre il gradiente nullo rispetto a μ e σ² e calcolare le stime. Parametri randomizzabili: n tra 4 e 12, campioni estratti da N(μ vera, σ² vera) con μ vera tra 5 e 15 e σ vera tra 0.5 e 3, arrotondati a un decimale. Soluzione: μ* = (1/n)Σx_j, σ²* = (1/n)Σ(x_j − μ*)²; verifica del secondo ordine: ∂²/∂μ² = −n/σ² < 0. Esempio: 12.1, 13.4, 11.2, 13.3 danno μ* = 12.5, σ²* = 3.3/4 = 0.825.",
+      "concepts": ["c05", "c07", "c09", "c11"]
+    },
+    {
+      "id": "es02",
+      "title": "Posterior della media gaussiana e predittiva",
+      "type": "numerico",
+      "description": "Dati σ² nota, prior N(μ0, σ0²) e n letture, calcolare 1/σ_n², μ_n, σ_n² e la predittiva N(μ_n, σ² + σ_n²). Parametri randomizzabili: σ tra 0.3 e 2, μ0 e σ0 plausibili per lo scenario, n tra 1 e 20, letture da N(μ vera, σ²). Soluzione: 1/σ_n² = n/σ² + 1/σ0²; μ_n = σ_n²(Σx_j/σ² + μ0/σ0²). Esempio di riferimento: σ = 0.5, prior N(4, 1), letture 4.8, 4.3, 5.1, 4.6, 4.9 danno 1/σ_n² = 21, μ_n = 4.705, σ_n² = 0.0476, predittiva con varianza 0.298. Verifica: μ_n sta tra μ0 e la media campionaria.",
+      "concepts": ["c30", "c31", "c32", "c15"]
+    },
+    {
+      "id": "es03",
+      "title": "Aggiornamento sequenziale contro aggiornamento in blocco",
+      "type": "numerico",
+      "description": "Con gli stessi dati dell'esercizio es02 calcolare la posterior aggiornando un dato alla volta (la posterior diventa il prior) e confrontarla con il calcolo in blocco. Parametri randomizzabili: ordine delle letture, n tra 2 e 6. Soluzione: a ogni passo 1/σ_k² = 1/σ_{k−1}² + 1/σ², μ_k = σ_k²(μ_{k−1}/σ_{k−1}² + x_k/σ²); il risultato finale non dipende dall'ordine e coincide con il blocco (esempio: 4.64 → 4.489 → 4.677 → 4.659 → 4.705).",
+      "concepts": ["c33", "c34", "c35"]
+    },
+    {
+      "id": "es04",
+      "title": "La posterior dipende solo dalla statistica sufficiente",
+      "type": "dimostrazione",
+      "description": "Dimostrare che se s = φ(D) soddisfa P(D|s, θ) = P(D|s) allora p(θ|D) = p(θ|s), giustificando ogni passaggio (definizione di condizionata, regola della catena, sostituzione della sufficienza, semplificazione, s funzione di D). Traccia: der04.",
+      "concepts": ["c22", "c23", "c24"]
+    },
+    {
+      "id": "es05",
+      "title": "Coniugatezza gaussiana-gaussiana",
+      "type": "dimostrazione",
+      "description": "Dimostrare che con verosimiglianza N(μ, σ²), σ² nota, e prior N(μ0, σ0²) la posterior di μ dopo n campioni i.i.d. è gaussiana, ricavandone media e varianza con il completamento del quadrato; spiegare perché la costante p(D) non serve. Traccia: der05.",
+      "concepts": ["c28", "c29", "c30", "c31", "c32", "c34"]
+    },
+    {
+      "id": "es06",
+      "title": "Statistica sufficiente o no?",
+      "type": "concettuale",
+      "description": "Per ciascuna coppia modello-statistica dire se la statistica è sufficiente e perché: gaussiana con σ nota e media campionaria (sì); gaussiana con σ ignota e sola media (no, serve anche Σx²); uniforme su [0, θ] e massimo del campione (sì); gaussiana e mediana (no); Bernoulli e numero di successi (sì). Per un caso negativo costruire due dataset con la stessa statistica e verosimiglianze diverse (esempio: {3, 5, 7} e {1, 5, 5.5} hanno la stessa mediana ma stime ML 5 e 3.83).",
+      "concepts": ["c21", "c22", "c25", "c26", "c27"]
+    },
+    {
+      "id": "es07",
+      "title": "Posterior discreta ed evidenza",
+      "type": "numerico",
+      "description": "Il parametro θ può valere solo θ1, θ2, θ3 con prior assegnato; data la verosimiglianza di un dataset per ciascun valore, calcolare p(D) = Σ_k p(D|θ_k)p(θ_k), la posterior e il valore più probabile. Parametri randomizzabili: tre valori di θ (es. temperature medie 3.5, 4, 4.5 °C), prior che somma a 1, 2-4 letture con σ nota. Soluzione: posterior_k = p(D|θ_k)p(θ_k)/p(D); il valore più probabile non cambia se si omette la divisione per p(D), le probabilità esatte sì.",
+      "concepts": ["c17", "c18", "c19", "c20"]
+    },
+    {
+      "id": "es08",
+      "title": "Classificare un punto stazionario con l'Hessiana",
+      "type": "concettuale",
+      "description": "Dato un punto in cui il gradiente della log-verosimiglianza è nullo e la sua Hessiana 2×2, dire se è un massimo, un minimo o una sella. Parametri randomizzabili: elementi dell'Hessiana simmetrica con autovalori di segni scelti a caso. Soluzione: autovalori entrambi negativi → massimo locale; entrambi positivi → minimo; segni misti → sella. Esempio: autovalori −9375 e +50766 nel punto (0.248, 0.248) della mistura acqua/vegetazione → sella.",
+      "concepts": ["c09", "c10", "c11"]
+    },
+    {
+      "id": "es09",
+      "title": "Tabella dei coniugati a memoria",
+      "type": "concettuale",
+      "description": "Completare la tabella Likelihood / Parameters / Conjugate prior per binomiale, multinomiale, normale e normale multivariata, e spiegare perché per la probabilità p non si può usare un prior gaussiano (supporto in [0, 1]).",
+      "concepts": ["c38", "c39", "c40", "c41", "c42", "c48"]
+    },
+    {
+      "id": "es10",
+      "title": "Perché il prodotto e perché il logaritmo",
+      "type": "concettuale",
+      "description": "Spiegare a voce: (1) perché p(D|θ) si scrive come prodotto (esempi i.i.d., indipendenza data la distribuzione) e cosa succede se i campioni sono ripetizioni dello stesso oggetto; (2) perché si massimizza il logaritmo (prodotto in somma, monotonia, underflow numerico); (3) perché ∇ = 0 è solo necessario.",
+      "concepts": ["c03", "c06", "c07", "c08", "c09", "c10"]
+    },
+    {
+      "id": "es11",
+      "title": "ML contro MAP: quanto pesa il prior",
+      "type": "numerico",
+      "description": "Dati σ nota, prior N(μ0, σ0²) sulla media e n letture, calcolare la stima ML μ* = (1/n)Σx_j, la stima MAP μ_MAP = μ_n, la distanza |μ_MAP − μ*| e il più piccolo n (a media campionaria fissa) per cui la distanza scende sotto una soglia ε. Parametri randomizzabili: μ0 tra 60 e 80, σ0 tra 2 e 30, σ tra 5 e 10, n tra 1 e 10, letture da N(μ vera, σ²) con μ vera tra 75 e 95, ε tra 0.2 e 1. Soluzione: μ_n = (Σx_j/σ² + μ0/σ0²)/(n/σ² + 1/σ0²); |μ_n − μ*| = σ²/(nσ0² + σ²)·|μ* − μ0|; n minimo = primo intero maggiore di (σ²/σ0²)(|μ* − μ0|/ε − 1). Esempio (ex07): σ = 8, prior N(70, 100), letture 88, 92, 85: μ* = 88.33, μ_MAP = 85.11; con ε = 0.5 serve n = 23. Domanda finale: con prior piatto le due stime coincidono, le due predittive no (varianze σ² + σ²/n e σ²).",
+      "concepts": ["c50", "c51"],
+      "addedBy": "revisore"
+    },
+    {
+      "id": "es12",
+      "title": "Aggiornamento sequenziale uguale al blocco: dimostrazione",
+      "type": "dimostrazione",
+      "description": "Dimostrare che, con dati i.i.d., la posterior ottenuta aggiornando un dato alla volta (la posterior del passo k − 1 usata come prior del passo k) coincide con quella calcolata su tutto il dataset, e che se il prior appartiene a una famiglia coniugata tutte le posterior intermedie restano nella famiglia. Poi ricavare la ricorrenza gaussiana 1/σ_k² = 1/σ_{k−1}² + 1/σ², μ_k = σ_k²(μ_{k−1}/σ_{k−1}² + x_k/σ²) e srotolarla fino alle formule in blocco. Traccia: der08.",
+      "concepts": ["c33", "c34", "c35", "c37"],
+      "addedBy": "revisore"
+    }
+  ],
+  "examQuestions": [
+    {
+      "text": "What is the formula of Maximum Likelihood, why we can use the separate products of the probabilities and what the Likelihood describe.",
+      "prof": "Melgani",
+      "concepts": ["c03", "c05", "c06"]
+    },
+    {
+      "text": "How we can describe the goodness of an estimation and Is Maximum Likelihood Estimation a good estimator? Is it better or not with respect to the Bayesian Estimation? Why?",
+      "prof": "Melgani",
+      "concepts": ["c02", "c15", "c51"]
+    },
+    {
+      "text": "Then he asked me to apply Maximum Likelihood estimation on an exercise.",
+      "prof": "Melgani",
+      "concepts": ["c05", "c07", "c09"]
+    },
+    {
+      "text": "Last question was: In which case ML and Bayesian are the same?",
+      "prof": "Melgani",
+      "concepts": ["c02", "c15", "c32", "c50", "c51"]
+    },
+    {
+      "text": "Explain ML estimation, develop the first derivative for a gaussian and explain the meaning of the result.",
+      "prof": "Melgani",
+      "concepts": ["c07", "c09", "c11"]
+    },
+    {
+      "text": "Perceptron (All) + Parameter estimation",
+      "prof": "Passerini",
+      "concepts": ["c02", "c05", "c12", "c17"]
+    },
+    {
+      "text": "Example of estimation of Gaussian parameters: why do we obtain a Gaussian also as posterior?",
+      "prof": "Passerini",
+      "concepts": ["c28", "c30", "c31", "c32"]
+    },
+    {
+      "text": "How to use parameter estimation in Bayesian Networks",
+      "prof": "Passerini",
+      "concepts": ["c01", "c02", "c05", "c17"]
+    },
+    {
+      "text": "Why ML is fast in Bayesian Network (CDP independence)",
+      "prof": "Passerini",
+      "concepts": ["c06", "c07"]
+    },
+    {
+      "text": "Learning Parameters  (ML with complete data, MAP), SVM (Hard Margin, Lagrangian, Soft Margin), NonLinear,  Kernel Machine, Perceptron)",
+      "prof": "Passerini",
+      "concepts": ["c05", "c17", "c19", "c50"]
+    },
+    {
+      "text": "Bayesian networks: formalization (DAG, local independencies, various case of d-separation criterion, general d-separation criterion and global independencies) and learning of the parameters (ML with complete data, MAP with prior knowledge, EM with incomplete data)",
+      "prof": "Passerini",
+      "concepts": ["c01", "c05", "c12", "c28", "c50"]
+    },
+    {
+      "text": "Hard or soft margin svm (choose one) + Learning bayesian network.",
+      "prof": "Passerini",
+      "concepts": ["c05", "c17", "c50"],
+      "addedBy": "revisore"
+    }
+  ],
+  "crossLinks": [
+    {"moduleId": "p02-bernoulli-multinomiale", "why": "Applica le due impostazioni di questo modulo alla Bernoulli (prior Beta, conteggi di teste e croci come statistiche sufficienti) e alla multinomiale (prior Dirichlet): sono le prime due righe della tabella dei coniugati. La pagina 5 è condivisa."},
+    {"moduleId": "p05-apprendimento-reti", "why": "Learning in Graphical Models (p. 24-27) riusa ML con dati completi, MAP con prior coniugati e dati incompleti: la fattorizzazione della verosimiglianza spiega perché ML è veloce nelle reti bayesiane."},
+    {"moduleId": "p03-reti-bayesiane", "why": "Le tabelle di probabilità condizionata delle reti bayesiane sono i parametri che si stimano con gli strumenti di questo modulo."},
+    {"moduleId": "m05-max-likelihood", "why": "Stessa stima ML nella versione di Melgani: prodotto per campioni indipendenti, logaritmo, gradiente nullo, esempio gaussiano e domande d'orale sul perché del prodotto."},
+    {"moduleId": "m07-stima-bayesiana", "why": "Versione di Melgani della stima bayesiana: da lì vengono le formule esplicite di μ_n, σ_n² e della predittiva usate qui come completamento dell'esempio gaussiano, e il confronto su quando ML e Bayes coincidono."},
+    {"moduleId": "m04-bonta-stimatori", "why": "La domanda d'orale su bontà dello stimatore e confronto ML contro Bayes richiede consistenza, non distorsione ed efficienza."},
+    {"moduleId": "m06-modelli-pdf-gaussiana", "why": "Il modello gaussiano univariato e multivariato e le stime ML di media e covarianza, che qui sono le statistiche sufficienti dell'esempio di pagina 4."},
+    {"moduleId": "m10-em-dati-incompleti", "why": "La verosimiglianza di una mistura ha più punti stazionari (esempio del widget sul gradiente nullo): è il contesto in cui serve EM."},
+    {"moduleId": "p12-clustering", "why": "Gaussian Mixture Model (p. 76): stima ML di pesi, medie e covarianze con massimi multipli e simmetrici della verosimiglianza."},
+    {"moduleId": "p07-regressione-multiclasse", "why": "I classificatori lineari generativi (p. 44) stimano le densità condizionate alla classe con queste stesse impostazioni."},
+    {"moduleId": "m17-bayes-map-ml", "why": "Le densità condizionate alla classe stimate qui entrano nei criteri di decisione MAP e ML; anche lì una costante di normalizzazione, p(x), non cambia la decisione, come p(D) per i parametri."}
+  ],
+  "emptyPages": [],
+  "gaps": [
+    "part2 p. 1-2: la pagina 1 e la metà superiore della pagina 2 sono solo copertina e indice; sono inventariati come concetto di orientamento (c01), senza contenuto tecnico.",
+    "part2 p. 3: la condizione della semplificazione p(x|y_i, D_i) → p(x|D) («if the probability of x given a class y_i is independent of other classes y_j») è formulata in modo impreciso; la freccia indica un cambio di notazione (si lavora classe per classe), non un'uguaglianza.",
+    "part2 p. 3: la riscrittura ∫ p(x, θ|D) dθ = ∫ p(x|θ)p(θ|D) dθ salta i passaggi della regola del prodotto e di p(x|θ, D) = p(x|θ); ricostruiti in der02.",
+    "part2 p. 2-3: le note citano le condizioni del secondo ordine e l'Hessiana senza dare il criterio (definita negativa → massimo); aggiunto come completamento in c11 e der01.",
+    "part2 p. 4: nella dimostrazione della statistica sufficiente il passaggio p(θ|D) = p(θ|D, s) (perché s è funzione di D) è implicito; notazione mista P maiuscola / p minuscola e refuso «for a parameters».",
+    "part2 p. 4: l'esempio Gaussian Likelihood with Gaussian Prior afferma che la posterior resta gaussiana senza darne i parametri e senza dire esplicitamente che σ² è nota; parametri e dimostrazione aggiunti da Melgani Cap. 2 slide 37 (c32, der05).",
+    "part2 p. 4: l'affermazione che media e covarianza campionarie sono sufficienti per la gaussiana non è dimostrata; giustificazione aggiunta in der06 (fattorizzazione).",
+    "part2 p. 5: la tabella «Examples» è un'immagine delle slide; la riga Multivariate normal indica il parametro μ_i (con pedice di classe) e prior Normal senza precisare che la covarianza è nota.",
+    "part2 p. 5: la PMF della Bernoulli è solo annunciata in fondo alla pagina; la formula è in cima a pagina 6 (modulo p02), riportata in c49.",
+    "Le istanze numeriche (sensore della cella frigorifera, salmoni, Holter, pixel NIR, email) sono sintetiche e non compaiono nelle fonti.",
+    "part2 p. 2-5: la stima MAP e i casi in cui ML e stima bayesiana coincidono (prior piatto, n → ∞) non sono scritti in queste pagine; aggiunti dal revisore come completamenti (c50, c51, der09, ex07) perché servono alla domanda d'orale «In which case ML and Bayesian are the same?» e al MAP delle reti bayesiane (p. 27, modulo p05).",
+    "part2 p. 5: la «Consistency Across Updates» è affermata senza dimostrazione; l'aggiornamento ricorsivo (posterior come nuovo prior, equivalenza con il blocco, chiusura della famiglia coniugata) è ricostruito in der08.",
+    "ex06 (mistura acqua/vegetazione): i valori dei punti stazionari e degli autovalori dipendono dal campione sintetico dei 120 pixel, che il widget deve fissare con un seed; gli altri esempi numerici del modulo sono stati ricontrollati dal revisore (ex01, ex02, ex03, ex04, ex05 e i numeri dei widget).",
+    "Verificatore formule: tutte le formule di part2 p. 1-5 sono state confrontate simbolo per simbolo con i PNG delle pagine (grassetti di x, θ, s, 0; pedici θ_i, y_i, D_i; estremi j = 1…n; ln con parentesi; argmax con pedice θ; P maiuscola per la probabilità del dataset a p. 4; θ e x non in grassetto nella sezione Conjugate Priors; tabella «Examples» con p in corsivo, p e μ_i in grassetto). Nessuna discrepanza e nessuna formula della fonte assente dall'inventario; nessun refuso nelle formule (resta solo il refuso testuale «for a parameters»). Le formule di completamento di c32/der05 sono state confrontate con Melgani Cap. 2 slide 37 e 39 e con le note part1 p. 28 (N → n, X̄ → μ̂_n): coincidono; la PMF di c49 è stata confrontata con part2 p. 6.",
+    "Verificatore numeri: ricalcolati ex04 (p(D) = 1.073·10⁻⁵, massimo della posterior 85.11 con picco 0.0951, P(θ > 80|D) = 0.889, prior bimodale p(D) = 2.158·10⁻⁵ con massimo 91.4) ed ex07 (tutti i valori di MAP e σ_n²): corretti. Corretti nei widget: la scala della verosimiglianza delle letture Holter è 10⁻⁴ (massimo 1.02·10⁻⁴), non 10⁻⁶; nel rejection sampling del widget sulla statistica sufficiente si accettano circa 2300 dataset per lato con la media e 2200 con la mediana, non 2700; nel widget sul gradiente nullo lo slider della distanza tra le classi non fa sparire la sella tra 0.1 e 0.5: nel punto diagonale (x̄, x̄) gli autovalori sono −n/(2σ²) e n(S − σ²)/(2σ⁴), quindi la sella c'è finché la varianza dei dati S supera σ² (verificato: −9375 e +50766 coincidono con queste formule con S = 0.04106).",
+    "ex05 e widget sul logaritmo: i valori per n = 10, 100, 300, 1000 e la soglia di underflow n = 356 dipendono dal campione sintetico da N(12, 2²); il widget deve fissare il seed e ricalcolarli. Valore atteso di controllo: in θ = 12 ogni campione aggiunge in media −½ln(8π) − ½ = −2.112 al logaritmo e il più piccolo double positivo vale circa e^−744.4, quindi la soglia attesa è attorno a n ≈ 350."
+  ]
+}

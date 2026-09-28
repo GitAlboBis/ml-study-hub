@@ -1,0 +1,1 @@
+teoria m04-bonta-stimatori: index.mdx (1330 righe, 65 titoli; 56/56 formule, 22/22 derivazioni, 5/5 figure, 25/25 widget, 9/9 esempi, 20 Check, 11 ModLink), checks.ts (20 quiz chk-01..chk-20), theory-map.json (70/70 concetti); MDX compila con remark-gfm+remark-math+rehype-katex, tsc senza errori nei file del foglio - 2026-09-24

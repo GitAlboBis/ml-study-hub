@@ -1,0 +1,3155 @@
+{
+  "moduleId": "p10-kernel-trick",
+  "title": "Kernel trick e kernel validi",
+  "stages": {
+    "inventario": "done",
+    "completezza": "done",
+    "formule": "done"
+  },
+  "pagesReviewed": [
+    {
+      "doc": "part2",
+      "from": 62,
+      "to": 68
+    }
+  ],
+  "overview": "Il modulo apre il capitolo Kernel Machines di Passerini: chiude la parte su Pegasos (SVM su larga scala) notando che resta il problema dei modelli non lineari, introduce la feature map φ: X → H che porta gli esempi in uno spazio a più dimensioni dove diventano (approssimativamente) linearmente separabili, e mostra che un iperpiano in H corrisponde a un confine non lineare (per esempio un'ellisse) nello spazio di input. Poi arriva il kernel trick: nel duale dell'SVM φ compare solo nei prodotti scalari, che si sostituiscono con una funzione kernel k(x, x') = φ(x)^T φ(x') calcolata direttamente nello spazio di input; i kernel polinomiali omogeneo e non omogeneo vengono verificati espandendo il quadrato. Infine definisce i kernel validi (Gram matrix, matrici definite positive, autovalori, K = B^T B, tre metodi di verifica) e mostra due kernel machines: la SVR in forma duale e il kernel perceptron. All'orale è centrale: le domande raccolte chiedono esplicitamente la derivazione del duale 'showing that features appear only in dot products', l'equivalenza tra mappa polinomiale omogenea e kernel omogeneo, e 'how can you demonstrate that a kernel is valid?'. Il revisore ha aggiunto il ruolo di C con il kernel (C = 0 e C → +∞, domanda d'esame ricorrente), il primale della SVR con la perdita ε-insensibile e la derivazione completa del suo duale (le note danno solo il duale), e la feature map del kernel polinomiale per ogni grado tramite il teorema multinomiale (origine dei fattori √2).",
+  "concepts": [
+    {
+      "id": "c01",
+      "name": "Pegasos: pseudocodice",
+      "nameEn": "Pseudocode (pegasos)",
+      "kind": "algoritmo",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 62
+        },
+        {
+          "doc": "part2",
+          "page": 61
+        }
+      ],
+      "detail": "Pegasos (Primal Estimated sub-GrAdient SOlver for SVMs, introdotto a pag. 61) addestra l'SVM lineare nel primale con discesa stocastica del sottogradiente. Pseudocodice del riquadro di pag. 62: (1) inizializza w_1 = 0; (2) per t = 1, ..., T: (a) scegli a caso un esempio (x_{i_t}, y_{i_t}) dal dataset D (randomly choose), (b) poni il learning rate η_t = 1/(λ t), (c) aggiorna w con il passo w_{t+1} = w_t − η_t ∇_w E(w; (x_{i_t}, y_{i_t})); (3) restituisci w_{T+1}. L'obiettivo per singolo esempio (pag. 61) è E(w; (x_i, y_i)) = (λ/2)‖w‖² + |1 − y_i⟨w, x_i⟩|_+, senza bias w_0 (tipico delle formulazioni su larga scala) e con la regolarizzazione governata da λ al posto di C.",
+      "latex": [
+        "\\mathbf{w}_1 = 0",
+        "\\text{for } t = 1 \\text{ to } T: \\quad (\\mathbf{x}_{i_t}, y_{i_t}) \\text{ scelto a caso da } \\mathcal{D}, \\quad \\eta_t = \\frac{1}{\\lambda t}",
+        "\\mathbf{w}_{t+1} = \\mathbf{w}_t - \\eta_t \\nabla_{\\mathbf{w}} E(\\mathbf{w}; (\\mathbf{x}_{i_t}, y_{i_t}))",
+        "\\text{return } \\mathbf{w}_{T+1}"
+      ],
+      "symbols": [
+        {
+          "s": "\\mathbf{w}_t",
+          "meaning": "vettore dei pesi all'iterazione t"
+        },
+        {
+          "s": "T",
+          "meaning": "numero totale di iterazioni (esempi estratti)"
+        },
+        {
+          "s": "\\mathcal{D}",
+          "meaning": "training set"
+        },
+        {
+          "s": "(\\mathbf{x}_{i_t}, y_{i_t})",
+          "meaning": "esempio estratto a caso all'iterazione t"
+        },
+        {
+          "s": "\\lambda",
+          "meaning": "parametro di regolarizzazione (> 0)"
+        }
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c02",
+      "name": "Learning rate decrescente di Pegasos",
+      "nameEn": "Learning rate η_t = 1/(λt)",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 62
+        }
+      ],
+      "detail": "Il passo di Pegasos non è costante: η_t = 1/(λ t) decresce come 1/t e dipende dal parametro di regolarizzazione λ. La nota della fonte dice che questo learning rate garantisce un tempo di esecuzione limitato (ensures bounded runtime): passi grandi all'inizio per muoversi in fretta, sempre più piccoli per stabilizzarsi vicino all'ottimo. Con λ grande i passi sono piccoli fin da subito (modello più regolarizzato); con λ piccolo i primi passi sono enormi.",
+      "latex": [
+        "\\eta_t = \\frac{1}{\\lambda t}"
+      ],
+      "symbols": [
+        {
+          "s": "\\eta_t",
+          "meaning": "learning rate all'iterazione t"
+        },
+        {
+          "s": "t",
+          "meaning": "indice dell'iterazione"
+        }
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c03",
+      "name": "Passo di aggiornamento con il sottogradiente dell'hinge loss",
+      "nameEn": "Update w with the subgradient",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 62
+        },
+        {
+          "doc": "part2",
+          "page": 61
+        }
+      ],
+      "detail": "L'aggiornamento del pseudocodice usa il sottogradiente (subgradient) dell'obiettivo per singolo esempio, necessario perché l'hinge loss non è differenziabile nel punto 1 − y_i⟨w, x_i⟩ = 0. Dalla pag. 61: ∇_w E = λw − 1[y_i⟨w, x_i⟩ < 1] y_i x_i, dove la funzione indicatrice vale 1 se il vincolo di margine è violato e 0 altrimenti. Quindi a ogni passo w viene sempre 'rimpicciolito' dal termine di regolarizzazione e, solo se l'esempio estratto viola il margine, spinto nella direzione y_i x_i.",
+      "latex": [
+        "\\mathbf{w}_{t+1} = \\mathbf{w}_t - \\eta_t \\nabla_{\\mathbf{w}} E(\\mathbf{w}_t; (\\mathbf{x}_{i_t}, y_{i_t}))",
+        "E(\\mathbf{w}; (\\mathbf{x}_i, y_i)) = \\frac{\\lambda}{2}\\|\\mathbf{w}\\|^2 + |1 - y_i \\langle \\mathbf{w}, \\mathbf{x}_i \\rangle|_+",
+        "\\nabla_{\\mathbf{w}} E(\\mathbf{w}; (\\mathbf{x}_i, y_i)) = \\lambda \\mathbf{w} - \\mathbf{1}[y_i \\langle \\mathbf{w}, \\mathbf{x}_i \\rangle < 1] \\, y_i \\mathbf{x}_i"
+      ],
+      "symbols": [
+        {
+          "s": "\\nabla_{\\mathbf{w}} E",
+          "meaning": "sottogradiente dell'obiettivo rispetto a w"
+        },
+        {
+          "s": "\\mathbf{1}[\\cdot]",
+          "meaning": "funzione indicatrice: 1 se il margine è violato, 0 altrimenti"
+        },
+        {
+          "s": "|z|_+",
+          "meaning": "parte positiva max(0, z): hinge loss"
+        }
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c04",
+      "name": "Tempo di esecuzione di Pegasos",
+      "nameEn": "Runtime O(d/(λε)) for an ε-accurate solution",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 62
+        }
+      ],
+      "detail": "Per ottenere una soluzione ε-accurata (ε-accurate solution), il tempo di esecuzione di Pegasos è O(d/(λε)), dove d è il numero massimo di feature non nulle in un esempio (maximum number of non-zero features). Si osservi che nella formula non compare il numero m di esempi di training: il costo dipende dalla sparsità dei dati, dalla regolarizzazione λ e dalla precisione ε richiesta (osservazione che segue direttamente dalla formula). La fonte non definisce formalmente cosa significhi ε-accurata (sottinteso: obiettivo entro ε dall'ottimo).",
+      "latex": [
+        "O\\left(\\frac{d}{\\lambda \\epsilon}\\right)"
+      ],
+      "symbols": [
+        {
+          "s": "d",
+          "meaning": "numero massimo di feature non nulle in un esempio (qui NON è il grado del polinomio)"
+        },
+        {
+          "s": "\\epsilon",
+          "meaning": "accuratezza richiesta sulla soluzione"
+        },
+        {
+          "s": "\\lambda",
+          "meaning": "parametro di regolarizzazione"
+        }
+      ],
+      "examRelevance": 1
+    },
+    {
+      "id": "c05",
+      "name": "Pegasos scala bene su dataset grandi",
+      "nameEn": "Pegasos scales well for large datasets",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 62
+        }
+      ],
+      "detail": "Seconda nota della fonte: Pegasos scala bene su grandi dataset (scales well for large datasets). Motivo: ogni iterazione tocca un solo esempio (costo proporzionale alle sue feature non nulle) e il numero di iterazioni necessarie non dipende da m. È la soluzione del paragrafo Large Scale SVM (pag. 60-61) per quando i metodi tradizionali (risoluzione del problema quadratico globale) diventano troppo costosi.",
+      "latex": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c06",
+      "name": "Il problema che resta: i modelli non lineari",
+      "nameEn": "Applicability to non-linear models remains problematic",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 62
+        }
+      ],
+      "detail": "Frase di transizione della fonte: 'rimane un problema in questa discussione: la sua applicabilità a modelli non lineari resta problematica'. Tutto ciò che è stato visto sulle SVM (hard margin, soft margin, Pegasos) produce un iperpiano w^T x + w_0 nello spazio di input. Questo è il motivo che introduce il capitolo Kernel Machines.",
+      "latex": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c07",
+      "name": "L'SVM hard margin gestisce solo problemi linearmente separabili",
+      "nameEn": "Hard-margin SVM: linearly separable problems",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 62
+        }
+      ],
+      "detail": "Un'SVM a margine rigido (hard-margin SVM) può trattare solo problemi linearmente separabili (linearly separable problems), cioè quelli in cui non c'è alcuna sovrapposizione (no overlap) tra le classi nello spazio di input. Se anche un solo esempio sta dalla parte sbagliata di ogni iperpiano possibile, i vincoli y_i(w^T x_i + w_0) ≥ 1 non ammettono soluzione. La disuguaglianza riportata in latex è il vincolo del primale hard margin (richiamo dal primale hard margin di p08): a pag. 62 la fonte lo descrive solo a parole.",
+      "latex": [
+        "y_i(\\mathbf{w}^T\\mathbf{x}_i + w_0) \\ge 1 \\quad \\forall i"
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c08",
+      "name": "L'SVM soft margin gestisce problemi separabili con outlier",
+      "nameEn": "Soft-margin SVM: linearly separable problems with outliers",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 62
+        }
+      ],
+      "detail": "Un'SVM a margine morbido (soft-margin SVM) gestisce problemi linearmente separabili con outlier (linearly separable problems with outliers), permettendo alcuni errori di classificazione per mantenere la robustezza (allowing some misclassifications to maintain robustness). Resta però un separatore lineare: tollera pochi esempi 'fuori posto', non una struttura intrinsecamente non lineare delle classi. La disuguaglianza riportata in latex è il vincolo con slack del primale soft margin (richiamo da p09, pag. 56-57): a pag. 62 la fonte lo descrive solo a parole.",
+      "latex": [
+        "y_i(\\mathbf{w}^T\\mathbf{x}_i + w_0) \\ge 1 - \\xi_i, \\quad \\xi_i \\ge 0"
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c09",
+      "name": "Problemi non linearmente separabili: serve più potere espressivo",
+      "nameEn": "Non-linearly separable problems: higher expressive power",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 62
+        }
+      ],
+      "detail": "Per i problemi non linearmente separabili (non-linearly separable problems) serve un livello più alto di potere espressivo (higher level of expressive power), cioè creare combinazioni di feature più complesse (more complex feature combinations) per separare i dati. Alcuni problemi sono intrinsecamente non separabili linearmente nello spazio delle feature originale, e lì le SVM semplici (plain SVMs) sono inefficaci. Esempio tipico: una classe al centro e l'altra tutto intorno (anello), dove nessuna retta funziona.",
+      "latex": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c10",
+      "name": "Vantaggi dei separatori lineari da non perdere",
+      "nameEn": "Advantages of linear separators: large margins, theoretical guarantees",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 62
+        }
+      ],
+      "detail": "Il punto (the point) è non rinunciare ai vantaggi dei separatori lineari: (1) margini ampi (large margins), che aiutano a migliorare la generalizzazione; (2) garanzie teoriche (theoretical guarantees) di prestazioni e robustezza. Invece di cambiare famiglia di modelli (per esempio passare a un classificatore non lineare qualsiasi), si cambia la rappresentazione dei dati e si tiene il classificatore lineare a massimo margine.",
+      "latex": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c11",
+      "name": "Soluzione: mappare in uno spazio a più dimensioni e classificare linearmente lì",
+      "nameEn": "Map input examples to a higher-dimensional feature space; perform linear classification there",
+      "kind": "procedura",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 62
+        }
+      ],
+      "detail": "La soluzione (Solution) ha due passi: (1) mappare gli esempi di input in uno spazio delle feature a più dimensioni (map input examples to a higher-dimensional feature space), dove i dati potrebbero diventare linearmente separabili; (2) eseguire la classificazione lineare (perform linear classification) in questo spazio trasformato. Così si ottiene un confine non lineare nello spazio originale con tutti gli strumenti delle SVM lineari (margine, duale, support vector).",
+      "latex": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c12",
+      "name": "Feature map φ",
+      "nameEn": "Feature map",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 62
+        }
+      ],
+      "detail": "La feature map è la funzione φ: X → H che associa a ogni esempio di input x ∈ X un punto φ(x) in uno spazio delle feature H a dimensione più alta (higher-dimensional feature space). X è lo spazio di input, H lo spazio delle feature (che nel caso dei kernel può avere dimensione enorme o persino infinita, come si vedrà per il kernel gaussiano in p11).",
+      "latex": [
+        "\\phi : X \\to H",
+        "\\mathbf{x} \\in X \\;\\mapsto\\; \\phi(\\mathbf{x}) \\in H"
+      ],
+      "symbols": [
+        {
+          "s": "X",
+          "meaning": "spazio di input degli esempi"
+        },
+        {
+          "s": "H",
+          "meaning": "spazio delle feature a più dimensioni"
+        },
+        {
+          "s": "\\phi",
+          "meaning": "feature map"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c13",
+      "name": "Scopo della feature map: separabilità e più potere espressivo",
+      "nameEn": "Feature map: (approximately) linearly separable representation, increased expressive power",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 63
+        }
+      ],
+      "detail": "Applicando φ(x) si cerca una rappresentazione in cui gli esempi siano (approssimativamente) linearmente separabili ((approximately) linearly separable): 'approssimativamente' perché nello spazio H si userà comunque l'SVM soft margin. La trasformazione aumenta il potere espressivo della rappresentazione, spesso introducendo nuove feature, per esempio combinazioni delle feature originali (combinations of original input features).",
+      "latex": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c14",
+      "name": "Principi della feature map",
+      "nameEn": "Principles of the Feature Map",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 63
+        }
+      ],
+      "detail": "Tre principi elencati dalla fonte: (1) gli esempi x dello spazio di input vengono sostituiti (replaced) dalla loro rappresentazione a più dimensioni φ(x); (2) la mappatura crea una nuova rappresentazione in cui la separazione lineare potrebbe essere fattibile (might be feasible: non è garantito); (3) idealmente gli esempi sono (approssimativamente) linearmente separabili nello spazio mappato H. Il primo principio è operativo: ovunque l'algoritmo usava x, ora usa φ(x).",
+      "latex": [
+        "\\mathbf{x} \\;\\longrightarrow\\; \\phi(\\mathbf{x})"
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c15",
+      "name": "Mappa polinomiale omogenea di grado 2",
+      "nameEn": "Homogeneous Polynomial Mapping (d = 2)",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 63
+        }
+      ],
+      "detail": "La mappa polinomiale omogenea associa alle feature tutti i possibili prodotti delle feature di input con grado fissato d (all possible products of the input features with a fixed degree d). Per d = 2 e due feature (x_1, x_2), il riquadro della fonte dà φ(x_1, x_2) = (x_1², x_1x_2, x_2²): da 2 a 3 dimensioni, tutti monomi di grado esattamente 2. Attenzione: questa è la mappa 'di esempio' della pag. 63, senza il fattore √2 che compare nella mappa implicita del kernel omogeneo di pag. 66 (vedi c38).",
+      "latex": [
+        "\\phi\\begin{pmatrix} x_1 \\\\ x_2 \\end{pmatrix} = \\begin{pmatrix} x_1^2 \\\\ x_1 x_2 \\\\ x_2^2 \\end{pmatrix}"
+      ],
+      "symbols": [
+        {
+          "s": "d",
+          "meaning": "grado del polinomio"
+        },
+        {
+          "s": "x_1, x_2",
+          "meaning": "le due feature di input"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c16",
+      "name": "Mappa polinomiale non omogenea di grado 2",
+      "nameEn": "Inhomogeneous Polynomial Mapping (d = 2)",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 63
+        }
+      ],
+      "detail": "La mappa polinomiale non omogenea associa alle feature tutti i possibili prodotti delle feature di input fino al grado d (up to degree d). Per d = 2 il riquadro della fonte dà φ(x_1, x_2) = (x_1, x_2, x_1², x_1x_2, x_2²): i monomi di grado 1 e di grado 2, cinque componenti. La mappa implicita del kernel non omogeneo di pag. 66 contiene in più la costante 1 e fattori √2 (sei componenti, vedi c37 e c38).",
+      "latex": [
+        "\\phi\\begin{pmatrix} x_1 \\\\ x_2 \\end{pmatrix} = \\begin{pmatrix} x_1 \\\\ x_2 \\\\ x_1^2 \\\\ x_1 x_2 \\\\ x_2^2 \\end{pmatrix}"
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c17",
+      "name": "La mappatura polinomiale introduce tutte le congiunzioni di feature",
+      "nameEn": "Polynomial mapping introduces all possible conjunctions (i.e. products) of features",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 63
+        }
+      ],
+      "detail": "La mappatura polinomiale (polynomial mapping) introduce tutte le possibili congiunzioni, cioè prodotti, di feature: di un certo grado d (mappa omogenea, Homogeneous Mapping) oppure fino a un certo grado d (mappa non omogenea, Inhomogeneous Mapping). 'Congiunzione' ha un senso letterale con feature binarie: se x_1, x_2 ∈ {0, 1}, il prodotto x_1x_2 vale 1 solo se entrambe sono accese, cioè è l'AND logico. Il numero di congiunzioni cresce combinatorialmente con il numero di feature n e con d (integrazione: C(n+d−1, d) monomi di grado esattamente d, C(n+d, d) fino a grado d contando la costante).",
+      "latex": [
+        "\\text{omogenea: } \\{x_{j_1} x_{j_2} \\cdots x_{j_d}\\}",
+        "\\text{non omogenea: } \\{x_{j_1} \\cdots x_{j_k} : 1 \\le k \\le d\\}"
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c18",
+      "name": "Le SVM non lineari mantengono le proprietà dei classificatori lineari",
+      "nameEn": "Non-linear SVMs preserve the key properties of linear classifiers",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 63
+        }
+      ],
+      "detail": "Sfruttando queste feature map, le SVM non lineari (non-linear SVMs) possono affrontare problemi non linearmente separabili nello spazio originale, preservando le proprietà chiave dei classificatori lineari (preserving the key properties of linear classifiers): massimo margine, problema convesso, duale, support vector. È la chiusura logica del ragionamento iniziato con c10: la non linearità sta nella mappa, l'apprendimento resta lineare.",
+      "latex": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c19",
+      "name": "Figura: una buona feature map rende le classi separabili",
+      "nameEn": "A good feature map (2D input → 3D feature space)",
+      "kind": "figura",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 64
+        },
+        {
+          "doc": "part2",
+          "page": 63
+        }
+      ],
+      "detail": "La figura (annunciata come 'Example:' a fine pag. 63, disegnata in cima a pag. 64) mostra a sinistra uno spazio di input 2D con quadratini neri raggruppati vicino all'origine e cerchi bianchi tutto intorno: nessuna retta li separa. Una freccia etichettata Φ porta i punti in uno spazio 3D dove un piano (parallelogramma) separa i quadratini (sopra il piano) dai cerchi (sotto). La fonte commenta: è una buona feature map perché trasforma i dati in uno spazio dove le due classi sono ben separate (well-separated), rendendo la classificazione semplice; la feature map aumenta la separabilità sfruttando una rappresentazione a più dimensioni.",
+      "latex": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c20",
+      "name": "SVM nello spazio delle feature",
+      "nameEn": "SVM in the transformed feature space: f(x) = w^T φ(x) + w_0",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 64
+        }
+      ],
+      "detail": "L'algoritmo SVM si applica nello spazio trasformato semplicemente sostituendo l'input originale x con la sua immagine φ(x) (replacing the original input x with its mapping φ(x)). La funzione di decisione diventa f(x) = w^T φ(x) + w_0: il classificatore trova una separazione lineare, cioè un iperpiano (hyperplane), nello spazio delle feature trasformato. Qui w vive in H, quindi ha la stessa dimensione di φ(x) (e questo è il motivo per cui nel primale serve calcolare φ esplicitamente, c32).",
+      "latex": [
+        "f(\\mathbf{x}) = \\mathbf{w}^T \\phi(\\mathbf{x}) + w_0"
+      ],
+      "symbols": [
+        {
+          "s": "\\mathbf{w}",
+          "meaning": "vettore dei pesi nello spazio delle feature H"
+        },
+        {
+          "s": "w_0",
+          "meaning": "bias"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c21",
+      "name": "Iperpiano in H = confine non lineare nello spazio di input",
+      "nameEn": "Linear separation in feature space corresponds to non-linear separation in input space",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 64
+        }
+      ],
+      "detail": "La separazione lineare trovata nello spazio delle feature corrisponde a una separazione non lineare nello spazio di input originale. La seconda figura di pag. 64 (freccia etichettata f(x)) mostra il percorso inverso: a sinistra il piano che separa i punti nello spazio 3D, a destra lo spazio di input 2D in cui il confine è diventato un'ellisse che racchiude i quadratini neri, con i cerchi bianchi fuori.",
+      "latex": [
+        "\\{\\mathbf{z} \\in H : \\mathbf{w}^T\\mathbf{z} + w_0 = 0\\} \\;\\longleftrightarrow\\; \\{\\mathbf{x} \\in X : \\mathbf{w}^T\\phi(\\mathbf{x}) + w_0 = 0\\}"
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c22",
+      "name": "Esempio: funzione di decisione quadratica",
+      "nameEn": "Example decision function f(x) = sgn(w1 x1^2 + w2 x1 x2 + w3 x2^2 + w0)",
+      "kind": "esempio",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 64
+        }
+      ],
+      "detail": "Per una specifica feature map e un vettore dei pesi, la funzione di decisione potrebbe essere f(x_1, x_2) = sgn(w_1x_1² + w_2x_1x_2 + w_3x_2² + w_0). Con la mappa omogenea φ = (x_1², x_1x_2, x_2²) è esattamente sgn(w^T φ(x) + w_0): nello spazio trasformato rappresenta un confine di decisione lineare. Nello spazio di input il confine w_1x_1² + w_2x_1x_2 + w_3x_2² + w_0 = 0 è una conica: con i segni giusti un'ellisse, come nella figura (integrazione: ellisse se w_2² − 4w_1w_3 < 0 e il livello ha segno opportuno, iperbole se > 0, parabola degenere se = 0).",
+      "latex": [
+        "f\\begin{pmatrix} x_1 \\\\ x_2 \\end{pmatrix} = \\mathrm{sgn}(w_1 x_1^2 + w_2 x_1 x_2 + w_3 x_2^2 + w_0)"
+      ],
+      "symbols": [
+        {
+          "s": "\\mathrm{sgn}",
+          "meaning": "funzione segno: restituisce la classe +1 o −1"
+        },
+        {
+          "s": "w_1, w_2, w_3",
+          "meaning": "pesi delle tre componenti di φ(x)"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c23",
+      "name": "Lineare in φ(x), non lineare in x",
+      "nameEn": "The separation is a linear function of φ(x); back in input space it is no longer linear",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 64
+        }
+      ],
+      "detail": "Due punti conclusivi della fonte: (1) la separazione che troviamo esiste in uno spazio a più dimensioni come funzione lineare di φ(x); (2) quando la si riporta nello spazio di input originale non è più lineare, e questo permette al modello di gestire in modo efficace pattern non lineari nei dati. f è lineare nei parametri w (quindi l'ottimizzazione resta convessa) ma non lineare nell'input x.",
+      "latex": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c24",
+      "name": "Kernel trick: definizione",
+      "nameEn": "Kernel trick",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 64
+        }
+      ],
+      "detail": "Il kernel trick è una tecnica potente che permette alle SVM e ad altri algoritmi (SVMs and other algorithms: per esempio il perceptron e la SVR a pag. 68) di gestire in modo efficiente feature map ad alta dimensione (handle high-dimensional feature mappings efficiently). L'idea, sviluppata a pag. 65: non calcolare mai φ(x), ma solo i prodotti scalari φ(x)^T φ(x') tramite una funzione k valutata direttamente sugli input.",
+      "latex": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c25",
+      "name": "Il problema: φ può avere dimensione enorme",
+      "nameEn": "The feature mapping can be extremely high-dimensional",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 64
+        }
+      ],
+      "detail": "La feature map φ(·) può essere estremamente ad alta dimensione (extremely high-dimensional), per esempio nel caso delle mappe polinomiali. Calcolare φ(x) esplicitamente per tutti i punti è computazionalmente costoso e spesso impraticabile (computationally expensive and often impractical). Integrazione quantitativa (non nella fonte): con n feature la mappa omogenea di grado d ha C(n+d−1, d) componenti; per un'immagine 28×28 (n = 784) e d = 3 sono 80.622.640 componenti per ogni esempio, mentre x^T x' costa 784 moltiplicazioni.",
+      "latex": [
+        "\\dim H_{\\text{omog}} = \\binom{n+d-1}{d}",
+        "\\dim H_{\\text{non omog}} = \\binom{n+d}{d}"
+      ],
+      "symbols": [
+        {
+          "s": "n",
+          "meaning": "numero di feature di input"
+        },
+        {
+          "s": "d",
+          "meaning": "grado del polinomio"
+        }
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c26",
+      "name": "Nel duale φ compare solo dentro prodotti scalari",
+      "nameEn": "In the dual formulation, feature mappings appear only within dot products",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 65
+        }
+      ],
+      "detail": "Nella formulazione duale delle SVM le feature map φ(·) compaiono solo all'interno di prodotti scalari (only within dot products), della forma φ(x)^T φ(x'). Questo vale sia nell'obiettivo del duale (φ(x_i)^T φ(x_j) tra coppie di esempi di training) sia nella funzione di decisione (φ(x_i)^T φ(x) tra un esempio di training e il punto da classificare). È la proprietà su cui si regge il kernel trick, ed è ciò che le domande d'esame chiedono di mostrare ('show that features appears only in dot products').",
+      "latex": [
+        "\\phi(\\mathbf{x})^T \\phi(\\mathbf{x}')"
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c27",
+      "name": "Funzione kernel: prodotto scalare calcolato nello spazio di input",
+      "nameEn": "Equivalent kernel function k(x, x') = φ(x)^T φ(x')",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 65
+        }
+      ],
+      "detail": "Il kernel trick sostituisce il prodotto scalare nello spazio delle feature con una funzione kernel equivalente (equivalent kernel function) k(x, x') = φ(x)^T φ(x'). La funzione kernel opera direttamente nello spazio di input (input space) degli esempi, evitando il calcolo esplicito della feature map φ(x): prende due esempi 'grezzi' e restituisce un numero, lo stesso che si otterrebbe mappandoli in H e facendone il prodotto scalare.",
+      "latex": [
+        "k(\\mathbf{x}, \\mathbf{x}') = \\phi(\\mathbf{x})^T \\phi(\\mathbf{x}')"
+      ],
+      "symbols": [
+        {
+          "s": "k(\\cdot, \\cdot)",
+          "meaning": "funzione kernel, valutata sugli input"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c28",
+      "name": "Vantaggio del kernel trick: alta dimensione a costo gestibile",
+      "nameEn": "Efficient handling of high-dimensional feature spaces without explicitly working in them",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 65
+        }
+      ],
+      "detail": "Questo approccio permette di gestire in modo efficiente spazi delle feature ad alta dimensione senza lavorarci esplicitamente (without explicitly working in them), consentendo ai modelli di imparare confini di decisione complessi e non lineari con costi computazionali gestibili (manageable computational costs). Il costo di una valutazione di k dipende dalla dimensione dello spazio di input, non da quella di H.",
+      "latex": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c29",
+      "name": "Duale dell'SVM soft margin con feature map",
+      "nameEn": "Dual formulation of the optimization problem (soft margin) with φ",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 65
+        }
+      ],
+      "detail": "Nelle SVM la classificazione si basa sulla soluzione di un problema di ottimizzazione duale in cui il kernel trick ha un ruolo chiave per ottenere confini non lineari. Il duale soft margin, con x sostituito da φ(x), è: massimizzare su α ∈ R^m la quantità Σ_i α_i − ½ Σ_{i,j} α_i α_j y_i y_j φ(x_i)^T φ(x_j), soggetto a 0 ≤ α_i ≤ C per ogni i = 1, ..., m e Σ_i α_i y_i = 0. È lo stesso duale derivato a pag. 59 (p09) con φ(x_i) al posto di x_i: i vincoli non contengono φ.",
+      "latex": [
+        "\\max_{\\boldsymbol{\\alpha} \\in \\mathbb{R}^m} \\sum_{i=1}^{m} \\alpha_i - \\frac{1}{2} \\sum_{i,j=1}^{m} \\alpha_i \\alpha_j y_i y_j \\phi(\\mathbf{x}_i)^T \\phi(\\mathbf{x}_j)",
+        "\\text{subject to } \\; 0 \\le \\alpha_i \\le C \\quad \\forall i = 1, \\dots, m",
+        "\\sum_{i=1}^{m} \\alpha_i y_i = 0"
+      ],
+      "symbols": [
+        {
+          "s": "\\alpha_i",
+          "meaning": "moltiplicatore di Lagrange (variabile duale) dell'esempio i"
+        },
+        {
+          "s": "C",
+          "meaning": "costante di regolarizzazione del soft margin"
+        },
+        {
+          "s": "m",
+          "meaning": "numero di esempi di training"
+        },
+        {
+          "s": "y_i \\in \\{-1, +1\\}",
+          "meaning": "etichetta dell'esempio i"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c30",
+      "name": "Sostituzione dei prodotti scalari con il kernel nel duale",
+      "nameEn": "Dot products replaced with a kernel function k(x_i, x_j)",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 65
+        }
+      ],
+      "detail": "Nel duale compaiono prodotti scalari della forma φ(x_i)^T φ(x_j). Si possono sostituire con una funzione kernel k(x_i, x_j), che calcola il loro valore equivalente direttamente nello spazio di input: k(x_i, x_j) = φ(x_i)^T φ(x_j). Questo elimina la necessità di calcolare esplicitamente la feature map φ(·), risparmiando costo computazionale. In pratica servono solo gli m² valori k(x_i, x_j), cioè la Gram matrix (c44). Il duale kernelizzato (ottenuto per sostituzione) è scritto nella seconda formula.",
+      "latex": [
+        "k(\\mathbf{x}_i, \\mathbf{x}_j) = \\phi(\\mathbf{x}_i)^T \\phi(\\mathbf{x}_j)",
+        "\\max_{\\boldsymbol{\\alpha} \\in \\mathbb{R}^m} \\sum_{i=1}^{m} \\alpha_i - \\frac{1}{2} \\sum_{i,j=1}^{m} \\alpha_i \\alpha_j y_i y_j k(\\mathbf{x}_i, \\mathbf{x}_j)"
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c31",
+      "name": "Funzione di decisione duale con il kernel",
+      "nameEn": "Decision function in the dual formulation",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 65
+        }
+      ],
+      "detail": "La funzione di decisione nella formulazione duale è f(x) = Σ_{i=1}^m α_i y_i φ(x_i)^T φ(x). Qui la funzione kernel k(x_i, x) sostituisce il prodotto scalare φ(x_i)^T φ(x), quindi f(x) = Σ α_i y_i k(x_i, x). Il kernel trick permette di operare direttamente nello spazio di input senza calcolare la feature map. Poiché α_i = 0 per i non-support vector, la somma corre di fatto solo sui support vector. La fonte scrive la funzione senza il bias w_0 (che invece compare in f(x) = w^T φ(x) + w_0 a pag. 64): vedi gaps.",
+      "latex": [
+        "f(\\mathbf{x}) = \\sum_{i=1}^{m} \\alpha_i y_i \\phi(\\mathbf{x}_i)^T \\phi(\\mathbf{x})",
+        "f(\\mathbf{x}) = \\sum_{i=1}^{m} \\alpha_i y_i k(\\mathbf{x}_i, \\mathbf{x})"
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c32",
+      "name": "Nel primale il kernel trick non si applica",
+      "nameEn": "In the primal formulation the kernel trick is not applicable",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 65
+        }
+      ],
+      "detail": "Nella formulazione primale la feature map φ(·) deve essere calcolata esplicitamente, quindi il kernel trick non è applicabile in quella forma. Motivo: il primale ottimizza direttamente w ∈ H (stessa dimensione di φ(x)) e i vincoli contengono w^T φ(x_i), non prodotti tra coppie di φ. È uno dei criteri per scegliere tra primale e duale (domanda d'esame 'when should we opt for primal or dual formulation'): il duale serve quando si vogliono i kernel, il primale (per esempio con Pegasos) quando φ è esplicita e di dimensione trattabile e m è molto grande.",
+      "latex": [
+        "\\min_{\\mathbf{w}, w_0, \\boldsymbol{\\xi}} \\frac{1}{2}\\|\\mathbf{w}\\|^2 + C\\sum_{i=1}^{m}\\xi_i \\quad \\text{s.t. } y_i(\\mathbf{w}^T\\phi(\\mathbf{x}_i) + w_0) \\ge 1 - \\xi_i"
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c33",
+      "name": "Kernel standard e kernel polinomiale",
+      "nameEn": "Standard kernels; the polynomial kernel",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 66
+        }
+      ],
+      "detail": "Alcuni kernel standard (standard kernels) calcolano in modo efficiente i prodotti scalari per feature map di uso comune. Il kernel polinomiale (polynomial kernel) calcola i prodotti scalari corrispondenti alle mappe polinomiali di pag. 63, nelle due versioni omogenea e non omogenea. Il catalogo completo (lineare, polinomiale con costante c, gaussiano) è a pag. 69 (p11).",
+      "latex": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c34",
+      "name": "Kernel polinomiale omogeneo",
+      "nameEn": "Homogeneous Polynomial Kernel",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 66
+        }
+      ],
+      "detail": "Il kernel polinomiale omogeneo include i prodotti di feature di grado fissato d (products of features with a fixed degree d): k(x, x') = (x^T x')^d. Costa un prodotto scalare nello spazio di input più un elevamento a potenza, indipendentemente dal numero di monomi della mappa implicita.",
+      "latex": [
+        "k(\\mathbf{x}, \\mathbf{x}') = \\left(\\mathbf{x}^T \\mathbf{x}'\\right)^d"
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c35",
+      "name": "Esempio d = 2: dal kernel omogeneo alla sua feature map",
+      "nameEn": "E.g. (d = 2) homogeneous polynomial kernel expansion",
+      "kind": "esempio",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 66
+        }
+      ],
+      "detail": "Riquadro della fonte: k((x_1, x_2), (x_1', x_2')) = (x_1x_1' + x_2x_2')² = (x_1x_1')² + (x_2x_2')² + 2x_1x_1'x_2x_2' = (x_1², √2x_1x_2, x_2²) · (x_1'², √2x_1'x_2', x_2'²)^T, con le parentesi graffe sotto i due vettori etichettate φ(x)^T e φ(x'). Quindi il kernel omogeneo di grado 2 è il prodotto scalare nello spazio della mappa φ(x) = (x_1², √2x_1x_2, x_2²): è la dimostrazione dell'equivalenza tra mappa polinomiale omogenea e kernel omogeneo che le domande d'esame chiedono.",
+      "latex": [
+        "k\\left(\\begin{pmatrix} x_1 \\\\ x_2 \\end{pmatrix}, \\begin{pmatrix} x_1' \\\\ x_2' \\end{pmatrix}\\right) = (x_1 x_1' + x_2 x_2')^2",
+        "= (x_1 x_1')^2 + (x_2 x_2')^2 + 2 x_1 x_1' x_2 x_2'",
+        "= \\underbrace{\\begin{pmatrix} x_1^2 & \\sqrt{2} x_1 x_2 & x_2^2 \\end{pmatrix}}_{\\phi(\\mathbf{x})^T} \\underbrace{\\begin{pmatrix} x_1'^2 \\\\ \\sqrt{2} x_1' x_2' \\\\ x_2'^2 \\end{pmatrix}}_{\\phi(\\mathbf{x}')}"
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c36",
+      "name": "Kernel polinomiale non omogeneo",
+      "nameEn": "Inhomogeneous Polynomial Kernel",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 66
+        }
+      ],
+      "detail": "Il kernel polinomiale non omogeneo include tutti i termini polinomiali fino al grado d (all polynomial terms up to degree d): k(x, x') = (1 + x^T x')^d. L'1 aggiunto fa sì che nello sviluppo del binomio compaiano tutte le potenze di x^T x' da 0 a d (integrazione: (1 + s)^d = Σ_k C(d, k) s^k), quindi monomi di ogni grado ≤ d.",
+      "latex": [
+        "k(\\mathbf{x}, \\mathbf{x}') = \\left(1 + \\mathbf{x}^T \\mathbf{x}'\\right)^d"
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c37",
+      "name": "Esempio d = 2: dal kernel non omogeneo alla sua feature map",
+      "nameEn": "E.g. (d = 2) inhomogeneous polynomial kernel expansion",
+      "kind": "esempio",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 66
+        }
+      ],
+      "detail": "Riquadro della fonte: k((x_1, x_2), (x_1', x_2')) = (1 + x_1x_1' + x_2x_2')² = 1 + (x_1x_1')² + (x_2x_2')² + 2x_1x_1' + 2x_2x_2' + 2x_1x_1'x_2x_2' = (1, √2x_1, √2x_2, x_1², √2x_1x_2, x_2²) · (1, √2x_1', √2x_2', x_1'², √2x_1'x_2', x_2'²)^T, con le etichette φ(x)^T e φ(x'). La mappa implicita ha 6 componenti: la costante, i due termini lineari e i tre quadratici, con √2 davanti ai termini che nascono dai doppi prodotti.",
+      "latex": [
+        "k\\left(\\begin{pmatrix} x_1 \\\\ x_2 \\end{pmatrix}, \\begin{pmatrix} x_1' \\\\ x_2' \\end{pmatrix}\\right) = (1 + x_1 x_1' + x_2 x_2')^2",
+        "= 1 + (x_1 x_1')^2 + (x_2 x_2')^2 + 2 x_1 x_1' + 2 x_2 x_2' + 2 x_1 x_1' x_2 x_2'",
+        "= \\underbrace{\\begin{pmatrix} 1 & \\sqrt{2} x_1 & \\sqrt{2} x_2 & x_1^2 & \\sqrt{2} x_1 x_2 & x_2^2 \\end{pmatrix}}_{\\phi(\\mathbf{x})^T} \\underbrace{\\begin{pmatrix} 1 \\\\ \\sqrt{2} x_1' \\\\ \\sqrt{2} x_2' \\\\ x_1'^2 \\\\ \\sqrt{2} x_1' x_2' \\\\ x_2'^2 \\end{pmatrix}}_{\\phi(\\mathbf{x}')}"
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c38",
+      "name": "Confronto: mappa esplicita di pag. 63 e mappa implicita del kernel di pag. 66",
+      "nameEn": "Explicit polynomial map vs the implicit map of the polynomial kernel (√2 factors)",
+      "kind": "confronto",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 66
+        },
+        {
+          "doc": "part2",
+          "page": 63
+        }
+      ],
+      "detail": "Le mappe di pag. 63 e quelle implicite dei kernel di pag. 66 generano gli stessi monomi ma con pesi diversi. Omogenea d = 2: pag. 63 usa (x_1², x_1x_2, x_2²), il kernel (x^T x')² corrisponde a (x_1², √2x_1x_2, x_2²). Non omogenea d = 2: pag. 63 usa (x_1, x_2, x_1², x_1x_2, x_2²), il kernel (1 + x^T x')² corrisponde a (1, √2x_1, √2x_2, x_1², √2x_1x_2, x_2²). Con la mappa di pag. 63 il prodotto scalare sarebbe x_1²x_1'² + x_1x_2x_1'x_2' + x_2²x_2'², che NON è (x^T x')²: manca un fattore 2 sul termine misto. La differenza non cambia la famiglia dei confini ottenibili (i pesi w possono riassorbire le scale √2 e la costante fa da bias), ma cambia la regolarizzazione ‖w‖² e quindi la soluzione a massimo margine. Osservazione ricavata dal confronto delle due pagine, non scritta nella fonte.",
+      "latex": [
+        "\\phi_{63}(\\mathbf{x})^T\\phi_{63}(\\mathbf{x}') = x_1^2 x_1'^2 + x_1 x_2 x_1' x_2' + x_2^2 x_2'^2 \\neq (\\mathbf{x}^T\\mathbf{x}')^2",
+        "\\phi_{66}(\\mathbf{x})^T\\phi_{66}(\\mathbf{x}') = x_1^2 x_1'^2 + 2 x_1 x_2 x_1' x_2' + x_2^2 x_2'^2 = (\\mathbf{x}^T\\mathbf{x}')^2"
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c39",
+      "name": "Kernel valido",
+      "nameEn": "Valid kernel",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 66
+        }
+      ],
+      "detail": "Nelle SVM e negli altri metodi basati su kernel (kernel-based methods), un kernel valido (valid kernel) è una funzione che corrisponde a un prodotto scalare in un certo spazio delle feature e soddisfa specifiche proprietà matematiche (la definita positività, c49). Non ogni funzione di due argomenti è un kernel: se non esiste alcun φ tale che k = φ^T φ, il duale perde le sue garanzie (può non essere più concavo) e l'SVM non è più ben definita.",
+      "latex": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c40",
+      "name": "Kernel come funzione di similarità che rappresenta un prodotto scalare",
+      "nameEn": "A kernel is a similarity function k: X × X → R",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 66
+        }
+      ],
+      "detail": "Un kernel è una funzione di similarità (similarity function) k: X × X → R che rappresenta un prodotto scalare in uno spazio delle feature (possibilmente a più dimensioni): k(x, x') = φ(x)^T φ(x'). Prende due oggetti dello spazio di input e restituisce un numero reale.",
+      "latex": [
+        "k : X \\times X \\to \\mathbb{R}",
+        "k(\\mathbf{x}, \\mathbf{x}') = \\phi(\\mathbf{x})^T \\phi(\\mathbf{x}')"
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c41",
+      "name": "I kernel polinomiali sono validi: verificare la corrispondenza è il modo più semplice",
+      "nameEn": "Verifying the correspondence to a dot product is the simplest way to establish validity",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 66
+        }
+      ],
+      "detail": "I kernel visti finora (polinomiale omogeneo e non omogeneo) sono validi perché corrispondono al prodotto scalare in uno spazio delle feature definito (lo si è visto espandendo il quadrato, c35 e c37). Verificare questa corrispondenza è il modo più semplice (the simplest way) per stabilire la validità di un kernel. È il secondo dei tre metodi di pag. 67 (c51).",
+      "latex": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c42",
+      "name": "Il kernel generalizza il prodotto scalare a spazi di input arbitrari",
+      "nameEn": "Generalization of Dot Product",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 67
+        }
+      ],
+      "detail": "Key note della fonte: un kernel estende la nozione di prodotto scalare a spazi di input arbitrari (arbitrary input spaces), per esempio sequenze, grafi o dati strutturati (sequences, graphs, or structured data). L'input non deve essere un vettore: basta saper calcolare k tra due oggetti. È il ponte verso i kernel su stringhe e grafi di p11 (spectrum kernel, WL kernel).",
+      "latex": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c43",
+      "name": "Il kernel come misura di similarità",
+      "nameEn": "Measure of Similarity",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 67
+        }
+      ],
+      "detail": "Key note della fonte: il kernel può essere interpretato come una misura di similarità (similarity measure) tra oggetti dello spazio di input. Intuizione geometrica: il prodotto scalare è grande quando i vettori puntano nella stessa direzione e sono lunghi, zero quando sono ortogonali. La funzione di decisione Σ α_i y_i k(x_i, x) si legge allora come un voto pesato dei support vector, ciascuno pesato da quanto x gli somiglia.",
+      "latex": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c44",
+      "name": "Gram matrix",
+      "nameEn": "Gram Matrix",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 67
+        }
+      ],
+      "detail": "Dato un insieme di esempi {x_1, ..., x_m} e una funzione kernel k, la Gram matrix K è la matrice simmetrica (symmetric matrix) delle valutazioni del kernel su tutte le coppie: K_ij = k(x_i, x_j) per ogni i, j. È m × m, simmetrica perché il prodotto scalare lo è, e contiene tutto ciò che il duale dell'SVM deve sapere sui dati. È il primo strumento per capire se una funzione è un kernel valido.",
+      "latex": [
+        "K_{ij} = k(\\mathbf{x}_i, \\mathbf{x}_j) \\quad \\forall i, j"
+      ],
+      "symbols": [
+        {
+          "s": "K",
+          "meaning": "Gram matrix (m × m)"
+        },
+        {
+          "s": "\\{\\mathbf{x}_1, \\dots, \\mathbf{x}_m\\}",
+          "meaning": "insieme finito di esempi"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c45",
+      "name": "Matrice definita positiva (p.d.)",
+      "nameEn": "Positive Definiteness: positive definite (p.d.) matrix",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 67
+        }
+      ],
+      "detail": "Una matrice simmetrica K è definita positiva (positive definite, p.d.) se Σ_{i,j=1}^m c_i c_j K_ij ≥ 0 per ogni c ∈ R^m. In notazione matriciale (integrazione) è c^T K c ≥ 0: la forma quadratica non è mai negativa, in qualsiasi direzione c. Nella terminologia dell'algebra lineare questa condizione (con ≥) si chiama semidefinita positiva; la fonte e la letteratura sui kernel la chiamano 'positive definite' (c53).",
+      "latex": [
+        "\\sum_{i,j=1}^{m} c_i c_j K_{ij} \\ge 0 \\quad \\forall \\mathbf{c} \\in \\mathbb{R}^m",
+        "\\mathbf{c}^T K \\mathbf{c} \\ge 0"
+      ],
+      "symbols": [
+        {
+          "s": "\\mathbf{c}",
+          "meaning": "vettore arbitrario di coefficienti reali"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c46",
+      "name": "Matrice strettamente definita positiva (s.p.d.)",
+      "nameEn": "Strictly positive definite (s.p.d.)",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 67
+        }
+      ],
+      "detail": "Se l'uguaglianza Σ c_i c_j K_ij = 0 vale solo quando c = 0, la matrice è strettamente definita positiva (strictly positive definite, s.p.d.). Equivale a dire che la forma quadratica è strettamente positiva per ogni c ≠ 0; per una Gram matrix ottenuta da una feature map significa (integrazione, dalla der04) che i vettori φ(x_1), ..., φ(x_m) sono linearmente indipendenti.",
+      "latex": [
+        "\\sum_{i,j=1}^{m} c_i c_j K_{ij} = 0 \\iff \\mathbf{c} = \\mathbf{0}"
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c47",
+      "name": "Caratterizzazione con gli autovalori",
+      "nameEn": "All eigenvalues of K must be non-negative",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 67
+        }
+      ],
+      "detail": "In alternativa (Alternatively), in una matrice definita positiva tutti gli autovalori di K devono essere non negativi (positivi nel caso s.p.d.). Motivo (integrazione, der05): K simmetrica si diagonalizza come K = UΛU^T, e scegliendo c uguale a un autovettore u_k la forma quadratica vale proprio λ_k; un solo autovalore negativo basta a trovare una direzione c con c^T K c < 0. È il test numerico più comodo per controllare la validità su un insieme concreto di esempi.",
+      "latex": [
+        "\\lambda_k(K) \\ge 0 \\;\\; \\forall k \\qquad (\\lambda_k(K) > 0 \\text{ se s.p.d.})"
+      ],
+      "symbols": [
+        {
+          "s": "\\lambda_k(K)",
+          "meaning": "k-esimo autovalore della Gram matrix (qui λ non è il parametro di Pegasos)"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c48",
+      "name": "Caratterizzazione con la fattorizzazione K = B^T B",
+      "nameEn": "There exists a matrix B such that K = B^T B",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 67
+        }
+      ],
+      "detail": "Seconda caratterizzazione alternativa: una matrice è definita positiva se e solo se esiste una matrice B tale che K = B^T B. In una direzione: c^T B^T B c = ‖Bc‖² ≥ 0; nell'altra: B = Λ^{1/2} U^T dalla decomposizione spettrale (integrazione, der05). Lettura per i kernel: le colonne di B sono una 'feature map' dei soli m esempi, e K_ij è il prodotto scalare tra la colonna i e la colonna j. Ecco perché p.d. e 'essere un prodotto scalare' sono la stessa cosa.",
+      "latex": [
+        "K = B^T B"
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c49",
+      "name": "Kernel definito positivo: condizione necessaria e sufficiente",
+      "nameEn": "Positive Definite Kernels",
+      "kind": "teorema",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 67
+        }
+      ],
+      "detail": "Un kernel k: X × X → R è definito positivo se, per qualunque insieme finito di input (per ogni m e ogni {x_1, ..., x_m}), la Gram matrix corrispondente K è definita positiva. Questa proprietà è necessaria e sufficiente (necessary and sufficient) perché il kernel corrisponda a un prodotto scalare in un qualche spazio delle feature φ. Quindi 'kernel valido' = 'kernel definito positivo'. Attenzione al quantificatore: bisogna verificarlo per TUTTI gli insiemi finiti di punti; un controllo numerico su un dataset può solo confutare (trovare un controesempio), non dimostrare la validità.",
+      "latex": [
+        "\\forall m, \\; \\forall \\{\\mathbf{x}_1, \\dots, \\mathbf{x}_m\\} \\subset X: \\; \\sum_{i,j=1}^{m} c_i c_j k(\\mathbf{x}_i, \\mathbf{x}_j) \\ge 0 \\;\\; \\forall \\mathbf{c} \\in \\mathbb{R}^m",
+        "\\iff \\exists \\, \\phi : \\; k(\\mathbf{x}, \\mathbf{x}') = \\phi(\\mathbf{x})^T \\phi(\\mathbf{x}')"
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c50",
+      "name": "Metodo 1: dimostrare direttamente la definita positività",
+      "nameEn": "Prove Positive Definiteness Directly",
+      "kind": "procedura",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 67
+        }
+      ],
+      "detail": "Primo metodo per verificare la validità di un kernel (Methods to Verify Kernel Validity): dimostrare matematicamente che la Gram matrix è p.d. per tutti gli insiemi di input. La fonte avverte che questo approccio può essere complesso (can be complex): è la risposta alla domanda d'esame 'Is it easy to demonstrate that a kernel is positive definite?' (no, in generale non è facile, per questo si usano gli altri due metodi).",
+      "latex": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c51",
+      "name": "Metodo 2: trovare una feature map corrispondente",
+      "nameEn": "Find a Corresponding Feature Map",
+      "kind": "procedura",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 67
+        }
+      ],
+      "detail": "Secondo metodo: se si riesce a descrivere esplicitamente la feature map φ(x), la validità del kernel è garantita (guaranteed), come per il kernel polinomiale (c35, c37). Il motivo (integrazione, der04): se K_ij = φ(x_i)^T φ(x_j), allora Σ c_i c_j K_ij = ‖Σ c_i φ(x_i)‖² ≥ 0 per costruzione.",
+      "latex": [
+        "k(\\mathbf{x}, \\mathbf{x}') = \\phi(\\mathbf{x})^T\\phi(\\mathbf{x}') \\;\\Rightarrow\\; \\mathbf{c}^T K \\mathbf{c} = \\left\\| \\sum_{i=1}^{m} c_i \\phi(\\mathbf{x}_i) \\right\\|^2 \\ge 0"
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c52",
+      "name": "Metodo 3: regole di combinazione dei kernel",
+      "nameEn": "Use Kernel Combination Rules",
+      "kind": "procedura",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 67
+        }
+      ],
+      "detail": "Terzo metodo: i kernel mantengono la validità sotto combinazioni, per esempio somma, prodotto e scalatura (addition, multiplication, scaling). Queste proprietà rendono più facile costruire nuovi kernel partendo da kernel già noti come validi. La fonte qui cita solo le tre operazioni; la lista completa degli operatori con le motivazioni è in p11 (pag. 71-72: combinazione lineare con coefficienti positivi, prodotto, composizione, kernel su spazi diversi). Integrazione: la scalatura richiede un fattore β > 0; la somma è valida perché le forme quadratiche si sommano (c^T(K_1 + K_2)c = c^T K_1 c + c^T K_2 c ≥ 0).",
+      "latex": [
+        "k(\\mathbf{x}, \\mathbf{x}') = k_1(\\mathbf{x}, \\mathbf{x}') + k_2(\\mathbf{x}, \\mathbf{x}')",
+        "k(\\mathbf{x}, \\mathbf{x}') = k_1(\\mathbf{x}, \\mathbf{x}') \\, k_2(\\mathbf{x}, \\mathbf{x}')",
+        "k(\\mathbf{x}, \\mathbf{x}') = \\beta \\, k_1(\\mathbf{x}, \\mathbf{x}'), \\quad \\beta > 0"
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c53",
+      "name": "Nota terminologica: 'positive definite' dei kernel = semidefinita positiva",
+      "nameEn": "p.d. (≥ 0) vs strictly p.d. terminology",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 67
+        }
+      ],
+      "detail": "La fonte chiama 'positive definite (p.d.)' la condizione con ≥ 0 e 'strictly positive definite (s.p.d.)' quella in cui lo zero si ottiene solo per c = 0. In algebra lineare le stesse condizioni si chiamano rispettivamente semidefinita positiva e definita positiva. Non è un errore: è la convenzione della letteratura sui kernel. All'orale conviene dirlo esplicitamente per evitare equivoci (per esempio una Gram matrix con due esempi identici ha un autovalore nullo, è p.d. nel senso dei kernel ma non s.p.d.).",
+      "latex": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c54",
+      "name": "SVR: problema duale con il kernel",
+      "nameEn": "Support Vector Regression (SVR) dual optimization problem",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 67
+        },
+        {
+          "doc": "part2",
+          "page": 68
+        }
+      ],
+      "detail": "Il problema duale della Support Vector Regression si scrive: massimizzare −½ Σ_{i,j}(α_i* − α_i)(α_j* − α_j) k(x_i, x_j) − ε Σ_i(α_i* + α_i) + Σ_i y_i(α_i* − α_i). Ogni esempio ha due variabili duali α_i e α_i*. La fonte non dice a quale vincolo corrisponde ciascuna; dal primale standard (integrazione, c64 e der11) α_i* è il moltiplicatore del vincolo y_i − f(x_i) ≤ ε + ξ_i* (target sopra il tubo) e α_i quello di f(x_i) − y_i ≤ ε + ξ_i (target sotto il tubo), coerentemente con il segno di w = Σ(α_i* − α_i)φ(x_i). Anche qui gli esempi compaiono solo attraverso k(x_i, x_j): la SVR si kernelizza esattamente come l'SVM di classificazione. La fonte scrive 'max_{α ∈ R^m}' anche se le variabili sono due vettori α, α* ∈ R^m (vedi gaps).",
+      "latex": [
+        "\\max_{\\boldsymbol{\\alpha} \\in \\mathbb{R}^m} -\\frac{1}{2} \\sum_{i,j=1}^{m} (\\alpha_i^* - \\alpha_i)(\\alpha_j^* - \\alpha_j) k(\\mathbf{x}_i, \\mathbf{x}_j) - \\epsilon \\sum_{i=1}^{m} (\\alpha_i^* + \\alpha_i) + \\sum_{i=1}^{m} y_i (\\alpha_i^* - \\alpha_i)"
+      ],
+      "symbols": [
+        {
+          "s": "\\alpha_i, \\alpha_i^*",
+          "meaning": "coppia di variabili duali dell'esempio i"
+        },
+        {
+          "s": "y_i \\in \\mathbb{R}",
+          "meaning": "target reale da predire"
+        },
+        {
+          "s": "\\epsilon",
+          "meaning": "tolleranza (larghezza del tubo)"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c55",
+      "name": "SVR: vincoli del duale",
+      "nameEn": "SVR dual constraints",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 68
+        }
+      ],
+      "detail": "Soggetto a (Subject to): Σ_i(α_i* − α_i) = 0 e α_i, α_i* ∈ [0, C] per ogni i ∈ [1, m]. Il primo vincolo è l'analogo di Σ α_i y_i = 0 della classificazione (nasce dalla derivata rispetto al bias w_0); il box [0, C] è lo stesso del soft margin: nessun esempio può pesare più di C.",
+      "latex": [
+        "\\sum_{i=1}^{m} (\\alpha_i^* - \\alpha_i) = 0",
+        "\\alpha_i, \\alpha_i^* \\in [0, C] \\quad \\forall i \\in [1, m]"
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c56",
+      "name": "SVR: significato di k, ε e C",
+      "nameEn": "Kernel function, margin of tolerance ε, regularization parameter C",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 68
+        }
+      ],
+      "detail": "Legenda della fonte: k(x_i, x_j) = φ(x_i)^T φ(x_j) è la funzione kernel usata per calcolare i prodotti scalari nello spazio delle feature; ε è il margine di tolleranza (margin of tolerance) per le predizioni di regressione, cioè gli errori entro ±ε non vengono penalizzati; C è il parametro di regolarizzazione che controlla il compromesso (trade-off) tra ampiezza del margine e slack consentito. Integrazione (la fonte non discute gli effetti): C grande rende costosi i punti fuori dal tubo e la funzione li insegue (rischio di overfitting); C piccolo privilegia ‖w‖² piccolo, cioè una funzione più piatta; ε grande allarga il tubo e riduce il numero di support vector.",
+      "latex": [
+        "k(\\mathbf{x}_i, \\mathbf{x}_j) = \\phi(\\mathbf{x}_i)^T \\phi(\\mathbf{x}_j)"
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c57",
+      "name": "SVR: funzione di predizione in forma duale",
+      "nameEn": "The SVR prediction function in the dual form",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 68
+        }
+      ],
+      "detail": "La funzione di predizione della SVR in forma duale è f(x) = w^T φ(x) + w_0 = Σ_i(α_i* − α_i) k(x_i, x) + w_0. Dove (Where): (α_i* − α_i) sono le variabili duali che controllano il contributo di ciascun support vector; w_0 è il termine di bias. La fonte scrive k(x_i, x_j) nell'ultima espressione: è un refuso, l'argomento corretto è il punto da predire x (vedi gaps). Gli esempi strettamente dentro il tubo hanno α_i = α_i* = 0 e non contribuiscono.",
+      "latex": [
+        "f(\\mathbf{x}) = \\mathbf{w}^T \\phi(\\mathbf{x}) + w_0 = \\sum_{i=1}^{m} (\\alpha_i^* - \\alpha_i) k(\\mathbf{x}_i, \\mathbf{x}_j) + w_0 \\quad \\text{(come nella fonte)}",
+        "f(\\mathbf{x}) = \\sum_{i=1}^{m} (\\alpha_i^* - \\alpha_i) k(\\mathbf{x}_i, \\mathbf{x}) + w_0"
+      ],
+      "symbols": [
+        {
+          "s": "\\alpha_i^* - \\alpha_i",
+          "meaning": "peso con segno del support vector i"
+        },
+        {
+          "s": "w_0",
+          "meaning": "bias"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c58",
+      "name": "La SVR mette in evidenza il kernel trick",
+      "nameEn": "This function highlights the kernel trick",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 68
+        }
+      ],
+      "detail": "Commento finale della fonte: la funzione di predizione della SVR mette in evidenza il kernel trick, perché permette di operare nello spazio delle feature ad alta dimensione senza calcolare esplicitamente φ(x). Per predire basta valutare il kernel tra x e i support vector. La SVR è un esempio di kernel machine per la regressione (per esempio curve non lineari come la radiazione solare nella giornata).",
+      "latex": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c59",
+      "name": "Kernel machines: algoritmi lineari kernelizzati",
+      "nameEn": "Kernel Machines",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 68
+        },
+        {
+          "doc": "part2",
+          "page": 62
+        }
+      ],
+      "detail": "Il titolo 'Kernel Machines' apre il capitolo a pag. 62 e ritorna a pag. 68, dove la fonte presenta gli algoritmi perceptron (Perceptron Algorithms) come secondo esempio dopo SVM e SVR. Una kernel machine è un algoritmo lineare in cui i dati compaiono solo tramite prodotti scalari, che vengono sostituiti da un kernel: il modello finale è una combinazione di valutazioni del kernel sugli esempi di training, f(x) = Σ_i (coefficiente_i) k(x_i, x). Il kernel perceptron è il caso più semplice.",
+      "latex": [
+        "f(\\mathbf{x}) = \\sum_{i=1}^{m} \\alpha_i k(\\mathbf{x}_i, \\mathbf{x})"
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c60",
+      "name": "Perceptron stocastico",
+      "nameEn": "Stochastic Perceptron",
+      "kind": "algoritmo",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 68
+        }
+      ],
+      "detail": "Il perceptron è un classificatore lineare semplice che aggiorna i pesi in base agli esempi classificati male. (1) Inizializzazione (Initialization): w = 0. (2) Aggiornamenti iterativi (Iterative Updates): per ogni esempio classificato male (x_i, y_i), w ← w + η y_i x_i. La funzione risultante è f(x) = w^T x (qui senza bias, che si può assorbire aggiungendo una feature costante). Richiama il perceptron di p06, stavolta come punto di partenza per la versione kernel.",
+      "latex": [
+        "\\mathbf{w} = \\mathbf{0}",
+        "\\mathbf{w} \\leftarrow \\mathbf{w} + \\eta y_i \\mathbf{x}_i",
+        "f(\\mathbf{x}) = \\mathbf{w}^T \\mathbf{x}"
+      ],
+      "symbols": [
+        {
+          "s": "\\eta",
+          "meaning": "learning rate"
+        },
+        {
+          "s": "\\leftarrow",
+          "meaning": "assegnazione (aggiornamento), non uguaglianza"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c61",
+      "name": "Kernel perceptron",
+      "nameEn": "Kernel Perceptron",
+      "kind": "algoritmo",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 68
+        }
+      ],
+      "detail": "Il kernel perceptron estende il perceptron a confini di decisione non lineari usando una funzione kernel. (1) Inizializzazione: α_i = 0 per ogni i. (2) Aggiornamenti iterativi: per ogni esempio classificato male (x_i, y_i), α_i ← α_i + η y_i. La funzione risultante è f(x) = Σ_i α_i k(x_i, x). Invece di un vettore w (che vivrebbe in H) si memorizza un coefficiente per ogni esempio di training; il segno di y_i è già dentro α_i, quindi nella funzione di decisione non compare un y_i separato (a differenza del duale SVM, dove si scrive α_i y_i con α_i ≥ 0).",
+      "latex": [
+        "\\alpha_i = 0 \\quad \\forall i",
+        "\\alpha_i \\leftarrow \\alpha_i + \\eta y_i",
+        "f(\\mathbf{x}) = \\sum_{i=1}^{m} \\alpha_i k(\\mathbf{x}_i, \\mathbf{x})"
+      ],
+      "symbols": [
+        {
+          "s": "\\alpha_i",
+          "meaning": "coefficiente dell'esempio i: η y_i per il numero di volte in cui è stato sbagliato"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c62",
+      "name": "Perché il kernel perceptron equivale al perceptron in H",
+      "nameEn": "Dual representation w = Σ α_i φ(x_i)",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 68
+        }
+      ],
+      "detail": "Collegamento tra i due algoritmi di pag. 68 (spiegazione integrativa, la fonte dà solo i due pseudocodici): partendo da w = 0 e sommando solo termini η y_i φ(x_i), il vettore w nello spazio delle feature è sempre una combinazione lineare degli esempi, w = Σ α_i φ(x_i). Allora l'aggiornamento w ← w + η y_i φ(x_i) equivale ad α_i ← α_i + η y_i, e f(x) = w^T φ(x) = Σ α_i φ(x_i)^T φ(x) = Σ α_i k(x_i, x). Anche il test 'classificato male' si calcola con il solo kernel: y_i Σ_j α_j k(x_j, x_i) ≤ 0. È la prova che il perceptron si kernelizza senza mai toccare φ, richiesta dalla domanda 'feature mapping and kernel perceptron'.",
+      "latex": [
+        "\\mathbf{w} = \\sum_{i=1}^{m} \\alpha_i \\phi(\\mathbf{x}_i)",
+        "\\mathbf{w}^T\\phi(\\mathbf{x}) = \\sum_{i=1}^{m} \\alpha_i \\phi(\\mathbf{x}_i)^T \\phi(\\mathbf{x}) = \\sum_{i=1}^{m} \\alpha_i k(\\mathbf{x}_i, \\mathbf{x})"
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c63",
+      "name": "Ruolo di C con il kernel: C = 0 e C → +∞",
+      "nameEn": "Role of C in the kernelized soft-margin dual (C = 0, C → +∞)",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 65
+        }
+      ],
+      "detail": "Nel duale kernelizzato di pag. 65 la costante C compare solo nel vincolo a scatola 0 ≤ α_i ≤ C: fissa il peso massimo che un singolo esempio può avere in f(x) = Σ α_i y_i k(x_i, x). Integrazione (la fonte non tratta i casi limite; per il caso lineare vedi p09), utile per la domanda d'esame 'rule of constant C in soft-margin SVM (what happens if C=0 and if C->+infinity)' posta proprio insieme alle feature map. C → +∞: il vincolo diventa α_i ≥ 0 e si ritrova il duale hard margin nello spazio H; con un kernel molto espressivo (grado d alto) i dati mappati sono spesso separabili e l'SVM insegue anche le etichette rumorose con un confine contorto in X (overfitting); se in H i dati non sono separabili il primale hard margin non ha soluzione e il duale è illimitato. C = 0: α_i = 0 per ogni i, w = Σ α_i y_i φ(x_i) = 0 e f(x) = w_0 è costante: il classificatore ignora i dati. In pratica C e i parametri del kernel (per esempio d) si scelgono insieme, per esempio con cross-validation.",
+      "latex": [
+        "0 \\le \\alpha_i \\le C \\quad \\forall i = 1, \\dots, m",
+        "C \\to +\\infty: \\;\\; 0 \\le \\alpha_i \\le C \\;\\longrightarrow\\; \\alpha_i \\ge 0 \\quad \\text{(duale hard margin in } H\\text{)}",
+        "C = 0: \\;\\; \\alpha_i = 0 \\;\\; \\forall i \\;\\Rightarrow\\; \\mathbf{w} = \\sum_{i=1}^{m} \\alpha_i y_i \\phi(\\mathbf{x}_i) = \\mathbf{0} \\;\\Rightarrow\\; f(\\mathbf{x}) = w_0"
+      ],
+      "symbols": [
+        {
+          "s": "C",
+          "meaning": "costante di regolarizzazione del soft margin: tetto dei moltiplicatori α_i"
+        }
+      ],
+      "examRelevance": 3,
+      "addedBy": "revisore"
+    },
+    {
+      "id": "c64",
+      "name": "SVR: primale con perdita ε-insensibile (integrazione)",
+      "nameEn": "SVR primal formulation and ε-insensitive loss",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 67
+        },
+        {
+          "doc": "part2",
+          "page": 68
+        }
+      ],
+      "detail": "Le note (pag. 67-68) presentano la SVR solo in forma duale; la domanda d'esame chiede anche 'SVR definition', quindi serve il primale da cui quel duale discende. Integrazione (formulazione standard della SVR, coerente con il duale, i vincoli e la funzione di predizione di pag. 68): si cerca f(x) = w^T φ(x) + w_0 che stia entro un tubo di semiampiezza ε attorno ai target, minimizzando ½‖w‖² + C Σ(ξ_i + ξ_i*). ξ_i* misura di quanto il target y_i sta sopra il tubo, ξ_i di quanto sta sotto; all'ottimo ξ_i + ξ_i* = |y_i − f(x_i)|_ε, cioè la perdita ε-insensibile (ε-insensitive loss): gli errori entro ε non costano nulla, oltre crescono linearmente (robusta come la hinge). ε è quindi la 'margin of tolerance' e C il 'trade-off between the margin size and allowed slack' della legenda di pag. 68. Dalla Lagrangiana si ottiene esattamente il duale della fonte (der11).",
+      "latex": [
+        "\\min_{\\mathbf{w}, w_0, \\boldsymbol{\\xi}, \\boldsymbol{\\xi}^*} \\frac{1}{2}\\|\\mathbf{w}\\|^2 + C \\sum_{i=1}^{m} (\\xi_i + \\xi_i^*)",
+        "\\text{s.t. } \\; \\mathbf{w}^T\\phi(\\mathbf{x}_i) + w_0 - y_i \\le \\epsilon + \\xi_i, \\quad y_i - \\mathbf{w}^T\\phi(\\mathbf{x}_i) - w_0 \\le \\epsilon + \\xi_i^*, \\quad \\xi_i, \\xi_i^* \\ge 0",
+        "|y - f(\\mathbf{x})|_{\\epsilon} = \\max\\left(0, \\; |y - f(\\mathbf{x})| - \\epsilon\\right)"
+      ],
+      "symbols": [
+        {
+          "s": "\\xi_i^*",
+          "meaning": "slack: di quanto il target y_i supera il bordo superiore del tubo"
+        },
+        {
+          "s": "\\xi_i",
+          "meaning": "slack: di quanto il target y_i scende sotto il bordo inferiore del tubo"
+        },
+        {
+          "s": "|\\cdot|_{\\epsilon}",
+          "meaning": "perdita ε-insensibile"
+        }
+      ],
+      "examRelevance": 3,
+      "addedBy": "revisore"
+    },
+    {
+      "id": "c65",
+      "name": "Feature map del kernel polinomiale per n feature e grado d qualsiasi",
+      "nameEn": "Explicit feature map of the polynomial kernel for any d (multinomial theorem)",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 66
+        },
+        {
+          "doc": "part2",
+          "page": 63
+        }
+      ],
+      "detail": "La fonte verifica i kernel polinomiali solo per n = 2 e d = 2 (pag. 66) e afferma che la validità del kernel polinomiale è garantita dalla sua feature map (pag. 67). Integrazione: il teorema multinomiale dà la mappa per ogni n e d. (x^T x')^d = Σ_{k_1+...+k_n=d} d!/(k_1!···k_n!) Π_j (x_j x_j')^{k_j}, quindi φ ha una componente per ogni monomio di grado d, con peso √(d!/(k_1!···k_n!)). Il √2 di pag. 66 è √(2!/(1!·1!)): il termine misto x_1x_2 nasce in due modi nello sviluppo. Il kernel non omogeneo è il kernel omogeneo applicato al vettore aumentato x̃ = (1, x_1, ..., x_n): (1 + x^T x')^d = (x̃^T x̃')^d, per cui la sua mappa contiene la costante e tutti i monomi di grado ≤ d con i loro pesi √(multinomiale). Le componenti sono C(n+d−1, d) nel caso omogeneo e C(n+d, d) nel non omogeneo (c25, der10). Esempio d = 3, n = 2: φ(x) = (x_1³, √3x_1²x_2, √3x_1x_2², x_2³).",
+      "latex": [
+        "(\\mathbf{x}^T\\mathbf{x}')^d = \\sum_{k_1 + \\dots + k_n = d} \\frac{d!}{k_1! \\cdots k_n!} \\prod_{j=1}^{n} (x_j x_j')^{k_j}",
+        "\\phi_{\\mathbf{k}}(\\mathbf{x}) = \\sqrt{\\frac{d!}{k_1! \\cdots k_n!}} \\; x_1^{k_1} \\cdots x_n^{k_n}, \\qquad k_1 + \\dots + k_n = d",
+        "(1 + \\mathbf{x}^T\\mathbf{x}')^d = (\\tilde{\\mathbf{x}}^T\\tilde{\\mathbf{x}}')^d, \\qquad \\tilde{\\mathbf{x}} = (1, x_1, \\dots, x_n)^T",
+        "d = 3, \\; n = 2: \\;\\; \\phi(\\mathbf{x}) = (x_1^3, \\; \\sqrt{3}x_1^2x_2, \\; \\sqrt{3}x_1x_2^2, \\; x_2^3)^T"
+      ],
+      "symbols": [
+        {
+          "s": "\\mathbf{k} = (k_1, \\dots, k_n)",
+          "meaning": "multi-indice: esponenti delle feature nel monomio"
+        },
+        {
+          "s": "\\tilde{\\mathbf{x}}",
+          "meaning": "vettore di input aumentato con la costante 1"
+        }
+      ],
+      "examRelevance": 2,
+      "addedBy": "revisore"
+    }
+  ],
+  "derivations": [
+    {
+      "id": "der01",
+      "title": "Il kernel polinomiale omogeneo di grado 2 è un prodotto scalare",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 66
+        }
+      ],
+      "goal": "Mostrare che (x^T x')² = φ(x)^T φ(x') con φ(x) = (x_1², √2x_1x_2, x_2²), quindi che il kernel è valido e qual è la sua feature map implicita.",
+      "steps": [
+        "k\\left(\\begin{pmatrix} x_1 \\\\ x_2 \\end{pmatrix}, \\begin{pmatrix} x_1' \\\\ x_2' \\end{pmatrix}\\right) = (\\mathbf{x}^T\\mathbf{x}')^2 = (x_1 x_1' + x_2 x_2')^2",
+        "= (x_1 x_1')^2 + (x_2 x_2')^2 + 2 x_1 x_1' x_2 x_2'",
+        "= x_1^2 \\, x_1'^2 + (\\sqrt{2} x_1 x_2)(\\sqrt{2} x_1' x_2') + x_2^2 \\, x_2'^2",
+        "= \\begin{pmatrix} x_1^2 & \\sqrt{2} x_1 x_2 & x_2^2 \\end{pmatrix} \\begin{pmatrix} x_1'^2 \\\\ \\sqrt{2} x_1' x_2' \\\\ x_2'^2 \\end{pmatrix}",
+        "= \\phi(\\mathbf{x})^T \\phi(\\mathbf{x}'), \\qquad \\phi(\\mathbf{x}) = (x_1^2, \\sqrt{2} x_1 x_2, x_2^2)^T"
+      ],
+      "stepWhy": [
+        "Definizione del kernel omogeneo con d = 2 e prodotto scalare in 2D: x^T x' = x_1x_1' + x_2x_2'.",
+        "Quadrato di un binomio: (a + b)² = a² + b² + 2ab con a = x_1x_1', b = x_2x_2'.",
+        "Si riscrive ogni termine come prodotto di 'qualcosa che dipende solo da x' per 'la stessa cosa calcolata su x''; il doppio prodotto 2x_1x_2x_1'x_2' si divide in modo simmetrico come (√2x_1x_2)(√2x_1'x_2').",
+        "Una somma di prodotti componente per componente è un prodotto scalare tra due vettori a 3 componenti.",
+        "Il primo vettore dipende solo da x e il secondo è lo stesso vettore calcolato in x': è φ(x)^T φ(x'). Esiste quindi una feature map esplicita, il kernel è valido (metodo 2 di pag. 67) e costa un prodotto scalare in 2D invece di uno in 3D."
+      ],
+      "concepts": [
+        "c34",
+        "c35",
+        "c38",
+        "c41"
+      ]
+    },
+    {
+      "id": "der02",
+      "title": "Il kernel polinomiale non omogeneo di grado 2 è un prodotto scalare",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 66
+        }
+      ],
+      "goal": "Mostrare che (1 + x^T x')² = φ(x)^T φ(x') con φ(x) = (1, √2x_1, √2x_2, x_1², √2x_1x_2, x_2²).",
+      "steps": [
+        "k(\\mathbf{x}, \\mathbf{x}') = (1 + \\mathbf{x}^T\\mathbf{x}')^2 = (1 + x_1 x_1' + x_2 x_2')^2",
+        "= 1 + (x_1 x_1')^2 + (x_2 x_2')^2 + 2 x_1 x_1' + 2 x_2 x_2' + 2 x_1 x_1' x_2 x_2'",
+        "= 1 \\cdot 1 + (\\sqrt{2}x_1)(\\sqrt{2}x_1') + (\\sqrt{2}x_2)(\\sqrt{2}x_2') + x_1^2 x_1'^2 + (\\sqrt{2}x_1x_2)(\\sqrt{2}x_1'x_2') + x_2^2 x_2'^2",
+        "= \\begin{pmatrix} 1 & \\sqrt{2} x_1 & \\sqrt{2} x_2 & x_1^2 & \\sqrt{2} x_1 x_2 & x_2^2 \\end{pmatrix} \\begin{pmatrix} 1 \\\\ \\sqrt{2} x_1' \\\\ \\sqrt{2} x_2' \\\\ x_1'^2 \\\\ \\sqrt{2} x_1' x_2' \\\\ x_2'^2 \\end{pmatrix} = \\phi(\\mathbf{x})^T\\phi(\\mathbf{x}')"
+      ],
+      "stepWhy": [
+        "Definizione del kernel non omogeneo con d = 2.",
+        "Quadrato di un trinomio: (a + b + c)² = a² + b² + c² + 2ab + 2ac + 2bc con a = 1, b = x_1x_1', c = x_2x_2'.",
+        "Ogni termine si fattorizza in una parte che dipende solo da x e la stessa parte calcolata in x'; i doppi prodotti portano il fattore √2 su ciascun lato.",
+        "Si riconosce un prodotto scalare in 6 dimensioni: la costante 1 (grado 0), i termini lineari (grado 1) e i quadratici (grado 2). È la mappa 'fino al grado d', con in più la costante e i √2 rispetto alla mappa esplicita di pag. 63."
+      ],
+      "concepts": [
+        "c36",
+        "c37",
+        "c38",
+        "c41"
+      ]
+    },
+    {
+      "id": "der03",
+      "title": "Kernel trick nel duale dell'SVM soft margin",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 65
+        },
+        {
+          "doc": "part2",
+          "page": 59
+        }
+      ],
+      "goal": "Mostrare che nel duale e nella funzione di decisione la feature map compare solo nei prodotti scalari, e sostituirli con il kernel (derivazione richiesta dalla domanda 'write the dual derivation and show that features appears only in dot products').",
+      "steps": [
+        "\\min_{\\mathbf{w}, w_0, \\boldsymbol{\\xi}} \\frac{1}{2}\\|\\mathbf{w}\\|^2 + C \\sum_{i=1}^{m}\\xi_i \\quad \\text{s.t. } y_i(\\mathbf{w}^T\\phi(\\mathbf{x}_i) + w_0) \\ge 1 - \\xi_i, \\; \\xi_i \\ge 0",
+        "\\frac{\\partial L}{\\partial \\mathbf{w}} = 0 \\Rightarrow \\mathbf{w} = \\sum_{i=1}^{m} \\alpha_i y_i \\phi(\\mathbf{x}_i), \\qquad \\frac{\\partial L}{\\partial w_0} = 0 \\Rightarrow \\sum_{i=1}^{m} \\alpha_i y_i = 0, \\qquad \\frac{\\partial L}{\\partial \\xi_i} = 0 \\Rightarrow C - \\alpha_i - \\beta_i = 0",
+        "\\max_{\\boldsymbol{\\alpha} \\in \\mathbb{R}^m} \\sum_{i=1}^{m} \\alpha_i - \\frac{1}{2}\\sum_{i,j=1}^{m} \\alpha_i \\alpha_j y_i y_j \\phi(\\mathbf{x}_i)^T\\phi(\\mathbf{x}_j), \\quad 0 \\le \\alpha_i \\le C, \\; \\sum_{i=1}^{m} \\alpha_i y_i = 0",
+        "k(\\mathbf{x}_i, \\mathbf{x}_j) = \\phi(\\mathbf{x}_i)^T\\phi(\\mathbf{x}_j)",
+        "\\max_{\\boldsymbol{\\alpha} \\in \\mathbb{R}^m} \\sum_{i=1}^{m} \\alpha_i - \\frac{1}{2}\\sum_{i,j=1}^{m} \\alpha_i \\alpha_j y_i y_j k(\\mathbf{x}_i, \\mathbf{x}_j)",
+        "f(\\mathbf{x}) = \\mathbf{w}^T\\phi(\\mathbf{x}) + w_0 = \\sum_{i=1}^{m} \\alpha_i y_i \\phi(\\mathbf{x}_i)^T\\phi(\\mathbf{x}) + w_0 = \\sum_{i=1}^{m} \\alpha_i y_i k(\\mathbf{x}_i, \\mathbf{x}) + w_0",
+        "w_0 = y_s - \\sum_{j=1}^{m} \\alpha_j y_j k(\\mathbf{x}_j, \\mathbf{x}_s) \\quad \\text{per un support vector } \\mathbf{x}_s \\text{ con } 0 < \\alpha_s < C"
+      ],
+      "stepWhy": [
+        "Primale soft margin di p09 con ogni x_i sostituito da φ(x_i): qui w vive in H e φ va calcolata esplicitamente, quindi il kernel trick non è applicabile (pag. 65).",
+        "Derivate della Lagrangiana L(w, w_0, ξ, α, β) uguagliate a zero come a pag. 59, con φ(x_i) al posto di x_i; da C − α_i − β_i = 0 e β_i ≥ 0 segue α_i ≤ C.",
+        "Sostituendo w nella Lagrangiana i termini in ξ e w_0 si annullano e resta il duale di pag. 65: l'unico punto in cui compaiono gli esempi è φ(x_i)^T φ(x_j). I vincoli non contengono φ.",
+        "Definizione della funzione kernel: il prodotto scalare in H calcolato direttamente sugli input.",
+        "Duale kernelizzato: servono solo gli m² valori k(x_i, x_j), cioè la Gram matrix. Se k è valido, la matrice [y_i y_j K_ij] è p.d. e il problema resta concavo (quadratico) come nel caso lineare.",
+        "Funzione di decisione: si sostituisce w dalla condizione di stazionarietà; anche qui φ compare solo nel prodotto scalare con φ(x), che diventa k(x_i, x). La fonte scrive questa formula senza w_0.",
+        "Integrazione (non nella fonte di pagina): per un support vector non saturato vale y_s f(x_s) = 1 (KKT, pag. 60), quindi w_0 = y_s − Σ_j α_j y_j k(x_j, x_s), usando y_s² = 1. Anche il bias si calcola con il solo kernel."
+      ],
+      "concepts": [
+        "c26",
+        "c29",
+        "c30",
+        "c31",
+        "c32"
+      ]
+    },
+    {
+      "id": "der04",
+      "title": "Una feature map esplicita garantisce la definita positività",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 67
+        }
+      ],
+      "goal": "Giustificare il metodo 2 di pag. 67 (e la direzione 'sufficiente' del teorema c49): se k(x, x') = φ(x)^T φ(x'), ogni Gram matrix è p.d. Integrazione didattica: la fonte afferma il risultato senza dimostrarlo.",
+      "steps": [
+        "K_{ij} = k(\\mathbf{x}_i, \\mathbf{x}_j) = \\phi(\\mathbf{x}_i)^T\\phi(\\mathbf{x}_j)",
+        "\\sum_{i,j=1}^{m} c_i c_j K_{ij} = \\sum_{i,j=1}^{m} c_i c_j \\, \\phi(\\mathbf{x}_i)^T\\phi(\\mathbf{x}_j)",
+        "= \\left(\\sum_{i=1}^{m} c_i \\phi(\\mathbf{x}_i)\\right)^T \\left(\\sum_{j=1}^{m} c_j \\phi(\\mathbf{x}_j)\\right)",
+        "= \\left\\| \\sum_{i=1}^{m} c_i \\phi(\\mathbf{x}_i) \\right\\|^2 \\ge 0 \\quad \\forall \\mathbf{c} \\in \\mathbb{R}^m",
+        "\\Phi = \\begin{pmatrix} \\phi(\\mathbf{x}_1)^T \\\\ \\vdots \\\\ \\phi(\\mathbf{x}_m)^T \\end{pmatrix} \\;\\Rightarrow\\; K = \\Phi\\Phi^T = B^T B, \\quad B = \\Phi^T"
+      ],
+      "stepWhy": [
+        "Ipotesi: il kernel è un prodotto scalare in uno spazio H (per esempio il polinomiale, der01 e der02).",
+        "Definizione di matrice p.d. (pag. 67) applicata alla Gram matrix.",
+        "Bilinearità del prodotto scalare: una doppia somma di prodotti scalari è il prodotto scalare delle due somme.",
+        "Il prodotto scalare di un vettore con sé stesso è il quadrato della sua norma, mai negativo. Vale per ogni m, ogni insieme di punti e ogni c: il kernel è definito positivo. L'uguaglianza a zero con c ≠ 0 si ha solo se i φ(x_i) sono linearmente dipendenti (legame con s.p.d.).",
+        "Stessa conclusione in forma matriciale: impilando i φ(x_i) come righe di Φ, la Gram matrix è Φ Φ^T, cioè della forma B^T B (seconda caratterizzazione di pag. 67)."
+      ],
+      "concepts": [
+        "c41",
+        "c49",
+        "c51",
+        "c48"
+      ]
+    },
+    {
+      "id": "der05",
+      "title": "Equivalenza tra le tre caratterizzazioni di matrice definita positiva",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 67
+        }
+      ],
+      "goal": "Mostrare perché, per K simmetrica, c^T K c ≥ 0 per ogni c ⇔ autovalori ≥ 0 ⇔ K = B^T B (la fonte elenca le tre condizioni come alternative senza dimostrarle; integrazione di algebra lineare).",
+      "steps": [
+        "\\sum_{i,j=1}^{m} c_i c_j K_{ij} = \\mathbf{c}^T K \\mathbf{c}",
+        "K = K^T \\Rightarrow K = U \\Lambda U^T, \\quad U^T U = I, \\quad \\Lambda = \\mathrm{diag}(\\lambda_1, \\dots, \\lambda_m)",
+        "\\mathbf{c}^T K \\mathbf{c} = (U^T\\mathbf{c})^T \\Lambda (U^T\\mathbf{c}) = \\sum_{k=1}^{m} \\lambda_k (\\mathbf{u}_k^T \\mathbf{c})^2",
+        "\\mathbf{c} = \\mathbf{u}_k \\Rightarrow \\mathbf{c}^T K \\mathbf{c} = \\lambda_k \\quad \\Rightarrow \\quad (\\mathbf{c}^T K \\mathbf{c} \\ge 0 \\; \\forall \\mathbf{c}) \\iff \\lambda_k \\ge 0 \\; \\forall k",
+        "\\lambda_k \\ge 0 \\Rightarrow B = \\Lambda^{1/2} U^T, \\quad B^T B = U \\Lambda^{1/2} \\Lambda^{1/2} U^T = U \\Lambda U^T = K",
+        "K = B^T B \\Rightarrow \\mathbf{c}^T K \\mathbf{c} = (B\\mathbf{c})^T (B\\mathbf{c}) = \\|B\\mathbf{c}\\|^2 \\ge 0"
+      ],
+      "stepWhy": [
+        "La doppia somma della definizione è la forma quadratica associata a K.",
+        "Teorema spettrale: una matrice reale simmetrica (come ogni Gram matrix) è diagonalizzabile con autovettori ortonormali u_k (colonne di U).",
+        "Cambio di variabile z = U^T c: nella base degli autovettori la forma quadratica è una somma pesata di quadrati, con pesi gli autovalori.",
+        "Se tutti i λ_k ≥ 0 ogni termine è ≥ 0; viceversa scegliendo c uguale a un autovettore si isola λ_k, quindi un autovalore negativo dà subito un c con forma quadratica negativa. Con λ_k > 0 per ogni k la forma è nulla solo per c = 0: caso s.p.d.",
+        "Con autovalori non negativi la radice Λ^{1/2} è reale e fornisce una fattorizzazione esplicita.",
+        "Viceversa, qualsiasi matrice della forma B^T B dà una forma quadratica uguale a una norma al quadrato: le colonne di B fanno da feature map degli m esempi."
+      ],
+      "concepts": [
+        "c45",
+        "c46",
+        "c47",
+        "c48"
+      ]
+    },
+    {
+      "id": "der06",
+      "title": "Dal perceptron al kernel perceptron",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 68
+        }
+      ],
+      "goal": "Ricavare le regole del kernel perceptron (α_i ← α_i + η y_i, f(x) = Σ α_i k(x_i, x)) dal perceptron eseguito nello spazio delle feature. La fonte dà i due algoritmi; il collegamento è un'integrazione.",
+      "steps": [
+        "\\mathbf{w} = \\mathbf{0}, \\qquad \\mathbf{w} \\leftarrow \\mathbf{w} + \\eta y_i \\phi(\\mathbf{x}_i) \\text{ su ogni errore}",
+        "\\mathbf{w} = \\sum_{i=1}^{m} \\alpha_i \\phi(\\mathbf{x}_i), \\qquad \\alpha_i = \\eta \\, y_i \\cdot n_i",
+        "\\mathbf{w} + \\eta y_i \\phi(\\mathbf{x}_i) = \\sum_{j \\ne i} \\alpha_j \\phi(\\mathbf{x}_j) + (\\alpha_i + \\eta y_i)\\phi(\\mathbf{x}_i) \\iff \\alpha_i \\leftarrow \\alpha_i + \\eta y_i",
+        "f(\\mathbf{x}) = \\mathbf{w}^T\\phi(\\mathbf{x}) = \\sum_{i=1}^{m} \\alpha_i \\phi(\\mathbf{x}_i)^T\\phi(\\mathbf{x}) = \\sum_{i=1}^{m} \\alpha_i k(\\mathbf{x}_i, \\mathbf{x})",
+        "(\\mathbf{x}_i, y_i) \\text{ classificato male} \\iff y_i \\sum_{j=1}^{m} \\alpha_j k(\\mathbf{x}_j, \\mathbf{x}_i) \\le 0"
+      ],
+      "stepWhy": [
+        "Perceptron stocastico di pag. 68 applicato agli esempi mappati φ(x_i) invece che a x_i.",
+        "Partendo da zero e sommando solo multipli di φ(x_i), w resta sempre combinazione lineare degli esempi di training; n_i è il numero di volte in cui l'esempio i è stato classificato male.",
+        "Aggiungere η y_i φ(x_i) a w cambia solo il coefficiente dell'esempio i: l'aggiornamento su w equivale all'aggiornamento su α_i, e l'inizializzazione w = 0 corrisponde ad α_i = 0 per ogni i.",
+        "Sostituendo la rappresentazione di w nella funzione del perceptron, φ compare solo nel prodotto scalare, che si rimpiazza con il kernel.",
+        "Anche la condizione di errore (segno sbagliato di f(x_i)) si valuta con il solo kernel: l'intero algoritmo non calcola mai φ."
+      ],
+      "concepts": [
+        "c60",
+        "c61",
+        "c62"
+      ]
+    },
+    {
+      "id": "der07",
+      "title": "Funzione di predizione della SVR in forma kernel",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 68
+        }
+      ],
+      "goal": "Passare da f(x) = w^T φ(x) + w_0 a Σ(α_i* − α_i) k(x_i, x) + w_0. La condizione di stazionarietà su w non è derivata nella fonte (il primale della SVR non compare in part2): è un'integrazione.",
+      "steps": [
+        "\\mathbf{w} = \\sum_{i=1}^{m} (\\alpha_i^* - \\alpha_i) \\phi(\\mathbf{x}_i)",
+        "f(\\mathbf{x}) = \\mathbf{w}^T\\phi(\\mathbf{x}) + w_0 = \\sum_{i=1}^{m} (\\alpha_i^* - \\alpha_i) \\phi(\\mathbf{x}_i)^T\\phi(\\mathbf{x}) + w_0",
+        "= \\sum_{i=1}^{m} (\\alpha_i^* - \\alpha_i) k(\\mathbf{x}_i, \\mathbf{x}) + w_0",
+        "|y_i - f(\\mathbf{x}_i)| < \\epsilon \\Rightarrow \\alpha_i = \\alpha_i^* = 0"
+      ],
+      "stepWhy": [
+        "Derivata della Lagrangiana della SVR rispetto a w uguagliata a zero (analoga a w = Σ α_i y_i φ(x_i) della classificazione): ogni esempio contribuisce con peso α_i* − α_i.",
+        "Sostituzione nella funzione di predizione di pag. 68: φ compare solo nel prodotto scalare con φ(x).",
+        "Kernel trick: il prodotto scalare diventa k(x_i, x). La fonte scrive k(x_i, x_j), refuso: l'argomento deve essere il punto x da predire.",
+        "Integrazione (condizioni KKT): gli esempi strettamente dentro il tubo ε non sono support vector e non entrano nella somma; solo i punti sul bordo o fuori dal tubo hanno α_i* − α_i ≠ 0."
+      ],
+      "concepts": [
+        "c57",
+        "c58",
+        "c54"
+      ]
+    },
+    {
+      "id": "der08",
+      "title": "La funzione di decisione quadratica è un iperpiano nello spazio delle feature",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 64
+        }
+      ],
+      "goal": "Mostrare che sgn(w_1x_1² + w_2x_1x_2 + w_3x_2² + w_0) è lineare in φ(x) e che il suo confine nello spazio di input è una conica (per esempio l'ellisse della figura).",
+      "steps": [
+        "\\phi(\\mathbf{x}) = (x_1^2, \\; x_1 x_2, \\; x_2^2)^T, \\qquad \\mathbf{w} = (w_1, w_2, w_3)^T",
+        "f(\\mathbf{x}) = \\mathrm{sgn}(\\mathbf{w}^T\\phi(\\mathbf{x}) + w_0) = \\mathrm{sgn}(w_1 x_1^2 + w_2 x_1 x_2 + w_3 x_2^2 + w_0)",
+        "\\{\\mathbf{z} \\in \\mathbb{R}^3 : w_1 z_1 + w_2 z_2 + w_3 z_3 + w_0 = 0\\} \\text{ è un piano}",
+        "\\{\\mathbf{x} \\in \\mathbb{R}^2 : w_1 x_1^2 + w_2 x_1 x_2 + w_3 x_2^2 + w_0 = 0\\} \\text{ è una conica; ellisse se } w_2^2 - 4 w_1 w_3 < 0",
+        "w_1 = w_3 = 1, \\; w_2 = 0, \\; w_0 = -r^2 \\;\\Rightarrow\\; f(\\mathbf{x}) = \\mathrm{sgn}(x_1^2 + x_2^2 - r^2)"
+      ],
+      "stepWhy": [
+        "Si sceglie la mappa polinomiale omogenea di grado 2 di pag. 63 e un vettore dei pesi in R³.",
+        "Il prodotto scalare w^T φ(x) sviluppato componente per componente dà esattamente la funzione di decisione della fonte.",
+        "Nelle coordinate z = φ(x) la funzione è affine: il confine è un iperpiano (un piano in 3D), come nella prima figura di pag. 64.",
+        "Nelle coordinate originali lo stesso insieme è un polinomio di secondo grado in (x_1, x_2) uguagliato a zero, cioè una conica; il discriminante w_2² − 4w_1w_3 ne determina il tipo (integrazione di geometria analitica).",
+        "Caso particolare dell'esempio 'anello': il confine è il cerchio di raggio r, positivo fuori e negativo dentro. Una retta non avrebbe mai potuto separare centro e periferia."
+      ],
+      "concepts": [
+        "c20",
+        "c21",
+        "c22",
+        "c23"
+      ]
+    },
+    {
+      "id": "der09",
+      "title": "Passo di Pegasos in forma esplicita",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 62
+        },
+        {
+          "doc": "part2",
+          "page": 61
+        }
+      ],
+      "goal": "Sostituire il sottogradiente di pag. 61 e η_t = 1/(λt) nel passo del pseudocodice per vedere l'effetto dell'aggiornamento (integrazione algebrica).",
+      "steps": [
+        "\\nabla_{\\mathbf{w}} E(\\mathbf{w}_t; (\\mathbf{x}_{i_t}, y_{i_t})) = \\lambda \\mathbf{w}_t - \\mathbf{1}[y_{i_t}\\langle \\mathbf{w}_t, \\mathbf{x}_{i_t}\\rangle < 1] \\, y_{i_t}\\mathbf{x}_{i_t}",
+        "\\mathbf{w}_{t+1} = \\mathbf{w}_t - \\frac{1}{\\lambda t}\\left(\\lambda \\mathbf{w}_t - \\mathbf{1}[\\cdot] \\, y_{i_t}\\mathbf{x}_{i_t}\\right)",
+        "\\mathbf{w}_{t+1} = \\left(1 - \\frac{1}{t}\\right)\\mathbf{w}_t + \\frac{1}{\\lambda t}\\mathbf{1}[\\cdot] \\, y_{i_t}\\mathbf{x}_{i_t}",
+        "t = 1: \\; \\mathbf{w}_2 = \\frac{1}{\\lambda} \\, y_{i_1}\\mathbf{x}_{i_1}"
+      ],
+      "stepWhy": [
+        "Sottogradiente dell'obiettivo per singolo esempio (pag. 61).",
+        "Passo del pseudocodice con η_t = 1/(λt).",
+        "Raccogliendo w_t: il termine di regolarizzazione restringe w di un fattore (1 − 1/t), l'hinge loss aggiunge y x solo se il margine è violato.",
+        "Alla prima iterazione w_1 = 0, quindi y⟨w, x⟩ = 0 < 1: il margine è sicuramente violato e w_2 punta nella direzione del primo esempio estratto, scalato di 1/λ."
+      ],
+      "concepts": [
+        "c01",
+        "c02",
+        "c03"
+      ]
+    },
+    {
+      "id": "der10",
+      "title": "Quanto è grande lo spazio delle feature polinomiali",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 64
+        },
+        {
+          "doc": "part2",
+          "page": 63
+        }
+      ],
+      "goal": "Quantificare 'extremely high-dimensional' (pag. 64) contando i monomi delle mappe polinomiali (integrazione combinatoria, non nella fonte).",
+      "steps": [
+        "\\#\\{\\text{monomi di grado esattamente } d \\text{ in } n \\text{ variabili}\\} = \\binom{n+d-1}{d}",
+        "\\#\\{\\text{monomi di grado da 0 a } d\\} = \\sum_{j=0}^{d}\\binom{n+j-1}{j} = \\binom{n+d}{d}",
+        "n = 2, \\; d = 2: \\; \\binom{3}{2} = 3 \\text{ (omogenea)}, \\quad \\binom{4}{2} = 6 \\text{ (non omogenea, con la costante)}",
+        "n = 784, \\; d = 2: \\; \\binom{785}{2} = 307{,}720; \\qquad n = 784, \\; d = 3: \\; \\binom{786}{3} = 80{,}622{,}640",
+        "\\text{costo di } k(\\mathbf{x}, \\mathbf{x}') = (\\mathbf{x}^T\\mathbf{x}')^d: \\; n \\text{ moltiplicazioni} + n - 1 \\text{ somme} + \\text{una potenza}"
+      ],
+      "stepWhy": [
+        "Stelle e barre: scegliere d fattori tra n variabili con ripetizione e senza ordine.",
+        "Si sommano i gradi da 0 a d (identità di Pascal); la mappa non omogenea del kernel include la costante (grado 0).",
+        "Verifica sugli esempi della fonte: 3 componenti per la mappa omogenea di pag. 63; 6 per quella implicita del kernel non omogeneo di pag. 66 (la mappa di pag. 63 ne ha 5 perché omette la costante).",
+        "Per un'immagine 28×28 (784 pixel) la mappa esplicita diventa enorme già al grado 3: impossibile memorizzarla per migliaia di esempi.",
+        "Il kernel lavora nello spazio di input: il costo non dipende da d (a parte la potenza). È il vantaggio computazionale del kernel trick."
+      ],
+      "concepts": [
+        "c25",
+        "c28",
+        "c17"
+      ]
+    },
+    {
+      "id": "der11",
+      "title": "Dal primale al duale della SVR (integrazione)",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 67
+        },
+        {
+          "doc": "part2",
+          "page": 68
+        }
+      ],
+      "goal": "Ricavare il duale della SVR di pag. 68 (e i suoi vincoli) dal primale con perdita ε-insensibile, mostrare che gli esempi compaiono solo nei prodotti scalari e ricavare w_0 dalle KKT. La fonte dà solo il risultato: tutti i passaggi sono un'integrazione, controllata sul duale della fonte.",
+      "steps": [
+        "L = \\frac{1}{2}\\|\\mathbf{w}\\|^2 + C\\sum_{i=1}^{m}(\\xi_i + \\xi_i^*) - \\sum_{i=1}^{m}\\alpha_i(\\epsilon + \\xi_i + y_i - \\mathbf{w}^T\\phi(\\mathbf{x}_i) - w_0) - \\sum_{i=1}^{m}\\alpha_i^*(\\epsilon + \\xi_i^* - y_i + \\mathbf{w}^T\\phi(\\mathbf{x}_i) + w_0) - \\sum_{i=1}^{m}(\\beta_i\\xi_i + \\beta_i^*\\xi_i^*)",
+        "\\frac{\\partial L}{\\partial \\mathbf{w}} = 0 \\Rightarrow \\mathbf{w} = \\sum_{i=1}^{m}(\\alpha_i^* - \\alpha_i)\\phi(\\mathbf{x}_i), \\qquad \\frac{\\partial L}{\\partial w_0} = 0 \\Rightarrow \\sum_{i=1}^{m}(\\alpha_i^* - \\alpha_i) = 0",
+        "\\frac{\\partial L}{\\partial \\xi_i} = 0 \\Rightarrow C - \\alpha_i - \\beta_i = 0, \\qquad \\frac{\\partial L}{\\partial \\xi_i^*} = 0 \\Rightarrow C - \\alpha_i^* - \\beta_i^* = 0 \\;\\Rightarrow\\; \\alpha_i, \\alpha_i^* \\in [0, C]",
+        "\\frac{1}{2}\\|\\mathbf{w}\\|^2 - \\mathbf{w}^T\\sum_{i=1}^{m}(\\alpha_i^* - \\alpha_i)\\phi(\\mathbf{x}_i) = -\\frac{1}{2}\\sum_{i,j=1}^{m}(\\alpha_i^* - \\alpha_i)(\\alpha_j^* - \\alpha_j)\\phi(\\mathbf{x}_i)^T\\phi(\\mathbf{x}_j)",
+        "\\max_{\\boldsymbol{\\alpha}, \\boldsymbol{\\alpha}^* \\in \\mathbb{R}^m} -\\frac{1}{2}\\sum_{i,j=1}^{m}(\\alpha_i^* - \\alpha_i)(\\alpha_j^* - \\alpha_j)k(\\mathbf{x}_i, \\mathbf{x}_j) - \\epsilon\\sum_{i=1}^{m}(\\alpha_i^* + \\alpha_i) + \\sum_{i=1}^{m} y_i(\\alpha_i^* - \\alpha_i)",
+        "\\alpha_i(\\epsilon + \\xi_i + y_i - f(\\mathbf{x}_i)) = 0, \\quad \\alpha_i^*(\\epsilon + \\xi_i^* - y_i + f(\\mathbf{x}_i)) = 0, \\quad (C - \\alpha_i)\\xi_i = 0, \\quad (C - \\alpha_i^*)\\xi_i^* = 0",
+        "0 < \\alpha_s^* < C \\Rightarrow w_0 = y_s - \\epsilon - \\sum_{j=1}^{m}(\\alpha_j^* - \\alpha_j)k(\\mathbf{x}_j, \\mathbf{x}_s); \\qquad 0 < \\alpha_s < C \\Rightarrow w_0 = y_s + \\epsilon - \\sum_{j=1}^{m}(\\alpha_j^* - \\alpha_j)k(\\mathbf{x}_j, \\mathbf{x}_s)"
+      ],
+      "stepWhy": [
+        "Lagrangiana del primale di c64: un moltiplicatore α_i ≥ 0 per il vincolo f(x_i) − y_i ≤ ε + ξ_i (target sotto il tubo), α_i* ≥ 0 per y_i − f(x_i) ≤ ε + ξ_i* (target sopra il tubo), β_i, β_i* ≥ 0 per la non negatività degli slack. Stessa costruzione del soft margin di pag. 58-59.",
+        "Stazionarietà rispetto a w e w_0: w è combinazione degli esempi mappati con pesi α_i* − α_i (è la w della funzione di predizione di pag. 68), e la derivata in w_0 dà il primo vincolo del duale Σ(α_i* − α_i) = 0.",
+        "Stazionarietà rispetto agli slack: come a pag. 59, da β_i, β_i* ≥ 0 segue α_i ≤ C e α_i* ≤ C, cioè il vincolo α_i, α_i* ∈ [0, C] della fonte.",
+        "Sostituendo w: i termini in w della Lagrangiana si combinano in −½‖w‖², che diventa la doppia somma di prodotti scalari φ(x_i)^T φ(x_j). I termini in ξ si annullano grazie a C − α_i − β_i = 0, quelli in w_0 grazie a Σ(α_i* − α_i) = 0; restano −εΣ(α_i + α_i*) e Σ y_i(α_i* − α_i).",
+        "Kernel trick: φ compare solo nel prodotto scalare, che diventa k(x_i, x_j). Si ottiene esattamente il duale di pag. 68 (dove la fonte scrive max_{α ∈ R^m} per entrambi i vettori α, α*).",
+        "Condizioni di complementarità (KKT): se |y_i − f(x_i)| < ε nessun vincolo è attivo e α_i = α_i* = 0 (l'esempio non è support vector); i due vincoli non possono essere attivi insieme se ε > 0, quindi α_i α_i* = 0; se ξ_i > 0 allora α_i = C (support vector 'bound').",
+        "Per un support vector 'unbound' (0 < α < C) lo slack è nullo e il target sta esattamente sul bordo del tubo: y_s − f(x_s) = +ε (se α_s* > 0) oppure −ε (se α_s > 0). Risolvendo per w_0 si ottiene il bias usando solo il kernel, come per la classificazione (der03)."
+      ],
+      "concepts": [
+        "c64",
+        "c54",
+        "c55",
+        "c56",
+        "c57"
+      ],
+      "addedBy": "revisore"
+    },
+    {
+      "id": "der12",
+      "title": "Feature map esplicita del kernel polinomiale di grado d (teorema multinomiale)",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 66
+        },
+        {
+          "doc": "part2",
+          "page": 67
+        }
+      ],
+      "goal": "Generalizzare i due riquadri d = 2 di pag. 66: mostrare che (x^T x')^d e (1 + x^T x')^d sono prodotti scalari per ogni n e d, trovando la feature map esplicita (metodo 2 di pag. 67) e spiegando l'origine dei fattori √2. Integrazione: la fonte tratta solo n = 2, d = 2.",
+      "steps": [
+        "(\\mathbf{x}^T\\mathbf{x}')^d = \\left(\\sum_{j=1}^{n} x_j x_j'\\right)^d",
+        "= \\sum_{k_1 + \\dots + k_n = d} \\frac{d!}{k_1! \\cdots k_n!} \\prod_{j=1}^{n} (x_j x_j')^{k_j}",
+        "= \\sum_{k_1 + \\dots + k_n = d} \\left(\\sqrt{\\frac{d!}{k_1! \\cdots k_n!}} \\prod_{j=1}^{n} x_j^{k_j}\\right)\\left(\\sqrt{\\frac{d!}{k_1! \\cdots k_n!}} \\prod_{j=1}^{n} x_j'^{k_j}\\right) = \\phi(\\mathbf{x})^T\\phi(\\mathbf{x}')",
+        "n = 2, \\; d = 2: \\;\\; \\mathbf{k} \\in \\{(2,0), (1,1), (0,2)\\}, \\;\\; \\frac{2!}{k_1!k_2!} \\in \\{1, 2, 1\\} \\;\\Rightarrow\\; \\phi(\\mathbf{x}) = (x_1^2, \\sqrt{2}x_1x_2, x_2^2)^T",
+        "(1 + \\mathbf{x}^T\\mathbf{x}')^d = (\\tilde{\\mathbf{x}}^T\\tilde{\\mathbf{x}}')^d, \\quad \\tilde{\\mathbf{x}} = (1, x_1, x_2)^T \\;\\Rightarrow\\; d = 2: \\; \\phi(\\mathbf{x}) = (1, \\sqrt{2}x_1, \\sqrt{2}x_2, x_1^2, \\sqrt{2}x_1x_2, x_2^2)^T",
+        "n = 2, \\; d = 3: \\;\\; (a + b)^3 = a^3 + 3a^2b + 3ab^2 + b^3 \\;\\Rightarrow\\; \\phi(\\mathbf{x}) = (x_1^3, \\sqrt{3}x_1^2x_2, \\sqrt{3}x_1x_2^2, x_2^3)^T"
+      ],
+      "stepWhy": [
+        "Definizione del kernel omogeneo di grado d e del prodotto scalare in n dimensioni.",
+        "Teorema multinomiale: la potenza d-esima di una somma di n termini è la somma su tutti i multi-indici k con k_1 + ... + k_n = d, ciascuno con il coefficiente multinomiale (numero di modi in cui quel monomio nasce dallo sviluppo).",
+        "Ogni termine si fattorizza simmetricamente dividendo il coefficiente in √coef · √coef: una metà dipende solo da x, l'altra è la stessa espressione in x'. La somma di prodotti componente per componente è un prodotto scalare: esiste una φ esplicita, quindi il kernel è valido per ogni d.",
+        "Verifica sul riquadro omogeneo di pag. 66: il coefficiente 2 del termine misto diventa √2 in entrambi i vettori.",
+        "Il kernel non omogeneo è il kernel omogeneo sul vettore con la costante 1 aggiunta; applicando lo stesso sviluppo a x̃ = (1, x_1, x_2) con d = 2 si ottengono i 6 componenti del riquadro non omogeneo di pag. 66 (1 nasce da k = (2,0,0), √2x_1 da (1,1,0), e così via).",
+        "Esempio nuovo con d = 3: i coefficienti binomiali 1, 3, 3, 1 danno i fattori 1, √3, √3, 1. La mappa di grado d contiene C(n+d−1, d) componenti, come contato in der10."
+      ],
+      "concepts": [
+        "c65",
+        "c34",
+        "c35",
+        "c36",
+        "c37",
+        "c38",
+        "c51"
+      ],
+      "addedBy": "revisore"
+    }
+  ],
+  "workedExamples": [
+    {
+      "id": "ex01",
+      "title": "Esempi di feature map polinomiali di grado 2",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 63
+        }
+      ],
+      "description": "Examples of Feature Maps. Homogeneous Polynomial Mapping (d = 2): associa a (x_1, x_2) tutti i prodotti di grado esattamente 2, φ(x_1, x_2) = (x_1², x_1x_2, x_2²). Inhomogeneous Polynomial Mapping (d = 2): tutti i prodotti fino al grado 2, φ(x_1, x_2) = (x_1, x_2, x_1², x_1x_2, x_2²). Da 2 dimensioni si passa a 3 e a 5.",
+      "concepts": [
+        "c15",
+        "c16",
+        "c17"
+      ]
+    },
+    {
+      "id": "ex02",
+      "title": "Figure: la feature map Φ e il ritorno allo spazio di input",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 64
+        },
+        {
+          "doc": "part2",
+          "page": 63
+        }
+      ],
+      "description": "Prima figura: in 2D i quadratini neri stanno vicino all'origine e i cerchi bianchi tutto intorno; Φ li porta in 3D dove un piano li separa (buona feature map, classi ben separate). Seconda figura (freccia f(x)): il piano in 3D riportato nello spazio di input diventa un'ellisse che racchiude i quadratini.",
+      "concepts": [
+        "c19",
+        "c21"
+      ]
+    },
+    {
+      "id": "ex03",
+      "title": "Funzione di decisione per una mappa quadratica",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 64
+        }
+      ],
+      "description": "Per una specifica feature mapping e un vettore dei pesi la funzione di decisione può essere f(x_1, x_2) = sgn(w_1x_1² + w_2x_1x_2 + w_3x_2² + w_0). Nello spazio trasformato è un confine lineare; nello spazio di input non è più lineare.",
+      "concepts": [
+        "c22",
+        "c23"
+      ]
+    },
+    {
+      "id": "ex04",
+      "title": "Kernel polinomiale omogeneo con d = 2",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 66
+        }
+      ],
+      "description": "k((x_1, x_2), (x_1', x_2')) = (x_1x_1' + x_2x_2')² = (x_1x_1')² + (x_2x_2')² + 2x_1x_1'x_2x_2' = (x_1², √2x_1x_2, x_2²)(x_1'², √2x_1'x_2', x_2'²)^T = φ(x)^T φ(x').",
+      "concepts": [
+        "c35"
+      ]
+    },
+    {
+      "id": "ex05",
+      "title": "Kernel polinomiale non omogeneo con d = 2",
+      "sourcePages": [
+        {
+          "doc": "part2",
+          "page": 66
+        }
+      ],
+      "description": "k((x_1, x_2), (x_1', x_2')) = (1 + x_1x_1' + x_2x_2')² = 1 + (x_1x_1')² + (x_2x_2')² + 2x_1x_1' + 2x_2x_2' + 2x_1x_1'x_2x_2' = (1, √2x_1, √2x_2, x_1², √2x_1x_2, x_2²)(1, √2x_1', √2x_2', x_1'², √2x_1'x_2', x_2'²)^T = φ(x)^T φ(x').",
+      "concepts": [
+        "c37"
+      ]
+    }
+  ],
+  "figures": [
+    {
+      "id": "fig01",
+      "doc": "part2",
+      "page": 62,
+      "description": "Riquadro 'Pseudocode (pegasus)': inizializza w_1 = 0; for t = 1 to T: scegli a caso (x_{i_t}, y_{i_t}) da D, poni η_t = 1/(λt), aggiorna w_{t+1} = w_t − η_t ∇_w E(w; (x_{i_t}, y_{i_t})); restituisci w_{T+1}.",
+      "region": "terzo superiore della pagina, riquadro blu-viola",
+      "concepts": [
+        "c01",
+        "c02",
+        "c03"
+      ],
+      "importance": 2
+    },
+    {
+      "id": "fig02",
+      "doc": "part2",
+      "page": 63,
+      "description": "Riquadro con la mappa polinomiale omogenea di grado 2: φ(x_1, x_2) = (x_1², x_1x_2, x_2²).",
+      "region": "centro-alto della pagina, primo riquadro lilla",
+      "concepts": [
+        "c15"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig03",
+      "doc": "part2",
+      "page": 63,
+      "description": "Riquadro con la mappa polinomiale non omogenea di grado 2: φ(x_1, x_2) = (x_1, x_2, x_1², x_1x_2, x_2²).",
+      "region": "centro della pagina, secondo riquadro lilla",
+      "concepts": [
+        "c16"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig04",
+      "doc": "part2",
+      "page": 64,
+      "description": "Feature map Φ: a sinistra piano 2D con quadratini neri al centro e cerchi bianchi intorno (non separabili linearmente); freccia Φ verso uno spazio 3D in cui un piano (parallelogramma) separa i quadratini (sopra) dai cerchi (sotto).",
+      "region": "parte alta della pagina, figura larga",
+      "concepts": [
+        "c19",
+        "c11",
+        "c13"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig05",
+      "doc": "part2",
+      "page": 64,
+      "description": "Ritorno allo spazio di input: freccia f(x) dal piano separatore nello spazio 3D allo spazio 2D, dove il confine è un'ellisse che racchiude i quadratini neri e lascia fuori i cerchi.",
+      "region": "metà della pagina, seconda figura",
+      "concepts": [
+        "c21",
+        "c23"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig06",
+      "doc": "part2",
+      "page": 64,
+      "description": "Riquadro con la funzione di decisione di esempio f(x_1, x_2) = sgn(w_1x_1² + w_2x_1x_2 + w_3x_2² + w_0).",
+      "region": "sotto la seconda figura, riquadro lilla",
+      "concepts": [
+        "c22"
+      ],
+      "importance": 2
+    },
+    {
+      "id": "fig07",
+      "doc": "part2",
+      "page": 66,
+      "description": "Riquadro 'E.g. (d = 2)' del kernel omogeneo: espansione di (x_1x_1' + x_2x_2')² fino al prodotto tra (x_1², √2x_1x_2, x_2²) e (x_1'², √2x_1'x_2', x_2'²), con le parentesi graffe etichettate φ(x)^T e φ(x').",
+      "region": "metà superiore della pagina",
+      "concepts": [
+        "c35",
+        "c34"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig08",
+      "doc": "part2",
+      "page": 66,
+      "description": "Riquadro 'E.g. (d = 2)' del kernel non omogeneo: espansione di (1 + x_1x_1' + x_2x_2')² fino al prodotto tra (1, √2x_1, √2x_2, x_1², √2x_1x_2, x_2²) e il vettore colonna corrispondente in x', etichettati φ(x)^T e φ(x').",
+      "region": "centro della pagina, riquadro più alto",
+      "concepts": [
+        "c37",
+        "c36"
+      ],
+      "importance": 3
+    }
+  ],
+  "widgets": [
+    {
+      "id": "p10-pegasos-passo-passo",
+      "title": "Pegasos, un esempio alla volta",
+      "concepts": [
+        "c01",
+        "c02",
+        "c03"
+      ],
+      "scenario": "banca",
+      "realExample": "Rilevamento frodi con carta di credito: milioni di transazioni descritte da importo normalizzato e frequenza degli acquisti nell'ultima ora (dati sintetici ispirati al credit scoring). Risolvere il QP globale su milioni di esempi è impraticabile: Pegasos addestra l'SVM lineare pescando una transazione alla volta.",
+      "storyboard": [
+        "Stato iniziale (al caricamento, fade-in 400 ms): piano 'importo normalizzato' / 'acquisti nell'ultima ora' con 400 transazioni sintetiche (legittime in basso a sinistra, frodi in alto a destra); w_1 = 0 è un punto nell'origine, la retta non è ancora disegnata; il pannello a destra mostra t = 0 e il λ corrente.",
+        "Trigger: clic su Passo. Una transazione scelta a caso da D pulsa (scala 1 → 1.6 → 1, 300 ms) e si stacca dal mucchio; il pannello mostra t, η_t = 1/(λt) con i numeri (es. λ = 0.1, t = 3 → η_3 = 3.33) e il margine y⟨w_t, x⟩ calcolato con le coordinate dell'esempio.",
+        "Se y⟨w_t, x⟩ < 1 l'indicatrice 1[·] si accende in rosso: la freccia w si accorcia del fattore (1 − 1/t) (contrazione, 300 ms) e poi riceve il vettore arancione (1/(λt)) y x sommato testa-coda (400 ms); la retta w^T x = 0 e le fasce di margine ruotano di conseguenza (tween 300 ms). Se il margine è rispettato si vede solo la contrazione e l'indicatrice resta grigia. A t = 1 la contrazione azzera w: w_2 = (1/λ) y x.",
+        "Trigger: Play. Le iterazioni partono a 4 passi/s e accelerano fino a 60 passi/s (sopra 10 passi/s le animazioni di contrazione e somma si saltano); la retta oscilla nei primi passi e si stabilizza man mano che η_t decresce. Sotto, due mini-grafici si allungano in tempo reale: η_t = 1/(λt) e l'obiettivo medio (λ/2)‖w‖² + media delle hinge loss sui 400 esempi.",
+        "A t = T l'animazione si ferma, compare il badge 'return w_{T+1}' (fade 300 ms) con l'accuratezza su un test set sintetico separato; cambiando λ o T il widget torna allo stato iniziale."
+      ],
+      "interactions": [
+        "pulsanti Passo, Play/Pausa, Reset",
+        "slider λ da 0.001 a 1 (scala logaritmica)",
+        "slider T da 10 a 5000",
+        "toggle 'mostra la contrazione' per isolare il termine λw"
+      ],
+      "visual": "Scatter 2D con legittime (cerchi blu) e frodi (triangoli rossi), freccia w in nero, retta w^T x = 0 e fasce di margine tratteggiate, esempio corrente evidenziato con alone; pannello con la formula del passo e i numeri sostituiti; mini-grafico di η_t in funzione di t. Etichetta 'dati sintetici ispirati alle frodi con carta'.",
+      "aha": "Pegasos non guarda mai tutto il dataset: a ogni passo restringe w (regolarizzazione) e lo corregge solo se l'esempio pescato viola il margine; il passo 1/(λt) rende i primi passi audaci e gli ultimi prudenti.",
+      "formulasShown": [
+        "\\eta_t = \\frac{1}{\\lambda t}",
+        "\\mathbf{w}_{t+1} = \\left(1 - \\frac{1}{t}\\right)\\mathbf{w}_t + \\frac{1}{\\lambda t}\\mathbf{1}[y\\langle \\mathbf{w}_t, \\mathbf{x}\\rangle < 1] \\, y\\mathbf{x}"
+      ],
+      "challenge": "Prevedi: con λ = 1 o λ = 0.01 la retta si stabilizza prima? Scegli, poi lancia Play e confronta dopo 200 passi.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p10-pegasos-scala-ma-resta-lineare",
+      "title": "Pegasos scala, ma resta una retta",
+      "concepts": [
+        "c04",
+        "c05",
+        "c06"
+      ],
+      "scenario": "banca",
+      "realExample": "Una banca deve riaddestrare ogni notte il filtro antifrode su un numero crescente di transazioni (da mille a cento milioni) con feature sparse (poche feature non nulle per transazione). Serve sapere come cresce il tempo; poi arriva un nuovo tipo di frode che non si separa con una retta.",
+      "storyboard": [
+        "Al caricamento: grafico log-log con asse x numero di esempi m (da 10^3 a 10^8) e asse y operazioni stimate; le due curve si disegnano da sinistra a destra in 1,2 s: 'QP globale' modellata in modo indicativo come m²·d operazioni (curva ripida, etichetta 'stima indicativa') e 'Pegasos' orizzontale a quota d/(λε).",
+        "Trigger: slider d, λ, ε. La linea di Pegasos trasla in verticale (tween 200 ms) e la formula mostra i valori sostituiti (es. d = 50, λ = 0.01, ε = 0.01 → 50/(0.01·0.01) = 5·10^5 operazioni); la curva QP si sposta solo con d, mai con λ o ε: il costo di Pegasos non contiene m.",
+        "Un'etichetta mobile segna il punto di incrocio m* oltre il quale Pegasos costa meno del QP (calcolato live); un contatore 'transazioni processate al secondo' scorre con la velocità stimata (scales well for large datasets).",
+        "Trigger: pulsante 'Nuovo schema di frode'. Il grafico scorre via a sinistra (400 ms) e compare uno scatter 2D ad anello (frodi con importi troppo piccoli o troppo grandi rispetto al profilo del cliente). Pegasos esegue 500 passi in 2 s: la retta ruota senza assestarsi e l'accuratezza oscilla attorno al 50%.",
+        "Alla fine compare la frase della fonte 'its applicability to non-linear models remains problematic' (fade 300 ms) con il link al widget 'Hard, soft o nessuna retta?'; pulsante 'Torna al grafico' per ripartire."
+      ],
+      "interactions": [
+        "slider d da 1 a 1000 (scala logaritmica, feature non nulle per transazione)",
+        "slider λ da 0.0001 a 1 (scala logaritmica)",
+        "slider ε da 0.001 a 0.1 (scala logaritmica)",
+        "pulsante 'Nuovo schema di frode' e pulsante 'Torna al grafico'"
+      ],
+      "visual": "Grafico log-log con due curve colorate, formula O(d/(λε)) con valori live, poi scatter 2D ad anello con retta che non separa e badge di accuratezza.",
+      "aha": "Il costo di Pegasos non dipende dal numero di esempi ma da sparsità, regolarizzazione e precisione; però risolve solo problemi lineari, ed è da qui che nasce il bisogno dei kernel.",
+      "formulasShown": [
+        "O\\left(\\frac{d}{\\lambda \\epsilon}\\right)"
+      ],
+      "challenge": "Con d = 50 ed ε = 0.01 trova il λ più piccolo per cui Pegasos resta sotto 10^7 operazioni (risposta: λ ≥ 50/(0.01·10^7) = 5·10^-4); poi spiega perché alzare ancora λ accelera l'addestramento ma può peggiorare il modello (regolarizzazione più forte).",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p10-tre-regimi-di-separabilita",
+      "title": "Hard, soft o nessuna retta?",
+      "concepts": [
+        "c07",
+        "c08",
+        "c09",
+        "c10"
+      ],
+      "scenario": "sensori",
+      "realExample": "Manutenzione predittiva di una pompa industriale: due sensori IoT misurano temperatura e vibrazione (normalizzate). Tre situazioni: guasti ben distinti dal funzionamento normale, guasti distinti ma con qualche lettura anomala dovuta a un sensore difettoso, e guasti che avvengono sia quando la pompa è troppo fredda sia quando è troppo calda (anello attorno al funzionamento normale). Dati sintetici ispirati ai sensori IoT.",
+      "storyboard": [
+        "Al caricamento è attiva la scheda 'Separabili': 60 letture sintetiche (verdi = normale, rosse = guasto) compaiono con stagger di 10 ms; nessuna retta.",
+        "Trigger: pulsante 'Hard margin'. La retta a massimo margine si disegna dal centro verso gli estremi (500 ms) e le fasce di margine si aprono (300 ms); i support vector si cerchiano; badge 'margine ampio → generalizzazione'. Hover su un punto: y_i(w^T x_i + w_0) con i numeri e la spunta '≥ 1'. 'Soft margin' dà la stessa retta.",
+        "Trigger: scheda 'Separabili con outlier' (crossfade 300 ms): due letture rosse cadono tra le verdi (sensore difettoso). Hard margin: nessuna retta, gli outlier lampeggiano due volte in rosso (2 × 250 ms) con il messaggio 'vincoli y_i(w^T x_i + w_0) ≥ 1 impossibili'. Soft margin: la retta compare, gli outlier prendono un alone arancio con il valore numerico di ξ_i; lo slider C sposta la retta in tempo reale (ricalcolo < 100 ms, tween 200 ms).",
+        "Trigger: scheda 'Non linearmente separabili' (anello: guasti sia con pompa troppo fredda sia troppo calda). Hard margin: messaggio di infeasibility; Soft margin: per ogni valore di C la retta taglia l'anello a metà, badge di accuratezza intorno al 50-60% e messaggio 'serve più potere espressivo: combinazioni di feature'.",
+        "Riquadro laterale sempre visibile con i due vantaggi da non perdere (large margins, theoretical guarantees); arrivati alla scheda 3 l'icona a lucchetto si chiude (200 ms) e un link porta al widget 'Solleva i dati nello spazio delle feature'."
+      ],
+      "interactions": [
+        "tre schede dei dataset",
+        "pulsanti Hard margin / Soft margin",
+        "slider C da 0.01 a 100 (scala logaritmica) per il soft margin",
+        "clic per aggiungere una lettura verde, Maiusc+clic per una rossa; pulsante Reset"
+      ],
+      "visual": "Scatter 2D temperatura/vibrazione, retta nera spessa, fasce di margine tratteggiate, outlier con alone arancio e valore di ξ_i, tooltip con y_i(w^T x_i + w_0) calcolato con i numeri, badge di accuratezza e messaggio di infeasibility. Etichetta 'dati sintetici ispirati a sensori IoT'.",
+      "aha": "Il soft margin perdona pochi punti fuori posto, ma nessuna retta, per quanto morbida, separa un centro da una corona: il problema è la rappresentazione, non la tolleranza.",
+      "formulasShown": [
+        "y_i(\\mathbf{w}^T\\mathbf{x}_i + w_0) \\ge 1",
+        "y_i(\\mathbf{w}^T\\mathbf{x}_i + w_0) \\ge 1 - \\xi_i"
+      ],
+      "challenge": "Nella scheda 3 aggiungi punti a mano: riesci a trovare una disposizione ad anello in cui una retta ottiene più del 70%? Perché no?",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p10-solleva-nel-feature-space",
+      "title": "Solleva i dati nello spazio delle feature",
+      "concepts": [
+        "c11",
+        "c12",
+        "c13",
+        "c14"
+      ],
+      "scenario": "sensori",
+      "realExample": "Le stesse letture ad anello della pompa (guasto se troppo fredda o troppo calda, troppa o troppo poca vibrazione). Invece di cercare una curva a mano, si trasforma ogni lettura con φ(x) = (x_1², x_1x_2, x_2²) e si usa l'SVM lineare nel nuovo spazio.",
+      "storyboard": [
+        "Al caricamento: 80 letture ad anello sul piano (x_1 = temperatura, x_2 = vibrazione, centrate e normalizzate in [−1.5, 1.5]) disegnate come pavimento di una scena 3D in prospettiva; in alto la definizione φ: X → H e la mappa φ(x_1, x_2) = (x_1², x_1x_2, x_2²).",
+        "Trigger: slider 'solleva' da 0 a 1 (oppure pulsante Anima: 1,5 s, ease-in-out). Ogni punto interpola dalla posizione (x_1, x_2, 0) alle coordinate (x_1², x_1x_2, x_2²): i rossi esterni (x_1² + x_2² grande) si allontanano dall'origine, i verdi interni restano vicini.",
+        "A sollevamento completo (valore 1) il piano separatore semitrasparente appare (fade 400 ms); badge 'linearmente separabili in H' con il margine calcolato; nota: stessa SVM lineare, spazio diverso.",
+        "Trascinando si ruota la scena (inerzia 300 ms al rilascio). Toggle tabella: 5 letture con x a sinistra e φ(x) a destra con i numeri (es. x = (0.8, −0.5) → φ(x) = (0.64, −0.40, 0.25)); cliccando una riga il punto si evidenzia nei due spazi (principio 'x sostituito da φ(x)').",
+        "Toggle rumore: 8 letture extra vicino al confine compaiono (stagger 50 ms); il piano non separa più tutto, i punti che lo violano si cerchiano in arancio e il badge diventa 'approssimativamente separabili: serve il soft margin'."
+      ],
+      "interactions": [
+        "slider 'solleva' da 0 a 1",
+        "trascinamento per ruotare la vista 3D",
+        "toggle tabella x → φ(x)",
+        "toggle rumore"
+      ],
+      "visual": "Scena 3D proiettata su canvas: assi z_1 = x_1², z_2 = x_1x_2, z_3 = x_2², punti verdi e rossi, piano separatore azzurro semitrasparente, ombre dei punti sul pavimento 2D originale; accanto al punto selezionato, φ(x) scritto con i numeri sostituiti. Etichetta 'dati sintetici ispirati a sensori IoT'.",
+      "aha": "Non si cambia classificatore: si cambia spazio. Nello spazio giusto il vecchio iperpiano a massimo margine torna a funzionare.",
+      "formulasShown": [
+        "\\phi : X \\to H",
+        "\\phi(x_1, x_2) = (x_1^2, x_1 x_2, x_2^2)"
+      ],
+      "challenge": "Prima di sollevare, indovina quale componente di φ separerà meglio le classi: x_1², x_1x_2 o x_2²? Poi guardale una alla volta.",
+      "size": "L",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "p10-andata-e-ritorno",
+      "title": "Andata con Φ, ritorno con f(x)",
+      "concepts": [
+        "c18",
+        "c19",
+        "c21",
+        "c23"
+      ],
+      "scenario": "telerilevamento",
+      "realExample": "Ricostruzione animata delle due figure di pag. 64 applicata al telerilevamento: in un'immagine satellitare a due bande (rosso e vicino infrarosso, valori centrati e normalizzati) i pixel di un piccolo lago (classe 'acqua') formano un gruppo compatto circondato dai pixel di vegetazione. Nessuna retta separa il gruppo dalla corona; una feature map quadratica e un piano in H sì (dati sintetici ispirati a immagini multispettrali).",
+      "storyboard": [
+        "Fotogramma 1 (al caricamento): lo spazio 2D della figura della fonte, quadratini neri (acqua) al centro e cerchi bianchi (vegetazione) intorno; un toggle sostituisce i simboli con pixel colorati acqua/vegetazione.",
+        "Trigger: Avanti. La freccia Φ si disegna ad arco (600 ms); poi i punti volano verso lo spazio 3D lungo traiettorie curve (1,2 s, stagger 15 ms) e si sistemano sopra e sotto un parallelogramma, il piano separatore.",
+        "Trigger: Avanti. Il piano si illumina (pulse 400 ms) e compare la scritta: in H l'SVM è lineare e conserva margine e garanzie teoriche.",
+        "Trigger: Avanti. La freccia f(x) si disegna all'indietro (600 ms): l'intersezione del piano con la superficie dei punti mappati viene tracciata e ricade nello spazio 2D come un'ellisse (stroke 800 ms) che racchiude i quadratini.",
+        "Fotogramma finale: split screen piano / ellisse. Hover su un punto 2D illumina il gemello 3D e mostra f(x) = w^T φ(x) + w_0 con i numeri (stesso segno nei due spazi); lo slider w_0 trasla il piano lungo la sua normale e l'ellisse si gonfia o sgonfia in tempo reale."
+      ],
+      "interactions": [
+        "pulsanti Avanti/Indietro tra i fotogrammi",
+        "hover su un punto per vedere il suo gemello nell'altro spazio e il valore di f(x)",
+        "slider w_0 da −3 a 1 (sposta il piano, gonfia o sgonfia l'ellisse)",
+        "toggle simboli della fonte / pixel acqua-vegetazione"
+      ],
+      "visual": "Riproduzione stilizzata delle figure di pag. 64 con la palette del progetto: quadratini neri, cerchi bianchi bordati, parallelogramma chiaro, ellisse blu; frecce curve etichettate Φ e f(x); tooltip con f(x) = w^T φ(x) + w_0 e i numeri sostituiti. Etichetta 'dati sintetici ispirati a immagini multispettrali'.",
+      "aha": "Lo stesso confine è un piano in H e un'ellisse in X: 'lineare' o 'non lineare' dipende dallo spazio in cui lo guardi.",
+      "formulasShown": [
+        "f(\\mathbf{x}) = \\mathbf{w}^T\\phi(\\mathbf{x}) + w_0"
+      ],
+      "challenge": "Sposta il piano in modo che l'ellisse passi esattamente tra il quadratino più esterno e il cerchio più interno.",
+      "size": "M",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "p10-costruttore-mappe-polinomiali",
+      "title": "Costruttore di mappe polinomiali",
+      "concepts": [
+        "c15",
+        "c16",
+        "c17"
+      ],
+      "scenario": "spam",
+      "realExample": "Filtro spam con feature binarie di presenza di parole: x_1 = 'gratis', x_2 = 'soldi', x_3 = 'vinci'. Una singola parola è un indizio debole; la congiunzione 'gratis AND soldi' (prodotto x_1x_2) è molto più indicativa. La mappa polinomiale crea automaticamente tutte queste congiunzioni.",
+      "storyboard": [
+        "Al caricamento: n = 3 chip di parole ('gratis', 'soldi', 'vinci') e un'email di esempio; il vettore x mostra 1 (chip acceso) o 0 (spento).",
+        "Trigger: toggle 'omogenea' con d = 2. I chip si combinano a coppie e cadono a cascata in una colonna φ(x) (80 ms per monomio): x_1², x_1x_2, x_1x_3, x_2², x_2x_3, x_3²; ogni componente mostra il valore 0/1, cioè l'AND logico dei due chip.",
+        "Trigger: toggle 'non omogenea'. In testa alla colonna scivolano i termini di grado 1 x_1, x_2, x_3 (250 ms), come nella mappa di pag. 63 (senza costante).",
+        "Trigger: slider d o n. La colonna si allunga o si accorcia (tween 250 ms) e il contatore mostra il numero di componenti: C(n+d−1, d) per la omogenea, C(n+d, d) − 1 per la non omogenea di pag. 63 (senza costante); con n = 2 e d = 2 un bordo verde segnala che la colonna coincide con i due riquadri della fonte (3 e 5 componenti).",
+        "Trigger: clic su un'email di prova o su un chip. Le congiunzioni accese si illuminano (200 ms) e accanto a ciascuna compare il peso w_k che un classificatore lineare nello spazio mappato le assegna (valori sintetici), con w^T φ(x) calcolato con i numeri."
+      ],
+      "interactions": [
+        "toggle omogenea / non omogenea",
+        "slider d da 1 a 4",
+        "slider n (numero di parole) da 2 a 6",
+        "clic sulle parole per accenderle o spegnerle"
+      ],
+      "visual": "Chip delle parole, colonna verticale φ(x) con monomi scritti in LaTeX e valore 0/1 colorato, contatore di dimensione, riquadro con i due vettori della fonte per n = 2, d = 2.",
+      "aha": "Con feature binarie un prodotto è un AND: la mappa polinomiale di grado d genera tutte le congiunzioni di d feature (o fino a d), che un classificatore lineare da solo non potrebbe esprimere.",
+      "formulasShown": [
+        "\\phi(x_1, x_2) = (x_1^2, x_1x_2, x_2^2)",
+        "\\phi(x_1, x_2) = (x_1, x_2, x_1^2, x_1x_2, x_2^2)"
+      ],
+      "challenge": "Con 3 parole e d = 2 non omogenea, quante componenti ottieni? Scrivilo prima di muovere lo slider (risposta: 3 lineari + 6 quadratiche = 9).",
+      "size": "M",
+      "tech": "html+motion"
+    },
+    {
+      "id": "p10-iperpiano-diventa-conica",
+      "title": "Quattro pesi, un'ellisse",
+      "concepts": [
+        "c20",
+        "c22",
+        "c23"
+      ],
+      "scenario": "medicina",
+      "realExample": "Screening cardiologico: frequenza cardiaca e pressione sistolica, centrate sui valori medi e normalizzate. I pazienti sani stanno in una regione centrale; valori troppo alti o troppo bassi di entrambe indicano rischio. Il confine naturale è un'ellisse, che un classificatore lineare su φ(x) = (x_1², x_1x_2, x_2²) può rappresentare (dati sintetici ispirati a dati clinici).",
+      "storyboard": [
+        "Al caricamento: a sinistra il piano 2D con 120 pazienti sintetici (verdi al centro, rossi intorno); a destra un piccolo cubo 3D con gli stessi pazienti mappati in φ(x) = (x_1², x_1x_2, x_2²); pesi iniziali w = (1, 0, 1), w_0 = −1 (cerchio unitario).",
+        "Trigger: slider w_1, w_2, w_3, w_0. Nel cubo il piano w^T z + w_0 = 0 ruota e trasla; nel piano 2D la curva w_1x_1² + w_2x_1x_2 + w_3x_2² + w_0 = 0 si ridisegna a ogni frame (curva di livello, nessun tween).",
+        "Un badge calcola il discriminante w_2² − 4w_1w_3 con i numeri e indica il tipo di conica (ellisse, iperbole, caso degenere o vuoto); con w_2 ≠ 0 l'ellisse si inclina; ogni cambio di tipo fa lampeggiare il badge (200 ms).",
+        "La regione sgn(·) = +1 è colorata; i pazienti classificati male mostrano una croce (pop 150 ms); la formula della fonte è scritta con i numeri sostituiti, es. sgn(1.0·x_1² + 0.3·x_1x_2 + 0.8·x_2² − 1.2), e l'accuratezza si aggiorna live.",
+        "Trigger: pulsante 'Addestra SVM'. I quattro slider scorrono verso la soluzione a massimo margine (tween 1 s) e l'ellisse si assesta; confronto tra accuratezza manuale e SVM."
+      ],
+      "interactions": [
+        "slider w_1, w_2, w_3 da −2 a 2",
+        "slider w_0 da −4 a 4",
+        "pulsante 'Addestra SVM'",
+        "hover su un paziente per vedere φ(x) e f(x)"
+      ],
+      "visual": "Split view: a sinistra scatter 2D con regione colorata e curva di livello, a destra cubo 3D con il piano; formula sgn(w_1x_1² + ...) con valori live; badge del tipo di conica.",
+      "aha": "La funzione è lineare nei pesi (quindi l'SVM resta convessa) ma quadratica negli input: basta muovere pesi lineari per ottenere ellissi, iperboli e parabole.",
+      "formulasShown": [
+        "f\\begin{pmatrix} x_1 \\\\ x_2 \\end{pmatrix} = \\mathrm{sgn}(w_1 x_1^2 + w_2 x_1 x_2 + w_3 x_2^2 + w_0)",
+        "w_2^2 - 4 w_1 w_3"
+      ],
+      "challenge": "Trova a mano pesi che classifichino correttamente almeno il 90% dei pazienti, poi confrontali con quelli dell'SVM.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p10-esplosione-dimensionale",
+      "title": "La corsa: φ esplicita contro kernel",
+      "concepts": [
+        "c24",
+        "c25",
+        "c28"
+      ],
+      "scenario": "cifre",
+      "realExample": "Riconoscimento di cifre scritte a mano 28×28 (784 pixel, stile MNIST). Un classificatore polinomiale di grado 3 sui pixel richiederebbe decine di milioni di componenti per ogni immagine; il kernel polinomiale calcola lo stesso prodotto scalare con 784 moltiplicazioni.",
+      "storyboard": [
+        "Al caricamento: due cifre sintetiche (un 3 e un 8) alla risoluzione scelta; sotto, due corsie di gara vuote: 'calcola φ(x), φ(x′), poi il prodotto scalare' e 'calcola (x^T x′)^d'.",
+        "Trigger: pulsante Via. Le corsie avanzano con velocità inversamente proporzionale al numero di operazioni (scala log): la corsia esplicita impiega circa 3 s e riempie una barra di memoria mentre un contatore sale fino a C(n+d−1, d) monomi; la corsia kernel arriva al traguardo in circa 0,3 s.",
+        "Al traguardo entrambe le corsie mostrano lo stesso numero (il prodotto scalare in H), con una spunta verde che appare quando arriva anche la corsia esplicita.",
+        "Trigger: slider d o selettore risoluzione. Il grafico a barre in scala log (dim H, operazioni della strada esplicita, operazioni del kernel) si aggiorna con tween 300 ms; oltre 10^7 componenti per esempio la corsia esplicita si ferma a metà con il badge rosso 'memoria esaurita' (con 10.000 esempi a 4 byte per componente servirebbero più di 400 GB).",
+        "Riquadro finale: la definizione di kernel trick della fonte ('SVMs and other algorithms') con i link ai widget su SVR e kernel perceptron."
+      ],
+      "interactions": [
+        "pulsante Via",
+        "slider d da 1 a 5",
+        "selettore risoluzione 8×8 / 16×16 / 28×28",
+        "selettore della coppia di cifre"
+      ],
+      "visual": "Due corsie animate con barre di progresso, contatori di operazioni, grafico a barre in scala logaritmica, valore del prodotto scalare in grande al traguardo.",
+      "aha": "Il kernel trick non approssima nulla: dà esattamente lo stesso prodotto scalare in H, ma con un costo legato alla dimensione dell'input, non a quella (enorme) dello spazio delle feature.",
+      "formulasShown": [
+        "\\dim H = \\binom{n+d-1}{d}",
+        "k(\\mathbf{x}, \\mathbf{x}') = (\\mathbf{x}^T\\mathbf{x}')^d"
+      ],
+      "challenge": "Stima a mente dim H per n = 784 e d = 2 prima di muovere lo slider (risposta: 307.720).",
+      "size": "M",
+      "tech": "html+motion"
+    },
+    {
+      "id": "p10-duale-solo-prodotti-scalari",
+      "title": "Dove compare φ nel duale?",
+      "concepts": [
+        "c26",
+        "c29",
+        "c30",
+        "c32"
+      ],
+      "scenario": "pesce",
+      "realExample": "SVM soft margin per smistare salmoni e spigole con luminosità e larghezza, dopo una mappa φ quadratica (dati sintetici ispirati all'impianto di confezionamento del Cap. 1). Lo studente verifica di persona che nel duale i pesci entrano solo tramite prodotti scalari, mentre nel primale serve w in H.",
+      "storyboard": [
+        "Al caricamento: la formula del duale soft margin di pag. 65 per intero; ogni occorrenza di φ(x_i)^T φ(x_j) è evidenziata in giallo con due pulsazioni (2 × 300 ms); i vincoli 0 ≤ α_i ≤ C e Σ α_i y_i = 0 sono in grigio con l'etichetta 'nessun φ'.",
+        "Trigger: pulsante 'Calcola la matrice'. Una griglia 6 × 6 (6 pesci sintetici, luminosità e larghezza) si riempie cella per cella (60 ms per cella, riga per riga): per ogni cella scorrono i due vettori φ calcolati esplicitamente con la mappa di grado d e il loro prodotto scalare.",
+        "Trigger: pulsante 'Kernelizza'. Ogni cella fa un flip (250 ms, stagger 30 ms) e mostra k(x_i, x_j) con lo stesso numero, calcolato da due soli numeri per pesce; nella formula φ(x_i)^T φ(x_j) si trasforma in k(x_i, x_j) con un morph del testo (400 ms).",
+        "Trigger: scheda 'Primale'. Compare il primale con w ∈ H; un contatore mostra dim w = numero di componenti di φ, che cresce con lo slider d; con il toggle 'kernel a dimensione infinita' (anticipazione del gaussiano di p11) il campo diventa '∞: w non memorizzabile' in rosso: qui il kernel trick non si applica.",
+        "Riepilogo finale (fade 300 ms): tabella 'primale / duale' con 'serve φ esplicita? sì / no' e 'numero di variabili: dim H + 1 + m / m'."
+      ],
+      "interactions": [
+        "pulsanti 'Calcola la matrice' e 'Kernelizza'",
+        "schede Duale / Primale",
+        "slider grado d del polinomio da 1 a 6",
+        "hover su una cella per vedere il calcolo con i numeri",
+        "toggle 'kernel a dimensione infinita'"
+      ],
+      "visual": "Formula LaTeX grande con evidenziature, griglia m × m tipo heatmap con valori, animazione di flip delle celle, contatore dimensione di w.",
+      "aha": "Nel duale i dati parlano solo attraverso prodotti scalari tra coppie: basta la Gram matrix. Nel primale w vive in H e φ va calcolata.",
+      "formulasShown": [
+        "\\max_{\\boldsymbol{\\alpha}} \\sum_i \\alpha_i - \\frac{1}{2}\\sum_{i,j} \\alpha_i \\alpha_j y_i y_j \\phi(\\mathbf{x}_i)^T\\phi(\\mathbf{x}_j)",
+        "k(\\mathbf{x}_i, \\mathbf{x}_j) = \\phi(\\mathbf{x}_i)^T\\phi(\\mathbf{x}_j)"
+      ],
+      "challenge": "Quiz a tempo: clicca tutte le occorrenze di φ nella formula primale e in quella duale; vince chi dice per quale delle due il kernel trick funziona.",
+      "size": "M",
+      "tech": "html+motion"
+    },
+    {
+      "id": "p10-decisione-somma-di-kernel",
+      "title": "La decisione come voto dei support vector",
+      "concepts": [
+        "c27",
+        "c31"
+      ],
+      "scenario": "sensori",
+      "realExample": "SVM con kernel polinomiale non omogeneo di grado 2 addestrata sulle letture ad anello della pompa. Per una nuova lettura (temperatura, vibrazione) la diagnosi si ottiene sommando i contributi dei soli support vector, ciascuno pesato da quanto la lettura gli somiglia.",
+      "storyboard": [
+        "Al caricamento: heatmap di f(x) sul piano delle letture ad anello della pompa con la curva f = 0 (SVM con kernel (1 + x^T x′)²); i support vector sono cerchiati, gli altri punti sbiaditi al 30% (α_i = 0).",
+        "Trigger: trascinamento della nuova lettura x. Da ogni support vector parte un filo verso x, aggiornato a ogni frame, con spessore proporzionale a |α_i y_i k(x_i, x)| e colore verde o rosso secondo il segno.",
+        "A destra le barre impilate dei contributi α_i y_i k(x_i, x), più w_0, si aggiornano con tween 150 ms; la somma f(x) è scritta con i numeri (es. 0.8·(+1)·3.1 + 1.2·(−1)·2.4 + … + w_0 = −0.42) e il segno decide la diagnosi (badge 'normale' / 'guasto').",
+        "Trigger: toggle 'mostra φ'. Sopra ogni barra compare φ(x_i)^T φ(x) calcolato esplicitamente con la mappa a 6 componenti: coincide con k(x_i, x) (spunta verde, 200 ms).",
+        "Trigger: selettore d (1, 2, 3). L'SVM si riaddestra (indicatore 300 ms) e la heatmap sfuma nella nuova (crossfade 400 ms): con d = 1 la curva è una retta e la diagnosi sbaglia metà dell'anello."
+      ],
+      "interactions": [
+        "trascinare la nuova lettura",
+        "toggle 'mostra φ'",
+        "selettore del grado d (1, 2, 3)"
+      ],
+      "visual": "Heatmap divergente verde/rosso di f(x), curva di livello nera, fili dai support vector, barre impilate con valori numerici, formula con i termini sostituiti.",
+      "aha": "Il classificatore kernel non ha bisogno di w: ricorda i support vector con i loro pesi e confronta il nuovo punto con ciascuno tramite il kernel.",
+      "formulasShown": [
+        "f(\\mathbf{x}) = \\sum_{i=1}^{m} \\alpha_i y_i k(\\mathbf{x}_i, \\mathbf{x}) + w_0"
+      ],
+      "challenge": "Trova una posizione della lettura in cui due support vector di classi opposte si annullano quasi esattamente.",
+      "size": "M",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "p10-verifica-kernel-polinomiale",
+      "title": "Due strade, stesso numero (kernel omogeneo)",
+      "concepts": [
+        "c33",
+        "c34",
+        "c35",
+        "c38"
+      ],
+      "scenario": "pesce",
+      "realExample": "Due pesci del nastro trasportatore, x = (luminosità, larghezza) e x′, normalizzati. Si confronta il kernel omogeneo (x^T x′)² con il prodotto scalare delle loro immagini φ: con la mappa √2 di pag. 66 i numeri coincidono, con la mappa di pag. 63 no.",
+      "storyboard": [
+        "Al caricamento: due pesci trascinabili (salmone e spigola) sul piano luminosità/larghezza normalizzate, inizialmente x = (1, 2) e x′ = (3, 1); coordinate in tabella.",
+        "Trigger: 'passo successivo' (o autoplay, un passo ogni 1,2 s). Colonna A 'strada kernel': compare x^T x′ = 1·3 + 2·1 = 5, poi il quadrato 25 (numeri che si compongono, 400 ms).",
+        "Passo successivo: colonna B 'strada φ con √2': i vettori (1, 2√2, 4) e (9, 3√2, 1) si costruiscono componente per componente (200 ms ciascuna), poi i prodotti 9 + 12 + 4 = 25; spunta verde quando il totale coincide con la colonna A.",
+        "Passo successivo (toggle colonna C): 'strada φ di pag. 63 senza √2': (1, 2, 4)·(9, 3, 1) = 9 + 6 + 4 = 19 ≠ 25; il termine misto lampeggia (2 × 250 ms) con la scritta 'manca il fattore 2'.",
+        "In parallelo la derivazione (a + b)² = a² + b² + 2ab evidenzia il passaggio corrente; trascinando i pesci tutte le colonne si ricalcolano in tempo reale."
+      ],
+      "interactions": [
+        "trascinare i due pesci",
+        "pulsante 'passo successivo' della derivazione",
+        "toggle colonna C"
+      ],
+      "visual": "Piano 2D piccolo con due punti, tre colonne di calcolo con numeri live, spunta verde o croce rossa, derivazione LaTeX con evidenziazione del passo corrente.",
+      "aha": "Il kernel omogeneo è esattamente un prodotto scalare, ma nello spazio con il √2 sul termine misto: la validità si dimostra trovando quella φ.",
+      "formulasShown": [
+        "(x_1x_1' + x_2x_2')^2 = (x_1x_1')^2 + (x_2x_2')^2 + 2x_1x_1'x_2x_2'",
+        "\\phi(\\mathbf{x}) = (x_1^2, \\sqrt{2}x_1x_2, x_2^2)"
+      ],
+      "challenge": "Trova due pesci per cui le colonne B e C danno lo stesso risultato (suggerimento: quando il termine misto è zero).",
+      "size": "S",
+      "tech": "html+motion"
+    },
+    {
+      "id": "p10-kernel-non-omogeneo-tutti-i-gradi",
+      "title": "L'1 che porta tutti i gradi",
+      "concepts": [
+        "c36",
+        "c37",
+        "c38",
+        "c16"
+      ],
+      "scenario": "pesce",
+      "realExample": "Stessi due pesci del widget precedente, ma con il kernel non omogeneo (1 + x^T x′)^d: lo studente vede quali termini (costante, lineari, quadratici, ...) nascono e con quali pesi, e perché la mappa implicita ha 6 componenti per d = 2.",
+      "storyboard": [
+        "Al caricamento: gli stessi due pesci del widget precedente (x = (1, 2), x′ = (3, 1)); l'espansione di (1 + x_1x_1′ + x_2x_2′)² si srotola riga per riga come nel riquadro di pag. 66 (una riga ogni 700 ms), termini colorati per grado (0 grigio, 1 blu, 2 arancio).",
+        "Sotto, i vettori φ(x) = (1, √2, 2√2, 1, 2√2, 4) e φ(x′) = (1, 3√2, √2, 9, 3√2, 1) si costruiscono (150 ms per componente) con i √2 al posto giusto; il prodotto scalare 1 + 6 + 4 + 9 + 12 + 4 = 36 coincide con (1 + 5)² = 36.",
+        "Trigger: slider d da 1 a 5. Un istogramma dei coefficienti binomiali C(d, k), k = 0..d, cresce con tween 300 ms; ogni barra è etichettata con il termine (x^T x′)^k e il suo valore numerico, e la somma riproduce (1 + x^T x′)^d: compaiono tutti i gradi fino a d.",
+        "Trigger: toggle confronto. Accanto compare la mappa di pag. 63 (5 componenti, senza costante e senza √2): prodotto scalare 3 + 2 + 9 + 6 + 4 = 24 ≠ 36, differenze evidenziate in rosso (fade 300 ms).",
+        "Trascinando i pesci tutti i numeri si ricalcolano live."
+      ],
+      "interactions": [
+        "slider d da 1 a 5",
+        "trascinare i due pesci",
+        "toggle confronto con la mappa di pag. 63"
+      ],
+      "visual": "Espansione LaTeX colorata per grado, due vettori colonna animati, istogramma dei coefficienti binomiali, valore numerico del kernel.",
+      "aha": "Aggiungere 1 dentro la potenza equivale ad avere nello spazio delle feature anche la costante e tutti i monomi di grado inferiore.",
+      "formulasShown": [
+        "(1 + \\mathbf{x}^T\\mathbf{x}')^d = \\sum_{k=0}^{d} \\binom{d}{k} (\\mathbf{x}^T\\mathbf{x}')^k",
+        "\\phi(\\mathbf{x}) = (1, \\sqrt{2}x_1, \\sqrt{2}x_2, x_1^2, \\sqrt{2}x_1x_2, x_2^2)"
+      ],
+      "challenge": "Per d = 2, quale componente di φ(x) vale sempre 1 e a cosa serve nel classificatore? (Risposta: fa da bias.)",
+      "size": "S",
+      "tech": "html+motion"
+    },
+    {
+      "id": "p10-kernel-come-similarita",
+      "title": "Il kernel misura la somiglianza",
+      "concepts": [
+        "c39",
+        "c40",
+        "c42",
+        "c43"
+      ],
+      "scenario": "cifre",
+      "realExample": "Galleria di cifre scritte a mano 8×8: scelta una cifra di riferimento, il kernel dice quanto ogni altra le somiglia. Poi lo stesso principio su oggetti che non sono vettori (parole): un'anticipazione dei kernel su stringhe di p11.",
+      "storyboard": [
+        "Al caricamento: griglia di 20 cifre sintetiche 8×8 di quattro classi (0, 1, 3, 8).",
+        "Trigger: clic su una cifra. Diventa il riferimento (bordo spesso); le altre si riordinano per valore di k(x_ref, x) normalizzato con un'animazione FLIP (500 ms) e sopra ognuna compare una barra di similarità con il valore numerico (es. 0.82).",
+        "Trigger: selettore del kernel (lineare x^T x′, polinomiale omogeneo d = 2, non omogeneo d = 2). L'ordinamento si riorganizza (FLIP 500 ms); con i polinomiali le cifre della stessa classe si staccano di più dalle altre.",
+        "Trigger: scheda 'Gram'. Heatmap 20 × 20 raggruppata per classe (fade 400 ms): blocchi chiari sulla diagonale, cioè alta similarità dentro la classe.",
+        "Trigger: scheda 'Oltre i vettori'. Due parole (es. 'kernel' e 'kennel'): le sottostringhe di 2 lettere comuni si evidenziano una alla volta (150 ms ciascuna) e il conteggio dà la similarità; scritta 'il kernel generalizza il prodotto scalare a sequenze e grafi: vedi p11'.",
+        "Riquadro finale con la definizione k: X × X → R e la condizione 'kernel valido = esiste φ con k(x, x′) = φ(x)^T φ(x′)'."
+      ],
+      "interactions": [
+        "clic su una cifra per sceglierla come riferimento",
+        "selettore del kernel",
+        "campo per scrivere due parole nella scheda stringhe"
+      ],
+      "visual": "Griglia di immagini pixelate, barre di similarità ordinate con il valore k(x_ref, x) scritto sopra ciascuna, heatmap della Gram matrix a blocchi, scheda testuale con le sottostringhe comuni evidenziate e il conteggio. Etichetta 'dati sintetici stile MNIST'.",
+      "aha": "Un kernel è un modo di dire 'quanto si somigliano' due oggetti che si comporta come un prodotto scalare; per questo funziona anche dove non ci sono vettori.",
+      "formulasShown": [
+        "k : X \\times X \\to \\mathbb{R}",
+        "k(\\mathbf{x}, \\mathbf{x}') = \\phi(\\mathbf{x})^T\\phi(\\mathbf{x}')"
+      ],
+      "challenge": "Trova una cifra che, con il kernel lineare, risulta più simile a una cifra di classe diversa che a una della sua classe.",
+      "size": "M",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "p10-validi-per-costruzione",
+      "title": "Validi per costruzione: la norma non mente",
+      "concepts": [
+        "c41",
+        "c49",
+        "c51"
+      ],
+      "scenario": "pesce",
+      "realExample": "Quattro pesci mappati con φ polinomiale: lo studente sceglie dei coefficienti c_i (anche negativi) e vede che la combinazione Σ c_i φ(x_i) è un vettore la cui lunghezza al quadrato è proprio c^T K c. Qualunque c scelga, non riesce a renderla negativa.",
+      "storyboard": [
+        "Al caricamento: 4 pesci sintetici in tabella con i loro φ(x_i) (kernel omogeneo d = 2, mappa a 3 componenti) disegnati come frecce in una proiezione 2D di H; c = (1, 0, 0, 0).",
+        "Trigger: slider c_1 … c_4. Le frecce si scalano (e si ribaltano se c_i < 0) con tween 150 ms e si concatenano testa-coda formando la risultante Σ c_i φ(x_i).",
+        "Accanto, la Gram matrix 4 × 4 e c^T K c = Σ c_i c_j K_ij calcolato con i numeri; un quadrato costruito sulla risultante ha area ‖Σ c_i φ(x_i)‖² e un'etichetta mostra che i due numeri coincidono.",
+        "Trigger: pulsante 'Prova a rompere'. 1000 vettori c casuali vengono provati in 2 s; l'istogramma dei valori di c^T K c si riempie da sinistra, con la linea dello zero in rosso mai superata.",
+        "Scritta finale (fade 300 ms): 'esiste φ ⇒ K p.d. per ogni insieme finito di punti ⇒ kernel valido' (metodo 2 di pag. 67)."
+      ],
+      "interactions": [
+        "slider c_1 … c_4 da −2 a 2 (passo 0.1)",
+        "pulsante 'Prova a rompere'",
+        "trascinare i pesci per cambiare la Gram matrix"
+      ],
+      "visual": "Frecce vettoriali colorate con somma testa-coda, quadrato sulla risultante con area = norma², matrice 4 × 4 con valori, istogramma di c^T K c.",
+      "aha": "Se il kernel è un prodotto scalare, c^T K c è la lunghezza al quadrato di un vettore: non può essere negativa, per nessuna scelta di punti e coefficienti.",
+      "formulasShown": [
+        "\\mathbf{c}^T K \\mathbf{c} = \\left\\| \\sum_{i=1}^{m} c_i \\phi(\\mathbf{x}_i) \\right\\|^2 \\ge 0"
+      ],
+      "challenge": "Trova un vettore c ≠ 0 che rende c^T K c esattamente zero (suggerimento: metti due pesci nello stesso punto).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p10-laboratorio-gram-matrix",
+      "title": "Laboratorio della Gram matrix",
+      "concepts": [
+        "c44",
+        "c45",
+        "c46",
+        "c53"
+      ],
+      "scenario": "sensori",
+      "realExample": "Letture di sensori IoT (temperatura, umidità) di un magazzino: si costruisce la Gram matrix di una funzione candidata sulle letture e si controlla se è definita positiva. Serve per capire se una 'misura di somiglianza' inventata tra letture può essere usata in un'SVM.",
+      "storyboard": [
+        "Al caricamento: 4 letture (temperatura, umidità normalizzate) sul piano e la heatmap della Gram matrix del kernel lineare con i valori nelle celle.",
+        "Trigger: trascinamento di una lettura. Riga e colonna corrispondenti della heatmap si aggiornano a ogni frame e le celle simmetriche K_ij e K_ji lampeggiano insieme (150 ms). Pulsanti + / − per avere da 2 a 6 letture.",
+        "Trigger: selettore della funzione (lineare, polinomiale omogeneo, non omogeneo, ‖x − x′‖², −x^T x′). La heatmap sfuma nella nuova (crossfade 300 ms).",
+        "Trigger: slider c_i. La doppia somma Σ c_i c_j K_ij è scritta con i numeri e si aggiorna live; se diventa negativa la cella del risultato diventa rossa con uno shake (200 ms) e il badge passa a 'non valido'.",
+        "Trigger: pulsante 'sovrapponi due letture'. Due letture scorrono una sull'altra (500 ms); con c = (1, −1, 0, …) la forma quadratica vale esattamente 0: badge 'p.d. ma non s.p.d.' e nota 'p.d. dei kernel = semidefinita positiva dell'algebra lineare'."
+      ],
+      "interactions": [
+        "trascinare le letture; pulsanti + / − (da 2 a 6 letture)",
+        "selettore della funzione candidata",
+        "slider c_i da −2 a 2 (passo 0.1)",
+        "pulsante 'sovrapponi due letture'"
+      ],
+      "visual": "Scatter 2D, heatmap m × m con valori, forma quadratica scritta come doppia somma con i numeri, badge p.d./s.p.d./non valido.",
+      "aha": "La definizione chiede che la doppia somma sia ≥ 0 per ogni scelta di c: basta un solo c che la rende negativa per bocciare la funzione.",
+      "formulasShown": [
+        "K_{ij} = k(\\mathbf{x}_i, \\mathbf{x}_j)",
+        "\\sum_{i,j=1}^{m} c_i c_j K_{ij} \\ge 0 \\quad \\forall \\mathbf{c} \\in \\mathbb{R}^m"
+      ],
+      "challenge": "Con k(x, x′) = ‖x − x′‖² trova in meno di 30 secondi un vettore c che rende la forma quadratica negativa.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p10-autovalori-e-fattorizzazione",
+      "title": "Autovalori e K = BᵀB",
+      "concepts": [
+        "c45",
+        "c47",
+        "c48"
+      ],
+      "scenario": "sensori",
+      "realExample": "Stesse letture del laboratorio precedente: invece di cercare c a mano si calcolano gli autovalori della Gram matrix, che è il test che si farebbe davvero in codice prima di usare una nuova funzione di somiglianza in un'SVM.",
+      "storyboard": [
+        "Al caricamento: la Gram matrix delle letture del laboratorio a sinistra; a destra il grafico a barre degli autovalori λ_1 ≥ … ≥ λ_m con la linea dello zero.",
+        "Trigger: trascinamento delle letture o cambio di funzione. Le barre si riordinano e cambiano altezza con tween 200 ms; verdi se ≥ 0, rosse se < 0 (transizione di colore 150 ms).",
+        "Trigger: clic su una barra rossa. Il suo autovettore u_k viene copiato nel vettore c (tween 400 ms) e il widget mostra c^T K c = λ_k < 0 con i numeri: il controesempio si costruisce da solo.",
+        "Trigger: scheda 'Fattorizza'. Per una matrice valida compare B = Λ^{1/2} U^T; le colonne di B si disegnano come vettori (300 ms ciascuna) e la matrice dei loro prodotti scalari si riempie cella per cella (50 ms), accendendo di verde le celle che coincidono con K.",
+        "Con una matrice non valida la scheda mostra √λ_k con λ_k < 0 in rosso e il messaggio 'B reale non esiste'."
+      ],
+      "interactions": [
+        "trascinare le letture",
+        "selettore della funzione",
+        "clic su una barra di autovalore",
+        "scheda Fattorizza"
+      ],
+      "visual": "Heatmap di K, barre degli autovalori con linea dello zero, vettori colonna di B in 2D o 3D, matrice ricostruita con celle che si accendono quando coincidono.",
+      "aha": "Autovalori non negativi, K = BᵀB e c^T K c ≥ 0 sono tre modi di dire la stessa cosa; le colonne di B sono una feature map dei soli punti osservati.",
+      "formulasShown": [
+        "\\mathbf{c}^T K \\mathbf{c} = \\sum_k \\lambda_k (\\mathbf{u}_k^T\\mathbf{c})^2",
+        "K = B^T B, \\quad B = \\Lambda^{1/2}U^T"
+      ],
+      "challenge": "Con il kernel lineare e 4 letture in 2D, prevedi quanti autovalori nulli vedrai prima di guardare (risposta: almeno 2, perché K = X X^T ha rango al massimo 2). Poi passa al polinomiale omogeneo di grado 2 e prevedi di nuovo (rango al massimo 3, la dimensione di φ).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p10-caccia-al-kernel-valido",
+      "title": "Valido o no? Scegli il metodo",
+      "concepts": [
+        "c49",
+        "c50",
+        "c51",
+        "c52"
+      ],
+      "scenario": "spam",
+      "realExample": "Un team che sviluppa un filtro spam propone varie 'misure di somiglianza' tra email rappresentate come vettori di conteggi di parole. Prima di metterle in un'SVM bisogna decidere quali sono kernel validi e con quale argomento difenderlo all'orale.",
+      "storyboard": [
+        "Al caricamento: mazzo di 7 carte con funzioni candidate tra email x, x′ (vettori di conteggi di parole): (x^T x′)², 3·(1 + x^T x′)², (x^T x′)² + x^T x′, (x^T x′)(1 + x^T x′)², −x^T x′, x^T x′ − 1, ‖x − x′‖²; le carte si aprono a ventaglio (stagger 80 ms).",
+        "Trigger: trascinamento di una carta nella colonna 'valido' o 'non valido' e scelta del metodo dal menu (feature map esplicita, regole di combinazione, controesempio sulla Gram matrix, dimostrazione diretta).",
+        "Trigger: pulsante 'mostra giustificazione'. Feature map: compare la φ (es. (x_1², √2x_1x_2, x_2²) per n = 2). Combinazione: l'albero di composizione si disegna dalle foglie (kernel validi noti) alla radice (200 ms per nodo) con l'operatore su ogni nodo (somma, prodotto, scalatura β > 0). Controesempio: una mini Gram matrix con i numeri e il vettore c che rende la forma quadratica negativa (es. per x^T x′ − 1 basta l'email vuota x = 0: K = [−1]).",
+        "Feedback: carta corretta → vola nella pila verde (300 ms); errata → shake (200 ms) e resta sul tavolo. Punteggio: +2 per il metodo più semplice, +1 per 'dimostrazione diretta' (accettata con il commento 'this approach can be complex').",
+        "Schermata finale: i tre metodi della fonte con il numero di carte risolte da ciascuno e il rimando a p11 per la lista completa degli operatori (4 carte valide, 3 non valide)."
+      ],
+      "interactions": [
+        "trascinare la carta nella colonna 'valido' o 'non valido'",
+        "menu del metodo",
+        "pulsante 'mostra giustificazione'"
+      ],
+      "visual": "Carte con formula LaTeX, colonne di destinazione, albero di composizione per le regole, mini Gram matrix 2 × 2 per i controesempi, punteggio.",
+      "aha": "Dimostrare la definita positività da zero è difficile; in pratica si trova una φ oppure si costruisce il kernel combinando kernel noti con operatori che preservano la validità.",
+      "formulasShown": [
+        "k = k_1 + k_2",
+        "k = k_1 k_2",
+        "k = \\beta k_1, \\; \\beta > 0"
+      ],
+      "challenge": "Classifica tutte le carte con almeno 6 risposte corrette su 7 e al massimo una 'dimostrazione diretta'.",
+      "size": "M",
+      "tech": "html+motion"
+    },
+    {
+      "id": "p10-svr-tubo-epsilon",
+      "title": "SVR con kernel: il tubo ε sulla radiazione solare",
+      "concepts": [
+        "c54",
+        "c55",
+        "c56",
+        "c58"
+      ],
+      "scenario": "energia",
+      "realExample": "Previsione della radiazione solare su un impianto fotovoltaico in funzione dell'ora del giorno (curva a campana tra alba e tramonto, misure rumorose; dati sintetici ispirati a dati di irraggiamento). Una regressione lineare non basta; la SVR con kernel polinomiale non omogeneo impara la curva lavorando solo con k(x_i, x_j).",
+      "storyboard": [
+        "Al caricamento: asse x ora (5-21), asse y radiazione normalizzata; 40 misure sintetiche compaiono una a una da sinistra (stagger 40 ms).",
+        "Trigger: slider d. Con d = 1 la SVR (kernel (1 + x x′)^d sull'ora normalizzata) dà una retta con il tubo ±ε; alzando d a 2-4 la curva si piega (crossfade 400 ms tra le soluzioni) e segue la campana.",
+        "Trigger: slider ε. Il tubo si allarga o si restringe (tween 200 ms); i punti dentro diventano grigi (α_i = α_i* = 0), quelli sul bordo o fuori si colorano: arancio sopra (α_i* > 0), blu sotto (α_i > 0); il contatore dei support vector si aggiorna.",
+        "Trigger: slider C. Con C piccolo la curva si appiattisce, con C grande insegue i punti (ricalcolo < 150 ms, tween della curva 300 ms).",
+        "Pannello sempre visibile: il duale della fonte con i valori numerici dei tre termini (−½ΣΣ(α*−α)(α*−α)k, −εΣ(α* + α), Σ y(α* − α)) e le spunte sui vincoli Σ(α* − α) = 0 e 0 ≤ α, α* ≤ C, aggiornati a ogni soluzione. Clic su un punto per aggiungere una misura."
+      ],
+      "interactions": [
+        "slider ε da 0 a 0.3",
+        "slider C da 0.01 a 100 (log)",
+        "slider grado d da 1 a 4",
+        "clic per aggiungere una misura"
+      ],
+      "visual": "Grafico 2D con curva di regressione, banda ±ε semitrasparente, support vector colorati per tipo, contatore dei SV, formula del duale con numeri live e spunte sui vincoli.",
+      "aha": "Anche la regressione si kernelizza: il duale della SVR usa i dati solo tramite k(x_i, x_j), ε decide quali punti contano, C quanto pesano.",
+      "formulasShown": [
+        "\\max -\\frac{1}{2}\\sum_{i,j}(\\alpha_i^* - \\alpha_i)(\\alpha_j^* - \\alpha_j)k(\\mathbf{x}_i, \\mathbf{x}_j) - \\epsilon\\sum_i(\\alpha_i^* + \\alpha_i) + \\sum_i y_i(\\alpha_i^* - \\alpha_i)",
+        "\\sum_i (\\alpha_i^* - \\alpha_i) = 0, \\quad \\alpha_i, \\alpha_i^* \\in [0, C]"
+      ],
+      "challenge": "Trova il valore di ε più grande che lascia al massimo 5 support vector mantenendo l'errore medio sotto una soglia data.",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p10-predizione-svr-somma",
+      "title": "Come predice la SVR: somma pesata di kernel",
+      "concepts": [
+        "c56",
+        "c57",
+        "c58"
+      ],
+      "scenario": "energia",
+      "realExample": "La SVR addestrata sulla radiazione solare deve prevedere il valore alle 14:30. La previsione è la somma dei contributi (α_i* − α_i) k(x_i, x) dei soli support vector più il bias: nessun φ calcolato.",
+      "storyboard": [
+        "Al caricamento: la curva della SVR già addestrata (d = 3) e il cursore verticale alle 12:00.",
+        "Trigger: trascinamento del cursore (5-21, passo 15 minuti). Da ogni support vector parte un segmento verso il cursore; le barre (α_i* − α_i) k(x_i, x) si aggiornano a ogni frame, impilate, e l'ultima è w_0.",
+        "Al rilascio del cursore le barre impilate scorrono fino ad allinearsi con l'altezza della curva (500 ms): la somma coincide con f(x), scritta con i numeri sostituiti.",
+        "Trigger: toggle 'formula della fonte'. La formula compare con k(x_i, x_j) evidenziato in rosso e il tooltip 'refuso: deve essere k(x_i, x)'; cliccando, x_j si trasforma in x (morph 300 ms).",
+        "Hover su una misura dentro il tubo: la sua barra è nulla e l'etichetta dice 'non è un support vector (α_i = α_i* = 0)'."
+      ],
+      "interactions": [
+        "trascinare il cursore dell'ora",
+        "toggle formula della fonte / corretta",
+        "hover su un support vector per vedere α_i* − α_i"
+      ],
+      "visual": "Curva di regressione, cursore verticale, barre impilate con valori e segno, formula con termini sostituiti.",
+      "aha": "La previsione della SVR è un voto pesato dei support vector, ciascuno moltiplicato per la sua somiglianza (kernel) con il punto da prevedere.",
+      "formulasShown": [
+        "f(\\mathbf{x}) = \\sum_{i=1}^{m} (\\alpha_i^* - \\alpha_i) k(\\mathbf{x}_i, \\mathbf{x}) + w_0"
+      ],
+      "challenge": "Prevedi il segno della barra del support vector delle 9:00 per il cursore alle 18:00, poi verifica.",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "p10-perceptron-vs-kernel-perceptron",
+      "title": "Perceptron contro kernel perceptron",
+      "concepts": [
+        "c59",
+        "c60",
+        "c61",
+        "c62"
+      ],
+      "scenario": "sensori",
+      "realExample": "Le letture ad anello della pompa (guasto se troppo fredda o troppo calda). Il perceptron lineare non converge mai; il kernel perceptron con k(x, x′) = (1 + x^T x′)² impara un confine chiuso aggiornando solo un contatore α_i per esempio.",
+      "storyboard": [
+        "Al caricamento: due pannelli affiancati con le stesse 40 letture ad anello; a sinistra 'Stochastic Perceptron' con w = 0, a destra 'Kernel Perceptron' con α_i = 0 scritto accanto a ogni punto.",
+        "Trigger: Passo (o Play a 5 passi/s). Lo stesso esempio viene presentato a entrambi e si evidenzia con un anello (200 ms). A sinistra, se è sbagliato, la freccia w riceve η y_i x_i (vettore sommato testa-coda, 300 ms) e la retta ruota; a destra, se è sbagliato, il punto pulsa e la sua etichetta scorre al nuovo valore α_i + η y_i (200 ms). Il test di errore è scritto con i numeri: y_i Σ_j α_j k(x_j, x_i) ≤ 0.",
+        "A fine epoca sotto ciascun pannello si aggiunge un punto al grafico degli errori per epoca: a sinistra non scende mai a zero; a destra la heatmap di f(x) e la curva f = 0 (crossfade 200 ms per epoca) si chiudono attorno ai punti normali e gli errori arrivano a zero.",
+        "Trigger: toggle 'rappresentazione duale'. A destra compaiono w = Σ α_i φ(x_i) e l'uguaglianza f(x) = w^T φ(x) = Σ α_i k(x_i, x); i punti con α_i ≠ 0 si evidenziano.",
+        "Riepilogo (fade 300 ms): 'kernel machine = algoritmo lineare in cui i dati entrano solo tramite prodotti scalari, sostituiti dal kernel'."
+      ],
+      "interactions": [
+        "pulsanti Passo, Play, Reset",
+        "slider η da 0.1 a 2 (con inizializzazione a zero cambia solo la scala di w e degli α, non la sequenza degli errori: il contatore resta identico)",
+        "selettore del kernel: lineare, (1 + x^T x′)², (1 + x^T x′)³",
+        "toggle 'rappresentazione duale'"
+      ],
+      "visual": "Due scatter affiancati; a sinistra retta e freccia w, a destra heatmap di f(x) e curva di livello; etichette α_i sui punti; formula dell'aggiornamento e del test di errore con i numeri dell'esempio corrente; grafico degli errori per epoca sotto ciascun pannello. Etichetta 'dati sintetici ispirati a sensori IoT'.",
+      "aha": "Il kernel perceptron è lo stesso perceptron eseguito in H: invece di aggiornare w si incrementa il contatore dell'esempio sbagliato, e la decisione si calcola solo con il kernel.",
+      "formulasShown": [
+        "\\mathbf{w} \\leftarrow \\mathbf{w} + \\eta y_i \\mathbf{x}_i",
+        "\\alpha_i \\leftarrow \\alpha_i + \\eta y_i",
+        "f(\\mathbf{x}) = \\sum_{i=1}^{m} \\alpha_i k(\\mathbf{x}_i, \\mathbf{x})"
+      ],
+      "challenge": "Con il kernel lineare anche il pannello di destra fallisce: spiega perché prima di premere Play.",
+      "size": "L",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "p10-c-con-il-kernel",
+      "title": "C con il kernel: da costante a hard margin in H",
+      "concepts": [
+        "c63",
+        "c29",
+        "c31"
+      ],
+      "scenario": "medicina",
+      "realExample": "Screening cardiologico (frequenza cardiaca e pressione sistolica normalizzate, dati sintetici ispirati a dati clinici): i pazienti sani stanno al centro, quelli a rischio intorno, e alcune etichette sono sbagliate (diagnosi errate). Un'SVM soft margin con kernel polinomiale deve decidere quanto fidarsi di ogni paziente: la manopola è C, che nel duale è il tetto dei moltiplicatori α_i.",
+      "storyboard": [
+        "Al caricamento: scatter 2D dei pazienti (verdi sani al centro, rossi a rischio intorno, 3 etichette sbagliate), regione f(x) > 0 colorata e curva f = 0; sotto, una fila di barre verticali α_i, una per paziente, con una linea tratteggiata al livello C; valori iniziali C = 1, d = 2.",
+        "Trigger: slider C tutto a sinistra (C = 0). Le barre si schiacciano a zero (tween 400 ms), la regione colorata diventa uniforme (crossfade 300 ms) e il badge dice f(x) = w_0: il classificatore ignora i dati.",
+        "Trigger: slider C verso destra (scala log da 10^-3 a 10^3). A ogni valore l'SVM si riaddestra (< 150 ms) e le barre crescono con tween 250 ms; i pazienti mal etichettati toccano subito il tetto (α_i = C, badge 'bound') e la curva f = 0 si forma attorno ai sani.",
+        "Trigger: slider C sulla tacca '∞' con d = 6. La linea del tetto scivola fuori dallo schermo (400 ms): resta il vincolo α_i ≥ 0, cioè il duale hard margin in H; la curva si contorce per racchiudere anche i pazienti mal etichettati; contatori: training 100%, test in calo (overfitting).",
+        "Con d = 2 e rumore attivo, a C = ∞ compare il messaggio 'in H i dati non sono separabili: il primale hard margin non ha soluzione, il duale diverge' e le barre α crescono in un loop animato di 1,5 s che si ripete."
+      ],
+      "interactions": [
+        "slider C su scala logaritmica da 10^-3 a 10^3 con le tacche estreme '0' e '∞'",
+        "slider grado d del kernel polinomiale da 1 a 6",
+        "pulsante 'aggiungi rumore alle etichette'",
+        "hover su una barra α_i per evidenziare il paziente corrispondente"
+      ],
+      "visual": "Scatter verde/rosso con regione di decisione a due colori e curva di livello nera, barre α_i in basso con linea del tetto C, badge bound/unbound/non support vector, due contatori di accuratezza (training e test); hover su un paziente: f(x) = Σ α_i y_i k(x_i, x) + w_0 con i numeri sostituiti. Etichetta 'dati sintetici ispirati a dati clinici'.",
+      "aha": "C è solo il tetto della scatola 0 ≤ α_i ≤ C: a zero nessun esempio conta, all'infinito si torna all'hard margin nello spazio del kernel e con un kernel ricco si impara anche il rumore.",
+      "formulasShown": [
+        "0 \\le \\alpha_i \\le C",
+        "f(\\mathbf{x}) = \\sum_{i=1}^{m} \\alpha_i y_i k(\\mathbf{x}_i, \\mathbf{x}) + w_0"
+      ],
+      "challenge": "Con d = 4 e rumore attivo trova il C che massimizza l'accuratezza di test; prima di muovere lo slider, prevedi cosa succede alla regione colorata a C = 0.",
+      "size": "M",
+      "tech": "canvas2d",
+      "addedBy": "revisore"
+    },
+    {
+      "id": "p10-svr-primale-epsilon-insensibile",
+      "title": "Il tubo ε visto dal primale",
+      "concepts": [
+        "c64",
+        "c54",
+        "c55"
+      ],
+      "scenario": "energia",
+      "realExample": "La stessa previsione della radiazione solare in funzione dell'ora (dati sintetici ispirati a dati di irraggiamento): il gestore dell'impianto accetta errori fino a ±ε W/m² senza penalità. Il widget mostra la SVR come problema primale (slack sopra e sotto il tubo, perdita ε-insensibile) e la collega alle variabili duali α_i, α_i* della fonte.",
+      "storyboard": [
+        "Al caricamento: a sinistra il grafico della perdita |r|_ε in funzione del residuo r = y − f(x) (zona piatta tra −ε e +ε, bracci lineari); a destra la curva SVR sulle misure di radiazione con il tubo ±ε.",
+        "Da ogni misura fuori dal tubo si disegna un segmento verticale fino al bordo (300 ms, stagger 30 ms): arancio sopra (ξ_i*), blu sotto (ξ_i); ogni misura compare anche come pallino sul grafico della perdita alla sua ascissa r, con il valore |r|_ε scritto accanto.",
+        "Trigger: slider ε e C (la soluzione si ricalcola subito). Il pannello a barre con ½‖w‖² e C Σ(ξ_i + ξ_i*) mostra i valori numerici e si aggiorna con tween 250 ms: le due barre si scambiano peso.",
+        "Trigger: toggle 'duale'. Sopra ogni misura crescono le barre α_i* (arancio) e α_i (blu) (300 ms): nulle dentro il tubo, tra 0 e C sul bordo, uguali a C fuori; mai entrambe accese (α_i α_i* = 0).",
+        "Trigger: trascinamento verticale di una misura. Segmenti degli slack e pallino sulla perdita si aggiornano live; la soluzione (curva, α) si ricalcola solo con il pulsante Risolvi, e le barre α si animano verso i nuovi valori (500 ms).",
+        "Trigger: clic su un support vector sul bordo (0 < α < C). La formula KKT di w_0 si compone con i numeri sostituiti (es. w_0 = y_s − ε − Σ_j(α_j* − α_j) k(x_j, x_s)) e il risultato si confronta con il bias della curva (spunta verde)."
+      ],
+      "interactions": [
+        "slider ε da 0 a 0.3",
+        "slider C da 0.01 a 100 (scala logaritmica)",
+        "trascinare una misura in alto o in basso",
+        "pulsante Risolvi (ricalcola la soluzione dopo aver spostato le misure)",
+        "toggle primale / duale",
+        "clic su un support vector per calcolare w_0"
+      ],
+      "visual": "Due pannelli collegati (perdita ε-insensibile e regressione con tubo semitrasparente), segmenti degli slack colorati per lato, barre dell'obiettivo primale, barre α_i/α_i* per misura, formula di w_0 con i numeri sostituiti.",
+      "aha": "Il duale di pag. 68 viene da un primale semplice: un tubo di tolleranza ε e un prezzo C per ogni unità di errore fuori dal tubo; α_i* e α_i sono i prezzi dei vincoli sopra e sotto.",
+      "formulasShown": [
+        "\\min \\frac{1}{2}\\|\\mathbf{w}\\|^2 + C\\sum_{i}(\\xi_i + \\xi_i^*)",
+        "|y - f(\\mathbf{x})|_{\\epsilon} = \\max(0, |y - f(\\mathbf{x})| - \\epsilon)",
+        "w_0 = y_s - \\epsilon - \\sum_{j}(\\alpha_j^* - \\alpha_j)k(\\mathbf{x}_j, \\mathbf{x}_s)"
+      ],
+      "challenge": "Prima di premere Risolvi, indica quali misure avranno α* = C, quali α = C e quali nessun moltiplicatore; poi verifica.",
+      "size": "M",
+      "tech": "svg+motion",
+      "addedBy": "revisore"
+    },
+    {
+      "id": "p10-radici-multinomiali",
+      "title": "Da dove vengono i √2 (e i √3)",
+      "concepts": [
+        "c65",
+        "c34",
+        "c36",
+        "c51"
+      ],
+      "scenario": "pesce",
+      "realExample": "Pesci descritti da luminosità, larghezza e lunghezza (n fino a 3, dati sintetici ispirati all'esempio del Cap. 1). Per dimostrare all'orale che il kernel polinomiale è valido per qualunque grado bisogna saper scrivere la sua feature map: il widget la costruisce monomio per monomio per ogni n e d.",
+      "storyboard": [
+        "Al caricamento: n = 2, d = 2; tabella dei multi-indici (k_1, k_2) con il monomio corrispondente e una tessera con il coefficiente multinomiale d!/(k_1!k_2!): 1, 2, 1.",
+        "Trigger: pulsante Anima. Ogni tessera si spezza in due metà √coef (300 ms) che volano una nel vettore φ(x) e una in φ(x′) (500 ms, stagger 150 ms): il 2 diventa √2 · √2 e si ricompone la mappa di pag. 66.",
+        "Trigger: trascinamento dei due pesci. Il widget somma i prodotti componente per componente con i numeri e li confronta con (x^T x′)^d (es. x = (1, 2), x′ = (3, 1), d = 3: 27 + 54 + 36 + 8 = 125 = 5³), con spunta verde.",
+        "Trigger: slider d (1-4) o selettore n = 3 (terza feature: lunghezza). La tabella si rigenera (righe che entrano con stagger 60 ms), coefficienti 1, 3, 3, 1 per n = 2, d = 3 e così via; il contatore mostra C(n+d−1, d) componenti.",
+        "Trigger: toggle 'non omogeneo'. Davanti a x scivola la costante 1 (vettore x̃, 300 ms); la tabella si rigenera con le righe di grado inferiore e per n = 2, d = 2 ricompone il vettore a 6 componenti della fonte; il contatore passa a C(n+d, d)."
+      ],
+      "interactions": [
+        "pulsante Anima",
+        "slider d da 1 a 4",
+        "selettore n = 2 / 3",
+        "toggle omogeneo / non omogeneo",
+        "trascinare i due pesci"
+      ],
+      "visual": "Tabella dei multi-indici con tessere colorate per grado, animazione di divisione delle tessere in due radici, due vettori colonna φ(x) e φ(x') in LaTeX, confronto numerico kernel contro prodotto scalare, contatore della dimensione.",
+      "aha": "I fattori √ sono le radici dei coefficienti multinomiali: il kernel pesa ogni monomio per il numero di modi in cui nasce dallo sviluppo, e così la feature map esiste per ogni grado.",
+      "formulasShown": [
+        "(\\mathbf{x}^T\\mathbf{x}')^d = \\sum_{|\\mathbf{k}| = d} \\frac{d!}{k_1! \\cdots k_n!} \\prod_{j} (x_j x_j')^{k_j}",
+        "\\phi_{\\mathbf{k}}(\\mathbf{x}) = \\sqrt{\\frac{d!}{k_1! \\cdots k_n!}} \\, x_1^{k_1} \\cdots x_n^{k_n}",
+        "(1 + \\mathbf{x}^T\\mathbf{x}')^d = (\\tilde{\\mathbf{x}}^T\\tilde{\\mathbf{x}}')^d"
+      ],
+      "challenge": "Scrivi a mano φ(x) per d = 3 e n = 2 prima di muovere lo slider (risposta: x_1³, √3x_1²x_2, √3x_1x_2², x_2³).",
+      "size": "M",
+      "tech": "html+motion",
+      "addedBy": "revisore"
+    }
+  ],
+  "exercises": [
+    {
+      "id": "es01",
+      "title": "Kernel omogeneo calcolato in due modi",
+      "type": "numerico",
+      "description": "Dati x = (1, 2) e x′ = (3, 1), calcola k(x, x′) = (x^T x′)² direttamente e tramite φ(x) = (x_1², √2x_1x_2, x_2²). Soluzione: x^T x′ = 3 + 2 = 5, k = 25; φ(x) = (1, 2√2, 4), φ(x′) = (9, 3√2, 1), prodotto = 9 + 12 + 4 = 25. Randomizzabile: componenti intere di x e x′ tra −3 e 3; la soluzione è (x_1x_1′ + x_2x_2′)².",
+      "concepts": [
+        "c34",
+        "c35"
+      ]
+    },
+    {
+      "id": "es02",
+      "title": "Kernel non omogeneo calcolato in due modi",
+      "type": "numerico",
+      "description": "Con gli stessi x = (1, 2) e x′ = (3, 1), calcola (1 + x^T x′)² e il prodotto scalare delle mappe φ(x) = (1, √2x_1, √2x_2, x_1², √2x_1x_2, x_2²). Soluzione: (1 + 5)² = 36; φ(x) = (1, √2, 2√2, 1, 2√2, 4), φ(x′) = (1, 3√2, √2, 9, 3√2, 1), prodotto = 1 + 6 + 4 + 9 + 12 + 4 = 36. Randomizzabile come es01.",
+      "concepts": [
+        "c36",
+        "c37"
+      ]
+    },
+    {
+      "id": "es03",
+      "title": "La mappa di pag. 63 non riproduce il kernel",
+      "type": "numerico",
+      "description": "Con x = (1, 2) e x′ = (3, 1) calcola il prodotto scalare delle mappe di pag. 63 senza √2: omogenea (x_1², x_1x_2, x_2²) dà 9 + 6 + 4 = 19 ≠ 25; spiega da dove viene la differenza (termine misto con peso 1 invece di 2) e perché la famiglia di confini ottenibili non cambia. Randomizzabile: qualsiasi coppia con x_1x_2x_1′x_2′ ≠ 0.",
+      "concepts": [
+        "c38",
+        "c15"
+      ]
+    },
+    {
+      "id": "es04",
+      "title": "Una funzione che non è un kernel",
+      "type": "numerico",
+      "description": "Considera k(x, x′) = ‖x − x′‖² e due punti distinti x_1, x_2 con ‖x_1 − x_2‖² = a > 0. La Gram matrix è K = [[0, a], [a, 0]]. Con c = (1, −1): c^T K c = −2a < 0, quindi K non è p.d. e k non è un kernel valido. Autovalori: ±a. Randomizzabile: coordinate dei due punti; la soluzione è sempre −2‖x_1 − x_2‖². Variante: k(x, x′) = −x^T x′ con un solo punto x ≠ 0 dà K = [−‖x‖²] < 0.",
+      "concepts": [
+        "c44",
+        "c45",
+        "c47",
+        "c49"
+      ]
+    },
+    {
+      "id": "es05",
+      "title": "Gram matrix e autovalori per il kernel lineare",
+      "type": "numerico",
+      "description": "Con i punti x_1 = (1, 0), x_2 = (0, 1), x_3 = (1, 1) e k(x, x′) = x^T x′ calcola K = [[1, 0, 1], [0, 1, 1], [1, 1, 2]], i suoi autovalori (3, 1, 0) e verifica che è p.d. ma non s.p.d. (c = (1, 1, −1) dà c^T K c = 0 perché x_3 = x_1 + x_2). Trova B con K = B^T B (per esempio B = matrice 2 × 3 con colonne x_i). Randomizzabile: punti interi in 2D; K = X X^T ha rango ≤ 2, quindi con 3 punti un autovalore è sempre 0.",
+      "concepts": [
+        "c44",
+        "c46",
+        "c47",
+        "c48"
+      ]
+    },
+    {
+      "id": "es06",
+      "title": "Confine quadratico da una funzione di decisione",
+      "type": "numerico",
+      "description": "Con φ(x) = (x_1², x_1x_2, x_2²), w = (1, 0, 4) e w_0 = −4 scrivi f(x) = sgn(x_1² + 4x_2² − 4), riconosci il confine (ellisse con semiassi 2 e 1) e classifica i punti (1, 0), (0, 1.5), (−2.5, 0). Soluzione: −1, +1, +1. Randomizzabile: w_1, w_3 > 0, w_2 piccolo, w_0 < 0; il tipo di conica si legge dal discriminante w_2² − 4w_1w_3.",
+      "concepts": [
+        "c20",
+        "c22",
+        "c21"
+      ]
+    },
+    {
+      "id": "es07",
+      "title": "Dimensione dello spazio delle feature",
+      "type": "numerico",
+      "description": "Per immagini 28×28 (n = 784) calcola la dimensione della mappa polinomiale omogenea di grado 2 (C(785, 2) = 307.720) e di quella con la costante fino al grado 2 (C(786, 2) = 308.505); confronta con il costo del kernel (784 moltiplicazioni + una potenza). Randomizzabile: n tra 16 e 1024, d tra 2 e 4; formule C(n+d−1, d) e C(n+d, d).",
+      "concepts": [
+        "c25",
+        "c28"
+      ]
+    },
+    {
+      "id": "es08",
+      "title": "Kernel perceptron a mano sullo XOR",
+      "type": "numerico",
+      "description": "Dati x_1 = (1, 1, y = +1), x_2 = (−1, −1, y = +1), x_3 = (1, −1, y = −1), x_4 = (−1, 1, y = −1), η = 1 e k(x, x′) = (1 + x^T x′)², esegui il kernel perceptron presentando gli esempi in ordine, considerando errore f(x_i)·y_i ≤ 0. Calcola la Gram matrix: 9 sulla diagonale e 1 fuori diagonale (le coppie con prodotto scalare 0 danno (1 + 0)² = 1, le coppie opposte x_1, x_2 e x_3, x_4 danno (1 − 2)² = 1). Aggiorna gli α_i finché un'epoca passa senza errori. Soluzione: epoca 1, errore su x_1 (f = 0) → α_1 = 1; x_2 corretto (f = 1); errore su x_3 (f = 1) → α_3 = −1; errore su x_4 (f = 0) → α_4 = −1; fine epoca α = (1, 0, −1, −1), 3 errori. Epoca 2: x_1 corretto (f = 7), errore su x_2 (f = −1) → α_2 = 1, poi x_3 e x_4 corretti (f = −8); α = (1, 1, −1, −1). Epoca 3: nessun errore (f = ±8 su tutti), convergenza. Il confine f(x) = (1 + x^T x_1)² + (1 + x^T x_2)² − (1 + x^T x_3)² − (1 + x^T x_4)² = 8ab per x = (a, b) risolve lo XOR, che nessuna retta separa. Randomizzabile: ordine di presentazione ed η; la soluzione si ottiene eseguendo l'algoritmo.",
+      "concepts": [
+        "c61",
+        "c62",
+        "c44"
+      ]
+    },
+    {
+      "id": "es09",
+      "title": "Previsione SVR con i coefficienti duali",
+      "type": "numerico",
+      "description": "Una SVR con kernel k(x, x′) = (1 + x x′)² su input scalari ha support vector x = −1, 0, 2 con α* − α = 0.3, −0.4, 0.1 e w_0 = 1. Verifica il vincolo Σ(α* − α) = 0.3 − 0.4 + 0.1 = 0, poi calcola f(1) = 0.3·(1 − 1)² − 0.4·(1 + 0)² + 0.1·(1 + 2)² + 1 = 0 − 0.4 + 0.9 + 1 = 1.5. Nota che il support vector in x = −1 non contribuisce in x = 1 perché lì il suo kernel vale 0. Randomizzabile: support vector, coefficienti (con somma zero e |α* − α| ≤ C), w_0.",
+      "concepts": [
+        "c57",
+        "c55"
+      ]
+    },
+    {
+      "id": "es10",
+      "title": "Due passi di Pegasos",
+      "type": "numerico",
+      "description": "Con λ = 0.5, w_1 = 0, esempi estratti (x, y) = ((1, 2), +1) al passo 1 e ((2, −1), −1) al passo 2, calcola η_1 = 2, w_2 = (1 − 1)·0 + 2·(1, 2) = (2, 4); al passo 2 η_2 = 1, margine y⟨w_2, x⟩ = −(4 − 4) = 0 < 1, quindi w_3 = (1 − 1/2)(2, 4) + 1·(−1)(2, −1) = (1, 2) + (−2, 1) = (−1, 3). Randomizzabile: λ, esempi; la soluzione segue la der09.",
+      "concepts": [
+        "c01",
+        "c02",
+        "c03"
+      ]
+    },
+    {
+      "id": "es11",
+      "title": "Deriva il duale kernelizzato",
+      "type": "dimostrazione",
+      "description": "Partendo dal primale soft margin con φ(x_i), scrivi la Lagrangiana, deriva le condizioni di stazionarietà, sostituisci e mostra che nel duale e nella funzione di decisione φ compare solo in prodotti scalari; sostituiscili con k e ricava w_0 da un support vector non saturato (der03).",
+      "concepts": [
+        "c26",
+        "c29",
+        "c30",
+        "c31"
+      ]
+    },
+    {
+      "id": "es12",
+      "title": "Dimostra che una feature map garantisce la validità",
+      "type": "dimostrazione",
+      "description": "Dimostra che se k(x, x′) = φ(x)^T φ(x′) allora per ogni insieme finito {x_1, ..., x_m} la Gram matrix è p.d. (der04), e che ogni matrice p.d. si fattorizza come B^T B (der05). Spiega perché un controllo numerico degli autovalori su un dataset può smentire ma non dimostrare la validità di un kernel.",
+      "concepts": [
+        "c49",
+        "c51",
+        "c48",
+        "c47"
+      ]
+    },
+    {
+      "id": "es13",
+      "title": "Primale o duale?",
+      "type": "concettuale",
+      "description": "Spiega perché il kernel trick non è applicabile nel primale e in quali casi conviene comunque il primale (per esempio Pegasos con m molto grande e φ esplicita a bassa dimensione) e in quali il duale (kernel a dimensione enorme o infinita, m moderato).",
+      "concepts": [
+        "c32",
+        "c05",
+        "c28"
+      ]
+    },
+    {
+      "id": "es14",
+      "title": "Perché non rinunciare ai separatori lineari",
+      "type": "concettuale",
+      "description": "Spiega il ragionamento di pag. 62-63: hard margin, soft margin e i loro limiti; perché, invece di passare a un modello non lineare generico, si mappano i dati in H e si tiene l'SVM lineare (margine ampio, garanzie teoriche, problema convesso).",
+      "concepts": [
+        "c07",
+        "c08",
+        "c09",
+        "c10",
+        "c11",
+        "c18"
+      ]
+    },
+    {
+      "id": "es15",
+      "title": "Costruisci un kernel valido con le regole",
+      "type": "concettuale",
+      "description": "Mostra che k(x, x′) = 2(x^T x′)² + (1 + x^T x′)³ è valido usando solo le regole di combinazione (scalatura positiva, somma, prodotto di kernel validi) e dicendo quale regola usi a ogni passo. Poi spiega perché x^T x′ − 1 non è valido (un solo punto x = 0 dà K = [−1]).",
+      "concepts": [
+        "c52",
+        "c49"
+      ]
+    },
+    {
+      "id": "es16",
+      "title": "Kernel omogeneo di grado 3 in due modi",
+      "type": "numerico",
+      "description": "Dati x = (1, 2) e x′ = (3, 1), calcola k(x, x′) = (x^T x′)³ direttamente e tramite φ(x) = (x_1³, √3x_1²x_2, √3x_1x_2², x_2³). Soluzione: x^T x′ = 5, k = 125; φ(x) = (1, 2√3, 4√3, 8), φ(x′) = (27, 9√3, 3√3, 1), prodotto = 27 + 54 + 36 + 8 = 125. Randomizzabile: componenti intere tra −3 e 3; la soluzione è (x_1x_1′ + x_2x_2′)³.",
+      "concepts": [
+        "c65",
+        "c34"
+      ],
+      "addedBy": "revisore"
+    },
+    {
+      "id": "es17",
+      "title": "Deriva il duale della SVR",
+      "type": "dimostrazione",
+      "description": "Scrivi il primale della SVR con perdita ε-insensibile (c64), la Lagrangiana con i moltiplicatori α_i, α_i*, β_i, β_i*, le condizioni di stazionarietà e sostituiscile fino a ottenere il duale di pag. 68 con i vincoli Σ(α_i* − α_i) = 0 e α_i, α_i* ∈ [0, C]. Mostra che gli esempi compaiono solo in φ(x_i)^T φ(x_j) e ricava w_0 da un support vector con 0 < α_s* < C (der11).",
+      "concepts": [
+        "c64",
+        "c54",
+        "c55",
+        "c57"
+      ],
+      "addedBy": "revisore"
+    },
+    {
+      "id": "es18",
+      "title": "C e kernel ai casi limite",
+      "type": "concettuale",
+      "description": "Per un'SVM soft margin con kernel polinomiale di grado 6 su dati con qualche etichetta sbagliata spiega: (a) cosa diventano i vincoli del duale e la funzione di decisione per C = 0; (b) cosa succede per C → +∞, distinguendo il caso in cui i dati mappati sono separabili in H (overfitting delle etichette rumorose) da quello in cui non lo sono (hard margin senza soluzione); (c) perché C e il grado d vanno scelti insieme (c63).",
+      "concepts": [
+        "c63",
+        "c29",
+        "c31"
+      ],
+      "addedBy": "revisore"
+    }
+  ],
+  "examQuestions": [
+    {
+      "text": "Kernels and kernel machines: entire chapter and link to the dual problem, write the dual derivation and show that features appears only in dot products",
+      "prof": "Passerini",
+      "concepts": [
+        "c24",
+        "c26",
+        "c27",
+        "c29",
+        "c30",
+        "c31",
+        "c32"
+      ]
+    },
+    {
+      "text": "Perceptron for classification and regression: entire chapter with proofs, feature mapping and kernel perceptron",
+      "prof": "Passerini",
+      "concepts": [
+        "c12",
+        "c59",
+        "c60",
+        "c61",
+        "c62"
+      ]
+    },
+    {
+      "text": "Non-linear SVM and Kernel machines. Concept of feature map, example (homogeneous polynomial map), revisiting soft-margin SVM using feature maps, SVR definition and proof for Non-Linear soft margin SVM for classification, advantages of using feature maps; question: rule of constant C in soft-margin SVM (what happens if C=0 and if C->+infinity).",
+      "prof": "Passerini",
+      "concepts": [
+        "c09",
+        "c10",
+        "c11",
+        "c12",
+        "c15",
+        "c18",
+        "c20",
+        "c29",
+        "c54",
+        "c56",
+        "c63",
+        "c64"
+      ]
+    },
+    {
+      "text": "Kernel machines, how kernels are related to feature maps, similarity with dot product, example (equivalence between homogeneous polynomial feature map and homogeneous polynomial kernel), definition of valid kernels and positive definite matrices, reason behind validity-preserving operators, list of operators (with examples), using kernels on non-vectorized objects: Spectrum Kernel for strings and WL-Kernel for graphs (just a quick explanation, no analysis of WL-Test).",
+      "prof": "Passerini",
+      "concepts": [
+        "c27",
+        "c34",
+        "c35",
+        "c38",
+        "c39",
+        "c40",
+        "c42",
+        "c43",
+        "c45",
+        "c49",
+        "c52",
+        "c65"
+      ]
+    },
+    {
+      "text": "Learning Parameters  (ML with complete data, MAP), SVM (Hard Margin, Lagrangian, Soft Margin), NonLinear,  Kernel Machine, Perceptron)",
+      "prof": "Passerini",
+      "concepts": [
+        "c07",
+        "c08",
+        "c11",
+        "c59",
+        "c61"
+      ]
+    },
+    {
+      "text": "Non-linear machines (non-linear SVM, SV regression, kernel machines)",
+      "prof": "Passerini",
+      "concepts": [
+        "c11",
+        "c20",
+        "c54",
+        "c57",
+        "c59",
+        "c64"
+      ]
+    },
+    {
+      "text": "SVM (when should we opt for primal or dual formulation)",
+      "prof": "Passerini",
+      "concepts": [
+        "c32",
+        "c26",
+        "c05"
+      ]
+    },
+    {
+      "text": "Unsupervised learning (everything I knew) + gaussian kernel related to gaussian distance (he said something during lessons, nothing in slides about that). During the oral part he asked me to explain better the mechanism of EM used for gaussian mixture and to explain the result then he asked me what are kernels and when we use them",
+      "prof": "Passerini",
+      "concepts": [
+        "c24",
+        "c27",
+        "c40",
+        "c43",
+        "c09"
+      ]
+    },
+    {
+      "text": "Kernel machines + Bayesian networks  Question: how can you demonstrate that a kernel is valid? Is it easy to demonstrate that a kernel is positive definite?",
+      "prof": "Passerini",
+      "concepts": [
+        "c41",
+        "c49",
+        "c50",
+        "c51",
+        "c52",
+        "c65"
+      ]
+    },
+    {
+      "text": "Linear Classifiers. Questions: (1) when do we use (and why) primal or dual (2) meaning of adapting learning rate",
+      "prof": "Passerini",
+      "concepts": [
+        "c32",
+        "c01",
+        "c02"
+      ]
+    },
+    {
+      "text": "Regression (perceptron + svm) + a tricky question on the pseudoinverse and in which topic it is used and how. He wanted me to talk about principal component analysis",
+      "prof": "Passerini",
+      "concepts": [
+        "c54",
+        "c57",
+        "c64"
+      ]
+    },
+    {
+      "text": "He asked me to formulaize everything about linear regression for perceptron and linear classification for perceptron and svm. I wrote all the equations till i reached the soft case for svm so i stopped as i took too much time. He did not ask me any questions and that's all",
+      "prof": "Passerini",
+      "concepts": [
+        "c60",
+        "c08"
+      ]
+    },
+    {
+      "text": "Perceptron (All) + Parameter estimation Questions: - Problem with analytical solution for perceptron regression - Example of estimation of Gaussian parameters: why do we obtain a Gaussian also as posterior? - How to use parameter estimation in Bayesian Networks - Why ML is fast in Bayesian Network (CDP independence)",
+      "prof": "Passerini",
+      "concepts": [
+        "c60",
+        "c61",
+        "c62"
+      ],
+      "addedBy": "revisore"
+    }
+  ],
+  "crossLinks": [
+    {
+      "moduleId": "p08-svm-hard-margin",
+      "why": "Il duale hard margin, le condizioni KKT e la stazionarietà w = Σ α_i y_i x_i sono la base su cui si sostituisce x con φ(x) e poi il prodotto scalare con k."
+    },
+    {
+      "moduleId": "p09-svm-soft-margin",
+      "why": "Duale soft margin (pag. 59-60) che qui viene kernelizzato; hinge loss, sottogradiente e prima parte di Pegasos (pag. 60-61), di cui questo modulo contiene la fine (pag. 62)."
+    },
+    {
+      "moduleId": "p11-kernel-machines",
+      "why": "Prosecuzione diretta: catalogo dei kernel (lineare, polinomiale con c, gaussiano universale), lista completa degli operatori che preservano la validità, kernel su stringhe (spectrum) e grafi (WL); condivide le pag. 67-68 (SVR e kernel perceptron)."
+    },
+    {
+      "moduleId": "p06-discriminanti-perceptron",
+      "why": "Perceptron stocastico e funzioni discriminanti lineari: qui il perceptron diventa la kernel machine più semplice."
+    },
+    {
+      "moduleId": "p07-regressione-multiclasse",
+      "why": "Regressione lineare: la SVR con kernel ne è la versione non lineare e robusta (tubo ε)."
+    },
+    {
+      "moduleId": "m19-funzioni-discriminanti",
+      "why": "Nel caso gaussiano con covarianze diverse le funzioni discriminanti di Melgani sono quadratiche e i confini sono coniche: è lo stesso tipo di confine che si ottiene con la mappa polinomiale di grado 2."
+    },
+    {
+      "moduleId": "m09-parzen-windows",
+      "why": "La parola 'kernel' nelle finestre di Parzen indica una funzione finestra per la stima di densità, concetto diverso dal kernel come prodotto scalare; il kernel gaussiano (p11) collega le due idee."
+    },
+    {
+      "moduleId": "m14-pca",
+      "why": "Autovalori, autovettori e matrici simmetriche semidefinite positive (come la covarianza) sono gli stessi strumenti usati per caratterizzare le Gram matrix valide."
+    },
+    {
+      "moduleId": "m11-hughes-feature-selection",
+      "why": "La feature map aumenta molto la dimensione: il confronto con l'effetto Hughes aiuta a capire perché il margine ampio e la regolarizzazione servono per generalizzare in H."
+    },
+    {
+      "moduleId": "d01-reti-feedforward",
+      "why": "Le reti neurali imparano la feature map dai dati, mentre le kernel machines la fissano tramite il kernel: confronto utile all'orale."
+    }
+  ],
+  "emptyPages": [],
+  "gaps": [
+    "part2 p63 vs p66: le mappe polinomiali di esempio a pag. 63 non hanno i fattori √2 (e la non omogenea non ha la costante 1), mentre le mappe implicite dei kernel a pag. 66 li hanno; il prodotto scalare delle mappe di pag. 63 non coincide con (x^T x')^d o (1 + x^T x')^d. Non è un errore di famiglia di confini, ma va spiegato (c38).",
+    "part2 p67: la fonte chiama 'positive definite' la condizione Σ c_i c_j K_ij ≥ 0 (in algebra lineare è semidefinita positiva) e 'strictly positive definite' quella stretta; convenzione della letteratura sui kernel da esplicitare (c53).",
+    "part2 p68: nella funzione di predizione della SVR la fonte scrive k(x_i, x_j) invece di k(x_i, x); è un refuso.",
+    "part2 p68: il duale della SVR è scritto 'max_{α ∈ R^m}' ma le variabili sono due vettori α e α* in R^m; manca anche il primale della SVR (la stazionarietà w = Σ(α_i* − α_i)φ(x_i) usata in der07 è un'integrazione). Il primale con perdita ε-insensibile, la derivazione del duale e il calcolo di w_0 dalle KKT sono ora integrati (c64, der11).",
+    "part2 p65: la funzione di decisione duale f(x) = Σ α_i y_i φ(x_i)^T φ(x) è scritta senza il bias w_0, che invece compare a pag. 64 in f(x) = w^T φ(x) + w_0; il calcolo di w_0 dai support vector non saturati è un'integrazione (der03).",
+    "part2 p67: le regole di combinazione dei kernel sono solo nominate (addition, multiplication, scaling) senza condizioni; la scalatura richiede un fattore positivo. La lista completa è in p11.",
+    "part2 p67: la frase 'correspond to a dot product in some feature space φ' confonde la feature map φ con lo spazio H; il senso è 'esiste una φ: X → H'. La direzione 'necessaria' del teorema (p.d. ⇒ esiste φ, teorema di Mercer / costruzione RKHS) non è dimostrata nella fonte.",
+    "part2 p62: 'ε-accurate solution' non è definita formalmente; d nella formula del runtime di Pegasos è il numero massimo di feature non nulle, da non confondere con il grado d del polinomio usato poche righe dopo.",
+    "part2 p62: il titolo del riquadro dice 'Pseudocode (pegasus)', grafia diversa da 'Pegasos' usata nel testo.",
+    "part2 p68: il perceptron stocastico è scritto senza bias (f(x) = w^T x) e il kernel perceptron accumula η y_i dentro α_i, quindi f(x) = Σ α_i k(x_i, x) senza y_i separato, a differenza del duale SVM (α_i y_i con α_i ≥ 0). La fonte non spiega il legame w = Σ α_i φ(x_i) (integrazione in c62 e der06).",
+    "part2 p66-67: la fonte verifica il kernel polinomiale solo per n = 2, d = 2 ma afferma la validità per ogni grado ('e.g., for the polynomial kernel'); la feature map generale con i coefficienti multinomiali è un'integrazione (c65, der12).",
+    "part2 p64 e p66 (verificatore): le figure e i riquadri usano Φ maiuscolo (freccia 'Φ' nella prima figura di pag. 64, etichette Φ(x)^T e Φ(x′) sotto le parentesi graffe dei due riquadri 'E.g. (d = 2)' di pag. 66), mentre il testo usa φ minuscolo: è la stessa feature map. Nell'inventario si usa \\phi ovunque.",
+    "part2 p62 (verificatore): nel passo del pseudocodice w_{t+1} = w_t − η_t ∇_w E(w; (x_{i_t}, y_{i_t})) il sottogradiente è scritto in w senza pedice; va valutato nel punto corrente w_t (così è trascritto in c03 e der09, mentre c01 riporta la forma letterale della fonte)."
+  ]
+}

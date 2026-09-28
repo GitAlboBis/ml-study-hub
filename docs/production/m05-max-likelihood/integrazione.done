@@ -1,0 +1,1 @@
+integrazione m05-max-likelihood: data.ts scritto (69/69 concetti coperti, 59 formule, 19 derivazioni, 28 widget, 10 figure, 78 flashcard, 86 quiz, 23 domande, 19 esercizi); validate-module PASS; formula-coverage 166/167 alla lettera + f-c69-2 equivalente (\forall della slide ch4 p13, annotato in data.ts); tsc senza errori; teoria e riassunto senza katex-error (2026-09-24)
