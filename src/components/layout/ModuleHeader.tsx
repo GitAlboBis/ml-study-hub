@@ -10,15 +10,8 @@ import { formatRange, REGIONS, sheetNumber, STATUS_LABEL } from '../../lib/atlas
 import { MODULE_STATUSES, useProgress } from '../../store/progress'
 import type { ModuleStatus } from '../../store/progress'
 import { StatusMark } from './marks'
+import { TICKS } from '../../pages/global/ui'
 
-/** Squadratura: tacche corte ogni 16 px e lunghe ogni 64, come sul bordo di una carta. */
-const TICKS = {
-  backgroundImage:
-    'repeating-linear-gradient(90deg, var(--border-strong) 0 1px, transparent 1px 64px), repeating-linear-gradient(90deg, var(--border-strong) 0 1px, transparent 1px 16px)',
-  backgroundSize: '100% 100%, 100% 45%',
-  backgroundRepeat: 'no-repeat',
-  backgroundPosition: 'left bottom',
-}
 
 const EMPTY: string[] = []
 

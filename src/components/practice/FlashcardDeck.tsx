@@ -2,7 +2,8 @@
 // angoli vivi, bordo a inchiostro, tacche d'angolo; si gira (flip 3D, solo transform) per vedere la
 // risposta e si vota con quattro timbri. Il mazzo si usa nella scheda Flashcard del foglio e nella
 // pagina globale delle flashcard: riceve le carte con la loro chiave nei progressi e decide da solo la
-// coda (le carte in scadenza, fissate all'inizio della sessione).
+// coda (le carte in scadenza, fissate all'inizio della sessione). Con `reviewAll` la prima sessione prende
+// invece tutte le carte ricevute, nell'ordine dato: la pagina globale lo usa per "ripassa comunque".
 //
 // Tastiera: Spazio gira la carta (sul comando "Mostra la risposta" o con il fuoco sul mazzo, che lo
 // prende al clic sulla carta), 1-4 votano dopo aver visto la risposta. Dopo il voto il fuoco torna
@@ -10,14 +11,14 @@
 //
 // Moto: il giro dura --dur-base (240 ms) con ease-out: è un'azione ripetuta decine di volte, anche da
 // tastiera, quindi breve. La carta successiva arriva già dritta (elemento nuovo, nessun giro all'indietro
-// che mostrerebbe per un istante la risposta della carta dopo). Con reduced motion niente rotazione:
-// le due facce si scambiano in dissolvenza.
+// che mostrerebbe per un istante la risposta della carta dopo). Con meno movimento (sistema o Impostazioni)
+// niente rotazione: le due facce si scambiano in dissolvenza.
 import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent, MouseEvent } from 'react'
 import { review } from '../../lib/srs'
+import { useReduceMotion } from '../../lib/useReduceMotion'
 import type { SrsGrade } from '../../lib/srs'
 import { activeStreak, useProgress } from '../../store/progress'
-import { useReducedMotion } from '../../widgets/kit/useReducedMotion'
 import { Rich } from '../content/Rich'
 import { BTN_PRIMARY, BTN_SECONDARY, FLOW, Icon } from '../content/shared'
 import { dueQueue, formatClock, gradeForKey, GRADES, intervalLabel, KIND_LABEL, nextDue } from './logic'
@@ -38,6 +39,8 @@ export interface FlashcardDeckProps {
   entries: readonly DeckEntry[]
   /** nome accessibile del mazzo */
   label?: string
+  /** la prima sessione ripassa tutte le carte ricevute, anche quelle non in scadenza */
+  reviewAll?: boolean
   onFinish?: (summary: DeckSummary) => void
 }
 
@@ -79,15 +82,15 @@ const days = (n: number) => (n === 1 ? '1 giorno' : `${n} giorni`)
 /** "domani", "tra 3 giorni" a partire da una scadenza in ms. */
 const untilLabel = (due: number, now: number) => intervalLabel(Math.ceil((due - now) / DAY))
 
-export function FlashcardDeck({ entries, label = 'Flashcard', onFinish }: FlashcardDeckProps) {
+export function FlashcardDeck({ entries, label = 'Flashcard', reviewAll = false, onFinish }: FlashcardDeckProps) {
   const srs = useProgress((s) => s.flashcards)
   const gradeCard = useProgress((s) => s.gradeCard)
   const streak = useProgress((s) => s.streak)
-  const reduced = useReducedMotion()
+  const reduced = useReduceMotion()
 
   const [session, setSession] = useState<Session>(() => {
     const s = newSession(0, [])
-    return { ...s, queue: dueQueue(entries, useProgress.getState().flashcards, s.startedAt) }
+    return { ...s, queue: reviewAll ? [...entries] : dueQueue(entries, useProgress.getState().flashcards, s.startedAt) }
   })
   const flipRef = useRef<HTMLButtonElement>(null)
   const summaryRef = useRef<HTMLHeadingElement>(null)

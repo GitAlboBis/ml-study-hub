@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { manifest } from '../content/manifest'
 import type { ModuleProgress } from '../store/progress'
-import { chaptersOf, DOCS, formatRange, isDocId, lastStop, modulesCitingPage, REGION_ORDER, sectionLabel, sheetNumber, sourcePageUrl } from './atlas'
+import { chapterName, chaptersOf, DOCS, formatRange, isDocId, lastStop, modulesCitingPage, REGION_ORDER, sectionLabel, sheetNumber, sourcePageUrl } from './atlas'
 
 const progress = (lastVisited: number, lastSection: string | null): ModuleProgress => ({
   status: 'in-corso',
@@ -33,6 +33,25 @@ describe('regioni e capitoli', () => {
     expect(melgani[0].sheets.map((s) => s.number)).toEqual(['01', '02'])
     const all = REGION_ORDER.flatMap((c) => chaptersOf(c).flatMap((ch) => ch.sheets.map((s) => s.meta.id)))
     expect(all).toEqual(manifest.map((m) => m.id))
+  })
+})
+
+describe("nome del capitolo in italiano (regressione: nelle pagine italiane c'era solo l'inglese)", () => {
+  it("tiene la sigla, mette il titolo italiano e lascia l'inglese accanto", () => {
+    expect(chapterName('Cap. 2 · Statistical Estimation Theory')).toEqual({ prefix: 'Cap. 2', it: 'Teoria della stima statistica', en: 'Statistical Estimation Theory' })
+    expect(chapterName('DL 7 · Sequence Models')).toEqual({ prefix: 'DL 7', it: 'Modelli per sequenze', en: 'Sequence Models' })
+    expect(chapterName('Bayesian Networks')).toEqual({ prefix: null, it: 'Reti bayesiane', en: 'Bayesian Networks' })
+  })
+
+  it('ogni capitolo del manifest ha il suo titolo italiano', () => {
+    for (const chapter of new Set(manifest.map((m) => m.chapter))) {
+      const name = chapterName(chapter)
+      expect(name.it, chapter).not.toBe(name.en)
+    }
+  })
+
+  it("un capitolo sconosciuto resta com'è, senza rompersi", () => {
+    expect(chapterName('Capitolo nuovo')).toEqual({ prefix: null, it: 'Capitolo nuovo', en: 'Capitolo nuovo' })
   })
 })
 

@@ -1,6 +1,5 @@
 // ErrorBoundary delle rotte (src/router.tsx): i 404 lanciati dai loader e gli errori di rendering delle pagine.
 // Sulla rotta interna viene reso dentro la shell; su quella radice, se si rompe la shell stessa, da solo.
-// Prima stava in pages/Placeholder.tsx, che ne conserva una copia finché la pagina segnaposto esiste.
 import { isRouteErrorResponse, Link, useRouteError } from 'react-router'
 import { useDocumentTitle } from '../../lib/useDocumentTitle'
 import { HATCH } from '../content/shared'

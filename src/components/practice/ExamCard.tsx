@@ -8,7 +8,13 @@
 // Il cronometro non parte da solo: si avvia quando si comincia a parlare e si ferma alla rivelazione,
 // così il tempo registrato è quello della risposta. È un role="timer" (non annunciato a ogni secondo);
 // avvio e pausa sono annunciati una volta.
+//
+// Il simulatore dell'orale (pages/OralSimulator) passa quattro cose in più, tutte facoltative: il proprio
+// cronometro (lo condivide con la risposta a voce), i comandi da mettere nella fascia del tempo, chi
+// avvisare quando arriva il voto, e per le domande della banca senza foglio pronto il contenuto che
+// prende il posto della risposta modello, con l'etichetta del pulsante che lo rivela.
 import { useId, useState } from 'react'
+import type { ReactNode } from 'react'
 import type { ExamQuestion, Prof } from '../../content/types'
 import { progressKey, useProgress } from '../../store/progress'
 import { Rich } from '../content/Rich'
@@ -17,6 +23,7 @@ import { examHistory, formatClock, SCORE_LABEL, suggestScore } from './logic'
 import type { ExamScore } from './logic'
 import { PlayPause, StampButton, StampMark, Stat } from './parts'
 import { useStopwatch } from './useStopwatch'
+import type { Stopwatch } from './useStopwatch'
 
 export interface ExamCardProps {
   question: ExamQuestion
@@ -26,6 +33,18 @@ export interface ExamCardProps {
   anchor?: string
   number?: number
   total?: number
+  /** cronometro di chi contiene la scheda; senza, la scheda usa il suo */
+  stopwatch?: Stopwatch
+  /** comandi in più nella fascia del tempo, sotto il cronometro; come funzione ricevono se la risposta è rivelata */
+  timerExtra?: ReactNode | ((revealed: boolean) => ReactNode)
+  /** chiamato dopo recordExam con il voto e i secondi registrati */
+  onGrade?: (score: ExamScore, seconds?: number) => void
+  /** chiamato da "Rifai la domanda": chi contiene la scheda dimentica il voto appena dato */
+  onRetry?: () => void
+  /** al posto della risposta modello, quando la domanda non ne ha (answer vuota) */
+  answerFallback?: ReactNode
+  /** etichetta del pulsante che rivela traccia e risposta */
+  revealLabel?: string
 }
 
 /** Il docente e la regione dell'atlante (il corso) in cui cade la domanda: tassello di legenda + nome. */
@@ -38,12 +57,25 @@ const PROF: Record<Prof, { name: string; field: string }> = {
 
 const SCORES: readonly ExamScore[] = [0, 1, 2, 3]
 
-export function ExamCard({ question, moduleId, anchor, number, total }: ExamCardProps) {
+export function ExamCard({
+  question,
+  moduleId,
+  anchor,
+  number,
+  total,
+  stopwatch,
+  timerExtra,
+  onGrade,
+  onRetry,
+  answerFallback,
+  revealLabel = 'Rivela traccia e risposta',
+}: ExamCardProps) {
   const key = progressKey(moduleId, question.id)
   const recordExam = useProgress((s) => s.recordExam)
   const entries = useProgress((s) => s.exam)
   const history = examHistory(entries, key)
-  const watch = useStopwatch()
+  const own = useStopwatch()
+  const watch = stopwatch ?? own
   const [revealed, setRevealed] = useState(false)
   const [ticked, setTicked] = useState<boolean[]>([])
   const [score, setScore] = useState<ExamScore | null>(null)
@@ -79,7 +111,11 @@ export function ExamCard({ question, moduleId, anchor, number, total }: ExamCard
     const seconds = watch.read()
     recordExam(seconds > 0 ? { key, score: s, seconds } : { key, score: s })
     setScore(s)
+    onGrade?.(s, seconds > 0 ? seconds : undefined)
   }
+
+  const noAnswer = question.answer.trim() === '' && answerFallback !== undefined
+  const twoColumns = question.checklist.length > 0
 
   function again() {
     watch.reset()
@@ -87,6 +123,7 @@ export function ExamCard({ question, moduleId, anchor, number, total }: ExamCard
     setTicked([])
     setScore(null)
     setSpoken('')
+    onRetry?.()
   }
 
   return (
@@ -127,7 +164,7 @@ export function ExamCard({ question, moduleId, anchor, number, total }: ExamCard
           {question.fromBank && question.bankText && (
             <Disclosure
               className="mt-1 border border-border"
-              summary={<span className="label text-text">Testo originale della banca</span>}
+              summary={<span className="label text-text">Resoconto originale della banca (EN, testuale)</span>}
               panelClassName="border-t border-border p-4"
             >
               <p lang="en" className="m-0 italic">
@@ -160,18 +197,19 @@ export function ExamCard({ question, moduleId, anchor, number, total }: ExamCard
           <span aria-live="polite" className="visually-hidden">
             {spoken}
           </span>
+          {timerExtra !== undefined && <div className="min-w-0 basis-full">{typeof timerExtra === 'function' ? timerExtra(revealed) : timerExtra}</div>}
         </div>
 
         {!revealed ? (
           <div>
             <button type="button" className={BTN_PRIMARY} onClick={reveal}>
               <Icon name="eye" size={18} />
-              Rivela traccia e risposta
+              {revealLabel}
             </button>
           </div>
         ) : (
           <>
-            <div className="grid gap-6 @3xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+            <div className={`grid gap-6 ${twoColumns ? '@3xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]' : ''}`}>
               {question.checklist.length > 0 && (
                 <fieldset className="m-0 grid content-start gap-2 border-0 p-0">
                   <legend className="label mb-2 p-0 text-text">Traccia: spunta i punti che hai toccato</legend>
@@ -203,10 +241,14 @@ export function ExamCard({ question, moduleId, anchor, number, total }: ExamCard
                   ))}
                 </fieldset>
               )}
-              <div className="grid content-start gap-2">
-                <p className="label m-0 text-text">Risposta modello</p>
-                <Rich text={question.answer} className={`prose ${FLOW}`} />
-              </div>
+              {noAnswer ? (
+                <div className="grid content-start gap-2">{answerFallback}</div>
+              ) : (
+                <div className="grid content-start gap-2">
+                  <p className="label m-0 text-text">Risposta modello</p>
+                  <Rich text={question.answer} className={`prose ${FLOW}`} />
+                </div>
+              )}
             </div>
 
             {/* autovalutazione */}

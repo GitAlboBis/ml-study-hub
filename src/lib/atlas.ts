@@ -70,6 +70,56 @@ export interface Chapter {
   sheets: Sheet[]
 }
 
+/** I titoli italiani dei capitoli: il manifest li scrive in inglese, come le fonti. */
+const CHAPTER_IT: Record<string, string> = {
+  Introduction: 'Introduzione',
+  'Statistical Estimation Theory': 'Teoria della stima statistica',
+  'Feature Reduction': 'Riduzione delle feature',
+  'Supervised Classification': 'Classificazione supervisionata',
+  'ML & Bayesian Parameter Estimation': 'Stima dei parametri ML e bayesiana',
+  'Bayesian Networks': 'Reti bayesiane',
+  'Linear Discriminant Functions': 'Funzioni discriminanti lineari',
+  'Support Vector Machines': 'Macchine a vettori di supporto',
+  'Kernel Machines': 'Macchine kernel',
+  'Unsupervised Learning': 'Apprendimento non supervisionato',
+  'Reinforcement Learning': 'Apprendimento per rinforzo',
+  'Feedforward Neural Networks': 'Reti neurali feedforward',
+  Backpropagation: 'Retropropagazione',
+  Optimization: 'Ottimizzazione',
+  Regularization: 'Regolarizzazione',
+  'Convolutional Neural Networks': 'Reti neurali convoluzionali',
+  'Recurrent Neural Networks': 'Reti neurali ricorrenti',
+  'Sequence Models': 'Modelli per sequenze',
+  Transformers: 'Transformer',
+  'Generative Models': 'Modelli generativi',
+  'Diffusion Models': 'Modelli di diffusione',
+  'Large Multi-Modal Models': 'Grandi modelli multimodali',
+}
+
+export interface ChapterName {
+  /** la sigla del capitolo ("Cap. 2", "DL 7"); null per i capitoli di Passerini, che non ne hanno */
+  prefix: string | null
+  it: string
+  en: string
+}
+
+/**
+ * Il nome di un capitolo nelle due lingue: "Cap. 2 · Statistical Estimation Theory" diventa sigla "Cap. 2",
+ * "Teoria della stima statistica" e, accanto in corsivo, l'inglese. Un capitolo senza traduzione resta com'è.
+ */
+export function chapterName(chapter: string): ChapterName {
+  const cut = chapter.indexOf(' · ')
+  const prefix = cut < 0 ? null : chapter.slice(0, cut)
+  const en = cut < 0 ? chapter : chapter.slice(cut + 3)
+  return { prefix, it: CHAPTER_IT[en] ?? en, en }
+}
+
+/** "Cap. 2 · Teoria della stima statistica": il nome italiano con la sigla, per le etichette di una riga. */
+export function chapterLabel(chapter: string): string {
+  const { prefix, it } = chapterName(chapter)
+  return prefix ? `${prefix} · ${it}` : it
+}
+
 /** I fogli di una regione raggruppati per capitolo, nell'ordine del manifest. */
 export function chaptersOf(course: CourseId): Chapter[] {
   const chapters: Chapter[] = []

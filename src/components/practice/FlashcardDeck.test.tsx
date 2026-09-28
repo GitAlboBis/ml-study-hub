@@ -150,8 +150,33 @@ describe('FlashcardDeck', () => {
     expect(screen.getByText('Carta 1 di 3')).toBeInTheDocument()
   })
 
+  it('con reviewAll la prima sessione ripassa tutte le carte, anche quelle non in scadenza, nell\'ordine dato', () => {
+    useProgress.setState({
+      flashcards: Object.fromEntries(cards.map((c, i) => [key(c.id), { ef: 2.5, interval: 6, reps: 2, due: NOW + (i + 1) * DAY }])),
+    })
+    render(<FlashcardDeck entries={[...entries].reverse()} reviewAll />)
+    expect(screen.getByText('Carta 1 di 3')).toBeInTheDocument()
+    expect(screen.getByText(/Scrivi la stima di Parzen/)).toBeInTheDocument()
+  })
+
   it('un mazzo vuoto non si rompe', () => {
     render(<FlashcardDeck entries={[]} />)
     expect(screen.getByText(/non ci sono ancora flashcard/i)).toBeInTheDocument()
+  })
+})
+
+describe('FlashcardDeck e «Riduci il movimento» delle Impostazioni', () => {
+  it('con la casella accesa la carta non ruota, anche se il sistema non lo chiede', async () => {
+    const { usePreferences } = await import('../../store/preferences')
+    usePreferences.getState().setReduceMotion(true)
+    try {
+      const user = userEvent.setup()
+      render(<FlashcardDeck entries={entries} />)
+      await user.click(flipButton())
+      expect(screen.getByText(/ipercubo/)).toBeInTheDocument()
+      expect(document.body.innerHTML).not.toContain('rotateY(180deg)')
+    } finally {
+      usePreferences.getState().setReduceMotion(false)
+    }
   })
 })

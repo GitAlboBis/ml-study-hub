@@ -141,15 +141,6 @@ describe('rotte', () => {
     expect(status(await settle(path))).toBe(200)
   })
 
-  // /m/:moduleId ha la sua pagina (Task 5.2): il segnaposto si prova su una rotta che lo usa ancora
-  it('la pagina segnaposto mostra il titolo della rotta e i parametri', async () => {
-    const router = createMemoryRouter(routes, { initialEntries: ['/giochi/formula-match'] })
-    render(createElement(RouterProvider, { router }))
-    expect((await screen.findByRole('heading', { level: 1 }, { timeout: 10_000 })).textContent).toBe('Gioco')
-    const text = document.body.textContent ?? ''
-    for (const s of ['game', 'formula-match']) expect(text).toContain(s)
-  }, 30_000)
-
   it('un percorso sconosciuto mostra "Pagina non trovata" con il ritorno alla home', async () => {
     const router = createMemoryRouter(routes, { initialEntries: ['/boh'] })
     render(createElement(RouterProvider, { router }))

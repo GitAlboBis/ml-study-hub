@@ -76,6 +76,10 @@ describe('stato iniziale e chiavi', () => {
     expect(CARD).toBe('m09-parzen-windows:fc01')
     expect(moduleOfKey(CARD)).toBe(MOD)
   })
+
+  it('moduleOfKey di una chiave senza «:» non inventa un foglio (regressione: "senzaduepunti" diventava "senzaduepunt")', () => {
+    expect(moduleOfKey('senzaduepunti')).toBe('')
+  })
 })
 
 describe('azioni', () => {
@@ -308,7 +312,8 @@ describe('export e import', () => {
   })
 
   describe('input non validi', () => {
-    const valido = () => JSON.parse(azioni().exportJson(T0)) as ProgressBackup
+    // esportato dopo l'ultima attività di popola() (16 settembre), come fa l'app
+    const valido = () => JSON.parse(azioni().exportJson(giorno(20))) as ProgressBackup
     const conStato = (patch: Record<string, unknown>) => () => {
       const b = valido()
       return JSON.stringify({ ...b, state: { ...b.state, ...patch } })
@@ -346,6 +351,15 @@ describe('export e import', () => {
       ['notes con testo non stringa', conStato({ notes: { t: 5 } })],
       ['streak con giorno malformato', conStato({ streak: { current: 1, best: 1, lastDay: 'ieri' } })],
       ['streak con record minore della serie', conStato({ streak: { current: 5, best: 1, lastDay: '2026-09-14' } })],
+      // regressioni: una data impossibile o futura bloccava la serie per sempre (today <= lastDay)
+      ['streak con una data impossibile', conStato({ streak: { current: 3, best: 5, lastDay: '2026-13-45' } })],
+      ['streak con il 31 di un mese di 30 giorni', conStato({ streak: { current: 1, best: 1, lastDay: '2026-09-31' } })],
+      ['streak con un giorno dopo l’esportazione', conStato({ streak: { current: 1, best: 1, lastDay: '2027-01-01' } })],
+      // regressioni: chiavi senza «<foglio>:» creavano fogli fantasma nelle tabelle dei progressi
+      ['flashcards con una chiave senza foglio', conStato({ flashcards: { senzaduepunti: { ef: 2.5, interval: 1, reps: 1, due: 1 } } })],
+      ['quiz con una chiave senza foglio', conStato({ quiz: { senzaduepunti: { attempts: 1, correct: 1, lastCorrect: true, lastAt: 0 } } })],
+      ['quiz con una chiave senza voce', conStato({ quiz: { 'm09-parzen-windows:': { attempts: 1, correct: 1, lastCorrect: true, lastAt: 0 } } })],
+      ['exam con una chiave senza foglio', conStato({ exam: [{ key: 'senzaduepunti', score: 2, at: 0 }] })],
     ])('rifiuta %s senza toccare lo stato', (_, crea) => {
       popola()
       const json = crea()

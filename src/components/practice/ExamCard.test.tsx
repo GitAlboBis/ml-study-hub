@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ExamQuestion } from '../../content/types'
 import { progressKey, useProgress } from '../../store/progress'
 import { ExamCard } from './ExamCard'
+import { useStopwatch } from './useStopwatch'
 
 const MODULE = 'm09-parzen-windows'
 
@@ -41,7 +42,7 @@ describe('ExamCard', () => {
     expect(screen.getByText('Melgani')).toBeInTheDocument()
     expect(screen.getByText(/dalla banca domande/i)).toBeInTheDocument()
     expect(screen.getByText("Domanda d'orale 1 di 3")).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: /testo originale della banca/i }))
+    await user.click(screen.getByRole('button', { name: /resoconto originale della banca/i }))
     expect(screen.getByText(question.bankText as string)).toBeInTheDocument()
   })
 
@@ -127,5 +128,61 @@ describe('ExamCard', () => {
     await user.click(screen.getByRole('button', { name: /rivela traccia e risposta/i }))
     expect(screen.queryAllByRole('checkbox')).toHaveLength(0)
     expect(screen.getByText(/si fissa il volume/i)).toBeInTheDocument()
+  })
+})
+
+// Le opzioni del simulatore dell'orale (pages/OralSimulator): cronometro condiviso, comandi in più nella
+// fascia del tempo, voto comunicato a chi contiene la scheda, domanda della banca senza risposta modello.
+describe('ExamCard nel simulatore', () => {
+  function Shared({ onGrade }: { onGrade?: (score: number, seconds?: number) => void }) {
+    const watch = useStopwatch()
+    return (
+      <ExamCard
+        question={question}
+        moduleId={MODULE}
+        stopwatch={watch}
+        onGrade={onGrade}
+        timerExtra={
+          <button type="button" onClick={watch.start}>
+            Parla
+          </button>
+        }
+      />
+    )
+  }
+
+  it('usa il cronometro di chi la contiene: un comando esterno lo avvia', () => {
+    vi.useFakeTimers()
+    render(<Shared />)
+    fireEvent.click(screen.getByRole('button', { name: 'Parla' }))
+    act(() => vi.advanceTimersByTime(4_000))
+    expect(screen.getByRole('timer')).toHaveTextContent('0:04')
+    expect(screen.getByRole('button', { name: /pausa/i })).toBeInTheDocument()
+  })
+
+  it('comunica il voto dopo averlo registrato', async () => {
+    const onGrade = vi.fn()
+    const user = userEvent.setup()
+    render(<Shared onGrade={onGrade} />)
+    await user.click(screen.getByRole('button', { name: /rivela traccia e risposta/i }))
+    await user.click(screen.getByRole('button', { name: /parziale/i }))
+    expect(exams()).toHaveLength(1)
+    expect(onGrade).toHaveBeenCalledWith(1, undefined)
+  })
+
+  it('senza risposta modello mostra il contenuto sostitutivo e il pulsante con la sua etichetta', async () => {
+    const user = userEvent.setup()
+    render(
+      <ExamCard
+        question={{ ...question, answer: '', checklist: [], followUps: [] }}
+        moduleId={MODULE}
+        revealLabel="Rivela i fogli di riferimento"
+        answerFallback={<p>Il foglio è in preparazione.</p>}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: 'Rivela i fogli di riferimento' }))
+    expect(screen.getByText('Il foglio è in preparazione.')).toBeInTheDocument()
+    expect(screen.queryByText('Risposta modello')).not.toBeInTheDocument()
+    expect(screen.getByRole('group', { name: /come è andata/i })).toBeInTheDocument()
   })
 })

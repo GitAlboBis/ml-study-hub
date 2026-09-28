@@ -1,7 +1,7 @@
 // Rotte dell'app (React Router 7, data router).
 //
-// Fase 5: per montare una pagina vera basta cambiare l'import dentro page(...) della sua rotta; il nome
-// della pagina prevista è nel commento a fine riga. Una pagina è un modulo con `export default` del componente.
+// Ogni rotta con pagina la carica con page(...): una pagina è un modulo con `export default` del componente
+// e diventa un chunk separato del bundle.
 // L'AppShell è il `Component` della rotta radice e rende <Outlet />. Gli errori e i 404 delle pagine
 // si fermano alla rotta interna senza path, quindi vengono resi dentro la shell; quelli della shell stessa
 // si fermano alla radice.
@@ -33,22 +33,23 @@ const moduleLoader = ({ params }: LoaderFunctionArgs) =>
 
 const pages: RouteObject[] = [
   { index: true, handle: { title: 'Copertina' }, lazy: page(() => import('./pages/Home')) },
-  { path: 'mappa', handle: { title: 'Mappa del corso' }, lazy: page(() => import('./pages/Placeholder')) }, // CourseMap
-  { path: 'corso/:course', loader: courseLoader, handle: { title: 'Corso' }, lazy: page(() => import('./pages/Placeholder')) }, // CoursePage
+  { path: 'mappa', handle: { title: 'Mappa del corso' }, lazy: page(() => import('./pages/CourseMap')) },
+  { path: 'corso/:course', loader: courseLoader, handle: { title: 'Corso' }, lazy: page(() => import('./pages/CoursePage')) },
   { path: 'm/:moduleId/:tab?', loader: moduleLoader, handle: { title: 'Foglio' }, lazy: page(() => import('./pages/ModulePage')) },
-  { path: 'formulario', handle: { title: 'Formulario' }, lazy: page(() => import('./pages/Placeholder')) }, // Formulario
-  { path: 'flashcard', handle: { title: 'Flashcard' }, lazy: page(() => import('./pages/Placeholder')) }, // Flashcards
-  { path: 'quiz', handle: { title: 'Quiz' }, lazy: page(() => import('./pages/Placeholder')) }, // QuizArena
-  { path: 'orale', handle: { title: 'Simulatore dell\'orale' }, lazy: page(() => import('./pages/Placeholder')) }, // OralSimulator
-  { path: 'giochi', handle: { title: 'Giochi' }, lazy: page(() => import('./pages/Placeholder')) }, // Games
-  { path: 'giochi/:game', handle: { title: 'Gioco' }, lazy: page(() => import('./pages/Placeholder')) }, // Games/<gioco> (Fase 8)
-  { path: 'glossario', handle: { title: 'Glossario' }, lazy: page(() => import('./pages/Placeholder')) }, // Glossary
+  { path: 'formulario', handle: { title: 'Formulario' }, lazy: page(() => import('./pages/Formulario')) },
+  { path: 'flashcard', handle: { title: 'Flashcard' }, lazy: page(() => import('./pages/Flashcards')) },
+  { path: 'quiz', handle: { title: 'Quiz' }, lazy: page(() => import('./pages/QuizArena')) },
+  { path: 'orale', handle: { title: 'Simulatore dell\'orale' }, lazy: page(() => import('./pages/OralSimulator')) },
+  { path: 'giochi', handle: { title: 'Giochi' }, lazy: page(() => import('./pages/games/GamesHub')) },
+  // un gioco sconosciuto lo dice la pagina stessa ("Questo gioco non esiste"), con il ritorno ai giochi
+  { path: 'giochi/:game', handle: { title: 'Gioco' }, lazy: page(() => import('./pages/games/Game')) },
+  { path: 'glossario', handle: { title: 'Glossario' }, lazy: page(() => import('./pages/Glossary')) },
   { path: 'fonti/:doc/:page', handle: { title: 'Fonti' }, lazy: page(() => import('./pages/SourceViewer')) },
   { path: 'lab/_tavola', handle: { title: 'Tavola dei segni convenzionali' }, lazy: page(() => import('./pages/TokenSpecimen')) },
   { path: 'lab/:widgetId', handle: { title: 'Laboratorio dei widget' }, lazy: page(() => import('./pages/WidgetLab')) }, // anche /lab/_kit (Task 4.4)
-  { path: 'progressi', handle: { title: 'Progressi' }, lazy: page(() => import('./pages/Placeholder')) }, // Progress
-  { path: 'copertura', handle: { title: 'Copertura' }, lazy: page(() => import('./pages/Placeholder')) }, // Coverage
-  { path: 'impostazioni', handle: { title: 'Impostazioni' }, lazy: page(() => import('./pages/Placeholder')) }, // Settings
+  { path: 'progressi', handle: { title: 'Progressi' }, lazy: page(() => import('./pages/Progress')) },
+  { path: 'copertura', handle: { title: 'Copertura' }, lazy: page(() => import('./pages/Coverage')) },
+  { path: 'impostazioni', handle: { title: 'Impostazioni' }, lazy: page(() => import('./pages/Settings')) },
   // Il loader lancia sempre, quindi questa rotta non rende mai nulla: `element: null` serve solo a evitare
   // l'avviso di React Router sulle rotte foglia senza elemento.
   { path: '*', loader: notFound, element: null },

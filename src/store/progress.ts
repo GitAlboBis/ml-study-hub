@@ -148,7 +148,11 @@ export const selectProgressData = (s: ProgressData): ProgressData => ({
 
 /** Chiave di una flashcard, di un quiz o di una domanda d'orale: "<moduleId>:<itemId>". */
 export const progressKey = (moduleId: string, itemId: string) => `${moduleId}:${itemId}`
-export const moduleOfKey = (key: string) => key.slice(0, key.indexOf(':'))
+/** Il foglio di una chiave; '' se la chiave non ha «:» (mai un foglio inventato tagliando la chiave). */
+export const moduleOfKey = (key: string) => {
+  const i = key.indexOf(':')
+  return i < 0 ? '' : key.slice(0, i)
+}
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const keyOfDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
@@ -214,6 +218,26 @@ const record = <T>(item: Parser<T>): Parser<Record<string, T>> => (v, path) =>
   Object.fromEntries(Object.entries(obj(v, path)).map(([k, x]) => [k, item(x, `${path}[${JSON.stringify(k)}]`)]))
 const unique = (xs: string[]) => [...new Set(xs)]
 
+/** Una chiave "<foglio>:<voce>", come le scrive progressKey: né foglio né voce vuoti. */
+const KEY = /^[^:]+:.+/
+const itemKey: Parser<string> = (v, path) => {
+  const k = str(v, path)
+  if (!KEY.test(k)) fail(path, 'una chiave "<foglio>:<voce>"')
+  return k
+}
+/** Un record con chiavi "<foglio>:<voce>" (flashcard, quiz). */
+const keyedRecord = <T>(item: Parser<T>): Parser<Record<string, T>> => (v, path) => {
+  const out = record(item)(v, path)
+  for (const k of Object.keys(out)) if (!KEY.test(k)) fail(`${path}[${JSON.stringify(k)}]`, 'con una chiave "<foglio>:<voce>"')
+  return out
+}
+
+/** Un giorno di calendario vero: YYYY-MM-DD che, ricostruito, dà lo stesso testo (niente 2026-13-45 né 31 settembre). */
+function isCalendarDay(s: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s)
+  return m !== null && keyOfDate(new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))) === s
+}
+
 const moduleProgress: Parser<ModuleProgress> = (v, path) => {
   const o = obj(v, path)
   const status = MODULE_STATUSES.find((s) => s === o.status) ?? fail(`${path}.status`, `uno tra ${MODULE_STATUSES.join(', ')}`)
@@ -247,7 +271,7 @@ const SCORES = [0, 1, 2, 3] as const
 const examEntry: Parser<ExamEntry> = (v, path) => {
   const o = obj(v, path)
   const score = SCORES.find((s) => s === o.score) ?? fail(`${path}.score`, 'un voto da 0 a 3')
-  const entry: ExamEntry = { key: str(o.key, `${path}.key`), score, at: num(o.at, `${path}.at`) }
+  const entry: ExamEntry = { key: itemKey(o.key, `${path}.key`), score, at: num(o.at, `${path}.at`) }
   if (o.seconds !== undefined) entry.seconds = num(o.seconds, `${path}.seconds`)
   return entry
 }
@@ -257,8 +281,8 @@ const streakParser: Parser<Streak> = (v, path) => {
   const current = int(o.current, `${path}.current`)
   const best = int(o.best, `${path}.best`)
   if (best < current) fail(`${path}.best`, 'non minore di current')
-  if (o.lastDay !== null && (typeof o.lastDay !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(o.lastDay))) {
-    fail(`${path}.lastDay`, 'una data YYYY-MM-DD oppure null')
+  if (o.lastDay !== null && (typeof o.lastDay !== 'string' || !isCalendarDay(o.lastDay))) {
+    fail(`${path}.lastDay`, 'una data YYYY-MM-DD esistente oppure null')
   }
   return { current, best, lastDay: o.lastDay }
 }
@@ -282,8 +306,8 @@ function readProgressData(value: unknown, mode: 'strict' | 'salvage'): ProgressD
   }
   return {
     modules: part('modules', record(moduleProgress)),
-    flashcards: part('flashcards', record(srsCard)),
-    quiz: part('quiz', record(quizStat)),
+    flashcards: part('flashcards', keyedRecord(srsCard)),
+    quiz: part('quiz', keyedRecord(quizStat)),
     exam: part('exam', (v, path) => list(examEntry)(v, path).slice(-MAX_EXAM_HISTORY)),
     challenges: part('challenges', record(num)),
     bookmarks: part('bookmarks', (v, path) => unique(list(str)(v, path))),
@@ -320,7 +344,13 @@ export function parseBackup(json: string): ProgressData {
   if (version > PROGRESS_VERSION) {
     throw new ProgressImportError(`Backup non valido: la versione ${version} è più recente di quella supportata (${PROGRESS_VERSION})`)
   }
-  return readProgressData(migrateProgress(raw.state, version), 'strict')
+  const data = readProgressData(migrateProgress(raw.state, version), 'strict')
+  // una serie "studiata" dopo il giorno dell'esportazione non esiste: con un giorno di margine per i fusi orari
+  const last = data.streak.lastDay
+  if (last !== null && typeof raw.exportedAt === 'number' && Number.isFinite(raw.exportedAt) && last > dayKey(raw.exportedAt + 86_400_000)) {
+    fail('streak.lastDay', "un giorno non successivo all'esportazione del backup")
+  }
+  return data
 }
 
 // ---------------------------------------------------------------------------------------------

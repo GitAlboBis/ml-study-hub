@@ -32,6 +32,27 @@ export function PinMark({ size = 16, className = '' }: { size?: number; classNam
   )
 }
 
+/** Glifo a un tratto della barra e dell'indice (griglia 24, tratto 2, estremità squadrate): `d` da destinations.ts o dalla barra. */
+export function NavGlyph({ d, size = 20, className = '' }: { d: string; size?: number; className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+      strokeLinejoin="miter"
+      aria-hidden="true"
+      focusable="false"
+      className={`shrink-0 ${className}`}
+    >
+      <path d={d} />
+    </svg>
+  )
+}
+
 /** Il tassello di una regione: un quadrato del suo campo con il bordo a inchiostro, come nelle legende. */
 export function RegionSwatch({ course, size = 14 }: { course: CourseId; size?: number }) {
   return (

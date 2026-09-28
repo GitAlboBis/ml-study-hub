@@ -35,7 +35,6 @@ export function FormulaCard({ formula, moduleId, anchor, startHidden = false }: 
   const bookmark = `formula:${moduleId}:${formula.id}`
   const pinned = useProgress((s) => s.bookmarks.includes(bookmark))
   const toggleBookmark = useProgress((s) => s.toggleBookmark)
-  const both = Boolean(formula.whenToUse && formula.pitfalls)
 
   const actions = (
     <>
@@ -110,44 +109,60 @@ export function FormulaCard({ formula, moduleId, anchor, startHidden = false }: 
 
       {!hidden && formula.symbols.length > 0 && (
         <div className="border-t border-border-strong p-4 @md:px-6">
-          <p className="label m-0">Legenda dei simboli</p>
-          <dl className="m-0 mt-3 grid gap-x-6 gap-y-2 @xl:grid-cols-2">
-            {formula.symbols.map((sym) => (
-              <div key={sym.s} className="flex items-start gap-3">
-                <dt className="grid min-h-9 min-w-12 shrink-0 place-items-center border border-border-strong bg-surface-2 px-2">
-                  <M tex={sym.s} />
-                </dt>
-                <dd className="m-0 min-w-0 pt-1">
-                  <Rich text={sym.meaning} inline />
-                </dd>
-              </div>
-            ))}
-          </dl>
+          <SymbolLegend symbols={formula.symbols} />
         </div>
       )}
 
-      {(formula.whenToUse || formula.pitfalls) && (
-        <div className={`grid border-t border-border-strong ${both ? '@xl:grid-cols-2' : ''}`}>
-          {formula.whenToUse && (
-            <div className="min-w-0 p-4 @md:px-6">
-              <p className="label m-0 flex items-center gap-2">
-                <Icon name="arrow" size={16} />
-                Quando si usa
-              </p>
-              <Rich text={formula.whenToUse} className={`${FLOW} mt-2`} />
-            </div>
-          )}
-          {formula.pitfalls && (
-            <div className={`min-w-0 bg-warn-bg p-4 @md:px-6 ${both ? 'border-t border-border @xl:border-t-0 @xl:border-l' : ''}`}>
-              <p className="label m-0 flex items-center gap-2 text-warn">
-                <Icon name="warning" size={16} />
-                Trappole
-              </p>
-              <Rich text={formula.pitfalls} className={`${FLOW} mt-2`} />
-            </div>
-          )}
+      <UsageNotes formula={formula} className="border-t border-border-strong" />
+    </Frame>
+  )
+}
+
+/** La legenda dei simboli a tasselli: la targa e il prontuario del formulario (sotto "Spiegazione e simboli"). */
+export function SymbolLegend({ symbols }: { symbols: FormulaData['symbols'] }) {
+  return (
+    <>
+      <p className="label m-0">Legenda dei simboli</p>
+      <dl className="m-0 mt-3 grid gap-x-6 gap-y-2 @xl:grid-cols-2">
+        {symbols.map((sym) => (
+          <div key={sym.s} className="flex items-start gap-3">
+            <dt className="grid min-h-9 min-w-12 shrink-0 place-items-center border border-border-strong bg-surface-2 px-2">
+              <M tex={sym.s} />
+            </dt>
+            <dd className="m-0 min-w-0 pt-1">
+              <Rich text={sym.meaning} inline />
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </>
+  )
+}
+
+/** "Quando si usa" e "Trappole", affiancati se ci sono tutti e due. Niente se la formula non li ha. */
+export function UsageNotes({ formula, className = '' }: { formula: FormulaData; className?: string }) {
+  const both = Boolean(formula.whenToUse && formula.pitfalls)
+  if (!formula.whenToUse && !formula.pitfalls) return null
+  return (
+    <div className={`grid ${className} ${both ? '@xl:grid-cols-2' : ''}`}>
+      {formula.whenToUse && (
+        <div className="min-w-0 p-4 @md:px-6">
+          <p className="label m-0 flex items-center gap-2">
+            <Icon name="arrow" size={16} />
+            Quando si usa
+          </p>
+          <Rich text={formula.whenToUse} className={`${FLOW} mt-2`} />
         </div>
       )}
-    </Frame>
+      {formula.pitfalls && (
+        <div className={`min-w-0 bg-warn-bg p-4 @md:px-6 ${both ? 'border-t border-border @xl:border-t-0 @xl:border-l' : ''}`}>
+          <p className="label m-0 flex items-center gap-2 text-warn">
+            <Icon name="warning" size={16} />
+            Trappole
+          </p>
+          <Rich text={formula.pitfalls} className={`${FLOW} mt-2`} />
+        </div>
+      )}
+    </div>
   )
 }

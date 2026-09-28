@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, render, screen, within } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import type { RouteObject } from 'react-router'
@@ -16,6 +16,8 @@ const routes: RouteObject[] = [
     children: [
       { index: true, handle: { title: 'Copertina' }, element: <main><h1>Copertina di prova</h1></main> },
       { path: 'm/:moduleId/:tab?', handle: { title: 'Foglio' }, element: <main><h1>Foglio di prova</h1></main> },
+      // le pagine globali (mappa, formulario, …): qui basta che esistano
+      { path: '*', handle: { title: 'Pagina' }, element: <main><h1>Pagina di prova</h1></main> },
     ],
   },
 ]
@@ -90,7 +92,64 @@ describe("indice dell'atlante", () => {
   })
 })
 
+describe("pagine globali nell'indice", () => {
+  const hrefs = (scope: HTMLElement) => within(scope).getAllByRole('link').map((a) => a.getAttribute('href'))
+
+  it('elenca le pagine globali in tre gruppi con il loro nome', () => {
+    renderShell()
+    const nav = index()
+    expect(hrefs(within(nav).getByRole('list', { name: 'Sul campo' }))).toEqual(['/flashcard', '/quiz', '/orale', '/giochi'])
+    expect(hrefs(within(nav).getByRole('list', { name: 'Consultazione' }))).toEqual(['/formulario', '/glossario'])
+    expect(hrefs(within(nav).getByRole('list', { name: 'Registro' }))).toEqual(['/progressi', '/copertura', '/impostazioni'])
+    expect(within(nav).getByRole('link', { name: 'Mappa del corso' })).toHaveAttribute('href', '/mappa')
+    expect(within(nav).getByRole('link', { name: 'Orale' })).toHaveAttribute('href', '/orale')
+  })
+
+  it('ogni regione porta alla sua pagina', () => {
+    renderShell()
+    const nav = index()
+    for (const [name, course] of [['Melgani', 'melgani'], ['Passerini', 'passerini'], ['Ricci', 'ricci']]) {
+      expect(within(nav).getByRole('link', { name: `Apri la regione ${name}` })).toHaveAttribute('href', `/corso/${course}`)
+    }
+  })
+
+  it('la pagina aperta ha aria-current, anche quella della regione', () => {
+    renderShell('/formulario')
+    const nav = index()
+    expect(within(nav).getByRole('link', { name: 'Formulario' })).toHaveAttribute('aria-current', 'page')
+    expect(within(nav).getByRole('link', { name: 'Glossario' })).not.toHaveAttribute('aria-current')
+    cleanup()
+    renderShell('/corso/ricci')
+    expect(within(index()).getByRole('link', { name: 'Apri la regione Ricci' })).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('nel cassetto, scegliere una pagina globale lo chiude', async () => {
+    const user = userEvent.setup()
+    const router = renderShell()
+    await user.click(screen.getByRole('button', { name: "Apri l'indice" }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('link', { name: 'Quiz' }))
+    expect(router.state.location.pathname).toBe('/quiz')
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+})
+
 describe('barra superiore', () => {
+  it('porta alle pagine di lavoro più usate e segna quella aperta', () => {
+    renderShell('/orale')
+    const bar = screen.getByRole('navigation', { name: "Pagine dell'atlante" })
+    expect(within(bar).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual([
+      '/mappa',
+      '/formulario',
+      '/glossario',
+      '/flashcard',
+      '/quiz',
+      '/orale',
+      '/giochi',
+    ])
+    expect(within(bar).getByRole('link', { name: 'Orale' })).toHaveAttribute('aria-current', 'page')
+    expect(within(bar).getByRole('link', { name: 'Mappa' })).not.toHaveAttribute('aria-current')
+  })
+
   it("comprime l'indice e se lo ricorda", async () => {
     const user = userEvent.setup()
     renderShell()
@@ -125,9 +184,10 @@ describe('barra superiore', () => {
     renderShell()
     await user.keyboard('{Control>}k{/Control}')
     const palette = screen.getByRole('dialog', { name: "Cerca nell'atlante" })
-    expect(within(palette).getByRole('searchbox')).toHaveFocus()
+    expect(within(palette).getByRole('combobox')).toHaveFocus()
     await user.keyboard('parzen')
-    expect(within(palette).getByRole('status')).toHaveTextContent(/parzen/)
+    // il conteggio annunciato arriva a scrittura ferma (useSettledValue), non a ogni lettera
+    await waitFor(() => expect(within(palette).getByRole('status')).toHaveTextContent(/parzen/), { timeout: 5000 })
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('dialog')).toBeNull()
   })
