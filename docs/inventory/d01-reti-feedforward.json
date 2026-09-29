@@ -1,0 +1,2203 @@
+{
+  "moduleId": "d01-reti-feedforward",
+  "title": "Reti feedforward, funzioni di costo, unità e attivazioni",
+  "stages": {"inventario": "done", "completezza": "done", "formule": "done"},
+  "pagesReviewed": [
+    {"doc": "dl", "from": 1, "to": 15},
+    {"doc": "examq", "from": 1, "to": 6}
+  ],
+  "overview": "Il modulo apre la parte di Deep Learning (Prof.ssa Elisa Ricci) con il capitolo 1 delle dispense di Brancasi e Manenti: che cos'è una rete neurale feedforward (composizione di funzioni su un DAG, input/hidden/output layer), perché supera i limiti dei modelli lineari imparando la mappa φ dai dati al prezzo di una loss non convessa, quali elementi vanno specificati per addestrarla (cost function, rappresentazione dell'uscita, attivazioni, architettura, ottimizzatore, regolarizzazione). Segue il catalogo delle funzioni di costo (categorical e binary cross-entropy, MSE, MAE, Huber), delle unità d'uscita (lineari, softmax e log-softmax con i suoi tre vantaggi) e delle funzioni di attivazione con pro, contro e grafici (sigmoide, tanh, ReLU, ReLU generalizzate: Leaky, Parametric, Randomized, ELU, Swish, GELU). Chiude il design dell'architettura: teorema di approssimazione universale di Cybenko e il compromesso profondità/larghezza. All'orale di Ricci sono domande ricorrenti 'Activation function and their diagram' e 'Softmax unit': bisogna saper disegnare ogni attivazione con la sua derivata e motivarne pro e contro.",
+  "concepts": [
+    {
+      "id": "c01",
+      "name": "Fonte e struttura del corso di Deep Learning (indice delle dispense)",
+      "nameEn": "Introduction and table of contents of the Deep Learning notes",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "dl", "page": 2}, {"doc": "dl", "page": 3}, {"doc": "dl", "page": 4}, {"doc": "dl", "page": 5}],
+      "detail": "Le dispense (Federico Brancasi e Jacopo Manenti, University of Trento) raccolgono il corso di Deep Learning della Prof.ssa Elisa Ricci, integrato con i video di 3Blue1Brown (usati per capire la backpropagation), articoli scientifici e siti specializzati; tutte le illustrazioni sono fatte con TikZ; il progetto è aperto ai contributi degli studenti tramite il repository GitHub (correzioni al testo e alle illustrazioni) ed è scritto con una versione modificata del template LaTeX 'LatHex Forta'. L'indice (pag. 3-5) organizza il corso in 11 capitoli: 1 Feedforward Neural Networks (p. 6: 1.1 Feedforward Neural Networks 6, 1.2 Cost Functions 8, 1.3 Unit Types 9, 1.4 Activation Functions 11, 1.5 Architecture design 15), 2 Backpropagation (16), 3 Optimization (23), 4 Regularization (32), 5 Convolutional Neural Networks (40), 6 Recurrent Neural Networks (56), 7 Sequence Models (63), 8 Transformers (76), 9 Generative Models (86), 10 Diffusion Models (104), 11 Large Multi-Modal Models (111). Questo modulo copre il capitolo 1 (pag. 6-15); i sei 'ingredienti' di una rete elencati a pag. 8 corrispondono ai capitoli successivi (ottimizzatore = cap. 3, regolarizzazione = cap. 4, architetture = cap. 5-11).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c02",
+      "name": "Rete neurale feedforward",
+      "nameEn": "Feedforward Neural Network",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "dl", "page": 6}],
+      "detail": "Le reti neurali feedforward sono uno dei pilastri fondamentali del deep learning; per capirle serve chiarezza sui loro componenti e sul loro ruolo nella modellazione dei dati. Una rete feedforward si può pensare come una sequenza di funzioni (il testo dice 'sequence of features'), ciascuna delle quali rappresenta un layer della rete; la struttura si basa sulla composizione di queste funzioni per formare una rappresentazione complessiva dei dati di input. È 'feed-forward' perché l'informazione scorre solo in avanti, dall'input all'output, senza connessioni di ritorno.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c03",
+      "name": "Figura: esempio di rete feedforward (4 input, 3 hidden layer, 2 output)",
+      "nameEn": "Example of a Feedforward Neural Network",
+      "kind": "figura",
+      "sourcePages": [{"doc": "dl", "page": 6}],
+      "detail": "La figura di pag. 6 mostra una rete completamente connessa: a sinistra l'Input Layer (4 nodi verdi), al centro gli Hidden Layers (3 layer da 3 nodi viola ciascuno), a destra l'Output Layer (2 nodi rossi). Ogni nodo di un layer è collegato con una freccia a tutti i nodi del layer successivo e tutte le frecce vanno da sinistra verso destra: nessuna connessione all'indietro né dentro lo stesso layer. Messaggio: la rete è una cascata di layer completamente connessi in cui il segnale attraversa in ordine input → hidden → output.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c04",
+      "name": "La rete come composizione di funzioni",
+      "nameEn": "Feedforward network as a composition of functions",
+      "kind": "formula",
+      "sourcePages": [{"doc": "dl", "page": 6}],
+      "detail": "Formalmente una rete feedforward è una composizione di più funzioni: l'uscita di ogni layer è l'ingresso del successivo. f^{(1)} è il primo layer (detto anche input layer) e f^{(i)} rappresenta l'uscita dell'i-esimo layer, e così via. L'uscita finale f(x) si ottiene annidando le funzioni dall'interno (f^{(1)} applicata a x) verso l'esterno (f^{(i)}).",
+      "latex": ["f(\\mathbf{x}) = f^{(i)}\\left(f^{(i-1)}\\left(\\dots f^{(2)}\\left(f^{(1)}(\\mathbf{x})\\right)\\dots\\right)\\right)"],
+      "symbols": [
+        {"s": "\\mathbf{x}", "meaning": "vettore di input (feature)"},
+        {"s": "f^{(1)}", "meaning": "funzione del primo layer (input layer)"},
+        {"s": "f^{(i)}", "meaning": "funzione/uscita dell'i-esimo layer"},
+        {"s": "f(\\mathbf{x})", "meaning": "uscita complessiva della rete"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c05",
+      "name": "Profondità della rete",
+      "nameEn": "Depth of the network",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "dl", "page": 6}],
+      "detail": "La profondità (depth) della rete è definita dal numero di layer, cioè dal numero di funzioni f^{(i)} coinvolte nella composizione. Da qui il nome 'deep' learning: reti con molte funzioni annidate. La larghezza (width) è invece il numero di neuroni in un layer (ripresa a pag. 15 nel design dell'architettura).",
+      "latex": ["\\text{depth} = \\#\\left\\{f^{(i)}\\right\\}"],
+      "symbols": [
+        {"s": "f^{(i)}", "meaning": "i-esima funzione (layer) della composizione"},
+        {"s": "\\#\\left\\{f^{(i)}\\right\\}", "meaning": "numero di funzioni annidate = profondità"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c06",
+      "name": "Grafo aciclico diretto e flusso in un'unica direzione",
+      "nameEn": "Directed acyclic graph (DAG), information flow from input to output",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "dl", "page": 6}],
+      "detail": "Una rete feedforward è un grafo aciclico diretto (directed acyclic graph, DAG): nel valutarne le funzioni il flusso di informazione procede in una sola direzione, dall'input all'output, passando per i calcoli intermedi (intermediate computations) nei vari layer. L'assenza di cicli è ciò che la distingue dalle reti ricorrenti (capitolo 6), in cui l'uscita viene reimmessa.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c07",
+      "name": "Input layer",
+      "nameEn": "Input Layer",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "dl", "page": 6}],
+      "detail": "Nel layer iniziale, detto Input Layer, ogni nodo corrisponde a una feature o variabile di input; in questo layer non si applica alcun calcolo né trasformazione ai dati: i nodi si limitano a presentare i valori al layer successivo. Il numero di nodi di input è quindi uguale alla dimensione del vettore di feature.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c08",
+      "name": "Hidden layers",
+      "nameEn": "Hidden Layers",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "dl", "page": 6}, {"doc": "dl", "page": 7}],
+      "detail": "I neuroni degli Hidden Layers eseguono calcoli non lineari (nonlinear computations) sui dati di input applicando pesi (weights) e funzioni di attivazione (activation functions). Il numero di hidden layer e il numero di neuroni per layer variano a seconda dell'architettura della rete e della complessità del problema. La funzione principale degli hidden layer è catturare e rappresentare feature complesse e astratte (complex and abstract features) dei dati di input.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c09",
+      "name": "Output layer: numero di nodi secondo il problema",
+      "nameEn": "Output Layer",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "dl", "page": 7}],
+      "detail": "Nell'Output Layer si ottiene l'uscita desiderata. Il numero di nodi dipende dalla natura del problema: in un problema di classificazione binaria (binary classification) c'è un solo nodo, in un problema di classificazione multiclasse (multiclass classification) c'è un nodo per ogni classe.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c10",
+      "name": "L'attivazione d'uscita dipende dal tipo di problema",
+      "nameEn": "Output activation depends on the problem (sigmoid for binary, softmax for multiclass)",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "dl", "page": 7}],
+      "detail": "Anche il tipo di funzione di attivazione usata nell'output layer dipende dal tipo di problema affrontato dalla rete (il testo lo sottolinea con un punto esclamativo). Per problemi di classificazione binaria si può usare la sigmoide (sigmoid activation function), mentre per la classificazione multiclasse si usa la softmax. Per la regressione l'uscita naturale è un'unità lineare (sezione 1.3.1).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c11",
+      "name": "Limiti dei modelli lineari",
+      "nameEn": "Limitations of linear models",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "dl", "page": 7}],
+      "detail": "I modelli lineari sono stati a lungo usati per la loro semplicità e per l'ottimizzazione convessa (convex optimization), ma hanno limiti significativi nella capacità di catturare interazioni complesse tra le variabili di input (complex interactions between input variables). Il limite è particolarmente evidente nei problemi complessi come la classificazione non lineare (nonlinear classification): una frontiera lineare non può separare classi disposte, per esempio, ad anello o a XOR.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c12",
+      "name": "La mappa φ nei modelli lineari",
+      "nameEn": "φ: nonlinear mapping of input data in feature space",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "dl", "page": 7}],
+      "detail": "Nel contesto dei modelli lineari, come le support vector machines, la scelta della funzione φ (nonlinear mapping of input data in feature space, mappatura non lineare dei dati di input in uno spazio delle feature) è cruciale per ottenere prestazioni soddisfacenti: il modello resta lineare in φ(x) ma diventa non lineare in x. Ingegnerizzare questa funzione ha però dei limiti che rendono difficile catturare informazioni complesse nei dati. Il testo passa in rassegna tre opzioni comuni per affrontare il problema (c13, c14, c15).",
+      "latex": [],
+      "symbols": [{"s": "\\phi", "meaning": "mappa non lineare dall'input allo spazio delle feature"}],
+      "examRelevance": 2
+    },
+    {
+      "id": "c13",
+      "name": "Opzione 1: usare una φ generica (kernel RBF)",
+      "nameEn": "Use of generic φ",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "dl", "page": 7}],
+      "detail": "Prima opzione: usare una funzione φ generica. Esempio: nelle kernel machines con kernel RBF (Radial Basis Function) φ ha una dimensionalità implicita infinita (implicit infinite dimensionality). Questo dà capacità sufficiente per adattarsi ai dati di training (sufficient capacity to fit the training data). Tuttavia l'approccio può soffrire di scarsa generalizzazione (poor generalization) quando la funzione obiettivo è molto variabile (highly variable objective functions).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c14",
+      "name": "Opzione 2: ingegnerizzare φ a mano",
+      "nameEn": "Engineer φ",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "dl", "page": 7}],
+      "detail": "Seconda opzione: dedicare gli sforzi a progettare manualmente (manually engineering) una funzione che catturi l'informazione rilevante nei dati di input. L'approccio può però essere limitato dalla complessità dei dati e dalla difficoltà di identificare correttamente le relazioni chiave (key relationships): dipende interamente dalla conoscenza di dominio del progettista.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c15",
+      "name": "Opzione 3: imparare φ dai dati",
+      "nameEn": "Learning φ from the data",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "dl", "page": 7}],
+      "detail": "Terza opzione: imparare la funzione φ direttamente dai dati. L'approccio rinuncia alla convessità (renounces convexity) ma offre vantaggi significativi combinando i punti di forza delle prime due opzioni: φ può essere modellata in modo molto generico (come nell'opzione 1) e l'ingegneria si concentra sulla progettazione di architetture di rete neurale capaci di imparare rappresentazioni complesse e informative dai dati (come nell'opzione 2, ma spostata sull'architettura). È la strada delle reti feedforward: gli hidden layer sono la φ imparata.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c16",
+      "name": "Le reti feedforward superano i limiti dei modelli lineari",
+      "nameEn": "Feedforward networks overcome the limitations of linear models",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "dl", "page": 7}],
+      "detail": "Grazie alle reti neurali feedforward si possono superare i limiti dei modelli lineari tradizionali, perché sono in grado di imparare dai dati funzioni complesse e non lineari (complex, nonlinear functions), superando così i limiti intrinseci dei modelli lineari nel catturare relazioni complesse tra le variabili di input. Condizione necessaria: le attivazioni degli hidden layer devono essere non lineari, altrimenti la composizione di layer lineari resta lineare (der01).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c17",
+      "name": "Nel training si specifica solo l'uscita finale, non gli hidden layer",
+      "nameEn": "Training: only the output of the final layer is specified, hidden layers are not",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "dl", "page": 7}],
+      "detail": "L'addestramento di una rete neurale condivide molte somiglianze con quello di altri modelli di machine learning, ma ha caratteristiche proprie. Durante il training è essenziale fornire solo l'uscita desiderata dei layer finali (i target), mentre gli hidden layer non richiedono un'analisi specifica: i dati non dicono che cosa debba calcolare ciascun layer nascosto, è l'algoritmo di apprendimento a decidere come usarli. Questo contribuisce sia alla complessità sia all'efficacia complessiva della rete (è anche il motivo del nome 'hidden').",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c18",
+      "name": "Loss convessa nei modelli lineari, non convessa nelle reti",
+      "nameEn": "Convex loss (linear models) vs nonconvex loss (neural networks)",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "dl", "page": 7}],
+      "detail": "La differenza principale rispetto ai modelli lineari sta nelle funzioni di loss. Nei modelli lineari la loss è convessa e garantisce la convergenza (guarantee convergence); nelle reti neurali diventa non convessa (nonconvex), il che porta maggiore complessità e non garantisce la convergenza a un ottimo globale (global optimum): la discesa del gradiente può fermarsi in minimi locali o punti di sella e il risultato dipende dall'inizializzazione.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c19",
+      "name": "Addestrare una rete: ottimizzare i pesi W perché f(X,W) si avvicini a f(X)",
+      "nameEn": "Training a neural network: optimize the parameters W so that f(X, W) is as close as possible to f(X)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "dl", "page": 8}],
+      "detail": "Addestrare una rete neurale significa ottimizzare i valori dei parametri W (weights, i pesi) in modo che la funzione calcolata dalla rete f(X, W) sia il più vicina possibile alla funzione target sconosciuta f(X). La funzione target non è nota esplicitamente: la si conosce solo attraverso gli esempi di training.",
+      "latex": ["f(X, \\mathbf{W}) \\approx f(X)"],
+      "symbols": [
+        {"s": "\\mathbf{W}", "meaning": "pesi (parametri) della rete"},
+        {"s": "f(X, \\mathbf{W})", "meaning": "funzione calcolata dalla rete con i pesi W"},
+        {"s": "f(X)", "meaning": "funzione target sconosciuta"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c20",
+      "name": "Discesa del gradiente per minimizzare la funzione di costo",
+      "nameEn": "Gradient descent: iterative minimization of the cost function",
+      "kind": "procedura",
+      "sourcePages": [{"doc": "dl", "page": 8}],
+      "detail": "Per addestrare la rete è essenziale applicare la discesa del gradiente (gradient descent), un approccio iterativo per minimizzare la funzione di costo; ed è cruciale specificare una funzione di costo appropriata che rappresenti accuratamente l'errore tra l'uscita predetta e quella desiderata. Il dettaglio dell'algoritmo e il calcolo del gradiente con la backpropagation sono nel modulo successivo (d02, pag. 16-22).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c21",
+      "name": "Scelte di modellazione: cost function, rappresentazione dell'uscita, attivazioni, architettura",
+      "nameEn": "Modeling choices: cost function, output representation, activation functions, network architecture",
+      "kind": "procedura",
+      "sourcePages": [{"doc": "dl", "page": 8}],
+      "detail": "Oltre alla funzione di costo (cost function), le scelte di modellazione includono la rappresentazione dell'uscita (output representation), le funzioni di attivazione (activation functions) e l'architettura della rete (network architecture, ad esempio il numero di layer): tutte influenzano in modo significativo le prestazioni. Riepilogo esplicito della fonte: in una rete neurale bisogna specificare cost function, output representation, activation function, architecture, optimizer, regularization.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c22",
+      "name": "Ottimizzatore e regolarizzazione",
+      "nameEn": "Optimizer and regularization",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "dl", "page": 8}],
+      "detail": "Ci sono altri aspetti della modellazione che si possono adattare per migliorare le prestazioni: la scelta dell'ottimizzatore (optimizer) e l'uso di tecniche di regolarizzazione (regularization) per evitare l'overfitting e migliorare la generalizzazione. Completano l'elenco dei sei elementi da specificare (cost function, output representation, activation function, architecture, optimizer, regularization) e sono trattati nei capitoli 3 (Optimization) e 4 (Regularization).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c23",
+      "name": "Funzione di costo (loss)",
+      "nameEn": "Cost (or Loss) function",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "dl", "page": 8}],
+      "detail": "Le funzioni di costo (o di loss) hanno un ruolo chiave nell'addestramento dei modelli di deep learning: misurano la discrepanza tra le predizioni del modello e i valori target reali (discrepancy between model predictions and actual target values) durante il processo di training. Una scelta accurata della loss è essenziale per prestazioni ottimali del modello: è la quantità che la discesa del gradiente minimizza.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c24",
+      "name": "Loss per la classificazione: lavorano con probabilità di classe",
+      "nameEn": "Classification losses work with class probabilities",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "dl", "page": 8}],
+      "detail": "Per i problemi di classificazione due loss usate comunemente sono la Categorical Cross-Entropy e la Binary Cross-Entropy. Sono progettate per lavorare con probabilità di classe (class probabilities) e sono particolarmente adatte a modelli che producono distribuzioni di probabilità (softmax o sigmoide in uscita). Per la regressione si usano invece loss diverse (MSE, MAE, Huber).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c25",
+      "name": "Categorical Cross-Entropy",
+      "nameEn": "Categorical Cross-Entropy",
+      "kind": "formula",
+      "sourcePages": [{"doc": "dl", "page": 8}],
+      "detail": "La Categorical Cross-Entropy è la loss standard per la classificazione multiclasse: somma, con segno meno, i prodotti tra la probabilità vera della classe i (true probability of class i, in rosso nella figura) e il logaritmo della probabilità predetta della classe i (predicted probability of class i, in blu). Qui la somma corre sulle classi (N = numero di classi). Con etichetta one-hot sopravvive un solo termine: la loss vale -log della probabilità assegnata alla classe vera, quindi è nulla se il modello assegna probabilità 1 alla classe giusta e tende a +∞ se le assegna probabilità 0.",
+      "latex": ["\\text{Categorical Cross-Entropy} = -\\sum_{i=1}^{N} y_i \\log(\\hat{y}_i)"],
+      "symbols": [
+        {"s": "y_i", "meaning": "probabilità vera della classe i (1 per la classe corretta, 0 altrove se one-hot)"},
+        {"s": "\\hat{y}_i", "meaning": "probabilità predetta della classe i"},
+        {"s": "N", "meaning": "numero di classi (indice della somma)"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c26",
+      "name": "Binary Cross-Entropy",
+      "nameEn": "Binary Cross-Entropy",
+      "kind": "formula",
+      "sourcePages": [{"doc": "dl", "page": 8}],
+      "detail": "La Binary Cross-Entropy è la loss per la classificazione binaria: y è l'etichetta vera (true label, 0 o 1) e ŷ è la probabilità predetta della classe 1 (predicted probability of class 1). Se y = 1 resta solo -log(ŷ), se y = 0 resta solo -log(1-ŷ): in entrambi i casi si penalizza la probabilità assegnata alla classe sbagliata in scala logaritmica. È il caso a due classi della categorical cross-entropy (der06).",
+      "latex": ["\\text{Binary Cross-Entropy} = -\\left(y \\log(\\hat{y}) + (1-y)\\log(1-\\hat{y})\\right)"],
+      "symbols": [
+        {"s": "y", "meaning": "etichetta vera (0 o 1)"},
+        {"s": "\\hat{y}", "meaning": "probabilità predetta della classe 1"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c27",
+      "name": "Mean Squared Error (MSE): formula",
+      "nameEn": "Mean Squared Error",
+      "kind": "formula",
+      "sourcePages": [{"doc": "dl", "page": 8}],
+      "detail": "Nel caso della regressione si usano loss diverse; la prima è il Mean Squared Error: la media, sugli N esempi, dei quadrati delle differenze tra il valore target vero y_i (actual or true target value for the example i) e la predizione del modello ŷ_i (model prediction for the example i).",
+      "latex": ["\\text{Mean Squared Error} = \\frac{1}{N}\\sum_{i=1}^{N}(y_i - \\hat{y}_i)^2"],
+      "symbols": [
+        {"s": "y_i", "meaning": "valore target vero dell'esempio i"},
+        {"s": "\\hat{y}_i", "meaning": "predizione del modello per l'esempio i"},
+        {"s": "N", "meaning": "numero di esempi"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c28",
+      "name": "MSE: penalizza molto gli errori grandi, sensibile agli outlier",
+      "nameEn": "MSE: strongly penalizes significant errors, sensitive to outliers",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "dl", "page": 9}],
+      "detail": "Il Mean Squared Error (MSE) calcola la media dei quadrati delle differenze tra predizioni e valori reali. È molto usato e penalizza fortemente gli errori significativi (strongly penalizes significant errors), perché l'errore entra al quadrato. Proprio per questo è sensibile agli outlier (sensitive to outliers): un solo esempio con errore enorme domina la somma e trascina la soluzione (il predittore costante ottimo è la media, der08).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c29",
+      "name": "Mean Absolute Error (MAE): formula",
+      "nameEn": "Mean Absolute Error",
+      "kind": "formula",
+      "sourcePages": [{"doc": "dl", "page": 9}],
+      "detail": "Il Mean Absolute Error è la media, sugli N esempi, dei valori assoluti delle differenze tra target vero y_i e predizione ŷ_i. Stessa annotazione della figura dell'MSE: y_i in rosso (actual or true target value for the example i), ŷ_i in blu (model prediction for the example i).",
+      "latex": ["\\text{Mean Absolute Error} = \\frac{1}{N}\\sum_{i=1}^{N}|y_i - \\hat{y}_i|"],
+      "symbols": [
+        {"s": "y_i", "meaning": "valore target vero dell'esempio i"},
+        {"s": "\\hat{y}_i", "meaning": "predizione del modello per l'esempio i"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c30",
+      "name": "MAE: meno sensibile agli outlier, derivata non definita in zero",
+      "nameEn": "MAE (or Absolute Error): less sensitive to outliers, derivative undefined at zero",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "dl", "page": 9}],
+      "detail": "Il Mean Absolute Error (MAE), o semplicemente Absolute Error (AE), calcola la media delle differenze assolute tra predizioni e valori reali. È meno sensibile agli outlier dell'MSE (ogni errore pesa linearmente, il predittore costante ottimo è la mediana), ma la sua derivata non è definita in zero (derivative is undefined in zero): la funzione |r| ha un angolo nell'origine, dove la pendenza salta da -1 a +1.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c31",
+      "name": "Huber Loss: formula e iperparametro δ",
+      "nameEn": "Huber Loss",
+      "kind": "formula",
+      "sourcePages": [{"doc": "dl", "page": 9}],
+      "detail": "La Huber Loss è definita a tratti per ogni esempio: se l'errore assoluto |y_i - ŷ_i| è al più δ si usa il termine quadratico (1/2)(y_i - ŷ_i)^2, altrimenti (otherwise) il termine lineare δ(|y_i - ŷ_i| - δ/2); poi si fa la media sugli N esempi. δ (in verde nella figura) è un iperparametro che controlla la transizione tra la regione quadratica e quella lineare della loss (hyperparameter controlling the transition between the quadratic and linear regions of the loss function). I due rami valgono entrambi δ²/2 per |r| = δ, quindi la funzione è continua e anche la sua derivata lo è (der07).",
+      "latex": ["\\text{Huber Loss} = \\frac{1}{N}\\sum_{i=1}^{N}\\begin{cases} \\frac{1}{2}(y_i - \\hat{y}_i)^2 & \\text{if } |y_i - \\hat{y}_i| \\le \\delta \\\\ \\delta\\left(|y_i - \\hat{y}_i| - \\frac{1}{2}\\delta\\right) & \\text{otherwise} \\end{cases}"],
+      "symbols": [
+        {"s": "\\delta", "meaning": "iperparametro di transizione tra regione quadratica e lineare"},
+        {"s": "y_i - \\hat{y}_i", "meaning": "residuo (errore) sull'esempio i"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c32",
+      "name": "Huber: il meglio di MSE e MAE",
+      "nameEn": "Huber Loss combines the best features of MSE and MAE",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "dl", "page": 9}],
+      "detail": "La Huber Loss combina le caratteristiche migliori di MSE e MAE: per errori piccoli si comporta come l'MSE (liscia e derivabile in zero), per errori grandi si comporta come l'AE (cresce linearmente, quindi gli outlier non dominano). Secondo la fonte questo evita problemi come l'overfitting e la pendenza ripida (steep slope) della curva dell'MSE per errori grandi, che produrrebbe gradienti enormi.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c33",
+      "name": "Esistono molte altre loss: la scelta dipende da obiettivo, dati e applicazione",
+      "nameEn": "Please Note: many other loss functions exist",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "dl", "page": 9}],
+      "detail": "Esistono numerose altre funzioni di loss oltre a quelle elencate, da usare secondo il problema e le caratteristiche dei dati. La scelta dipende dall'obiettivo dell'addestramento, dalla natura dei dati e dalle esigenze dell'applicazione: ad esempio in contesti speciali come il rilevamento di outlier (outlier detection) o la gestione di dati rumorosi (noisy data) si possono preferire loss specializzate. Inoltre, con l'avanzare della ricerca, si sviluppano continuamente nuove loss e si adattano quelle esistenti alle nuove sfide applicative.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c34",
+      "name": "La cost function non è indipendente dall'unità d'uscita",
+      "nameEn": "The choice of the cost function is not independent of the choice of the output unit",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "dl", "page": 9}],
+      "detail": "La scelta della funzione di costo non è indipendente dalla scelta dell'unità d'uscita (output unit): scegliere una certa unità può essere conveniente per la loss che si vuole usare, per esempio sigmoide e binary cross-entropy. Il motivo matematico: il logaritmo della cross-entropy annulla l'esponenziale della sigmoide/softmax e il gradiente rispetto al logit diventa ŷ - y, che non si annulla quando la rete sbaglia (der05, der06).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c35",
+      "name": "Unità lineari",
+      "nameEn": "Linear Units",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "dl", "page": 9}],
+      "detail": "Le Linear Units hanno un ruolo chiave nei layer intermedi e d'uscita delle reti neurali. Applicano una trasformazione lineare agli ingressi (linear transformation to the inputs) combinando i pesi associati agli ingressi con i valori degli ingressi stessi: l'uscita prodotta è una combinazione lineare degli ingressi. Non comprimono l'uscita in un intervallo, perciò sono l'uscita naturale per la regressione.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c36",
+      "name": "Uscita di un'unità lineare",
+      "nameEn": "Output of a Linear Unit",
+      "kind": "formula",
+      "sourcePages": [{"doc": "dl", "page": 10}],
+      "detail": "L'uscita delle Linear Units si calcola come prodotto tra la trasposta dei pesi W e le feature h del layer precedente, più il termine di bias b. ŷ è l'uscita predetta, W i pesi associati agli ingressi, h le feature provenienti dal layer precedente (features from the previous layer), b il bias.",
+      "latex": ["\\hat{y} = W^T h + b"],
+      "symbols": [
+        {"s": "\\hat{y}", "meaning": "uscita predetta"},
+        {"s": "W", "meaning": "pesi associati agli ingressi"},
+        {"s": "h", "meaning": "feature dal layer precedente"},
+        {"s": "b", "meaning": "termine di bias"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c37",
+      "name": "Unità softmax",
+      "nameEn": "Softmax Units",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "dl", "page": 10}],
+      "detail": "Le Softmax Units si usano comunemente negli output layer delle reti neurali, soprattutto nella classificazione multiclasse (Multiclass Classification, con Cross-Entropy Loss). Trasformano i punteggi non normalizzati (unnormalized scores) dell'ultimo layer lineare in una distribuzione di probabilità normalizzata (normalized probability distribution), permettendo al modello di assegnare a un dato input una probabilità per ogni classe di appartenenza.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c38",
+      "name": "Formula della softmax",
+      "nameEn": "Softmax formula",
+      "kind": "formula",
+      "sourcePages": [{"doc": "dl", "page": 10}],
+      "detail": "La probabilità della classe i è l'esponenziale del suo punteggio non normalizzato z_i diviso per la somma degli esponenziali di tutti i punteggi. z_i è il punteggio non normalizzato (non-normalized score) associato alla classe i e la somma su j di e^{z_j} è la somma di tutti gli esponenziali dei punteggi non normalizzati. Conseguenze: ogni uscita è positiva, le uscite sommano a 1, l'ordine dei punteggi è conservato e aggiungere la stessa costante a tutti i z non cambia il risultato (der04).",
+      "latex": ["\\text{Softmax}(z_i) = \\frac{e^{z_i}}{\\sum_j e^{z_j}}"],
+      "symbols": [
+        {"s": "z_i", "meaning": "punteggio non normalizzato (logit) della classe i"},
+        {"s": "\\sum_j e^{z_j}", "meaning": "somma degli esponenziali di tutti i punteggi (normalizzatore)"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c39",
+      "name": "Log Softmax",
+      "nameEn": "Log Softmax",
+      "kind": "formula",
+      "sourcePages": [{"doc": "dl", "page": 10}],
+      "detail": "La Log Softmax è una variante della softmax usata per migliorare la stabilità numerica (improve numerical stability) nel calcolo delle probabilità: invece di calcolare il rapporto di esponenziali (che può andare in overflow o dare log(0)), si calcola direttamente il logaritmo, che si semplifica in z_i meno il logaritmo della somma degli esponenziali (log-sum-exp, calcolabile in modo stabile sottraendo il massimo, der04). È esattamente il termine che compare nella log-verosimiglianza / cross-entropy.",
+      "latex": ["\\log \\text{Softmax}(z_i) = z_i - \\log\\left(\\sum_j e^{z_j}\\right)"],
+      "symbols": [
+        {"s": "z_i", "meaning": "punteggio non normalizzato della classe i"},
+        {"s": "\\log\\sum_j e^{z_j}", "meaning": "log-sum-exp dei punteggi"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c40",
+      "name": "Vantaggio della log-softmax: il termine z_i non satura",
+      "nameEn": "The term z_i never saturates",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "dl", "page": 10}],
+      "detail": "Primo vantaggio: il termine z_i non satura mai (never saturates), cioè la scala dei valori z_i non è compressa né limitata in alcun modo. È un beneficio perché permette al modello di continuare a imparare da informazione rilevante senza i limiti imposti dalla saturazione: nella log-softmax z_i entra linearmente, quindi la sua derivata diretta vale 1 e il gradiente non svanisce anche quando la softmax sarebbe schiacciata vicino a 0 o 1.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c41",
+      "name": "Massimizzare la log-verosimiglianza alza z_i e abbassa tutti gli altri z",
+      "nameEn": "Maximizing the log-likelihood encourages z_i to be increased, while encouraging all other z to be decreased",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "dl", "page": 10}],
+      "detail": "Secondo vantaggio: quando si massimizza la log-verosimiglianza si cerca di rendere la predizione del modello il più vicina possibile alla realtà. Si incoraggia quindi z_i (il punteggio della classe corretta, che rappresenta la probabilità associata alla classe giusta) ad aumentare, e allo stesso tempo si incoraggiano gli altri z a diminuire per ridurre la probabilità associata alle classi sbagliate: nella formula z_i compare con segno + e tutti gli z_j (anche gli sbagliati) nel termine log-sum-exp con segno -. Il gradiente è esattamente ŷ_k - y_k (der05).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c42",
+      "name": "La log-verosimiglianza penalizza fortemente la predizione errata più attiva",
+      "nameEn": "The log-likelihood cost function heavily penalizes the most active incorrect prediction",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "dl", "page": 10}],
+      "detail": "Terzo vantaggio: la funzione di costo di log-verosimiglianza penalizza in modo significativo la predizione errata più attiva (most active incorrect prediction). Se il modello è molto sicuro di una predizione sbagliata (ad esempio assegna una probabilità molto alta a una classe errata), il costo cresce molto, spingendo il modello a correggere quell'errore. Il motivo: il termine log Σ_j e^{z_j} è dominato dal punteggio più grande, per cui la loss si comporta circa come max_j z_j - z_i.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c43",
+      "name": "Come scegliere la funzione di attivazione h",
+      "nameEn": "How can we select the activation function h most suitable for our neural network?",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "dl", "page": 10}, {"doc": "dl", "page": 11}],
+      "detail": "L'analisi delle unità d'uscita porta a una domanda fondamentale: come selezionare la funzione di attivazione h più adatta alla rete? La sezione 1.4 (Activation Functions) risponde in modo volutamente descrittivo ('we have decided to be quite descriptive'), ma con formati diversi: tabella Pros/Cons a due colonne solo per sigmoide, tanh e ReLU; elenchi puntati per le ReLU generalizzate (Leaky, Parametric, Randomized) e per le alternative (ELU, Swish, GELU); grafico della funzione con la derivata tratteggiata ('Derivative') per sigmoide, tanh, ReLU, Leaky ReLU ed ELU, mentre Swish, GELU, PReLU e RReLU non hanno né grafico né formula. I criteri che emergono: intervallo d'uscita, saturazione e flusso del gradiente, centratura in zero, derivabilità, neuroni morti, costo computazionale.",
+      "latex": [],
+      "symbols": [{"s": "h", "meaning": "funzione di attivazione"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c44",
+      "name": "Sigmoide: formula",
+      "nameEn": "Sigmoid",
+      "kind": "formula",
+      "sourcePages": [{"doc": "dl", "page": 11}],
+      "detail": "La sigmoide (sigmoid) è la funzione logistica 1/(1+e^{-z}): vale 0.5 in z = 0, tende a 1 per z → +∞ e a 0 per z → -∞. La sua derivata (tracciata tratteggiata nel grafico di pag. 11 ma non scritta nella fonte) è σ(z)(1-σ(z)), con massimo 1/4 in z = 0 (der02).",
+      "latex": ["\\text{Sigmoid}(z) = \\frac{1}{1+e^{-z}}"],
+      "symbols": [{"s": "z", "meaning": "ingresso (pre-attivazione) del neurone"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c45",
+      "name": "Sigmoide, pro: non linearità di compressione in [0,1], uscite leggibili come probabilità",
+      "nameEn": "Sigmoid pros: squashing non-linearity in [0, 1]",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "dl", "page": 11}],
+      "detail": "Vantaggio della sigmoide: agisce come una non linearità di compressione (squashing non-linearity) che 'schiaccia' le uscite nell'intervallo [0, 1]. È particolarmente vantaggioso in scenari come la classificazione binaria, dove il modello deve generare uscite interpretabili come probabilità.",
+      "latex": ["\\text{Sigmoid}(z) = \\frac{1}{1+e^{-z}} \\in [0, 1]"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c46",
+      "name": "Sigmoide, pro: derivabile e liscia su tutto il dominio",
+      "nameEn": "Sigmoid pros: differentiability and smoothness",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "dl", "page": 11}],
+      "detail": "La sigmoide ha la proprietà di derivabilità e regolarità (differentiability and smoothness) su tutto il dominio. Questa proprietà ne facilita l'integrazione con le tecniche di ottimizzazione basate sul gradiente (gradient-based optimization), garantendo una convergenza stabile durante l'addestramento.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c47",
+      "name": "Sigmoide, contro: satura nella maggior parte del dominio",
+      "nameEn": "Sigmoid cons: tends to saturate in most of its domain",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "dl", "page": 11}],
+      "detail": "Svantaggio: la sigmoide tende a saturare (tends to saturate) nella maggior parte del suo dominio. La saturazione fa tendere il gradiente a zero, creando difficoltà nella fase di apprendimento; di conseguenza può ostacolare la propagazione efficace dei gradienti attraverso la rete durante la backpropagation (è la radice del vanishing gradient: con derivata al più 1/4, il prodotto delle derivate su molti layer si riduce rapidamente, der02).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c48",
+      "name": "Sigmoide, contro: sensibilità solo vicino a zero",
+      "nameEn": "Sigmoid cons: sensitivity decreases for large and small input values",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "dl", "page": 11}],
+      "detail": "Inoltre la sigmoide mostra una forte sensibilità soprattutto quando l'input è vicino a zero; al contrario la sua sensibilità diminuisce (sensitivity decreases) sia per input grandi sia per input piccoli (molto negativi). Questa caratteristica influisce negativamente sulla capacità del modello di imparare da dataset con un ampio intervallo di valori di input: senza normalizzazione molti input cadono nelle code piatte.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c49",
+      "name": "Grafico della sigmoide e della sua derivata",
+      "nameEn": "Sigmoid Activation Function Plot",
+      "kind": "figura",
+      "sourcePages": [{"doc": "dl", "page": 11}],
+      "detail": "Il grafico di pag. 11 mostra la sigmoide (linea blu continua) che sale da 0 a 1 passando per 0.5 in z = 0, e la sua derivata (linea grigia tratteggiata) a forma di campana centrata in 0 e quasi nulla lontano dall'origine. Messaggio: la zona utile (derivata apprezzabile) è stretta intorno a zero; nelle code la curva è piatta e il gradiente sparisce. La scala verticale è corretta: sull'asse sono segnati 0.5 e 1, la sigmoide passa per 0.5 in z = 0 e il picco della derivata tratteggiata è disegnato esattamente a 0.25 (un quarto dell'altezza), valore che conviene ricordare e disegnare all'orale. Le etichette dell'asse orizzontale (-1, 0, 1) invece non sono in unità di z: la curva è già quasi a 1 all'altezza dell'etichetta 0.5, quindi il dominio reale disegnato è circa [-10, 10] (vedi gaps).",
+      "latex": ["\\text{Sigmoid}(0) = \\frac{1}{1+e^{0}} = 0.5"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c50",
+      "name": "Tangente iperbolica: formula",
+      "nameEn": "Hyperbolic Tangent",
+      "kind": "formula",
+      "sourcePages": [{"doc": "dl", "page": 12}],
+      "detail": "La tangente iperbolica è il rapporto (e^z - e^{-z})/(e^z + e^{-z}): vale 0 in z = 0, tende a +1 per z → +∞ e a -1 per z → -∞, ed è dispari. È una sigmoide riscalata e centrata: tanh z = 2σ(2z) - 1; la sua derivata, tracciata tratteggiata a pag. 12, è 1 - tanh² z con massimo 1 in z = 0 (der03).",
+      "latex": ["\\tanh z = \\frac{e^{z}-e^{-z}}{e^{z}+e^{-z}}"],
+      "symbols": [{"s": "z", "meaning": "ingresso del neurone"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c51",
+      "name": "Tanh, pro: derivabile e continua",
+      "nameEn": "Tanh pros: differentiable and continuous",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "dl", "page": 12}],
+      "detail": "Primo vantaggio della tangente iperbolica: è derivabile e continua (differentiable and continuous), il che garantisce la compatibilità con le tecniche di ottimizzazione basate sul gradiente.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c52",
+      "name": "Tanh, pro: simile alla sigmoide ma centrata in zero, uscite in [-1, 1]",
+      "nameEn": "Tanh pros: similar to sigmoid, outputs in [-1, 1] centered in zero",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "dl", "page": 12}],
+      "detail": "La tanh è simile alla sigmoide (similar to sigmoid) ma offre un intervallo d'uscita più favorevole: comprimendo le uscite in [-1, 1] garantisce che siano centrate in zero (centered in zero). Questa caratteristica può migliorare la capacità del modello di imparare e adattarsi alle distribuzioni dei dati, specialmente dove dati centrati sono vantaggiosi (ingressi a media nulla per il layer successivo evitano che tutti i gradienti dei pesi abbiano lo stesso segno).",
+      "latex": ["\\tanh z \\in [-1, 1], \\qquad \\tanh 0 = 0"],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c53",
+      "name": "Tanh, contro: satura come la sigmoide",
+      "nameEn": "Tanh cons: tends to saturate throughout much of its domain",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "dl", "page": 12}],
+      "detail": "Anche la tangente iperbolica ha dei limiti: come la sigmoide tende a saturare (saturate) in gran parte del dominio. La saturazione può ostacolare la propagazione efficace del gradiente durante la back-propagation, impedendo l'apprendimento e portando potenzialmente a una convergenza più lenta.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c54",
+      "name": "Grafico della tanh e della sua derivata",
+      "nameEn": "Hyperbolic Tangent Activation Function Plot",
+      "kind": "figura",
+      "sourcePages": [{"doc": "dl", "page": 12}],
+      "detail": "Il grafico di pag. 12 mostra la tanh (linea rossa) che va da -1 a +1 passando per l'origine, simmetrica rispetto a essa, e la derivata (tratteggiata grigia) a campana con picco 1 in z = 0. Messaggio: rispetto alla sigmoide l'uscita è centrata e la derivata massima è 4 volte più grande (1 contro 0.25), ma le code restano piatte (saturazione).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c55",
+      "name": "ReLU: formula",
+      "nameEn": "Rectified Linear Unit (ReLU)",
+      "kind": "formula",
+      "sourcePages": [{"doc": "dl", "page": 13}],
+      "detail": "La Rectified Linear Unit restituisce il massimo tra 0 e z: è l'identità per z > 0 e vale 0 per z ≤ 0. La derivata (tratteggiata nel grafico di pag. 13) è un gradino: 0 per z < 0, 1 per z > 0, non definita in z = 0.",
+      "latex": ["\\text{ReLU}(z) = \\max(0, z)"],
+      "symbols": [{"s": "z", "meaning": "ingresso del neurone"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c56",
+      "name": "ReLU, pro: gradienti ampi e consistenti quando è attiva",
+      "nameEn": "ReLU pros: wide and consistent gradients when active",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "dl", "page": 13}],
+      "detail": "Primo vantaggio della ReLU: fornisce gradienti ampi e consistenti (wide and consistent gradients) quando è attiva (z > 0), dove la derivata vale sempre 1. Significa che la ReLU non satura quando è attiva, il che accelera molto la convergenza dell'ottimizzazione basata sul gradiente.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c57",
+      "name": "ReLU, pro: la limitazione non positiva accelera la convergenza",
+      "nameEn": "ReLU pros: the non-positive limitation accelerates convergence",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "dl", "page": 13}],
+      "detail": "Inoltre la limitazione non positiva (non-positive limitation: gli ingressi non positivi vengono azzerati) accelera la convergenza della discesa del gradiente, permettendo un apprendimento più veloce. Un'interpretazione: le unità spente danno attivazioni sparse e il calcolo si riduce a operazioni lineari a tratti, economiche da valutare e derivare.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c58",
+      "name": "ReLU: limite di derivabilità in z = 0, derivata unilaterale",
+      "nameEn": "ReLU differentiability limitation: one-sided derivative at z = 0",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "dl", "page": 13}],
+      "detail": "La ReLU può avere un limite nella sua derivabilità (differentiability): in z = 0 non è derivabile. In pratica non è necessariamente un problema, perché in z = 0 si restituisce la derivata unilaterale (one-sided derivative, sinistra 0 o destra 1). Inoltre l'ottimizzazione basata sul gradiente è comunque soggetta a errori numerici, per cui questo limite viene spesso trascurato (in virgola mobile un ingresso esattamente uguale a 0 è rarissimo).",
+      "latex": ["z = 0: \\quad \\text{ReLU}'(0^{-}) = 0, \\qquad \\text{ReLU}'(0^{+}) = 1"],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c59",
+      "name": "Buona pratica: inizializzare il bias con piccoli valori positivi",
+      "nameEn": "Good practice: initialize bias with small positive values",
+      "kind": "procedura",
+      "sourcePages": [{"doc": "dl", "page": 13}],
+      "detail": "Una buona pratica con la ReLU è inizializzare il bias (initialize bias) con piccoli valori positivi (es. 0.1). Questo assicura che le unità siano inizialmente attive per la maggior parte degli input e che le derivate possano propagarsi attraverso di esse fin dai primi passi di addestramento.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c60",
+      "name": "ReLU, contro: uscite non centrate in zero",
+      "nameEn": "ReLU cons: outputs are not centered on zero",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "dl", "page": 13}],
+      "detail": "Primo svantaggio della ReLU: le sue uscite non sono centrate in zero (not centered on zero), essendo sempre ≥ 0, il che può causare problemi in alcuni contesti di machine learning (stesso difetto della sigmoide rispetto alla tanh: gli ingressi del layer successivo hanno tutti lo stesso segno).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c61",
+      "name": "Dying ReLU (neuroni morti)",
+      "nameEn": "Dying ReLU",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "dl", "page": 13}],
+      "detail": "I neuroni ReLU possono soffrire del fenomeno detto 'dying ReLU': accade quando la maggior parte degli ingressi dei neuroni ReLU cade nella regione negativa. In quel caso i neuroni restituiscono 0 e i gradienti non fluiscono durante la backpropagation (derivata nulla), impedendo l'aggiornamento dei pesi: il neurone resta spento per sempre. Il problema non si presenta sempre e può essere mitigato regolando bene il learning rate o usando la Stochastic Gradient Descent (la fonte scrive 'SDG'). Le varianti generalizzate (Leaky ReLU, ELU) nascono proprio per evitarlo.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c62",
+      "name": "ReLU, contro: sensibile a learning rate elevati",
+      "nameEn": "ReLU cons: sensitive to a large learning rate",
+      "kind": "proprieta",
+      "sourcePages": [{"doc": "dl", "page": 13}],
+      "detail": "La ReLU può essere sensibile a un learning rate grande (large learning rate). Se il learning rate è troppo alto, i nuovi pesi rischiano di finire nella zona molto negativa (highly negative range), con effetti negativi sulla convergenza del modello: un grande aggiornamento può spingere il neurone nella regione in cui è sempre spento (dying ReLU).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c63",
+      "name": "Grafico della ReLU e della sua derivata",
+      "nameEn": "ReLU Activation Function Plot",
+      "kind": "figura",
+      "sourcePages": [{"doc": "dl", "page": 13}],
+      "detail": "Il grafico di pag. 13 mostra la ReLU (linea verde): piatta a 0 per z < 0 e retta a 45 gradi per z > 0; la derivata (tratteggiata) è un gradino che vale 0 a sinistra e 1 a destra, con salto verticale in z = 0. Messaggio: nessuna saturazione per z > 0 (derivata costante 1), gradiente nullo per z < 0 (origine dei neuroni morti), angolo non derivabile nell'origine.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c64",
+      "name": "ReLU generalizzata: formula",
+      "nameEn": "Generalized Rectified Linear Units",
+      "kind": "formula",
+      "sourcePages": [{"doc": "dl", "page": 14}],
+      "detail": "Le generalized rectified linear units sono state introdotte per affrontare alcuni limiti della ReLU; l'obiettivo principale è ottenere una pendenza non nulla (non-zero slope) quando z_i < 0. La forma generalizzata somma la parte positiva max(0, z_i) e la parte negativa min(0, z_i) moltiplicata per un coefficiente α_i: per z_i > 0 la funzione è z_i (pendenza 1), per z_i < 0 è α_i z_i (pendenza α_i). Con α_i = 0 si ritrova la ReLU; le varianti differiscono per come si sceglie α_i.",
+      "latex": [
+        "h(z, \\alpha_i) = \\max(0, z_i) + \\alpha_i \\min(0, z_i)",
+        "z_i < 0 \\;\\Rightarrow\\; h(z, \\alpha_i) = \\alpha_i z_i \\quad (\\text{pendenza } \\alpha_i \\neq 0)"
+      ],
+      "symbols": [
+        {"s": "z_i", "meaning": "ingresso dell'unità i"},
+        {"s": "\\alpha_i", "meaning": "pendenza per ingressi negativi (fissa, imparata o casuale)"}
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c65",
+      "name": "Le ReLU generalizzate non sono universalmente migliori",
+      "nameEn": "Generalized ReLUs are not universally better than ReLU",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "dl", "page": 14}],
+      "detail": "Le ReLU generalizzate non sono universalmente migliori della ReLU (not universally better) e possono portare altri problemi, come una complessità computazionale aggiuntiva (additional computational complexity). La scelta va quindi fatta caso per caso: nessuna attivazione domina le altre su tutti i problemi.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c66",
+      "name": "Leaky ReLU",
+      "nameEn": "Leaky ReLU",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "dl", "page": 14}],
+      "detail": "La Leaky ReLU risolve il problema della morte dei neuroni (neuron death) fissando α_i (la fonte scrive a_i) a un valore piccolo, come α_i = 0.01, per mantenere un flusso di gradiente anche quando l'ingresso è negativo. Nel grafico di pag. 14 è scritta come max(α·z, z), che per 0 < α < 1 coincide con la forma generalizzata: per z > 0 vince z, per z < 0 vince αz. La derivata vale 1 per z > 0 e α per z < 0.",
+      "latex": [
+        "\\text{Leaky ReLU}(z) = \\max(\\alpha \\cdot z, z)",
+        "\\alpha_i = 0.01"
+      ],
+      "symbols": [{"s": "\\alpha", "meaning": "pendenza piccola fissa per z < 0 (es. 0.01)"}],
+      "examRelevance": 3
+    },
+    {
+      "id": "c67",
+      "name": "Parametric ReLU (PReLU)",
+      "nameEn": "Parametric ReLU",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "dl", "page": 14}],
+      "detail": "La Parametric ReLU permette di imparare il parametro α_i (a_i nel testo) insieme ai pesi, lasciando che la rete adatti la pendenza della funzione di attivazione per z < 0 in base ai dati. α_i viene aggiornato dalla discesa del gradiente come ogni altro parametro.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c68",
+      "name": "Randomized ReLU (RReLU)",
+      "nameEn": "ReLU Randomized",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "dl", "page": 14}],
+      "detail": "La ReLU Randomized campiona il parametro α_i da un intervallo fisso durante l'addestramento e lo mantiene costante durante il test, introducendo casualità nel modello (una forma di rumore che agisce da regolarizzatore).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c69",
+      "name": "Exponential Linear Unit (ELU): pro e costo",
+      "nameEn": "Exponential Linear Units (ELU)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "dl", "page": 14}],
+      "detail": "Tra le altre attivazioni proposte in alternativa alla ReLU, la Exponential Linear Unit conserva tutti i vantaggi della ReLU ma evita il problema della morte dei neuroni (per z < 0 la derivata non è zero). Richiede però un'esponenziazione durante il calcolo, che aumenta leggermente la complessità computazionale.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c70",
+      "name": "ELU: formula e grafico",
+      "nameEn": "ELU Activation Function Plot",
+      "kind": "formula",
+      "sourcePages": [{"doc": "dl", "page": 15}],
+      "detail": "A pag. 15 la ELU è data come funzione a tratti accanto al suo grafico: z se z ≥ 0 e, nell'altro ramo, un termine esponenziale che la fonte stampa come 'α·exp(z) - 1' senza condizione. È un refuso (parentesi mancanti e condizione z < 0 omessa): la forma corretta, standard in letteratura e l'unica continua in z = 0 per ogni α come la curva del grafico, è α(exp(z) - 1) per z < 0, ed è quella trascritta nel latex; la discrepanza è annotata in gaps. Il grafico mostra la curva verde che per z ≥ 0 coincide con la retta z e per z < 0 scende dolcemente verso l'asintoto -α (satura), mentre la derivata tratteggiata vale 1 per z > 0 e, per z < 0, è positiva e crescente verso lo zero (α e^z), con un salto in z = 0 nel disegno (quindi α < 1 nel grafico). Il disegno è qualitativo: la curva vale circa -0.5 in z = -1, mentre la derivata tratteggiata sale da circa 0.18 (z = -1) a circa 0.35 (z → 0⁻) prima di saltare a 1; i due tracciati non corrispondono allo stesso α (vedi gaps). Messaggio: niente gradiente nullo per ingressi negativi e uscite medie più vicine a zero rispetto alla ReLU.",
+      "latex": ["\\text{ELU}(z) = \\begin{cases} \\alpha\\left(\\exp(z) - 1\\right) & \\text{if } z < 0 \\\\ z & \\text{if } z \\ge 0 \\end{cases}"],
+      "symbols": [
+        {"s": "\\alpha", "meaning": "parametro che fissa il valore di saturazione -α per z negativi"},
+        {"s": "\\exp(z)", "meaning": "esponenziale e^z"}
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c71",
+      "name": "Swish",
+      "nameEn": "Swish",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "dl", "page": 14}],
+      "detail": "Swish è una funzione liscia e non monotona (smooth, non-monotonic) che si è dimostrata migliore della ReLU su modelli più profondi, migliorando le prestazioni su dataset come ImageNet. La fonte non ne scrive la formula; la forma standard è z·σ(z) (con eventuale parametro β: z·σ(βz)), che per z negativi scende sotto lo zero con un minimo di circa -0.28 e poi torna a 0.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c72",
+      "name": "GELU",
+      "nameEn": "Linear Units with Gaussian Error (GELU)",
+      "kind": "definizione",
+      "sourcePages": [{"doc": "dl", "page": 14}],
+      "detail": "La GELU (Gaussian Error Linear Unit; la fonte la chiama 'Linear Units with Gaussian Error') è stata usata in algoritmi allo stato dell'arte come GPT-3 e BERT. Combina l'aspetto non monotono (che aiuta il gradiente della funzione), idee di regolarizzazione come dropout e zone-out e i benefici della ReLU, ottenendo una versione più liscia (smoother) della ReLU. La fonte non ne scrive la formula; la forma standard è z·Φ(z), con Φ la CDF della gaussiana standard.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c73",
+      "name": "Grafico della Leaky ReLU e della sua derivata",
+      "nameEn": "Leaky ReLU Activation Function Plot",
+      "kind": "figura",
+      "sourcePages": [{"doc": "dl", "page": 14}],
+      "detail": "Il grafico di pag. 14 mostra la Leaky ReLU (verde scuro): retta a 45 gradi per z > 0 e retta con piccola pendenza positiva per z < 0 (sotto l'asse), con la formula max(α·z, z). La derivata tratteggiata vale 1 per z > 0 e un livello costante basso ma non nullo per z < 0. Messaggio: il gradiente non si annulla mai, quindi il neurone non può morire. Nel disegno la pendenza negativa è visibilmente maggiore di 0.01 per leggibilità: la retta vale circa -0.2 in z = -1 e la derivata tratteggiata sta a circa 0.2 per z < 0, cioè il grafico usa α ≈ 0.2; in z = 0 la derivata sale con un tratto verticale da α a 1.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c74",
+      "name": "Come decidere profondità e larghezza",
+      "nameEn": "How do we decide depth and width?",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "dl", "page": 15}],
+      "detail": "Scegliere la profondità (depth, numero di layer) e la larghezza (width, numero di unità per layer) di una rete dipende da diversi fattori: la complessità del problema da risolvere, la disponibilità di dati di training e le risorse computazionali disponibili. In linea di principio, quante unità nascoste sono sufficienti? La teoria offre alcune risposte (teorema di Cybenko).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c75",
+      "name": "Teorema di Cybenko (approssimazione universale)",
+      "nameEn": "Cybenko's Theorem (1989), universal approximation theorem",
+      "kind": "teorema",
+      "sourcePages": [{"doc": "dl", "page": 15}],
+      "detail": "Il teorema di Cybenko (1989), noto anche come teorema di approssimazione universale (universal approximation theorem), afferma che una rete neurale a due layer con uscita lineare (a two-layer neural network with linear output, cioè un hidden layer non lineare più un'uscita lineare) può approssimare qualsiasi funzione continua su un dominio compatto con precisione arbitraria, purché ci siano abbastanza unità nascoste. Il teorema ha implicazioni importanti per il design delle architetture neurali. Formalizzazione standard (non scritta nella fonte): per ogni f continua su un compatto K e ogni ε > 0 esistono M, v_j, w_j, b_j tali che F(x) = Σ_{j=1}^{M} v_j σ(w_j^T x + b_j) soddisfa |F(x) - f(x)| < ε per ogni x in K (Cybenko lo dimostra per σ sigmoidale).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c76",
+      "name": "Implicazioni del teorema: rappresentabile non vuol dire imparabile",
+      "nameEn": "Implications of the universal approximation theorem",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "dl", "page": 15}],
+      "detail": "Implicazioni: qualunque sia la funzione che cerchiamo di imparare, sappiamo che una rete multilayer abbastanza grande può rappresentarla. Tuttavia non c'è garanzia che l'algoritmo di training riesca a impararla, per problemi di ottimizzazione (loss non convessa) o di sovrapposizione dei dati (data overlap issues, cioè dati insufficienti o ambigui, rischio di overfitting). Inoltre il teorema non dà alcuna indicazione su quanto debba essere grande la rete.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c77",
+      "name": "Profondità o larghezza? Le reti più profonde generalizzano meglio",
+      "nameEn": "Depth vs width trade-offs: deeper networks generally generalize better",
+      "kind": "confronto",
+      "sourcePages": [{"doc": "dl", "page": 15}],
+      "detail": "È più importante la profondità o la larghezza? Esistono compromessi (trade-offs) tra le due. Ad esempio le reti più profonde in genere generalizzano meglio. Metafora della fonte: una rete neurale è un insieme di strumenti per risolvere un problema; più strumenti hai, più problemi complessi puoi risolvere; aggiungendo layer (rendendo la rete più profonda) si dà alla rete la capacità di affrontare problemi più difficili o di catturare dettagli più fini nei dati.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c78",
+      "name": "Il design dell'architettura incide sulle prestazioni (CNN vs feedforward)",
+      "nameEn": "Architecture design has a significant impact on performance",
+      "kind": "osservazione",
+      "sourcePages": [{"doc": "dl", "page": 15}],
+      "detail": "Oltre alle dimensioni, il design dell'architettura ha un impatto significativo sulle prestazioni, ad esempio tra reti convoluzionali (CNN) e reti feedforward: a parità di problema (immagini) una struttura adatta ai dati, con pesi condivisi e connessioni locali, ottiene risultati migliori con molti meno parametri. È il ponte verso i capitoli sulle architetture specializzate (CNN, RNN, Transformer).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    }
+  ],
+  "derivations": [
+    {
+      "id": "der01",
+      "title": "Perché servono attivazioni non lineari: due layer lineari collassano in uno",
+      "sourcePages": [{"doc": "dl", "page": 6}, {"doc": "dl", "page": 7}, {"doc": "dl", "page": 10}],
+      "goal": "Mostrare che una composizione di unità lineari (y = W^T h + b) è ancora una funzione lineare dell'input, quindi senza attivazioni non lineari negli hidden layer la rete non supera i limiti dei modelli lineari (integrazione esplicativa: la fonte afferma che gli hidden layer eseguono calcoli non lineari)",
+      "steps": [
+        "\\mathbf{h}^{(1)} = \\mathbf{W}^{(1)T}\\mathbf{x} + \\mathbf{b}^{(1)}",
+        "\\hat{y} = \\mathbf{W}^{(2)T}\\mathbf{h}^{(1)} + \\mathbf{b}^{(2)}",
+        "\\hat{y} = \\mathbf{W}^{(2)T}\\left(\\mathbf{W}^{(1)T}\\mathbf{x} + \\mathbf{b}^{(1)}\\right) + \\mathbf{b}^{(2)}",
+        "\\hat{y} = \\left(\\mathbf{W}^{(1)}\\mathbf{W}^{(2)}\\right)^T\\mathbf{x} + \\left(\\mathbf{W}^{(2)T}\\mathbf{b}^{(1)} + \\mathbf{b}^{(2)}\\right) = \\mathbf{W}'^T\\mathbf{x} + \\mathbf{b}'",
+        "\\mathbf{h}^{(1)} = g\\left(\\mathbf{W}^{(1)T}\\mathbf{x} + \\mathbf{b}^{(1)}\\right),\\; g \\text{ non lineare} \\Rightarrow \\hat{y} \\text{ non è più affine in } \\mathbf{x}"
+      ],
+      "stepWhy": [
+        "Primo layer come unità lineare (formula di pag. 10) senza attivazione.",
+        "Secondo layer (uscita) come unità lineare che riceve h^{(1)} come feature del layer precedente.",
+        "Si sostituisce h^{(1)}: è la composizione f^{(2)}(f^{(1)}(x)) di pag. 6.",
+        "Si distribuisce il prodotto e si usa (AB)^T = B^T A^T: W^{(2)T}W^{(1)T} = (W^{(1)}W^{(2)})^T. Il risultato è un solo layer lineare con pesi W' e bias b': la profondità non ha aggiunto espressività.",
+        "Inserendo una funzione di attivazione non lineare g (sigmoide, tanh, ReLU...) il collasso non avviene più: ecco perché gli hidden layer applicano 'weights and activation functions' e la rete può imparare φ non lineari."
+      ],
+      "concepts": ["c04", "c08", "c11", "c16", "c36"]
+    },
+    {
+      "id": "der02",
+      "title": "Derivata della sigmoide e origine della saturazione",
+      "sourcePages": [{"doc": "dl", "page": 11}],
+      "goal": "Ricavare σ'(z) = σ(z)(1 - σ(z)), il suo massimo 1/4 in z = 0 e il suo annullarsi nelle code, cioè la curva tratteggiata del grafico di pag. 11 (la fonte la disegna ma non la scrive)",
+      "steps": [
+        "\\sigma(z) = \\frac{1}{1+e^{-z}} = \\left(1+e^{-z}\\right)^{-1}",
+        "\\sigma'(z) = -\\left(1+e^{-z}\\right)^{-2}\\cdot\\left(-e^{-z}\\right) = \\frac{e^{-z}}{\\left(1+e^{-z}\\right)^{2}}",
+        "\\frac{e^{-z}}{\\left(1+e^{-z}\\right)^{2}} = \\frac{1}{1+e^{-z}}\\cdot\\frac{e^{-z}}{1+e^{-z}} = \\sigma(z)\\left(1-\\sigma(z)\\right)",
+        "\\sigma'(0) = \\frac{1}{2}\\cdot\\frac{1}{2} = \\frac{1}{4} = \\max_z \\sigma'(z)",
+        "\\lim_{z\\to\\pm\\infty}\\sigma'(z) = 0",
+        "\\prod_{l=1}^{L}\\sigma'\\left(z^{(l)}\\right) \\le \\left(\\frac{1}{4}\\right)^{L}"
+      ],
+      "stepWhy": [
+        "Si riscrive la sigmoide come potenza -1 per derivare con la regola della catena.",
+        "Derivata di u^{-1} è -u^{-2}u', con u = 1 + e^{-z} e u' = -e^{-z}.",
+        "Si spezza il quadrato in due fattori e si osserva che e^{-z}/(1+e^{-z}) = 1 - 1/(1+e^{-z}) = 1 - σ(z).",
+        "Il prodotto p(1-p) con p in (0,1) è massimo per p = 1/2, cioè σ(z) = 1/2, cioè z = 0: il picco della campana tratteggiata vale 0.25.",
+        "Per z → +∞ σ → 1 e per z → -∞ σ → 0: in entrambi i casi uno dei due fattori va a zero. È la saturazione (tends to saturate) della tabella Cons.",
+        "Nella backpropagation (d02) il gradiente che attraversa L layer sigmoidali viene moltiplicato per una derivata ≤ 1/4 a ogni layer (trascurando i pesi): dopo 5 layer al più ≈ 0.001, da cui il vanishing gradient."
+      ],
+      "concepts": ["c44", "c46", "c47", "c48", "c49"]
+    },
+    {
+      "id": "der03",
+      "title": "Derivata della tanh e legame tanh(z) = 2σ(2z) - 1",
+      "sourcePages": [{"doc": "dl", "page": 12}],
+      "goal": "Ricavare tanh'(z) = 1 - tanh²(z) (curva tratteggiata di pag. 12, massimo 1 in 0) e mostrare in che senso la tanh è 'simile alla sigmoide'",
+      "steps": [
+        "\\tanh z = \\frac{e^{z}-e^{-z}}{e^{z}+e^{-z}}",
+        "\\frac{d}{dz}\\tanh z = \\frac{\\left(e^{z}+e^{-z}\\right)^{2}-\\left(e^{z}-e^{-z}\\right)^{2}}{\\left(e^{z}+e^{-z}\\right)^{2}}",
+        "\\frac{d}{dz}\\tanh z = 1-\\tanh^{2} z",
+        "\\tanh'(0) = 1, \\qquad \\lim_{z\\to\\pm\\infty}\\tanh'(z) = 0",
+        "\\tanh z = \\frac{1-e^{-2z}}{1+e^{-2z}} = \\frac{2}{1+e^{-2z}} - 1 = 2\\sigma(2z)-1"
+      ],
+      "stepWhy": [
+        "Definizione di pag. 12.",
+        "Regola del quoziente: la derivata del numeratore è e^z + e^{-z} (il denominatore), quella del denominatore è e^z - e^{-z} (il numeratore).",
+        "Si divide termine a termine per (e^z + e^{-z})^2: il primo addendo dà 1, il secondo è proprio tanh^2 z.",
+        "In z = 0 tanh = 0 e la derivata vale 1 (quattro volte il massimo della sigmoide); nelle code tanh → ±1 e la derivata si annulla: anche la tanh satura.",
+        "Moltiplicando numeratore e denominatore per e^{-z}, e verificando che 2/(1+e^{-2z}) - 1 = (1-e^{-2z})/(1+e^{-2z}): la tanh è una sigmoide compressa in orizzontale di un fattore 2, stirata in verticale di 2 e abbassata di 1, cioè centrata in zero con uscite in [-1, 1]."
+      ],
+      "concepts": ["c50", "c51", "c52", "c53", "c54"]
+    },
+    {
+      "id": "der04",
+      "title": "Dalla softmax alla log-softmax e trucco log-sum-exp per la stabilità numerica",
+      "sourcePages": [{"doc": "dl", "page": 10}],
+      "goal": "Ricavare la formula della log-softmax di pag. 10 e mostrare perché migliora la stabilità numerica",
+      "steps": [
+        "\\log \\text{Softmax}(z_i) = \\log \\frac{e^{z_i}}{\\sum_j e^{z_j}}",
+        "\\log \\text{Softmax}(z_i) = \\log e^{z_i} - \\log \\sum_j e^{z_j} = z_i - \\log\\left(\\sum_j e^{z_j}\\right)",
+        "\\text{Softmax}(z_i + c) = \\frac{e^{c}e^{z_i}}{e^{c}\\sum_j e^{z_j}} = \\text{Softmax}(z_i)",
+        "m = \\max_j z_j: \\quad \\sum_j e^{z_j} = e^{m}\\sum_j e^{z_j - m} \\Rightarrow \\log\\sum_j e^{z_j} = m + \\log\\sum_j e^{z_j - m}",
+        "z_j - m \\le 0 \\Rightarrow 0 < e^{z_j - m} \\le 1, \\quad \\sum_j e^{z_j - m} \\ge 1"
+      ],
+      "stepWhy": [
+        "Definizione: si prende il logaritmo della softmax di pag. 10.",
+        "Log di un rapporto = differenza dei log, e log(e^{z_i}) = z_i: si ottiene la formula della fonte, in cui z_i compare linearmente (non satura).",
+        "Aggiungere la stessa costante c a tutti i punteggi moltiplica numeratore e denominatore per e^c: la softmax dipende solo dalle differenze tra i punteggi.",
+        "Si sceglie c = -m (il punteggio massimo) e si raccoglie e^m: il log-sum-exp si calcola senza mai valutare esponenziali enormi.",
+        "Tutti gli esponenti sono ≤ 0 (niente overflow, es. e^{1000}) e la somma contiene il termine e^0 = 1 (niente log(0)): è la stabilità numerica promessa dalla fonte."
+      ],
+      "concepts": ["c38", "c39", "c40"]
+    },
+    {
+      "id": "der05",
+      "title": "Gradiente della cross-entropy con softmax: ∂L/∂z_k = ŷ_k - y_k",
+      "sourcePages": [{"doc": "dl", "page": 8}, {"doc": "dl", "page": 10}],
+      "goal": "Giustificare matematicamente i tre vantaggi della log-softmax di pag. 10 (z_i non satura, z_i sale e gli altri scendono, la predizione errata più attiva è la più penalizzata)",
+      "steps": [
+        "L = -\\sum_{i} y_i \\log \\hat{y}_i, \\quad \\hat{y}_i = \\text{Softmax}(z_i), \\quad y = \\text{one-hot della classe } c",
+        "L = -\\log \\hat{y}_c = -z_c + \\log\\sum_j e^{z_j}",
+        "\\frac{\\partial L}{\\partial z_k} = -\\mathbf{1}[k=c] + \\frac{e^{z_k}}{\\sum_j e^{z_j}} = \\hat{y}_k - y_k",
+        "\\frac{\\partial L}{\\partial z_c} = \\hat{y}_c - 1 \\le 0, \\qquad \\frac{\\partial L}{\\partial z_k} = \\hat{y}_k \\ge 0 \\;\\; (k \\ne c)",
+        "z_k \\leftarrow z_k - \\eta\\,(\\hat{y}_k - y_k)",
+        "z_c \\ll \\max_j z_j \\Rightarrow L \\approx \\max_j z_j - z_c, \\quad \\frac{\\partial L}{\\partial z_c} \\approx -1"
+      ],
+      "stepWhy": [
+        "Categorical cross-entropy di pag. 8 con uscite softmax di pag. 10 e target one-hot (y_c = 1, altri 0).",
+        "Sopravvive solo il termine della classe vera e si usa la log-softmax: minimizzare L equivale a massimizzare la log-verosimiglianza log ŷ_c.",
+        "Derivata di -z_c: -1 solo se k = c; derivata del log-sum-exp rispetto a z_k: e^{z_k}/Σ_j e^{z_j} = ŷ_k.",
+        "Il gradiente sulla classe corretta è negativo e quello sulle altre è positivo, proporzionale alla loro probabilità.",
+        "Con la discesa del gradiente z_c aumenta e tutti gli altri z_k diminuiscono (secondo vantaggio); lo spostamento più grande tocca la classe sbagliata con ŷ_k maggiore, cioè la predizione errata più attiva (terzo vantaggio).",
+        "Quando la rete è molto sicura e sbagliata il log-sum-exp è circa il punteggio massimo: la loss è lineare in z_c e il gradiente resta circa -1, non svanisce (primo vantaggio: z_i non satura)."
+      ],
+      "concepts": ["c25", "c39", "c40", "c41", "c42"]
+    },
+    {
+      "id": "der06",
+      "title": "Binary cross-entropy come caso a due classi, sigmoide come softmax a due classi",
+      "sourcePages": [{"doc": "dl", "page": 8}, {"doc": "dl", "page": 9}, {"doc": "dl", "page": 11}],
+      "goal": "Collegare le due cross-entropy di pag. 8 e spiegare perché la coppia sigmoide + binary cross-entropy citata a pag. 9 è conveniente",
+      "steps": [
+        "N = 2: \\; y_1 = y,\\; y_2 = 1-y,\\; \\hat{y}_1 = \\hat{y},\\; \\hat{y}_2 = 1-\\hat{y}",
+        "-\\sum_{i=1}^{2} y_i \\log \\hat{y}_i = -\\left(y\\log\\hat{y} + (1-y)\\log(1-\\hat{y})\\right)",
+        "\\text{Softmax}(z_1) = \\frac{e^{z_1}}{e^{z_1}+e^{z_2}} = \\frac{1}{1+e^{-(z_1-z_2)}} = \\sigma(z_1 - z_2)",
+        "\\hat{y} = \\sigma(z): \\quad L = -\\left(y\\log\\sigma(z) + (1-y)\\log(1-\\sigma(z))\\right)",
+        "\\frac{\\partial L}{\\partial z} = -y\\left(1-\\sigma(z)\\right) + (1-y)\\,\\sigma(z) = \\sigma(z) - y"
+      ],
+      "stepWhy": [
+        "Con due classi le probabilità vere e predette sono complementari.",
+        "Sostituendo nella categorical cross-entropy si ottiene esattamente la binary cross-entropy.",
+        "Si divide numeratore e denominatore per e^{z_1}: la softmax a due classi è una sigmoide della differenza dei punteggi, perciò basta un solo nodo d'uscita sigmoide.",
+        "Unità d'uscita sigmoide accoppiata alla binary cross-entropy.",
+        "Si usa σ' = σ(1-σ) (der02): d(log σ)/dz = 1-σ e d(log(1-σ))/dz = -σ. Il gradiente è l'errore σ(z) - y, grande quando la rete sbaglia anche se la sigmoide è saturata: il log annulla l'esponenziale. Con l'MSE il gradiente sarebbe (σ - y)σ'(z) e si annullerebbe in saturazione."
+      ],
+      "concepts": ["c10", "c26", "c34", "c45"]
+    },
+    {
+      "id": "der07",
+      "title": "Huber loss: continuità in δ, gradiente limitato e casi limite",
+      "sourcePages": [{"doc": "dl", "page": 9}],
+      "goal": "Verificare che la definizione a tratti di pag. 9 sia continua e derivabile, e mostrare perché interpola tra MSE e MAE",
+      "steps": [
+        "r_i = y_i - \\hat{y}_i",
+        "|r| = \\delta: \\quad \\frac{1}{2}\\delta^{2} = \\delta\\left(\\delta - \\frac{1}{2}\\delta\\right) = \\frac{1}{2}\\delta^{2}",
+        "\\frac{\\partial}{\\partial r}\\,\\text{Huber}(r) = \\begin{cases} r & |r| \\le \\delta \\\\ \\delta\\,\\text{sign}(r) & |r| > \\delta \\end{cases}",
+        "\\frac{\\partial}{\\partial r}\\frac{1}{2}r^{2} = r, \\qquad \\frac{\\partial}{\\partial r}|r| = \\text{sign}(r) \\;\\; (r \\ne 0)",
+        "\\delta \\to \\infty: \\text{Huber}(r) \\to \\frac{1}{2}r^{2}; \\qquad \\delta \\to 0: \\frac{\\text{Huber}(r)}{\\delta} \\to |r|"
+      ],
+      "stepWhy": [
+        "Si chiama residuo la differenza tra target e predizione.",
+        "Sul confine |r| = δ i due rami danno lo stesso valore: la loss è continua.",
+        "Derivando ogni ramo: dentro la banda il gradiente è il residuo (come MSE), fuori è costante in modulo δ (come MAE, scalato): sul confine entrambi valgono ±δ, quindi anche la derivata è continua.",
+        "Confronto: l'MSE ha gradiente illimitato (pendenza ripida, gli outlier dominano), l'MAE ha gradiente limitato ma non definito in 0.",
+        "Con δ enorme tutti i residui cadono nella regione quadratica (MSE/2); con δ piccolo quasi tutti nella regione lineare e la loss diventa proporzionale al valore assoluto (MAE). δ regola la transizione, come dice la fonte."
+      ],
+      "concepts": ["c30", "c31", "c32"]
+    },
+    {
+      "id": "der08",
+      "title": "Perché l'MSE è sensibile agli outlier e l'MAE no: media contro mediana",
+      "sourcePages": [{"doc": "dl", "page": 8}, {"doc": "dl", "page": 9}],
+      "goal": "Giustificare le affermazioni di pag. 9 (MSE sensibile agli outlier, MAE meno sensibile) trovando il miglior predittore costante per ciascuna loss",
+      "steps": [
+        "c^{*}_{\\text{MSE}} = \\arg\\min_{c} \\frac{1}{N}\\sum_{i=1}^{N}(y_i - c)^{2}",
+        "\\frac{d}{dc}\\frac{1}{N}\\sum_{i=1}^{N}(y_i - c)^{2} = -\\frac{2}{N}\\sum_{i=1}^{N}(y_i - c) = 0 \\Rightarrow c^{*}_{\\text{MSE}} = \\frac{1}{N}\\sum_{i=1}^{N} y_i = \\bar{y}",
+        "\\frac{d}{dc}\\frac{1}{N}\\sum_{i=1}^{N}|y_i - c| = -\\frac{1}{N}\\sum_{i=1}^{N}\\text{sign}(y_i - c) = 0 \\Rightarrow \\#\\{y_i > c\\} = \\#\\{y_i < c\\}",
+        "c^{*}_{\\text{MAE}} = \\text{mediana}(y_1,\\dots,y_N)",
+        "y_N = \\max_i y_i,\\; \\Delta > 0: \\quad \\bar{y} \\to \\bar{y} + \\frac{\\Delta}{N}, \\qquad \\text{mediana invariata}"
+      ],
+      "stepWhy": [
+        "Il caso più semplice di regressione: predire lo stesso valore c per tutti gli esempi.",
+        "Derivata nulla: la somma dei residui deve annullarsi, quindi c è la media campionaria.",
+        "La derivata di |y_i - c| rispetto a c è -sign(y_i - c) (fuori dai punti y_i = c, dove non è definita: il difetto dell'MAE in zero).",
+        "La derivata si annulla quando ci sono tanti punti sopra quanti sotto: c è la mediana.",
+        "Spostando verso l'alto di una quantità Δ arbitraria il punto più grande (un outlier che si allontana dal gruppo) la media si sposta senza limite (Δ/N), la mediana no, perché l'ordinamento degli altri punti non cambia: l'MSE insegue gli outlier, l'MAE li ignora. Lo stesso vale per il gradiente di un singolo esempio: -2(y_i - ŷ_i)/N nell'MSE cresce con l'errore, ±1/N nell'MAE resta limitato."
+      ],
+      "concepts": ["c27", "c28", "c29", "c30"]
+    },
+    {
+      "id": "der09",
+      "title": "Derivate della famiglia ReLU (ReLU, generalizzata, Leaky, ELU)",
+      "sourcePages": [{"doc": "dl", "page": 13}, {"doc": "dl", "page": 14}, {"doc": "dl", "page": 15}],
+      "goal": "Ricavare le curve tratteggiate (Derivative) dei grafici di pag. 13-15 e spiegare perché le varianti evitano i neuroni morti",
+      "steps": [
+        "\\text{ReLU}'(z) = \\begin{cases} 1 & z > 0 \\\\ 0 & z < 0 \\end{cases}, \\quad z = 0: \\text{derivata unilaterale}",
+        "h(z,\\alpha) = \\max(0,z) + \\alpha\\min(0,z) \\Rightarrow h'(z) = \\begin{cases} 1 & z > 0 \\\\ \\alpha & z < 0 \\end{cases}",
+        "0 < \\alpha < 1: \\; z > 0 \\Rightarrow \\max(\\alpha z, z) = z; \\;\\; z < 0 \\Rightarrow \\max(\\alpha z, z) = \\alpha z \\;\\Rightarrow\\; \\max(\\alpha z, z) = h(z,\\alpha)",
+        "\\alpha = 0 \\Rightarrow h = \\text{ReLU}; \\qquad \\alpha = 1 \\Rightarrow h(z) = z",
+        "\\text{ELU}(z) = \\alpha\\left(e^{z}-1\\right) \\; (z<0) \\Rightarrow \\text{ELU}'(z) = \\alpha e^{z} > 0, \\quad \\lim_{z\\to-\\infty}\\text{ELU}(z) = -\\alpha"
+      ],
+      "stepWhy": [
+        "La ReLU è lineare a tratti: pendenza 1 a destra, 0 a sinistra; in 0 si restituisce una delle due derivate unilaterali (pag. 13). Per z < 0 il gradiente è esattamente zero: se un neurone riceve sempre ingressi negativi non si aggiorna più (dying ReLU).",
+        "La forma generalizzata di pag. 14 ha pendenza α_i per ingressi negativi: il gradiente non si annulla se α_i ≠ 0 (non-zero slope when z_i < 0).",
+        "Equivalenza tra la scrittura del grafico (max(α·z, z)) e la forma generalizzata: per z < 0 e α < 1 si ha αz > z.",
+        "Casi limite: con α = 0 si torna alla ReLU (Leaky usa 0.01, PReLU impara α, RReLU lo campiona), con α = 1 l'attivazione diventa l'identità e si perde la non linearità.",
+        "Forma standard della ELU (la fonte scrive α·exp(z) - 1, vedi gaps): per z < 0 la derivata è positiva e tende a 0 solo per z → -∞, quindi niente neuroni morti; l'uscita satura dolcemente a -α, con media delle attivazioni più vicina a zero. In z = 0 la derivata sinistra vale α: è continua solo se α = 1 (nel grafico di pag. 15 c'è un salto, quindi α < 1)."
+      ],
+      "concepts": ["c55", "c58", "c61", "c64", "c66", "c69", "c70"]
+    },
+    {
+      "id": "der10",
+      "title": "La cross-entropy è la log-verosimiglianza negativa (Bernoulli e categorica)",
+      "sourcePages": [{"doc": "dl", "page": 8}, {"doc": "dl", "page": 10}],
+      "goal": "Collegare le cross-entropy di pag. 8 alla 'log-likelihood cost function' di pag. 10: minimizzare la cross-entropy equivale a massimizzare la log-verosimiglianza delle uscite sigmoide/softmax (integrazione esplicativa: la fonte usa i due nomi senza mostrarne l'equivalenza)",
+      "steps": [
+        "P(y \\mid \\mathbf{x}) = \\hat{y}^{\\,y}(1-\\hat{y})^{1-y}, \\quad y \\in \\{0,1\\}, \\; \\hat{y} = \\sigma(z)",
+        "-\\log P(y \\mid \\mathbf{x}) = -\\left(y\\log(\\hat{y}) + (1-y)\\log(1-\\hat{y})\\right)",
+        "P(\\mathbf{y} \\mid \\mathbf{x}) = \\prod_{i=1}^{N}\\hat{y}_i^{\\,y_i}, \\quad \\hat{y}_i = \\text{Softmax}(z_i), \\; \\mathbf{y} \\text{ one-hot}",
+        "-\\log P(\\mathbf{y} \\mid \\mathbf{x}) = -\\sum_{i=1}^{N} y_i\\log(\\hat{y}_i)",
+        "\\mathcal{L}(\\mathbf{W}) = \\prod_{n=1}^{M} P\\left(\\mathbf{y}^{(n)} \\mid \\mathbf{x}^{(n)}; \\mathbf{W}\\right) \\Rightarrow \\arg\\max_{\\mathbf{W}}\\log\\mathcal{L}(\\mathbf{W}) = \\arg\\min_{\\mathbf{W}}\\frac{1}{M}\\sum_{n=1}^{M}\\text{CE}\\left(\\mathbf{y}^{(n)}, \\hat{\\mathbf{y}}^{(n)}\\right)",
+        "-\\log\\text{Softmax}(z_c) = -z_c + \\log\\sum_j e^{z_j}"
+      ],
+      "stepWhy": [
+        "L'uscita sigmoide è la probabilità della classe 1: il modello dell'etichetta è una Bernoulli di parametro ŷ; la scrittura compatta vale ŷ se y = 1 e 1 - ŷ se y = 0.",
+        "Il logaritmo trasforma le potenze in prodotti e il segno meno rende la quantità da minimizzare: è esattamente la Binary Cross-Entropy di pag. 8.",
+        "Con N classi e target one-hot la verosimiglianza di una categorica è il prodotto delle probabilità elevate agli indicatori: sopravvive solo il fattore della classe vera.",
+        "Logaritmo e segno meno: è la Categorical Cross-Entropy di pag. 8 (qui N è il numero di classi, come nella fonte).",
+        "Con M esempi di training indipendenti la verosimiglianza è il prodotto; il log trasforma il prodotto in somma e il segno meno trasforma il massimo in minimo. Massimizzare la log-verosimiglianza (maximizing the log-likelihood, pag. 10) equivale a minimizzare la cross-entropy media: è la stima a massima verosimiglianza di Melgani applicata ai pesi W.",
+        "Sostituendo la softmax nel termine della classe vera c compare la log-softmax di pag. 10: è la forma in cui la loss si calcola, e da essa discendono i tre vantaggi elencati dalla fonte (der05)."
+      ],
+      "concepts": ["c24", "c25", "c26", "c39", "c41", "c42"],
+      "addedBy": "revisore"
+    },
+    {
+      "id": "der11",
+      "title": "La softmax produce una distribuzione di probabilità (e perché è un max 'morbido')",
+      "sourcePages": [{"doc": "dl", "page": 10}],
+      "goal": "Verificare che le uscite della softmax formino la 'normalized probability distribution' promessa a pag. 10 e che l'ordine dei punteggi sia conservato; il limite verso l'argmax spiega il nome (integrazione esplicativa)",
+      "steps": [
+        "e^{z_i} > 0 \\;\\; \\forall z_i \\in \\mathbb{R} \\Rightarrow \\text{Softmax}(z_i) > 0",
+        "\\sum_{i}\\text{Softmax}(z_i) = \\frac{\\sum_i e^{z_i}}{\\sum_j e^{z_j}} = 1",
+        "z_i > z_k \\Rightarrow e^{z_i} > e^{z_k} \\Rightarrow \\text{Softmax}(z_i) > \\text{Softmax}(z_k)",
+        "\\frac{\\text{Softmax}(z_i)}{\\text{Softmax}(z_k)} = e^{z_i - z_k}",
+        "\\lim_{s\\to\\infty}\\text{Softmax}(s\\,z_i) = \\begin{cases} 1 & i = \\arg\\max_j z_j \\\\ 0 & \\text{altrimenti} \\end{cases}"
+      ],
+      "stepWhy": [
+        "L'esponenziale è sempre positivo: nessuna probabilità negativa anche con punteggi (unnormalized scores) negativi.",
+        "Il denominatore è la somma di tutti i numeratori: le uscite sommano a 1, cioè la distribuzione è normalizzata.",
+        "L'esponenziale è strettamente crescente: la classe con il punteggio più alto riceve la probabilità più alta e la decisione (argmax) non cambia.",
+        "Il rapporto tra due probabilità dipende solo dalla differenza dei punteggi: una differenza di 1 moltiplica il rapporto per e ≈ 2.72 (coerente con l'invarianza a traslazione di der04).",
+        "Moltiplicando tutti i punteggi per s grande la massa si concentra sul punteggio massimo (se unico): la softmax è una versione morbida e derivabile dell'argmax, da cui il nome; con s → 0 tende invece alla distribuzione uniforme."
+      ],
+      "concepts": ["c37", "c38"],
+      "addedBy": "revisore"
+    }
+  ],
+  "workedExamples": [
+    {
+      "id": "ex01",
+      "title": "Quanti parametri ha la rete della figura di pag. 6?",
+      "sourcePages": [{"doc": "dl", "page": 6}],
+      "description": "Esempio ricavato dalla figura della fonte (la fonte non fa il conto). La rete ha 4 nodi di input, 3 hidden layer da 3 neuroni e 2 nodi di output, completamente connessi. Pesi: 4·3 (input → hidden 1) + 3·3 (hidden 1 → hidden 2) + 3·3 (hidden 2 → hidden 3) + 3·2 (hidden 3 → output) = 12 + 9 + 9 + 6 = 36. Bias: uno per ogni neurone che calcola, cioè 3 + 3 + 3 + 2 = 11 (l'input layer non calcola nulla). Totale: 47 parametri. Le funzioni che calcolano sono 4 (3 hidden + output): come composizione f(x) = f^{(4)}(f^{(3)}(f^{(2)}(f^{(1)}(x)))) se non si conta l'input layer; la fonte però chiama f^{(1)} 'input layer', per cui la profondità dichiarata dipende dalla convenzione (vedi gaps).",
+      "concepts": ["c02", "c03", "c04", "c05", "c07"]
+    }
+  ],
+  "figures": [
+    {"id": "fig01", "doc": "dl", "page": 6, "description": "Esempio di rete feedforward: Input Layer (4 nodi verdi), Hidden Layers (3 colonne da 3 nodi viola), Output Layer (2 nodi rossi), connessioni complete tutte orientate da sinistra a destra", "region": "centro pagina, sotto il primo paragrafo", "concepts": ["c02", "c03", "c06", "c07", "c08", "c09"], "importance": 3},
+    {"id": "fig02", "doc": "dl", "page": 8, "description": "Formule annotate di Categorical Cross-Entropy e Binary Cross-Entropy: y_i/y in rosso (true probability of class i, true label 0 or 1) e ŷ_i/ŷ in blu (predicted probability of class i / of class 1)", "region": "metà inferiore, sezione 1.2", "concepts": ["c25", "c26"], "importance": 2},
+    {"id": "fig03", "doc": "dl", "page": 8, "description": "Formula annotata del Mean Squared Error con y_i (actual target value for the example i) e ŷ_i (model prediction for the example i)", "region": "fondo pagina", "concepts": ["c27"], "importance": 2},
+    {"id": "fig04", "doc": "dl", "page": 9, "description": "Formula annotata del Mean Absolute Error con y_i in rosso e ŷ_i in blu", "region": "parte alta", "concepts": ["c29"], "importance": 2},
+    {"id": "fig05", "doc": "dl", "page": 9, "description": "Formula a tratti della Huber Loss con δ evidenziato in verde e l'annotazione 'hyperparameter controlling the transition between the quadratic and linear regions of the loss function'", "region": "centro pagina", "concepts": ["c31"], "importance": 3},
+    {"id": "fig06", "doc": "dl", "page": 11, "description": "Tabella 'Benefits and Limitations of Sigmoid Activation' a due colonne Pros/Cons con le parole chiave in blu (squashing non-linearity, differentiability and smoothness, tends to saturate, sensitivity decreases)", "region": "metà superiore", "concepts": ["c45", "c46", "c47", "c48"], "importance": 2},
+    {"id": "fig07", "doc": "dl", "page": 11, "description": "Sigmoid Activation Function Plot: sigmoide blu da 0 a 1 con 0.5 in z = 0, derivata tratteggiata a campana centrata in 0; a destra la formula 1/(1+e^{-z})", "region": "metà inferiore", "concepts": ["c44", "c49"], "importance": 3},
+    {"id": "fig08", "doc": "dl", "page": 12, "description": "Tabella 'Benefits and Limitations of Hyperbolic Tangent Activation' (differentiable and continuous, similar to sigmoid, saturate) con parole chiave in rosso", "region": "metà superiore", "concepts": ["c51", "c52", "c53"], "importance": 2},
+    {"id": "fig09", "doc": "dl", "page": 12, "description": "Hyperbolic Tangent Activation Function Plot: tanh rossa da -1 a 1 passante per l'origine, derivata tratteggiata con picco 1 in z = 0; formula tanh z = (e^z - e^{-z})/(e^z + e^{-z})", "region": "metà inferiore", "concepts": ["c50", "c54"], "importance": 3},
+    {"id": "fig10", "doc": "dl", "page": 13, "description": "Tabella 'Benefits and Limitations of ReLU Activation' (wide and consistent gradients, non-positive limitation, differentiability, initialize bias, centered on zero, dying ReLU, large learning rate) con parole chiave in verde", "region": "metà superiore", "concepts": ["c56", "c57", "c58", "c59", "c60", "c61", "c62"], "importance": 2},
+    {"id": "fig11", "doc": "dl", "page": 13, "description": "ReLU Activation Function Plot: ReLU verde nulla per z < 0 e lineare per z > 0, derivata tratteggiata a gradino (0 a sinistra, 1 a destra); formula max(0, z)", "region": "metà inferiore", "concepts": ["c55", "c63"], "importance": 3},
+    {"id": "fig12", "doc": "dl", "page": 14, "description": "Leaky ReLU Activation Function Plot: piccola pendenza positiva per z < 0, retta a 45 gradi per z > 0, derivata tratteggiata a due livelli (circa 0.2 a sinistra, cioè α ≈ 0.2 nel disegno, e 1 a destra); formula max(α·z, z)", "region": "parte bassa", "concepts": ["c66", "c73"], "importance": 3},
+    {"id": "fig13", "doc": "dl", "page": 15, "description": "ELU Activation Function Plot: per z ≥ 0 retta z, per z < 0 curva esponenziale che satura verso un valore negativo; derivata tratteggiata crescente per z < 0 con salto a 1 in z = 0; formula a tratti a sinistra", "region": "parte alta", "concepts": ["c70"], "importance": 3},
+    {"id": "fig14", "doc": "dl", "page": 15, "description": "Riquadro con barra laterale che enuncia il teorema di Cybenko (1989), con in grassetto 'a two-layer neural network with linear output can approximate any continuous function'", "region": "centro pagina, sezione 1.5", "concepts": ["c75"], "importance": 2}
+  ],
+  "widgets": [
+    {
+      "id": "d01-anatomia-rete-feedforward",
+      "title": "Anatomia di una rete feedforward: il pesce attraversa la rete",
+      "concepts": ["c02", "c03", "c07", "c08", "c09", "c17"],
+      "scenario": "pesce",
+      "realExample": "Impianto di confezionamento pesce: ogni pesce sul nastro è descritto da 4 feature misurate dalla telecamera e dalla bilancia (luminosità, larghezza, lunghezza, peso; dati sintetici ispirati all'esempio del Cap. 1 di Melgani). La rete della figura di pag. 6 (4 input, 3 hidden layer da 3 neuroni, 2 output) decide salmone o spigola: 4 feature = 4 nodi di input, 2 classi = 2 nodi di output.",
+      "storyboard": [
+        "Al caricamento (fade-in di 400 ms per layer, da sinistra a destra): la rete di pag. 6 con gli stessi colori, 4 cerchi verdi (Input Layer), 3 colonne da 3 cerchi viola (Hidden Layers), 2 cerchi rossi (Output Layer), 36 frecce blu tutte orientate da sinistra a destra; in basso il contatore 'parametri: 47'.",
+        "Trigger 'Nuovo pesce': un pesce sintetico scorre sul nastro in alto (800 ms); le sue 4 misure normalizzate (es. luminosità 0.62, larghezza 0.41, lunghezza 0.77, peso 0.55) volano nei nodi verdi (400 ms, stagger 80 ms), che mostrano il valore invariato con l'etichetta 'nessun calcolo'.",
+        "Trigger Play (oppure Passo = una colonna per clic): le frecce della colonna successiva si accendono in 300 ms con spessore proporzionale a |w|; ogni nodo viola si riempie in 300 ms fino al valore della sua attivazione h = ReLU(w^T x + b) e il pannello laterale mostra la somma pesata con i numeri del nodo; pausa di 500 ms tra una colonna e l'altra (circa 3 s in tutto).",
+        "Uscita (600 ms): i due nodi rossi applicano la softmax e mostrano P(salmone) = 0.83 e P(spigola) = 0.17 con barre che crescono; il pesce scivola nella cassetta della classe vincente (500 ms).",
+        "Toggle 'modalità addestramento': sopra i nodi rossi compare in 300 ms l'etichetta vera del pesce (target one-hot), sopra ogni nodo viola un '?' che pulsa: i dati di training fissano solo l'uscita finale, non ciò che devono calcolare gli hidden layer.",
+        "Selettore del numero di nodi d'uscita (1-5): l'output layer si ricostruisce con un'animazione di layout di 400 ms (1 nodo = P(salmone) con sigmoide; da 2 a 5 nodi = salmone, spigola, orata, tonno, sgombro con softmax); gli slider di profondità e larghezza aggiungono o tolgono colonne e nodi con la stessa animazione e il contatore dei parametri mostra il conto esplicito."
+      ],
+      "interactions": [
+        "hover (o tap) su un nodo: ruolo del layer e formula locale con i valori sostituiti",
+        "pulsante 'Nuovo pesce' (20 pesci sintetici a seme fisso)",
+        "pulsanti Play / Passo / Reset della propagazione layer per layer",
+        "toggle 'modalità addestramento' (target solo sull'output, '?' sugli hidden)",
+        "selettore numero di nodi d'uscita da 1 a 5",
+        "slider numero di hidden layer da 1 a 4 e neuroni per hidden layer da 2 a 6, con contatore dei parametri"
+      ],
+      "visual": "SVG della rete con i colori della figura di pag. 6 (verde input, viola hidden, rosso output); nastro trasportatore con il pesce in alto; valori numerici dentro i nodi; frecce animate con spessore proporzionale al peso; pannello laterale con la formula del nodo selezionato e i numeri sostituiti; contatore 'parametri: 47' per la configurazione della figura.",
+      "aha": "Input = feature grezze senza calcoli, hidden = rappresentazioni che nessuno specifica e che la rete impara, output = un nodo per classe (o uno solo nel binario): i dati di training vincolano solo l'ultimo layer.",
+      "formulasShown": [
+        "\\mathbf{h}^{(l)} = g\\left(\\mathbf{W}^{(l)T}\\mathbf{h}^{(l-1)} + \\mathbf{b}^{(l)}\\right)",
+        "\\hat{y}_k = \\frac{e^{z_k}}{\\sum_j e^{z_j}}",
+        "\\#\\text{parametri} = 4\\cdot 3 + 3\\cdot 3 + 3\\cdot 3 + 3\\cdot 2 + 11 = 47",
+        "h^{(1)}_1 = \\text{ReLU}(0.8\\cdot 0.62 - 0.5\\cdot 0.41 + 0.3\\cdot 0.77 + 0.1\\cdot 0.55 + 0.05) = \\text{ReLU}(0.627) = 0.627"
+      ],
+      "challenge": "Prima di premere Play prevedi quale nodo di uscita si accenderà per un pesce molto chiaro e lungo; poi costruisci con gli slider la rete per 5 specie (3 hidden layer da 3 neuroni, 5 nodi d'uscita) e indovina il numero di parametri prima che il contatore lo riveli (soluzione: 4·3 + 3·3 + 3·3 + 3·5 = 45 pesi più 3 + 3 + 3 + 5 = 14 bias, totale 59).",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d01-composizione-di-funzioni",
+      "title": "Una rete è una funzione composta: f(3)(f(2)(f(1)(x)))",
+      "concepts": ["c04", "c05", "c06"],
+      "scenario": "energia",
+      "realExample": "Previsione della radiazione solare lungo la giornata (dati sintetici): l'input è l'ora x, l'uscita la radiazione prevista. Ogni layer è una funzione f^{(i)} che trasforma ciò che esce dal layer precedente; impilandole si ottiene la curva a campana della radiazione con il calo di mezzogiorno dovuto alle nuvole.",
+      "storyboard": [
+        "Al caricamento: a sinistra l'asse delle ore (0-24) con 48 misure sintetiche di radiazione solare (W/m²); a destra 3 pannelli affiancati, uno per layer, ciascuno con il mini-grafico della propria funzione f^{(i)} (ingresso in ascissa, uscita in ordinata); frecce solo da sinistra a destra.",
+        "Trigger Play: un punto arancione con x = 10:00 entra nel pannello f^{(1)} (600 ms), si ferma sulla curva mostrando ingresso e uscita numerici (pausa 400 ms), poi vola nel pannello f^{(2)} (500 ms) e così via; Passo avanza di un pannello per clic.",
+        "In sincronia la formula in alto si costruisce per annidamento in tre tempi (fade di 250 ms per ogni parentesi): f^{(1)}(10) = 0.42 → f^{(2)}(0.42) = 0.71 → f^{(3)}(0.71) = 612 W/m² (valori d'esempio della rete preaddestrata).",
+        "Trascinamento del punto x sull'asse delle ore: l'uscita finale si aggiorna in tempo reale (60 fps, nessuna animazione) e lascia una scia che disegna punto per punto la curva della rete sopra i dati sintetici.",
+        "Slider profondità (1-5): i pannelli entrano o escono con uno slide di 400 ms, il contatore 'depth = numero di funzioni f^{(i)}' si aggiorna e la curva finale viene ricalcolata con i pesi preaddestrati per quella profondità, diventando più articolata.",
+        "Tentativo di disegnare una freccia all'indietro (trascinamento da un pannello a uno precedente): la freccia diventa rossa, trema per 300 ms e scompare; compare il messaggio 'ciclo: non è più un DAG, non è feedforward' (anticipo delle RNN del cap. 6)."
+      ],
+      "interactions": [
+        "slider profondità da 1 a 5 layer",
+        "pulsanti Play / Passo / Reset per seguire il punto nei pannelli",
+        "trascinamento del punto x lungo l'asse delle ore (0-24, passo 0.25 h)",
+        "trascinamento di una freccia all'indietro tra pannelli (rifiutato)"
+      ],
+      "visual": "Pannelli SVG impilati orizzontalmente con mini-grafici delle funzioni dei layer, frecce solo in avanti, punto colorato che salta da un pannello all'altro, formula annidata che cresce in alto, curva di uscita sovrapposta ai punti di radiazione sintetici.",
+      "aha": "Una rete profonda è una funzione composta: ogni layer vede solo ciò che esce dal precedente, l'informazione va in un'unica direzione e la profondità conta le funzioni annidate.",
+      "formulasShown": [
+        "f(\\mathbf{x}) = f^{(3)}\\left(f^{(2)}\\left(f^{(1)}(\\mathbf{x})\\right)\\right)",
+        "\\text{depth} = \\#\\{f^{(i)}\\}",
+        "f^{(3)}\\left(f^{(2)}\\left(f^{(1)}(10)\\right)\\right) = f^{(3)}\\left(f^{(2)}(0.42)\\right) = f^{(3)}(0.71) = 612"
+      ],
+      "challenge": "Prevedi con quale profondità minima la curva della rete riproduce anche il calo delle nuvole a mezzogiorno (errore medio sotto 30 W/m²), poi verificalo con lo slider e spiega perché con depth = 1 si ottiene solo una forma semplice.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d01-uscita-su-misura",
+      "title": "Uscita su misura: nodi, attivazione e loss secondo il problema",
+      "concepts": ["c10", "c24", "c34"],
+      "scenario": "spam",
+      "realExample": "Stessa rete nascosta, tre problemi reali: filtro spam/ham (binario), riconoscimento di cifre scritte a mano 0-9 (multiclasse, scenario cifre), prezzo di una casa (regressione, scenario case). Cambiano solo la testa d'uscita e la loss accoppiata.",
+      "storyboard": [
+        "Al caricamento: tre carte in alto ('Spam o ham?', 'Che cifra è?', 'Quanto costa la casa?'); sotto, il corpo nascosto della rete in grigio (2 hidden layer), identico per tutti i problemi, e una testa d'uscita vuota tratteggiata.",
+        "Clic su 'Spam': la testa si compone in 400 ms in un solo nodo con etichetta σ; dal corpo arriva il logit z = 2.6 e il nodo mostra ŷ = σ(2.6) = 0.93 come 'P(spam)'; il badge della loss scivola accanto (300 ms) con scritto Binary Cross-Entropy e il valore -ln 0.93 ≈ 0.07 per un'email etichettata spam.",
+        "Clic su 'Cifre': la testa si espande in 10 nodi (stagger 40 ms) con softmax; 10 barre di probabilità crescono in 500 ms e un contatore conferma 'somma = 1.00'; badge Categorical Cross-Entropy con il valore -ln ŷ della classe vera.",
+        "Clic su 'Case': la testa collassa in un nodo lineare senza compressione (400 ms); l'uscita scorre come contatore fino a 312 000 €; badge MSE / MAE / Huber.",
+        "Modalità sfida: la testa è vuota e l'utente trascina un'attivazione (σ, softmax, lineare) e una loss (BCE, CE, MSE) nei due slot; a ogni rilascio un semaforo diventa verde o rosso in 200 ms e, se rosso, spiega l'incoerenza (un'uscita in [0,1] non può esprimere un prezzo, 10 sigmoidi indipendenti non sommano a 1, una softmax non ha senso per un prezzo)."
+      ],
+      "interactions": [
+        "clic sulle tre carte problema",
+        "trascinamento di attivazione e loss nei due slot della testa vuota (modalità sfida)",
+        "tre scenari extra in modalità sfida: COVID-19 sì/no da radiografia, 4 tipi di terreno da un pixel satellitare, consumo energetico in kWh",
+        "pulsante 'mostra perché' per la spiegazione dell'accoppiamento"
+      ],
+      "visual": "Rete SVG con corpo grigio e testa colorata che si ricompone con animazione di layout; badge della loss agganciato alla testa; barre di probabilità o valore numerico in uscita; semaforo verde/rosso per la coerenza.",
+      "aha": "Il tipo di problema decide insieme numero di nodi d'uscita, attivazione e loss: sigmoide con binary cross-entropy, softmax con categorical cross-entropy, uscita lineare con MSE.",
+      "formulasShown": [
+        "\\hat{y} = \\sigma(z)",
+        "\\hat{y}_i = \\frac{e^{z_i}}{\\sum_j e^{z_j}}",
+        "\\hat{y} = W^T h + b",
+        "\\text{BCE} = -\\ln\\sigma(2.6) = -\\ln 0.93 \\approx 0.07"
+      ],
+      "challenge": "Assembla la testa giusta per 'COVID sì/no da radiografia' e per 'quale dei 4 tipi di terreno in un pixel satellitare' senza sbagliare accoppiamento (soluzioni: 1 nodo sigmoide + Binary Cross-Entropy; 4 nodi softmax + Categorical Cross-Entropy).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d01-oltre-il-lineare",
+      "title": "Oltre il lineare: quando nessuna retta basta",
+      "concepts": ["c11", "c16"],
+      "scenario": "sensori",
+      "realExample": "Rilevamento di anomalie su un macchinario con due sensori IoT (temperatura e vibrazione normalizzate, dati sintetici): le letture normali formano un anello, quelle anomale stanno al centro (macchina ferma) o all'esterno (guasto). Nessuna retta separa le classi.",
+      "storyboard": [
+        "Al caricamento: scatter 2D di 200 letture sintetiche (temperatura e vibrazione normalizzate): punti verdi (normale) ad anello, punti rossi al centro (macchina ferma) e all'esterno (guasto).",
+        "Trigger 'Addestra' con il modello lineare: la retta di decisione parte orizzontale e ruota e trasla per 60 epoche animate (30 ms per epoca, circa 2 s); lo sfondo si colora dei due semipiani a ogni epoca e il contatore di accuratezza si ferma intorno al 60%.",
+        "Toggle 'rete feedforward, 1 hidden layer' e 'Addestra': con 3-8 neuroni tanh la frontiera si piega epoca dopo epoca (200 epoche in circa 4 s) fino a una curva chiusa attorno all'anello; l'accuratezza sale oltre il 95% e la loss scende in un riquadro.",
+        "Toggle 'mostra i neuroni': le rette w_k^T x + b_k = 0 dei singoli neuroni nascosti compaiono semitrasparenti (fade 300 ms): la loro combinazione non lineare ritaglia la regione ad anello (con 3 neuroni un triangolo, con 8 quasi un cerchio).",
+        "Toggle 'togli le attivazioni' (g = identità): la frontiera si raddrizza in 500 ms e torna una sola retta anche con 3 layer; compare il richiamo a der01 (ŷ = W'^T x + b')."
+      ],
+      "interactions": [
+        "toggle modello lineare / rete feedforward",
+        "slider neuroni nascosti da 1 a 8",
+        "clic sul piano per aggiungere un punto della classe selezionata (massimo 300 punti)",
+        "selettore dataset: anello, XOR, spirale",
+        "toggle attivazioni on/off (tanh oppure identità)",
+        "pulsanti Addestra / Reset e slider velocità da 0.5x a 4x"
+      ],
+      "visual": "Canvas con mappa di colore della decisione, punti colorati per classe, rette dei singoli neuroni semitrasparenti, contatore di accuratezza e di epoche.",
+      "aha": "Un modello lineare traccia solo iperpiani: per catturare le interazioni tra variabili serve una funzione non lineare, che la rete impara dai dati purché le attivazioni siano non lineari.",
+      "formulasShown": [
+        "\\hat{y} = \\sigma(\\mathbf{w}^T\\mathbf{x} + b)",
+        "\\hat{y} = \\sigma\\left(\\mathbf{v}^T g(\\mathbf{W}^T\\mathbf{x} + \\mathbf{b}) + c\\right)",
+        "\\hat{y} = \\sigma(0.9\\cdot 0.3 - 1.2\\cdot(-0.5) + 0.1) = \\sigma(0.97) \\approx 0.73"
+      ],
+      "challenge": "Trova il numero minimo di neuroni nascosti che separa lo XOR e quello che separa l'anello (soluzioni attese: 2 per lo XOR; 3 per l'anello, perché servono almeno 3 rette per chiudere una regione limitata del piano); per la spirale registra il tuo record.",
+      "size": "M",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "d01-tre-strade-per-phi",
+      "title": "Tre strade per φ: kernel generico, feature a mano, feature imparate",
+      "concepts": ["c12", "c13", "c14", "c15"],
+      "scenario": "telerilevamento",
+      "realExample": "Classificare pixel di un'immagine multispettrale da drone come vegetazione o suolo nudo usando 2 bande, rosso (R) e vicino infrarosso (NIR) (dati sintetici). La vegetazione occupa una regione curva del piano (R, NIR): serve una mappa φ che renda le classi linearmente separabili.",
+      "storyboard": [
+        "Al caricamento: pannello sinistro con 150 pixel sintetici nel piano (R, NIR) (verde = vegetazione, marrone = suolo nudo; pieni = training, vuoti = test); tre schede in alto: 'φ generico (kernel RBF)', 'φ ingegnerizzato', 'φ imparato (rete)'.",
+        "Scheda 1, slider γ del kernel RBF: a ogni variazione la frontiera della SVM si ridisegna (debounce 150 ms); con γ grande avvolge ogni punto di training (accuratezza di training 100%) mentre i punti di test sbagliati lampeggiano in rosso (2 cicli da 300 ms): etichetta 'capacità sufficiente, generalizzazione scarsa'.",
+        "Scheda 2, caselle di feature fatte a mano (R², NIR², R·NIR, NDVI = (NIR - R)/(NIR + R)): spuntando una casella il modello lineare si riaddestra in 500 ms e la frontiera si aggiorna; con l'NDVI il problema diventa quasi lineare, con feature sbagliate fallisce: 'dipende dalla tua conoscenza del dominio'.",
+        "Scheda 3, pulsante Addestra: una rete con hidden layer a 2 neuroni tanh si addestra per 300 epoche (circa 5 s); il pannello destro mostra i punti nello spazio φ(x) = (h_1, h_2) degli hidden che si districano progressivamente finché una retta li separa, mentre a sinistra la frontiera si piega.",
+        "Pulsante 'Nuovo seme': la scheda 3 riparte da pesi casuali diversi; a volte la φ imparata è peggiore e compare (fade 300 ms) il badge 'loss non convessa, niente garanzia di ottimo globale'.",
+        "Tabella riassuntiva in basso: ogni scheda completata aggiorna in 300 ms le celle di accuratezza di training e di test delle tre strade."
+      ],
+      "interactions": [
+        "slider γ del kernel RBF da 0.1 a 100 (scala logaritmica)",
+        "caselle di feature ingegnerizzate: R², NIR², R·NIR, NDVI (al massimo 2 insieme in modalità sfida)",
+        "pulsanti Addestra / Nuovo seme",
+        "toggle mostra punti di test"
+      ],
+      "visual": "Due pannelli canvas affiancati: spazio originale (R, NIR) con frontiera colorata e spazio delle feature φ(x) animato; tabella con le accuratezze; colori verde vegetazione e marrone suolo.",
+      "aha": "Imparare φ unisce la genericità del kernel e l'efficacia delle feature mirate: si rinuncia alla convessità, ma l'ingegneria si sposta sul progetto dell'architettura.",
+      "formulasShown": [
+        "\\hat{y} = \\mathbf{w}^T\\phi(\\mathbf{x}) + b",
+        "k(\\mathbf{x},\\mathbf{x}') = \\exp\\left(-\\gamma\\|\\mathbf{x}-\\mathbf{x}'\\|^2\\right)",
+        "\\phi(\\mathbf{x}) = g\\left(\\mathbf{W}^T\\mathbf{x} + \\mathbf{b}\\right)",
+        "\\text{NDVI} = \\frac{0.45 - 0.08}{0.45 + 0.08} = \\frac{0.37}{0.53} \\approx 0.70"
+      ],
+      "challenge": "Batti l'accuratezza di test della rete scegliendo a mano al massimo due feature.",
+      "size": "L",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "d01-paesaggio-della-loss",
+      "title": "Il paesaggio della loss: ciotola convessa contro valli multiple",
+      "concepts": ["c18", "c19", "c20"],
+      "scenario": "case",
+      "realExample": "Prezzo delle case in funzione della superficie (dati sintetici). Con una regressione lineare la loss MSE nei parametri (w, b) è una ciotola convessa; con una piccola rete (2 neuroni tanh) la loss vista su due pesi scelti ha più valli e punti di sella.",
+      "storyboard": [
+        "Al caricamento: in alto 30 case sintetiche (superficie 40-200 m², prezzo 80-600 k€) e la curva f(X, W) del modello corrente; la funzione target f(X) è tratteggiata e nascosta di default.",
+        "Pannello sinistro (modello lineare, parametri w e b): mappa a curve di livello della MSE. Clic in un punto: compare una pallina che scende con la discesa del gradiente, un passo ogni 50 ms per 100 passi (circa 5 s), lasciando la traiettoria; la retta in alto si adatta a ogni passo e i contatori mostrano iterazione e J(W). Da qualunque punto si arriva allo stesso minimo.",
+        "Pannello destro (rete con 2 neuroni tanh, vista su due pesi w_1 e w_2 con gli altri fissati): stessa animazione; palline lanciate da punti diversi finiscono in valli diverse con J diversi; il badge 'minimo globale?' diventa verde (300 ms) solo quando J è entro l'1% del migliore noto.",
+        "Pulsante 'lancia 10 palline': 10 discese in parallelo (circa 5 s), poi l'istogramma delle loss finali cresce in 500 ms: una sola barra a sinistra, barre sparse a destra.",
+        "Toggle 'mostra f(X)': la funzione target compare con un fade di 300 ms e lo scarto tra f(X, W) e f(X) viene colorato tra le due curve per il minimo raggiunto."
+      ],
+      "interactions": [
+        "clic sulla mappa per far partire la discesa del gradiente da quel punto",
+        "slider learning rate η da 0.001 a 1 (scala logaritmica)",
+        "pulsante 'lancia 10 palline'",
+        "toggle mostra funzione target"
+      ],
+      "visual": "Due heatmap con curve di livello e traiettorie delle palline animate; grafico dei dati con la curva del modello aggiornata a ogni iterazione; contatori di iterazioni e di loss; istogramma delle loss finali.",
+      "aha": "Addestrare significa scendere lungo la loss nello spazio dei pesi W: nel modello lineare la ciotola garantisce la convergenza, nella rete la loss non convessa può fermarti in un minimo locale che dipende da dove parti.",
+      "formulasShown": [
+        "f(X, \\mathbf{W}) \\approx f(X)",
+        "J(\\mathbf{W}) = \\frac{1}{N}\\sum_{i=1}^{N}\\left(y_i - f(x_i, \\mathbf{W})\\right)^2",
+        "\\mathbf{W} \\leftarrow \\mathbf{W} - \\eta\\,\\nabla_{\\mathbf{W}} J(\\mathbf{W})",
+        "\\mathbf{W} \\leftarrow (0.8,\\ 1.2) - 0.1\\cdot(2.0,\\ -1.5) = (0.6,\\ 1.35)"
+      ],
+      "challenge": "Trova un punto di partenza da cui la rete arriva al minimo globale e uno da cui resta bloccata; poi prova a sbloccarla cambiando il learning rate.",
+      "size": "L",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "d01-ricetta-della-rete",
+      "title": "La ricetta della rete: sei ingredienti e la mappa del corso",
+      "concepts": ["c21", "c22", "c01"],
+      "scenario": "cifre",
+      "realExample": "Progettare una rete per riconoscere cifre scritte a mano 28×28 (stile MNIST): prima di addestrarla vanno fissati sei ingredienti, ognuno dei quali è un capitolo del corso di Deep Learning (indice di pag. 3-5).",
+      "storyboard": [
+        "Al caricamento: scheda-ricetta con sei slot vuoti (cost function, output representation, activation function, architecture, optimizer, regularization) e, sotto, una tavolozza di chip; a destra la mini-mappa degli 11 capitoli del corso (indice di pag. 3-5) in grigio.",
+        "Trascinamento di un chip in uno slot: il chip si aggancia con una molla (250 ms), lo slot si colora e nella mini-mappa si accende in 300 ms il capitolo corrispondente con titolo e pagina: 1.2 Cost Functions (p. 8), 1.3 Unit Types (p. 9), 1.4 Activation Functions (p. 11), 1.5 Architecture design (p. 15), 3 Optimization (p. 23), 4 Regularization (p. 32).",
+        "Ogni volta che cambiano l'architettura o la testa d'uscita, il contatore dei parametri si aggiorna con il conto esplicito (es. 784·128 + 128 + 128·10 + 10 = 101 770).",
+        "Ricetta completa: il pulsante 'Addestra' si attiva; parte una curva di addestramento precalcolata (20 epoche disegnate in 3 s) con accuratezza di training (blu) e di validazione (arancione).",
+        "Ricette sbagliate mostrano i sintomi tipici con un'etichetta sul grafico: sigmoide + MSE impara lentamente (curva piatta per le prime 10 epoche), rete grande senza regolarizzazione mostra un divario crescente tra training e validazione (overfitting), una testa a 1 nodo lineare per 10 classi non supera il caso."
+      ],
+      "interactions": [
+        "drag and drop (o tap sul chip e poi sullo slot) degli ingredienti: cost function {Cross-Entropy, MSE}; output {softmax a 10 nodi, 1 nodo lineare}; attivazione {ReLU, sigmoide, tanh}; architettura {1 hidden da 16, 1 da 128, 2 da 128}; optimizer {SGD, Adam}; regolarizzazione {nessuna, dropout 0.5, weight decay 10^-4}",
+        "pulsante 'mostra la ricetta consigliata'",
+        "clic su un capitolo della mappa per vederne titolo e pagina",
+        "pulsanti Addestra / Reset"
+      ],
+      "visual": "Scheda-ricetta HTML con sei slot, tavolozza di chip, mini-mappa del corso a 11 capitoli con evidenziazione, grafico delle curve di training/validazione.",
+      "aha": "Una rete non è solo un'architettura: sono sei scelte interdipendenti, e il corso è organizzato proprio attorno a esse.",
+      "formulasShown": [
+        "\\text{rete} = (\\text{cost}, \\text{output}, h, \\text{architettura}, \\text{optimizer}, \\text{regolarizzazione})",
+        "\\#\\text{parametri} = 784\\cdot 128 + 128 + 128\\cdot 10 + 10 = 101\\,770"
+      ],
+      "challenge": "Componi la ricetta che raggiunge il 98% di validazione con il minor numero di parametri (le curve sono precalcolate per tutte le 2·2·3·3·2·3 = 216 combinazioni).",
+      "size": "M",
+      "tech": "html+motion"
+    },
+    {
+      "id": "d01-cross-entropy-categorica",
+      "title": "Categorical cross-entropy: quanto costa sbagliare una cifra",
+      "concepts": ["c23", "c25", "c42"],
+      "scenario": "cifre",
+      "realExample": "Una rete classifica l'immagine 28×28 di un '7' scritto a mano (sintetica) e produce 10 probabilità. La categorical cross-entropy confronta questa distribuzione con il target one-hot della classe vera.",
+      "storyboard": [
+        "Al caricamento: a sinistra l'immagine 28×28 di un '7' (sintetica); al centro 10 barre ŷ_0...ŷ_9 (blu) con il target one-hot y (contorno rosso sulla barra 7), come nella figura di pag. 8; a destra la curva -log p.",
+        "Trascinamento di una barra: le altre si rinormalizzano in tempo reale (somma sempre 1); sotto, la somma -Σ y_i log ŷ_i è scritta per esteso con 10 termini: i 9 con y_i = 0 sfumano in grigio (300 ms) e resta solo -log ŷ_7 con il valore numerico.",
+        "Il punto sulla curva -log p segue ŷ_7 (spring 200 ms): vicino a 1 la loss è quasi zero, vicino a 0 la curva esplode e il valore della loss diventa rosso.",
+        "Pulsanti preset (transizione delle barre in 500 ms): 'sicuro e sbagliato' ŷ_1 = 0.95, ŷ_7 = 0.01 → L = -ln 0.01 ≈ 4.61; 'incerto' tutte 0.1 → L = -ln 0.1 ≈ 2.30; 'giusto' ŷ_7 = 0.9 → L = -ln 0.9 ≈ 0.11.",
+        "Toggle modalità batch: compaiono 8 cifre con le loro predizioni (stagger 60 ms) e la loss media -(1/M) Σ log ŷ della classe vera si aggiorna live.",
+        "Toggle 'vista verosimiglianza' (der10): sopra il batch compare il prodotto delle 8 probabilità assegnate alle classi vere (es. 0.9 · 0.7 · 0.05 · ... ≈ 3·10^{-4}); una freccia 'log' lo trasforma in 400 ms nella somma dei log e una freccia '-1/M' nella loss media, che coincide con quella del pannello batch: minimizzare la cross-entropy = massimizzare la log-verosimiglianza."
+      ],
+      "interactions": [
+        "trascinamento verticale delle barre di probabilità (da 0 a 1, rinormalizzate a somma 1)",
+        "pulsanti preset: sicuro e sbagliato / incerto / giusto",
+        "menu a tendina per la classe vera (0-9)",
+        "toggle modalità batch (M = 8)",
+        "toggle vista verosimiglianza (prodotto → log → media con segno meno)"
+      ],
+      "visual": "SVG con immagine della cifra, barre di probabilità blu e target rosso come nella figura di pag. 8, somma dei termini con quelli nulli in grigio, curva -log p con punto mobile e valore numerico grande della loss.",
+      "aha": "La cross-entropy guarda solo la probabilità data alla classe vera, ma la paga in scala logaritmica: essere molto sicuri della classe sbagliata costa carissimo.",
+      "formulasShown": [
+        "L = -\\sum_{i=1}^{N} y_i \\log(\\hat{y}_i) = -\\log \\hat{y}_{7}",
+        "-\\ln 0.01 \\approx 4.61",
+        "-\\frac{1}{M}\\log\\prod_{n=1}^{M}\\hat{y}^{(n)}_{c_n} = \\frac{1}{M}\\sum_{n=1}^{M}\\left(-\\log\\hat{y}^{(n)}_{c_n}\\right)",
+        "L = -\\ln 0.9 \\approx 0.11, \\qquad L = -\\ln 0.1 \\approx 2.30"
+      ],
+      "challenge": "Distribuisci le probabilità in modo da ottenere esattamente L = 1 (suggerimento: ŷ_7 = 1/e ≈ 0.37).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d01-binary-cross-entropy",
+      "title": "Binary cross-entropy e sigmoide: la coppia giusta per lo spam",
+      "concepts": ["c26", "c34"],
+      "scenario": "spam",
+      "realExample": "Filtro spam: l'unità d'uscita sigmoide produce ŷ = P(spam | email); l'etichetta vera y vale 1 (spam) o 0 (ham). La binary cross-entropy misura quanto la probabilità si discosta dall'etichetta.",
+      "storyboard": [
+        "Al caricamento: un'email sintetica ('Hai vinto un premio!') entra nel filtro; in alto la sigmoide con un punto in z = 0 (ŷ = 0.5); in basso due curve di loss in funzione di ŷ: -log ŷ (rossa, termine attivo se y = 1) e -log(1 - ŷ) (blu, attivo se y = 0).",
+        "Slider del logit z: il punto scorre sulla sigmoide in tempo reale e ŷ = σ(z) si aggiorna; sulla curva di loss attiva un secondo punto mostra il valore della BCE con i numeri sostituiti.",
+        "Toggle dell'etichetta y (spam/ham): il termine con moltiplicatore 0 sfuma in grigio in 300 ms e compare il fattore '× 0' accanto, l'altro si colora.",
+        "Pannello gradiente: una barra orizzontale mostra ∂L/∂z = σ(z) - y; con y = 1 e z = -8 vale circa -1: la rete sbaglia e il segnale per correggersi è pieno.",
+        "Toggle 'MSE': la barra si trasforma (400 ms) in (ŷ - y)σ'(z); a z = -8 vale circa -0.0003 e diventa quasi invisibile: la rete sbaglia ma quasi non impara; un'etichetta confronta i due valori.",
+        "Pulsante Play: 20 email etichettate cadono una ogni 400 ms nella casella spam o nella posta in arrivo secondo ŷ ≥ 0.5, e la BCE media scorre in un grafico a linee."
+      ],
+      "interactions": [
+        "slider z da -8 a 8 (passo 0.1)",
+        "toggle etichetta y (spam = 1 / ham = 0)",
+        "toggle loss: BCE / MSE per confrontare i gradienti",
+        "Play / Pausa del flusso di 20 email"
+      ],
+      "visual": "SVG con sigmoide in alto, due curve di loss in basso con i termini attivi colorati, barra del gradiente con valore numerico, icone email che cadono nella casella spam o posta in arrivo.",
+      "aha": "Sigmoide e BCE sono fatte l'una per l'altra: il log della BCE annulla l'esponenziale della sigmoide e il gradiente resta σ(z) - y, forte proprio quando la rete sbaglia.",
+      "formulasShown": [
+        "\\text{BCE} = -\\left(y\\log(\\hat{y}) + (1-y)\\log(1-\\hat{y})\\right)",
+        "\\frac{\\partial \\text{BCE}}{\\partial z} = \\sigma(z) - y",
+        "\\frac{\\partial}{\\partial z}\\frac{1}{2}(\\hat{y}-y)^2 = (\\hat{y}-y)\\,\\sigma'(z)",
+        "\\frac{\\partial \\text{BCE}}{\\partial z}\\Big|_{z=-8,\\,y=1} = \\sigma(-8) - 1 \\approx -1.00, \\qquad (\\hat{y}-y)\\,\\sigma'(-8) \\approx -0.0003"
+      ],
+      "challenge": "Con y = 1 e loss MSE trova il valore negativo di z sotto il quale il gradiente scende in modulo sotto 0.01: è lì che la rete, pur sbagliando, 'smette di imparare' (soluzione: z ≈ -4.6, dove σ(z)(1 - σ(z))² = 0.01; nello stesso punto il gradiente della BCE vale ancora circa -0.99).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d01-mse-contro-mae-outlier",
+      "title": "MSE contro MAE: la villa di lusso che sposta la media",
+      "concepts": ["c27", "c28", "c29", "c30"],
+      "scenario": "case",
+      "realExample": "Prezzi di 12 appartamenti simili in una zona (dati sintetici, migliaia di euro) più una villa di lusso outlier. Si stima il 'prezzo tipico' e poi una retta prezzo-superficie minimizzando MSE oppure MAE.",
+      "storyboard": [
+        "Al caricamento: 12 appartamenti sintetici (prezzi tra 180 e 260 k€, media 220) come punti su un asse orizzontale dei prezzi, più una villa di lusso a 450 k€; due marcatori verticali: il minimo dell'MSE (media, arancione) e quello dell'MAE (mediana, viola), con i valori numerici.",
+        "Trascinamento della villa verso destra: il marcatore MSE la insegue in tempo reale (si sposta di Δ/13 per ogni spostamento Δ), quello MAE resta fermo; le etichette numeriche si aggiornano a 60 fps.",
+        "Toggle 'mostra i residui': per l'MSE ogni residuo compare come un quadrato vero (area = errore al quadrato, crescita in 400 ms), per l'MAE come un segmento; il quadrato della villa copre quasi tutta l'area e un contatore mostra la sua quota sul totale.",
+        "Selettore 'retta': il grafico si trasforma (600 ms) in prezzo contro superficie; due rette adattate con MSE e MAE (quest'ultima con minimi quadrati ripesati iterativi, 20 passi animati in 1 s): la retta MSE si inclina verso la villa, la retta MAE resta sui 12 appartamenti.",
+        "Pannello loss contro residuo: parabola r² e 'V' |r|; passando il mouse sul vertice della V compare in 200 ms 'derivata non definita in 0' con le due pendenze -1 e +1."
+      ],
+      "interactions": [
+        "trascinamento dell'outlier da 150 a 3000 k€",
+        "toggle MSE / MAE / entrambi",
+        "selettore modalità: costante / retta",
+        "clic per aggiungere appartamenti (massimo 30)",
+        "toggle mostra i residui"
+      ],
+      "visual": "SVG con asse dei prezzi, marcatori colorati (arancione MSE, viola MAE), quadrati e segmenti dei residui, pannello regressione con due rette, pannello delle curve di loss con valori numerici live.",
+      "aha": "Elevare al quadrato fa pesare in modo sproporzionato gli errori grandi: l'MSE insegue l'outlier, l'MAE no, ma paga con un angolo in zero dove la derivata non esiste.",
+      "formulasShown": [
+        "\\text{MSE} = \\frac{1}{N}\\sum_{i=1}^{N}(y_i-\\hat{y}_i)^2",
+        "\\text{MAE} = \\frac{1}{N}\\sum_{i=1}^{N}|y_i-\\hat{y}_i|",
+        "c^{*}_{\\text{MSE}} = \\bar{y}, \\qquad c^{*}_{\\text{MAE}} = \\text{mediana}(y)",
+        "\\bar{y} = \\frac{12\\cdot 220 + 450}{13} \\approx 237.7, \\qquad \\text{mediana} = y_{(7)}"
+      ],
+      "challenge": "Di quanto devi spostare la villa perché la media superi il prezzo di tutti gli altri 12 appartamenti? E la mediana? (soluzione: la media supera il massimo m = 260 degli altri quando il prezzo v della villa soddisfa (2640 + v)/13 > 260, cioè v > 740 k€; la mediana, il 7° valore su 13, non li supera mai).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d01-huber-delta",
+      "title": "Huber loss: il cursore δ tra quadratico e lineare",
+      "concepts": ["c31", "c32"],
+      "scenario": "energia",
+      "realExample": "Previsione oraria della produzione di un impianto fotovoltaico con alcune letture del sensore errate (picchi spuri, dati sintetici): la Huber loss tratta i piccoli errori come l'MSE e i grandi come l'MAE, così i picchi non trascinano il modello.",
+      "storyboard": [
+        "Al caricamento: grafico loss contro residuo r in [-5, 5] con tre curve sovrapposte, ½r² (MSE, arancione), |r| (MAE, viola) e Huber (verde) con δ = 1; la banda |r| ≤ δ è ombreggiata in verde come la δ della figura di pag. 9.",
+        "Slider δ: la banda si allarga o si stringe in tempo reale e la curva Huber si ricalcola; nei punti di giunzione ±δ un marcatore mostra il valore ½δ² e un segno di spunta 'continua', che pulsa per 300 ms quando δ si ferma.",
+        "Grafico sotto: le derivate, retta r (MSE), gradino ±1 (MAE) e per la Huber una retta che si appiattisce a ±δ; un cursore sul residuo mostra i tre gradienti numerici.",
+        "Pannello destro, pulsante 'Adatta': serie oraria sintetica della produzione fotovoltaica (48 ore) con 3 picchi spuri; tre curve vengono adattate con MSE, MAE e Huber in 40 iterazioni animate (circa 2 s); la curva MSE viene tirata dai picchi e le tre loss totali si aggiornano.",
+        "Trascinando δ agli estremi: con δ = 5 la curva Huber si sovrappone a ½r² (compare l'etichetta 'come MSE'), con δ = 0.1 diventa una V smussata proporzionale a |r| ('come MAE, scalata di δ')."
+      ],
+      "interactions": [
+        "slider δ da 0.1 a 5 (passo 0.1)",
+        "toggle delle tre curve",
+        "trascinamento verticale dei picchi spuri",
+        "cursore sul residuo r da -5 a 5",
+        "pulsante Adatta"
+      ],
+      "visual": "SVG con curve di loss e derivate colorate per tipo, banda quadratica verde, marcatori ai giunti ±δ, serie temporale con curve adattate e valori numerici.",
+      "aha": "δ è l'interruttore: dentro la banda la Huber è l'MSE (liscia e derivabile in zero), fuori cresce linearmente come l'MAE e il gradiente non esplode per gli outlier.",
+      "formulasShown": [
+        "\\text{Huber}(r) = \\begin{cases} \\frac{1}{2}r^2 & |r| \\le \\delta \\\\ \\delta\\left(|r| - \\frac{1}{2}\\delta\\right) & \\text{otherwise} \\end{cases}",
+        "\\frac{\\partial\\,\\text{Huber}}{\\partial r} = \\begin{cases} r & |r| \\le \\delta \\\\ \\delta\\,\\text{sign}(r) & \\text{otherwise} \\end{cases}",
+        "\\text{Huber}(3)\\big|_{\\delta=1} = 1\\cdot\\left(3 - \\tfrac{1}{2}\\right) = 2.5, \\qquad \\tfrac{1}{2}\\cdot 3^2 = 4.5, \\qquad |3| = 3"
+      ],
+      "challenge": "Scegli δ in modo che la curva Huber ignori i 3 picchi ma segua ancora le normali oscillazioni delle nuvole.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d01-scegli-la-loss",
+      "title": "Scegli la loss: gioco di carte sui problemi reali",
+      "concepts": ["c33", "c23", "c24"],
+      "scenario": "medicina",
+      "realExample": "Mazzo di casi reali: COVID-19 sì/no da radiografia, diagnosi ECG su 5 patologie, stima del consumo energetico con sensori rumorosi, prezzi delle case con errori di battitura nel dataset, rilevamento di transazioni anomale con carta di credito.",
+      "storyboard": [
+        "Al caricamento: un mazzo di 10 carte coperte estratte da 20 casi; la prima si gira (flip di 400 ms) e mostra il caso, il tipo di uscita e una descrizione dei dati (es. 'COVID-19 sì/no da radiografia, uscita: probabilità'; 'consumo energetico da sensori con rari errori grossolani, uscita: kWh').",
+        "L'utente sceglie una loss tra Categorical CE, Binary CE, MSE, MAE, Huber, 'loss specializzata': il chip scelto si sposta sulla carta (250 ms).",
+        "Feedback: la carta si gira sul retro (400 ms) e mostra la scelta consigliata con il motivo (classificazione → probabilità di classe; outlier → MAE/Huber; outlier detection → loss specializzata) e il valore della loss consigliata su un esempio numerico della carta (es. BCE = -ln 0.8 ≈ 0.22).",
+        "Punteggio e serie si aggiornano con un contatore animato (300 ms); alla fine un riepilogo a tre colonne 'obiettivo, natura dei dati, applicazione' raggruppa le carte (stagger 60 ms)."
+      ],
+      "interactions": [
+        "clic su una delle sei loss proposte",
+        "pulsante 'prossima carta'",
+        "pulsante 'spiegami' dopo la risposta",
+        "pulsante 'nuovo mazzo' (10 carte estratte a caso da 20 casi)"
+      ],
+      "visual": "Carte HTML con flip animato, chip delle loss, barra del punteggio, riepilogo finale a tre colonne.",
+      "aha": "Non esiste la loss giusta in assoluto: la scelta dipende dall'obiettivo dell'addestramento, dalla natura dei dati (rumore, outlier) e dall'applicazione.",
+      "formulasShown": [
+        "L = \\text{discrepanza}(\\hat{y}, y)",
+        "\\text{BCE} = -\\ln 0.8 \\approx 0.22",
+        "\\text{Huber}_{\\delta=1}(r = 6) = 1\\cdot(6 - 0.5) = 5.5 \\quad \\text{contro} \\quad r^2 = 36"
+      ],
+      "challenge": "Fai 10 carte di fila senza errori.",
+      "size": "S",
+      "tech": "html+motion"
+    },
+    {
+      "id": "d01-unita-lineare",
+      "title": "L'unità lineare: somma pesata più bias",
+      "concepts": ["c35", "c36"],
+      "scenario": "case",
+      "realExample": "L'ultimo layer di una rete che stima il prezzo di una casa: 3 feature imparate dal layer precedente (h_1 'ampiezza', h_2 'posizione', h_3 'stato') combinate linearmente con pesi W e bias b (dati sintetici).",
+      "storyboard": [
+        "Al caricamento: tre barre verticali per le feature del layer precedente, h_1 'ampiezza' = 2.0, h_2 'posizione' = 1.5, h_3 'stato' = 3.0, tre slider per i pesi W_1 = 50, W_2 = 30, W_3 = 20 (k€ per unità) e lo slider del bias b = 40.",
+        "Ogni prodotto W_k h_k compare come barra colorata (verde se positivo, rossa se negativo) che si impila verso l'uscita (400 ms, stagger 100 ms) fino a ŷ = 100 + 45 + 60 + 40 = 245 k€.",
+        "Muovendo un qualsiasi slider la formula ŷ = W^T h + b si aggiorna in tempo reale con i numeri sostituiti; l'uscita non ha limiti di intervallo (diventa anche negativa se i pesi lo impongono).",
+        "Pulsante 'raddoppia h_1': la barra di h_1 si allunga in 400 ms e il suo contributo passa esattamente da 100 a 200 (linearità), nessuna compressione.",
+        "Toggle 'vista a piano': con due sole feature (h_1, h_2) l'uscita diventa un piano in vista isometrica che ruota lentamente (un giro in 8 s); muovendo W_1 e W_2 il piano si inclina, muovendo b si solleva."
+      ],
+      "interactions": [
+        "slider dei pesi W_k da -100 a 100 e del bias b da -100 a 200",
+        "slider dei valori h_k da 0 a 5",
+        "pulsante 'raddoppia h_1'",
+        "toggle vista a barre / vista a piano"
+      ],
+      "visual": "SVG con barre impilate e valori, formula con numeri live; vista 3D semplificata del piano in isometria.",
+      "aha": "Un'unità lineare è una somma pesata più un bias: non comprime nulla, per questo è l'uscita naturale della regressione e il mattone di ogni neurone prima dell'attivazione.",
+      "formulasShown": [
+        "\\hat{y} = W^T h + b = W_1 h_1 + W_2 h_2 + W_3 h_3 + b",
+        "\\hat{y} = 50\\cdot 2.0 + 30\\cdot 1.5 + 20\\cdot 3.0 + 40 = 245"
+      ],
+      "challenge": "Imposta pesi e bias perché la casa d'esempio valga esattamente 250 000 € (una soluzione: b = 45 con gli altri valori iniziali); poi ottieni lo stesso risultato cambiando un solo peso (W_1 = 52.5).",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d01-softmax-live",
+      "title": "Softmax dal vivo: dai punteggi alle probabilità",
+      "concepts": ["c37", "c38"],
+      "scenario": "immagini",
+      "realExample": "Classificatore di oggetti per un'auto a guida autonoma con 4 classi (pedone, ciclista, auto, cartello; dati sintetici). L'ultimo layer lineare produce punteggi non normalizzati z; la softmax li trasforma in probabilità.",
+      "storyboard": [
+        "Al caricamento: quattro slider verticali per i punteggi z (pedone 2, ciclista 1, auto 0.1, cartello -1); accanto l'immagine sintetica del riquadro da classificare.",
+        "Colonna e^z: le barre e^{z_i} (tutte positive) crescono dal basso in 400 ms: 7.39, 2.72, 1.11, 0.37.",
+        "Colonna probabilità: le barre vengono divise per la somma Σ_j e^{z_j} = 11.58 (animazione di scala di 500 ms) e diventano 0.64, 0.23, 0.10, 0.03; una torta si ricompone e mostra 'somma = 1'.",
+        "Trascinando un solo slider la sua fetta cresce in tempo reale rubando massa a tutte le altre; quando la classe vincente cambia, il suo nome si ingrandisce con una transizione di 200 ms.",
+        "Pulsante '+c a tutti i punteggi': le 4 barre z salgono insieme di c (300 ms), le barre e^z crescono tutte dello stesso fattore e^c, ma torta e probabilità restano identiche (il bordo della torta lampeggia in verde).",
+        "Slider 'scala s' (der11): tutti i punteggi vengono moltiplicati per s in tempo reale; con s = 10 la torta diventa una sola fetta (argmax, 'hard max'), con s = 0.05 quattro fette quasi uguali (≈ 0.25); l'ordine delle classi non cambia mai e un'etichetta mostra il rapporto tra due fette e^{s(z_i - z_k)}."
+      ],
+      "interactions": [
+        "slider dei 4 punteggi z da -5 a 5 (passo 0.1)",
+        "pulsante '+c a tutti' con slider c da -5 a 5",
+        "pulsante 'punteggi casuali'",
+        "slider scala s da 0.05 a 10 (softmax morbida contro argmax)"
+      ],
+      "visual": "SVG a tre colonne (z, e^z, probabilità) con barre animate, torta delle probabilità, formula con la frazione della classe selezionata e numeri sostituiti.",
+      "aha": "La softmax trasforma punteggi qualsiasi in una distribuzione: tutte positive, somma 1, e conta solo la differenza tra i punteggi.",
+      "formulasShown": [
+        "\\text{Softmax}(z_i) = \\frac{e^{z_i}}{\\sum_j e^{z_j}}",
+        "\\text{Softmax}(z_i + c) = \\text{Softmax}(z_i)",
+        "\\text{Softmax}(z_{\\text{pedone}}) = \\frac{e^{2}}{e^{2}+e^{1}+e^{0.1}+e^{-1}} = \\frac{7.39}{11.58} \\approx 0.64"
+      ],
+      "challenge": "Imposta i punteggi in modo che il pedone abbia esattamente probabilità 0.5 e le altre tre classi siano uguali tra loro (soluzione: z_pedone - z_altre = ln 3 ≈ 1.10, perché e^a = 3e^b).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d01-log-softmax-stabile",
+      "title": "Log-softmax: stabile e senza saturazione",
+      "concepts": ["c39", "c40"],
+      "scenario": "cifre",
+      "realExample": "Durante l'addestramento su cifre scritte a mano i logit possono diventare grandi (es. 1000, 1001, 1002): e^{1000} in virgola mobile va in overflow e la softmax ingenua dà NaN; la log-softmax con il trucco log-sum-exp calcola direttamente il termine della log-verosimiglianza.",
+      "storyboard": [
+        "Al caricamento: calcolatrice a due corsie con gli stessi logit in ingresso (2, 1, 0.1), modificabili.",
+        "Pulsante 'Calcola': le due corsie si riempiono passo per passo, un passo ogni 400 ms: corsia 'ingenua' e^z → somma → rapporto → log; corsia 'stabile' m = max z → z - m → e^{z - m} → log Σ → z_i - m - log Σ. Con logit piccoli le due corsie danno gli stessi numeri (spunta verde).",
+        "Pulsante 'logit enormi' (1000, 1001, 1002): la corsia ingenua mostra e^{1000} → Infinity e poi Infinity/Infinity = NaN, e il riquadro diventa rosso (shake di 300 ms); la corsia stabile sottrae m = 1002, ottiene gli esponenti -2, -1, 0, la somma 1.503, il log 0.408 e il risultato (-2.41, -1.41, -0.41) in verde.",
+        "Pannello grafici: con gli altri logit fissi a 0, lo slider z_i da -20 a 20 muove un punto su due curve, Softmax(z_i) (si appiattisce a 0 e a 1) e log Softmax(z_i) (per z_i molto negativo è una retta di pendenza 1: non satura).",
+        "Una barra mostra in tempo reale la derivata d log Softmax(z_i)/dz_i = 1 - Softmax(z_i): vicina a 1 proprio quando la classe è poco probabile, cioè quando serve imparare."
+      ],
+      "interactions": [
+        "campi numerici per inserire da 2 a 10 logit (valori da -2000 a 2000)",
+        "slider z_i da -20 a 20",
+        "pulsante 'logit enormi' (1000, 1001, 1002)",
+        "pulsanti Calcola / Passo"
+      ],
+      "visual": "HTML con due corsie di calcolo passo per passo, errori in rosso e risultati in verde; grafico SVG di Softmax e log-Softmax con punto mobile e barra della derivata.",
+      "aha": "Lavorare in scala logaritmica rende il calcolo stabile e lascia a z_i un effetto lineare sul costo: la log-softmax non satura.",
+      "formulasShown": [
+        "\\log \\text{Softmax}(z_i) = z_i - \\log\\left(\\sum_j e^{z_j}\\right)",
+        "\\log\\sum_j e^{z_j} = m + \\log\\sum_j e^{z_j - m}, \\quad m = \\max_j z_j",
+        "\\log\\text{Softmax}(z_1) = 1000 - \\left(1002 + \\log\\left(e^{-2}+e^{-1}+e^{0}\\right)\\right) = 1000 - 1002.408 = -2.408"
+      ],
+      "challenge": "Trova il logit più piccolo che manda in overflow la corsia ingenua (in doppia precisione, circa 710).",
+      "size": "M",
+      "tech": "html+motion"
+    },
+    {
+      "id": "d01-spinta-dei-logit",
+      "title": "La spinta dei logit: su la classe giusta, giù le altre",
+      "concepts": ["c41", "c42"],
+      "scenario": "cifre",
+      "realExample": "Un '7' scritto male viene visto come '1' con probabilità 0.8. A ogni passo di discesa del gradiente la log-verosimiglianza spinge in su il logit del 7 e in giù tutti gli altri, soprattutto quello dell'1 (dati sintetici).",
+      "storyboard": [
+        "Al caricamento: dieci barre dei logit z_0...z_9 di un '7' scritto male, con sopra le probabilità softmax: ŷ_1 = 0.80 (la più alta), ŷ_7 = 0.05, le altre 0.01875 ciascuna; loss L = -ln 0.05 ≈ 3.00.",
+        "Su ogni barra compare (fade di 300 ms) una freccia -∂L/∂z_k = y_k - ŷ_k: verso l'alto sul 7 (1 - 0.05 = 0.95), verso il basso sulle altre con lunghezza proporzionale a ŷ_k; la freccia più lunga verso il basso è sull'1 (0.80).",
+        "Pulsante Passo: i logit si spostano di η volte la freccia (animazione di 400 ms), le probabilità si ricalcolano, le frecce si accorciano e un punto si aggiunge al grafico della loss; Play ripete un passo ogni 600 ms.",
+        "Con η = 1 bastano 2 passi: dopo il primo ŷ_1 = 0.57 e ŷ_7 = 0.20, dopo il secondo ŷ_1 = 0.32 e ŷ_7 = 0.45; la barra del 7 diventa verde (200 ms) quando diventa la classe più probabile e le frecce si riducono.",
+        "Preset 'incerto' (tutte le ŷ = 0.1): frecce piccole e uniformi e loss -ln 0.1 ≈ 2.30, più bassa della predizione sicura e sbagliata (3.00): la log-verosimiglianza punisce di più l'errore più sicuro."
+      ],
+      "interactions": [
+        "pulsanti Passo / Play / Reset",
+        "slider learning rate η da 0.1 a 5",
+        "preset: sicuro e sbagliato / incerto / quasi giusto",
+        "menu a tendina per la classe vera (0-9)"
+      ],
+      "visual": "SVG con barre dei logit, frecce di gradiente colorate (verde verso l'alto, rosso verso il basso), probabilità sopra le barre, grafico della loss per passo.",
+      "aha": "Il gradiente della cross-entropy con softmax è semplicemente ŷ - y: la classe giusta sale, le altre scendono in proporzione alla loro attività, e l'errore più sicuro viene corretto per primo.",
+      "formulasShown": [
+        "\\frac{\\partial L}{\\partial z_k} = \\hat{y}_k - y_k",
+        "z_k \\leftarrow z_k - \\eta\\,(\\hat{y}_k - y_k)",
+        "\\frac{\\partial L}{\\partial z_7} = 0.05 - 1 = -0.95, \\qquad \\frac{\\partial L}{\\partial z_1} = 0.80 - 0 = 0.80"
+      ],
+      "challenge": "Prevedi quale logit si abbasserà di più al primo passo e di quanto, poi verifica (soluzione: quello dell'1, che scende di η·0.80, mentre il 7 sale di η·0.95).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d01-sigmoide-probabilita",
+      "title": "La sigmoide trasforma un punteggio in una probabilità",
+      "concepts": ["c44", "c45", "c46"],
+      "scenario": "medicina",
+      "realExample": "Un classificatore ECG produce un punteggio z per ogni tracciato; la sigmoide lo trasforma nella probabilità di patologia cardiaca che il medico legge come 'P(patologia) = 0.88' (dati sintetici).",
+      "storyboard": [
+        "Al caricamento: asse z da -6 a 6 con la sigmoide blu come nel grafico di pag. 11 (tick 0.5 e 1 sull'asse verticale); in alto un tracciato ECG sintetico con il suo punteggio z = 0.",
+        "Trascinamento di z: il punto scorre sulla curva in tempo reale e un indicatore a lancetta ruota (spring di 200 ms) sull'uscita in [0,1]: z = 0 → 0.5, z = 2 → 0.88, z = -2 → 0.12.",
+        "Una retta tangente segue il punto e ruota con continuità, senza salti; accanto la pendenza σ'(z) = σ(z)(1 - σ(z)) come numero (0.25 in z = 0, 0.105 in z = ±2).",
+        "Una soglia orizzontale a 0.5 colora il tracciato di verde (sano) o di rosso (patologia), con una transizione di colore di 250 ms quando ŷ la attraversa.",
+        "Pulsante 'valori estremi': z salta a +50 e poi a -50 (animazione di 600 ms): l'uscita si avvicina a 1 e a 0 ma resta sempre dentro l'intervallo, mai oltre.",
+        "Pulsante 'nuovo tracciato ECG': un nuovo tracciato sintetico scorre in 800 ms e porta con sé un nuovo punteggio z, che riposiziona il punto sulla curva."
+      ],
+      "interactions": [
+        "trascinamento di z sull'asse da -6 a 6 (±50 con il pulsante 'valori estremi')",
+        "pulsante 'nuovo tracciato ECG' (12 tracciati sintetici a seme fisso)",
+        "slider della soglia di decisione da 0.05 a 0.95",
+        "pulsante 'valori estremi'"
+      ],
+      "visual": "SVG con sigmoide blu, punto mobile, tangente, indicatore probabilistico, tracciato ECG colorato secondo la decisione, formula con valori sostituiti.",
+      "aha": "La sigmoide schiaccia qualunque numero in (0,1) in modo liscio: perfetta per leggere l'uscita come probabilità e per la discesa del gradiente.",
+      "formulasShown": [
+        "\\sigma(z) = \\frac{1}{1+e^{-z}}",
+        "\\sigma'(z) = \\sigma(z)\\left(1-\\sigma(z)\\right)",
+        "\\sigma(2) = \\frac{1}{1+e^{-2}} = \\frac{1}{1.135} \\approx 0.88, \\qquad \\sigma'(2) = 0.88\\cdot 0.12 \\approx 0.105"
+      ],
+      "challenge": "Trova il punteggio z per cui il modello dichiara il 95% di probabilità di patologia (soluzione: z = ln(0.95/0.05) = ln 19 ≈ 2.94).",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d01-saturazione-sigmoide-tanh",
+      "title": "Saturazione: quando il gradiente muore nelle code",
+      "concepts": ["c47", "c48", "c49", "c53"],
+      "scenario": "medicina",
+      "realExample": "Feature ECG non normalizzate (frequenza cardiaca 40-180 bpm, intervalli in millisecondi) date direttamente a neuroni sigmoide: quasi tutti gli ingressi finiscono nelle zone piatte, il gradiente sparisce e la rete non impara (dati sintetici).",
+      "storyboard": [
+        "Al caricamento: sigmoide con la derivata tratteggiata come nel grafico di pag. 11 (picco 0.25 in z = 0); sotto l'asse z un istogramma di 500 pre-attivazioni sintetiche calcolate da feature ECG non normalizzate (frequenza cardiaca, intervalli), con scala 1.",
+        "Slider 'scala degli input': l'istogramma si allarga in tempo reale; i campioni con σ'(z) < 0.01 (|z| > 4.6) diventano grigi con l'etichetta 'saturato, σ' ≈ 0' e un contatore mostra la percentuale saturata.",
+        "L'indicatore 'gradiente medio' (media di σ'(z) sui 500 campioni) scende con una barra animata man mano che la nuvola si allarga.",
+        "Pannello catena, trigger 'Backprop': un pacchetto di gradiente parte dall'uscita con valore 1 e viaggia all'indietro, 500 ms per layer, rimpicciolendosi a ogni layer del fattore σ'(z^{(l)}) ≤ 0.25; il valore numerico è scritto sul pacchetto: dopo 5 layer è al più 0.001.",
+        "Toggle tanh: curva e derivata si trasformano (morph di 600 ms) nella tanh con picco della derivata 1; con ingressi vicini a 0 il pacchetto arriva molto più lontano, ma con una scala degli input grande anche la tanh satura.",
+        "Pulsante 'normalizza gli input': l'istogramma si ricompatta attorno a zero (600 ms) e il gradiente medio risale."
+      ],
+      "interactions": [
+        "slider scala degli input da 0.5 a 50 (scala logaritmica)",
+        "toggle sigmoide / tanh",
+        "slider numero di layer L da 1 a 10",
+        "pulsanti 'Backprop' e 'normalizza gli input'"
+      ],
+      "visual": "SVG con curva e derivata, istogramma degli ingressi colorato per zona (attiva/saturata), catena di layer con pacchetto di gradiente che si rimpicciolisce e valore numerico del prodotto.",
+      "aha": "Sigmoide e tanh sono sensibili solo vicino a zero: fuori la derivata è quasi nulla e, moltiplicata layer dopo layer, il gradiente muore.",
+      "formulasShown": [
+        "\\sigma'(z) = \\sigma(z)\\left(1-\\sigma(z)\\right) \\le \\frac{1}{4}",
+        "\\tanh'(z) = 1-\\tanh^2 z \\le 1",
+        "\\prod_{l=1}^{L}\\sigma'\\left(z^{(l)}\\right) \\le \\left(\\frac{1}{4}\\right)^{L}",
+        "\\left(\\tfrac{1}{4}\\right)^{5} = \\tfrac{1}{1024} \\approx 0.00098"
+      ],
+      "challenge": "Anche con ingressi perfettamente centrati in 0 (σ' = 1/4 in ogni layer), dopo quanti layer sigmoide il gradiente scende sotto 10^{-4}? Prevedilo e verificalo con lo slider (soluzione: L = 7, perché (1/4)^6 ≈ 2.4·10^{-4} e (1/4)^7 ≈ 6.1·10^{-5}). Con la tanh nelle stesse condizioni succede mai? (no: tanh'(0) = 1).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d01-tanh-centrata-in-zero",
+      "title": "Tanh: una sigmoide stirata e centrata in zero",
+      "concepts": ["c50", "c51", "c52", "c54", "c60"],
+      "scenario": "sensori",
+      "realExample": "Letture di temperatura normalizzate (media 0) passano per un layer di 50 neuroni: con tanh le attivazioni restano centrate in zero, con sigmoide o ReLU sono tutte positive. Se gli ingressi di un layer sono tutti positivi, i gradienti dei suoi pesi hanno lo stesso segno e l'aggiornamento procede a zig-zag (spiegazione standard del vantaggio 'centered in zero').",
+      "storyboard": [
+        "Al caricamento: la sigmoide blu di pag. 11 da sola, su assi z ∈ [-4, 4] e y ∈ [-1, 1].",
+        "Pulsante Play del morphing (tre tempi da 600 ms): la curva si comprime in orizzontale di 2 (σ(2z)), si stira in verticale di 2 (2σ(2z)) e scende di 1 (2σ(2z) - 1), diventando la tanh rossa di pag. 12; a ogni tempo si scrive la trasformazione applicata.",
+        "Una tangente scorre lungo la tanh seguendo il mouse e ruota senza salti (derivabile e continua); la pendenza 1 - tanh² z è mostrata come numero (1 in z = 0, 0.42 in z = 1).",
+        "Curve sovrapposte di sigmoide, tanh e ReLU con le derivate tratteggiate: i picchi 0.25 e 1 sono marcati.",
+        "Istogramma di 1000 letture di temperatura normalizzate (media 0) e, sotto, gli istogrammi delle uscite dopo ciascuna attivazione, che si formano in 500 ms; un marcatore mostra la media: 0.5 per la sigmoide, 0 per la tanh, circa 0.4 per la ReLU.",
+        "Pannello a due pesi del layer successivo, trigger 'Aggiorna': con ingressi tutti positivi (sigmoide o ReLU) la traiettoria dei pesi zigzaga verso il minimo (20 passi da 100 ms) perché i gradienti hanno lo stesso segno; con ingressi centrati (tanh) va quasi dritta."
+      ],
+      "interactions": [
+        "pulsante Play del morphing sigmoide → tanh",
+        "selettore attivazione: sigmoide / tanh / ReLU",
+        "slider media degli ingressi da -2 a 2",
+        "trascinamento della tangente lungo la curva",
+        "pulsante Aggiorna (20 passi di discesa nel pannello a due pesi)"
+      ],
+      "visual": "SVG con curve colorate come nelle figure (blu sigmoide, rosso tanh, verde ReLU), istogrammi con media marcata, mini mappa di livello con traiettoria di aggiornamento.",
+      "aha": "La tanh ha la stessa forma della sigmoide ma uscite in [-1, 1] a media zero e derivata massima 1; sigmoide e ReLU invece producono uscite tutte positive.",
+      "formulasShown": [
+        "\\tanh z = \\frac{e^{z}-e^{-z}}{e^{z}+e^{-z}}",
+        "\\tanh z = 2\\sigma(2z)-1",
+        "\\tanh'(0) = 1",
+        "\\tanh(1) = \\frac{e - e^{-1}}{e + e^{-1}} = \\frac{2.350}{3.086} \\approx 0.76, \\qquad 1 - \\tanh^2(1) \\approx 0.42"
+      ],
+      "challenge": "Quale attivazione dà la traiettoria di aggiornamento più corta verso il minimo? Prevedilo prima di provarlo (atteso: la tanh, perché le sue uscite sono centrate in zero; sigmoide e ReLU producono ingressi tutti positivi e quindi lo zig-zag).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d01-relu-autostrada-del-gradiente",
+      "title": "ReLU: l'autostrada del gradiente",
+      "concepts": ["c55", "c56", "c57", "c58", "c63"],
+      "scenario": "immagini",
+      "realExample": "Classificatore di immagini per la guida autonoma (auto contro pedone) con 10 hidden layer: si confronta quanto gradiente arriva ai primi layer con sigmoide o con ReLU e quanto velocemente scende la loss (curve sintetiche).",
+      "storyboard": [
+        "Al caricamento: grafico della ReLU verde con la derivata tratteggiata a gradino, come a pag. 13.",
+        "Pannello catena di 10 layer, trigger 'Backprop': pacchetti di gradiente partono dall'uscita con valore 1 e viaggiano all'indietro, 300 ms per layer; con la sigmoide si rimpiccioliscono a ogni layer (×σ' ≤ 0.25), con la ReLU passano intatti (×1) nei neuroni attivi e si fermano (×0) in quelli spenti; il valore arrivato al primo layer è scritto in grande.",
+        "Contatore 'neuroni spenti' per layer (circa la metà con ingressi centrati): le attivazioni sono sparse e il calcolo si riduce a un confronto con 0 e a una moltiplicazione per 1 o 0 (la limitazione non positiva).",
+        "Grafico delle loss (curve sintetiche precalcolate, 50 epoche disegnate in 2 s): con la ReLU la loss scende molto prima che con la sigmoide.",
+        "Zoom sull'origine (animazione di 500 ms): l'angolo in z = 0; toggle derivata unilaterale sinistra (0) / destra (1): la curva di addestramento non cambia di un pixel.",
+        "Pulsante 'campiona 10^6 ingressi': un contatore corre per 1 s su un milione di pre-attivazioni float32 e mostra quante valgono esattamente 0: risultato 0, il punto non derivabile in pratica non si incontra."
+      ],
+      "interactions": [
+        "toggle attivazione sigmoide / ReLU",
+        "slider profondità da 2 a 10 layer",
+        "toggle derivata unilaterale in 0 (sinistra 0 / destra 1)",
+        "pulsanti 'Backprop' e 'campiona 10^6 ingressi'"
+      ],
+      "visual": "SVG con curva e derivata, catena di layer con pacchetti animati, grafico delle loss affiancato, riquadro di zoom sull'angolo.",
+      "aha": "Quando è attiva, la ReLU ha derivata 1: il gradiente passa intatto e l'addestramento accelera; il punto non derivabile in 0 in pratica non conta.",
+      "formulasShown": [
+        "\\text{ReLU}(z) = \\max(0, z)",
+        "\\text{ReLU}'(z) = \\begin{cases} 1 & z > 0 \\\\ 0 & z < 0 \\end{cases}",
+        "0.25^{10} \\approx 9.5\\cdot 10^{-7}\\ (\\text{sigmoide}), \\qquad 1^{10} = 1\\ (\\text{ReLU attiva})"
+      ],
+      "challenge": "Prevedi a quale profondità il gradiente che arriva al primo layer sigmoide scende sotto 1/1000 anche nel caso migliore (soluzione: L = 5, perché (1/4)^5 = 1/1024), poi verifica che con la ReLU, lungo un cammino di neuroni attivi, resta 1 a ogni profondità.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d01-dying-relu",
+      "title": "Dying ReLU: salva i neuroni prima che muoiano",
+      "concepts": ["c59", "c61", "c62"],
+      "scenario": "cifre",
+      "realExample": "Layer di 32 neuroni ReLU in una rete per cifre scritte a mano: con un learning rate troppo alto un aggiornamento spinge pesi e bias nella zona negativa, i neuroni danno sempre 0 e smettono di imparare (simulazione sintetica).",
+      "storyboard": [
+        "Al caricamento: griglia 4×8 di 32 neuroni ReLU di un layer per cifre scritte a mano, colorati secondo la frazione di immagini di training per cui sono attivi (verde acceso = sempre attivo, grigio = morto); contatore 'neuroni morti: 0/32'.",
+        "Play dell'addestramento (simulazione sintetica a seme fisso, un'epoca ogni 300 ms per 30 epoche) con learning rate η = 0.01: i neuroni restano per lo più verdi e la loss scende.",
+        "Slider η portato a 0.5 e Play: al primo grande aggiornamento molti neuroni sfumano in grigio (transizione di 400 ms) e il contatore segna 'neuroni morti: 14/32'; la curva della loss si appiattisce.",
+        "Clic su un neurone morto: si apre (300 ms) l'istogramma delle sue pre-attivazioni z = w^T x + b sulle immagini di training, tutto a sinistra dello zero, e la freccia del gradiente è nulla (∂ReLU/∂z = 0).",
+        "Toggle dei rimedi, uno alla volta, con riaddestramento automatico: 'bias iniziale 0.1' (all'avvio più neuroni verdi), 'SGD a mini-batch' contro batch intero, 'Leaky ReLU' (α = 0.01: i neuroni grigi ricominciano lentamente a colorarsi perché il gradiente per z < 0 vale α)."
+      ],
+      "interactions": [
+        "slider learning rate η da 0.001 a 1 (scala logaritmica)",
+        "toggle bias iniziale 0 / 0.1",
+        "toggle SGD a mini-batch (32 esempi) / batch intero",
+        "toggle ReLU / Leaky ReLU (α = 0.01)",
+        "clic su un neurone per vederne l'istogramma",
+        "pulsanti Play / Pausa / Reset"
+      ],
+      "visual": "Griglia SVG di neuroni con colori di attività, contatore dei morti, istogramma delle pre-attivazioni con linea dello zero, curva della loss.",
+      "aha": "Un neurone ReLU sempre negativo non riceve più gradiente e non si riprende: learning rate moderato, bias iniziale piccolo positivo o una variante leaky lo tengono vivo.",
+      "formulasShown": [
+        "z < 0 \\;\\forall\\, \\mathbf{x} \\Rightarrow \\frac{\\partial\\,\\text{ReLU}(z)}{\\partial z} = 0",
+        "\\mathbf{w} \\leftarrow \\mathbf{w} - \\eta\\,\\nabla_{\\mathbf{w}} J",
+        "b^{(0)} = 0.1",
+        "z = \\mathbf{w}^T\\mathbf{x} + b = -1.3 < 0 \\;\\Rightarrow\\; \\text{ReLU}(z) = 0, \\quad \\frac{\\partial\\,\\text{ReLU}}{\\partial z} = 0"
+      ],
+      "challenge": "Trova il learning rate più alto che non uccide più di 2 neuroni su 32 (simulazione a seme fisso); poi attiva il bias iniziale 0.1 e verifica di quanto puoi alzarlo.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d01-famiglia-relu-generalizzata",
+      "title": "La famiglia delle ReLU generalizzate: chi decide α?",
+      "concepts": ["c64", "c65", "c66", "c67", "c68", "c73"],
+      "scenario": "immagini",
+      "realExample": "Rete per classificare immagini di oggetti (tipo ImageNet, simulazione sintetica): confronto tra ReLU, Leaky ReLU (α = 0.01), Parametric ReLU (α imparato) e Randomized ReLU (α casuale in training, fisso in test).",
+      "storyboard": [
+        "Al caricamento: grafico di h(z, α) su z ∈ [-1, 1] con α = 0 (ReLU) e la derivata tratteggiata grigia, nello stile delle figure di pag. 13-14.",
+        "Slider α: la retta per z < 0 ruota in tempo reale e il livello sinistro della derivata sale ad α; con α = 1 la curva diventa la retta identità e compare l'etichetta 'non più una non linearità'.",
+        "Modalità Leaky: α si blocca a 0.01 (animazione di 400 ms); uno zoom ×50 sul semiasse negativo mostra la pendenza minuscola ma non nulla (h(-2) = -0.02).",
+        "Modalità Parametric, pulsante Play: addestramento sintetico di 40 passi da 100 ms; α è un parametro della rete e si sposta (es. da 0.25 a 0.08) mentre la loss scende nel riquadro.",
+        "Modalità Randomized: in training, a ogni mini-batch (ogni 250 ms), α salta a un valore casuale nell'intervallo fisso [1/8, 1/3] e la curva vibra; con il toggle 'test' α si ferma al valore costante (1/8 + 1/3)/2 ≈ 0.23 (convenzione di PyTorch; la fonte dice solo 'costante').",
+        "Un contatore di costo per attivazione (operazioni per neurone) e una tabellina 'meglio della ReLU?' con esiti misti: le generalizzate non sono gratis e non battono sempre la ReLU."
+      ],
+      "interactions": [
+        "slider α da 0 a 1 (passo 0.01)",
+        "selettore modalità: ReLU / Leaky / Parametric / Randomized",
+        "toggle training / test",
+        "pulsante Play dell'addestramento"
+      ],
+      "visual": "SVG con curva verde scuro e derivata tratteggiata grigia come le figure di pag. 13-14, riquadro di zoom, valore di α live, piccolo grafico della loss, contatore di costo.",
+      "aha": "Una sola formula h(z, α) genera tutta la famiglia: cambia solo chi decide α (fisso, imparato, casuale), e ogni α ≠ 0 lascia passare un po' di gradiente per z < 0.",
+      "formulasShown": [
+        "h(z, \\alpha_i) = \\max(0, z_i) + \\alpha_i \\min(0, z_i)",
+        "\\text{Leaky ReLU}(z) = \\max(\\alpha \\cdot z, z)",
+        "h'(z) = \\begin{cases} 1 & z > 0 \\\\ \\alpha & z < 0 \\end{cases}",
+        "h(-2, 0.01) = \\max(0, -2) + 0.01\\cdot\\min(0, -2) = -0.02"
+      ],
+      "challenge": "Per quale valore di α la ReLU generalizzata smette di essere una non linearità? (risposta: α = 1, h(z) = z; e per quali α la scrittura max(α·z, z) del grafico coincide con h(z, α)? per 0 ≤ α ≤ 1).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d01-elu-swish-gelu",
+      "title": "ELU, Swish e GELU: smussare l'angolo della ReLU",
+      "concepts": ["c69", "c70", "c71", "c72"],
+      "scenario": "traduzione",
+      "realExample": "Le attivazioni dei modelli moderni: GELU nei transformer come BERT e GPT-3 (traduzione, sentiment delle recensioni), Swish nelle reti profonde per ImageNet, ELU come ReLU senza neuroni morti.",
+      "storyboard": [
+        "Al caricamento: curve sovrapposte su z ∈ [-4, 4]: ReLU (grigio), ELU con α = 1 (verde), Swish (blu), GELU (viola).",
+        "Pulsante 'zoom sul negativo' (animazione di 500 ms su z ∈ [-4, 0]): la ELU scende dolcemente verso -α (asintoto tratteggiato); Swish e GELU scendono sotto lo zero e poi risalgono verso 0 (non monotone), con i minimi marcati (Swish ≈ -0.28 in z ≈ -1.28, GELU ≈ -0.17 in z ≈ -0.75).",
+        "Pannello derivate: per z < 0 la ReLU ha derivata 0, la ELU α e^z > 0; l'hover su un punto mostra valore e derivata di tutte le curve; Swish e GELU sono lisce anche in 0.",
+        "Pannello 'forma di pag. 15': toggle tra la ELU scritta come nella fonte (α·exp(z) - 1) e la forma standard α(exp(z) - 1); con lo slider α ≠ 1 la forma della fonte mostra un salto in z = 0 (α - 1 contro 0) evidenziato in rosso, mentre la forma standard resta continua.",
+        "Contatore di costo: ELU, Swish e GELU richiedono un esponenziale (o la CDF gaussiana Φ) per ogni attivazione; badge 'usata in BERT / GPT-3' sulla GELU e 'ImageNet' sulla Swish."
+      ],
+      "interactions": [
+        "slider α della ELU da 0.1 a 2",
+        "toggle delle singole curve",
+        "toggle forma della fonte / forma standard della ELU",
+        "hover per leggere valore e derivata",
+        "pulsante 'zoom sul negativo'"
+      ],
+      "visual": "SVG con curve colorate distinte, riquadro di zoom sul negativo, pannello derivate, badge 'usata in BERT/GPT-3' su GELU e 'ImageNet' su Swish.",
+      "aha": "Le alternative moderne smussano l'angolo della ReLU e lasciano passare un po' di segnale negativo: più gradiente e niente neuroni morti, al prezzo di un esponenziale.",
+      "formulasShown": [
+        "\\text{ELU}(z) = \\begin{cases} \\alpha(e^{z}-1) & z < 0 \\\\ z & z \\ge 0 \\end{cases}",
+        "\\text{Swish}(z) = z\\,\\sigma(z)",
+        "\\text{GELU}(z) = z\\,\\Phi(z)",
+        "\\text{ELU}(-1)\\big|_{\\alpha=1} = e^{-1} - 1 \\approx -0.63, \\qquad \\text{Swish}(-1.28) = -1.28\\cdot\\sigma(-1.28) \\approx -0.28"
+      ],
+      "challenge": "Tra Swish e GELU, quale ha il minimo più profondo e dove? Indovinalo prima di attivare lo zoom (risposta: Swish, circa -0.28 in z ≈ -1.28, contro circa -0.17 in z ≈ -0.75 per la GELU). Perché la ELU invece non ha un minimo ma solo un asintoto a -α?",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d01-atlante-attivazioni",
+      "title": "Atlante delle attivazioni: disegnale come all'orale",
+      "concepts": ["c43", "c44", "c50", "c55", "c66", "c70"],
+      "scenario": "cifre",
+      "realExample": "Ripasso per la domanda d'esame reale 'Activation function and their diagram along with explanation all which we studied': per i layer di una rete per cifre scritte a mano (hidden, uscita binaria 'è un 7?', uscita a 10 classi) scegliere l'attivazione e giustificarla.",
+      "storyboard": [
+        "Al caricamento: galleria di 5 carte (Sigmoid, Tanh, ReLU, Leaky ReLU, ELU) con grafico, derivata tratteggiata e formula negli stessi colori delle pagine 11-15; le carte entrano con stagger di 80 ms.",
+        "Clic su una carta: si ingrandisce (400 ms) e mostra pro e contro della fonte in due colonne, come le tabelle 'Benefits and Limitations'.",
+        "Modalità disegno: assi vuoti con tick -1, 0, 1 e 0.5; l'utente traccia a mano la funzione e poi la derivata; al rilascio la curva vera si sovrappone con un tratto che si disegna in 800 ms e un punteggio (0-100) misura l'area di scarto.",
+        "Tabella quiz: per ogni funzione intervallo d'uscita, centrata in zero?, satura?, neuroni morti?, costo; l'utente compila e al 'rivela' le celle si colorano di verde o di rosso con stagger di 50 ms.",
+        "Selettore di layer (hidden / uscita binaria 'è un 7?' / uscita a 10 classi / uscita di regressione): l'atlante evidenzia in 300 ms l'attivazione consigliata con il motivo (ReLU negli hidden, sigmoide per il binario, softmax per le 10 classi, lineare per la regressione)."
+      ],
+      "interactions": [
+        "clic sulle carte della galleria",
+        "disegno a mano libera con mouse o dito (funzione, poi derivata)",
+        "compilazione della tabella quiz e pulsante 'rivela'",
+        "selettore del layer"
+      ],
+      "visual": "Galleria SVG di mini-grafici, canvas per il disegno con sovrapposizione della curva vera, tabella con celle che si colorano al reveal.",
+      "aha": "Ogni attivazione è un compromesso tra intervallo d'uscita, saturazione, centratura, neuroni morti e costo: la scelta di h dipende dal layer e dal problema.",
+      "formulasShown": [
+        "\\frac{1}{1+e^{-z}}",
+        "\\tanh z = \\frac{e^{z}-e^{-z}}{e^{z}+e^{-z}}",
+        "\\max(0, z)",
+        "\\max(\\alpha \\cdot z, z)",
+        "\\text{Sigmoid}(0) = 0.5, \\quad \\text{Sigmoid}'(0) = 0.25, \\quad \\tanh'(0) = 1, \\quad \\text{ReLU}'(z>0) = 1"
+      ],
+      "challenge": "Disegna a memoria la sigmoide e la sua derivata: il punteggio premia il picco della derivata al posto giusto (0.25 in z = 0).",
+      "size": "L",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "d01-approssimatore-universale",
+      "title": "L'approssimatore universale: torri di sigmoidi",
+      "concepts": ["c75", "c76"],
+      "scenario": "energia",
+      "realExample": "Approssimare la curva giornaliera della radiazione solare (funzione continua sull'intervallo compatto 0-24 ore, dati sintetici) con una rete a un solo hidden layer e uscita lineare, aumentando il numero di neuroni nascosti.",
+      "storyboard": [
+        "Al caricamento: la curva target della radiazione solare su [0, 24] ore (sintetica, normalizzata con massimo 1) con una banda ±ε attorno (ε = 0.05).",
+        "Modalità costruttiva, slider M: ogni coppia di sigmoidi ripide (w = 50) forma un 'gradino su e gradino giù', cioè una torre; le torri compaiono una alla volta (stagger di 100 ms) e si sommano come un istogramma; l'approssimazione F(x) si aggiorna, l'errore massimo sup|F - f| è scritto live e, quando F entra nella banda, la banda diventa verde.",
+        "Modalità addestrata, pulsante Addestra: la stessa rete con M neuroni parte da pesi casuali e scende con la discesa del gradiente (500 iterazioni in circa 5 s); con alcuni semi resta bloccata con errore alto e compare il badge 'esiste la soluzione, ma l'algoritmo non la trova'.",
+        "Modalità pochi dati: restano solo 8 campioni (gli altri punti sfumano in 400 ms); la rete addestrata li interpola ma oscilla tra un campione e l'altro.",
+        "Selettore di funzioni sempre più frastagliate (giornata limpida, con nuvole, con nuvole a raffica): il contatore 'M necessari per ε = 0.05' cresce senza un limite noto a priori."
+      ],
+      "interactions": [
+        "slider M da 1 a 50 neuroni nascosti",
+        "slider ε da 0.01 a 0.2",
+        "selettore modalità: costruttiva / addestrata / pochi dati",
+        "selettore della funzione target (3 livelli di frastagliatura)",
+        "pulsanti Addestra / Nuovo seme"
+      ],
+      "visual": "SVG con curva target, banda ε ombreggiata, singole sigmoidi e torri semitrasparenti, curva approssimante in evidenza, valore numerico dell'errore massimo e di M.",
+      "aha": "Una rete con un solo hidden layer abbastanza largo può rappresentare qualsiasi funzione continua, ma il teorema non dice quanti neuroni servono né garantisce che l'addestramento li trovi.",
+      "formulasShown": [
+        "F(x) = \\sum_{j=1}^{M} v_j\\,\\sigma(w_j x + b_j)",
+        "\\sup_{x \\in [0,24]} |F(x) - f(x)| < \\varepsilon",
+        "\\text{torre}_{[10,12]}(x) = 0.6\\left[\\sigma\\left(50(x-10)\\right) - \\sigma\\left(50(x-12)\\right)\\right]"
+      ],
+      "challenge": "Con quante torri riesci a stare dentro la banda ε = 0.05? Batti la rete addestrata usando meno neuroni.",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d01-profondita-vs-larghezza",
+      "title": "Profondità o larghezza? Stesso budget, reti diverse",
+      "concepts": ["c74", "c77", "c78"],
+      "scenario": "cifre",
+      "realExample": "Stesso numero di parametri, due architetture: rete larga e bassa contro rete stretta e profonda su una funzione a dente di sega (sintetica) e su cifre 28×28; poi confronto dei parametri del primo layer tra una rete feedforward e una CNN sulle stesse immagini.",
+      "storyboard": [
+        "Al caricamento: slider del budget di parametri (50); due reti disegnate affiancate con lo stesso conteggio, una larga a 1 hidden layer e una stretta a molti layer, con il conteggio scritto sotto ciascuna.",
+        "Target a dente di sega su [0, 1], pulsante 'piega': la rete profonda con 2 neuroni ReLU per layer applica la mappa a tenda T(x) layer dopo layer (una piega ogni 600 ms) e i denti raddoppiano a ogni layer (1, 2, 4, 8, 16); la rete larga aggiunge un tratto lineare per neurone. Un contatore mostra i tratti lineari di entrambe.",
+        "Toggle 'dati di training' (60 000 contro 500 esempi) e 'risorse' (FLOP disponibili): l'indicatore di architettura consigliata cambia con una transizione di 300 ms e una frase di motivo.",
+        "Toggle FFN / CNN su un'immagine 28×28: il primo layer denso con 128 neuroni si disegna come un fascio di 784·128 = 100 352 connessioni (densità di linee), il primo layer convoluzionale con 32 filtri 3×3 come 32 piccoli riquadri che scorrono sull'immagine (1 s) con 3·3·32 = 288 pesi (+32 bias)."
+      ],
+      "interactions": [
+        "slider budget di parametri da 20 a 500",
+        "slider profondità da 1 a 8 (la larghezza si adatta per mantenere il budget)",
+        "toggle quantità di dati (500 / 60 000) e risorse (bassa / alta)",
+        "toggle FFN / CNN",
+        "pulsante 'piega'"
+      ],
+      "visual": "SVG con le due reti affiancate, grafico target con le due approssimazioni lineari a tratti, contatore dei tratti lineari, pannello con conteggio dei parametri FFN vs CNN.",
+      "aha": "La profondità compone trasformazioni e moltiplica la complessità esprimibile, ma la scelta dipende da problema, dati e risorse; e l'architettura giusta (es. CNN per le immagini) conta quanto le dimensioni.",
+      "formulasShown": [
+        "\\#\\text{pesi}_{\\text{FFN}} = 784 \\cdot 128 = 100\\,352",
+        "\\#\\text{pesi}_{\\text{CNN}} = 3 \\cdot 3 \\cdot 32 = 288",
+        "T(x) = 2\\,\\text{ReLU}(x) - 4\\,\\text{ReLU}(x - 0.5), \\qquad T^{(k)} = \\underbrace{T\\circ\\cdots\\circ T}_{k} \\text{ ha } 2^{k-1} \\text{ denti}"
+      ],
+      "challenge": "Quanti layer da 2 neuroni ReLU servono per un dente di sega con 16 denti, e quanti neuroni servirebbero a una rete con un solo hidden layer? (soluzione: 5 layer, perché T^{(5)} ha 2^4 = 16 denti; la rete larga deve creare 31 punti di rottura, quindi almeno 31 neuroni).",
+      "size": "M",
+      "tech": "svg+motion"
+    }
+  ],
+  "exercises": [
+    {
+      "id": "es01",
+      "title": "Softmax, cross-entropy e gradiente a partire dai logit",
+      "type": "numerico",
+      "description": "Dati i logit z = (2.0, 1.0, 0.1) di un classificatore a 3 classi e la classe vera c = 1: calcolare le probabilità softmax, la categorical cross-entropy e il gradiente rispetto ai logit. Soluzione: e^2 = 7.389, e^1 = 2.718, e^{0.1} = 1.105, somma 11.213; ŷ = (0.659, 0.242, 0.099); L = -ln 0.659 = 0.417; ∂L/∂z = ŷ - y = (-0.341, 0.242, 0.099). Con c = 3: L = -ln 0.099 = 2.317. Randomizzabili: numero di classi K tra 3 e 10, logit uniformi in [-3, 3], classe vera; soluzione calcolata con la formula della softmax e L = -log ŷ_c.",
+      "concepts": ["c25", "c38", "c41"]
+    },
+    {
+      "id": "es02",
+      "title": "Binary cross-entropy: sicuro e giusto, sicuro e sbagliato",
+      "type": "numerico",
+      "description": "Un filtro spam produce ŷ = 0.9 per un'email. Calcolare la BCE se l'email è spam (y = 1: L = -ln 0.9 = 0.105) e se è ham (y = 0: L = -ln 0.1 = 2.303). Poi calcolare il gradiente rispetto al logit, σ(z) - y (-0.1 e 0.9). Randomizzabili: ŷ in (0.01, 0.99) e y in {0, 1}.",
+      "concepts": ["c26", "c34"]
+    },
+    {
+      "id": "es03",
+      "title": "MSE, MAE e Huber sugli stessi residui",
+      "type": "numerico",
+      "description": "Residui r = (0.5, -1, 0.2, 8) (l'ultimo è un outlier), δ = 1. MSE = (0.25 + 1 + 0.04 + 64)/4 = 16.32; MAE = (0.5 + 1 + 0.2 + 8)/4 = 2.425; Huber: 0.125, 0.5 (|r| = δ, ramo quadratico), 0.02, 1·(8 - 0.5) = 7.5, media = 2.036. Osservare quanto l'outlier pesa in ciascuna loss. Randomizzabili: 4-10 residui gaussiani con un outlier di ampiezza 5-20, δ tra 0.5 e 3.",
+      "concepts": ["c27", "c29", "c31", "c32"]
+    },
+    {
+      "id": "es04",
+      "title": "Contare i parametri di una rete feedforward",
+      "type": "numerico",
+      "description": "Per la rete della figura di pag. 6 (4-3-3-3-2) contare pesi e bias: 36 + 11 = 47. Generalizzazione: con dimensioni n_0, n_1, ..., n_L il totale è Σ_{l=1}^{L} (n_{l-1} n_l + n_l). Randomizzabili: numero di layer 2-5 e larghezze 2-128.",
+      "concepts": ["c03", "c05", "c07"]
+    },
+    {
+      "id": "es05",
+      "title": "Valori e derivate delle attivazioni",
+      "type": "numerico",
+      "description": "Calcolare in z = -2, 0, 2 i valori e le derivate di sigmoide (0.119, 0.5, 0.881; 0.105, 0.25, 0.105), tanh (-0.964, 0, 0.964; 0.071, 1, 0.071), ReLU (0, 0, 2; 0, derivata unilaterale, 1) e Leaky ReLU con α = 0.01 (-0.02, 0, 2; 0.01, -, 1). Poi calcolare il limite superiore del prodotto delle derivate della sigmoide su L = 5 layer ((1/4)^5 ≈ 0.00098). Randomizzabili: z e L.",
+      "concepts": ["c44", "c47", "c50", "c55", "c66"]
+    },
+    {
+      "id": "es06",
+      "title": "Log-softmax con logit enormi",
+      "type": "numerico",
+      "description": "Logit z = (1000, 1001, 1002). Spiegare perché la softmax ingenua fallisce in virgola mobile (e^{1000} va in overflow) e calcolare la log-softmax con il trucco log-sum-exp: m = 1002, log(e^{-2} + e^{-1} + 1) = log(1.503) = 0.408, quindi log Softmax = (-2.408, -1.408, -0.408). Randomizzabili: offset comune dei logit e differenze tra di essi.",
+      "concepts": ["c39", "c40"]
+    },
+    {
+      "id": "es07",
+      "title": "Dimostrare σ'(z) = σ(z)(1 - σ(z)) e tanh(z) = 2σ(2z) - 1",
+      "type": "dimostrazione",
+      "description": "Derivare la sigmoide con la regola della catena, riscrivere il risultato in funzione di σ e trovarne il massimo; poi mostrare che la tanh è una sigmoide riscalata e ricavarne la derivata 1 - tanh² z (der02, der03).",
+      "concepts": ["c44", "c47", "c50", "c52"]
+    },
+    {
+      "id": "es08",
+      "title": "Dimostrare che il gradiente della cross-entropy con softmax è ŷ - y",
+      "type": "dimostrazione",
+      "description": "Partendo da L = -Σ y_i log Softmax(z_i) con target one-hot, derivare ∂L/∂z_k = ŷ_k - y_k e usarlo per spiegare i tre vantaggi della log-softmax elencati a pag. 10 (der05).",
+      "concepts": ["c39", "c40", "c41", "c42"]
+    },
+    {
+      "id": "es09",
+      "title": "Dimostrare che due layer lineari equivalgono a uno",
+      "type": "dimostrazione",
+      "description": "Mostrare che y = W2^T(W1^T x + b1) + b2 è un'unica trasformazione affine di x e spiegare perché servono attivazioni non lineari negli hidden layer (der01).",
+      "concepts": ["c04", "c08", "c16", "c36"]
+    },
+    {
+      "id": "es10",
+      "title": "Sigmoide, tanh o ReLU? Confronto ragionato",
+      "type": "concettuale",
+      "description": "Per ciascuna delle tre attivazioni elencare pro e contro come nelle tabelle di pag. 11-13 (intervallo d'uscita, centratura, saturazione, derivabilità, dying ReLU, sensibilità al learning rate) e dire quale usare negli hidden layer di una rete profonda e quale in uscita per un problema binario, motivando.",
+      "concepts": ["c43", "c45", "c47", "c52", "c53", "c56", "c60", "c61"]
+    },
+    {
+      "id": "es11",
+      "title": "Dying ReLU: diagnosi e rimedi",
+      "type": "concettuale",
+      "description": "Spiegare il meccanismo della morte dei neuroni ReLU, il ruolo del learning rate troppo alto e i rimedi citati nella fonte (learning rate adeguato, SGD, bias iniziale piccolo positivo, Leaky/Parametric/Randomized ReLU, ELU).",
+      "concepts": ["c59", "c61", "c62", "c64", "c66", "c69"]
+    },
+    {
+      "id": "es12",
+      "title": "Teorema di Cybenko e scelta dell'architettura",
+      "type": "concettuale",
+      "description": "Enunciare il teorema di approssimazione universale, spiegare perché non garantisce che la rete impari la funzione né indica quanto debba essere grande, e discutere il compromesso profondità/larghezza e il ruolo di dati e risorse computazionali.",
+      "concepts": ["c74", "c75", "c76", "c77", "c78"]
+    },
+    {
+      "id": "es13",
+      "title": "Le tre strade per φ",
+      "type": "concettuale",
+      "description": "Confrontare φ generica (kernel RBF), φ ingegnerizzata e φ imparata dai dati: capacità, generalizzazione, dipendenza dalla conoscenza di dominio, convessità dell'ottimizzazione. Collegare alla differenza tra loss convessa e non convessa.",
+      "concepts": ["c12", "c13", "c14", "c15", "c18"]
+    },
+    {
+      "id": "es14",
+      "title": "Progettare la testa d'uscita",
+      "type": "concettuale",
+      "description": "Per tre problemi (email spam/ham, cifre 0-9, prezzo di una casa) indicare numero di nodi d'uscita, attivazione d'uscita e loss, spiegando perché la scelta della loss non è indipendente dall'unità d'uscita.",
+      "concepts": ["c09", "c10", "c24", "c34", "c35"]
+    },
+    {
+      "id": "es15",
+      "title": "Dimostrare che le cross-entropy sono log-verosimiglianze negative",
+      "type": "dimostrazione",
+      "description": "Scrivere la verosimiglianza di un'etichetta binaria modellata come Bernoulli di parametro ŷ = σ(z) e quella di un'etichetta one-hot modellata come categorica di parametri ŷ_i = Softmax(z_i); mostrare che i loro logaritmi cambiati di segno sono la Binary e la Categorical Cross-Entropy di pag. 8, e che su M esempi indipendenti massimizzare la log-verosimiglianza (pag. 10) equivale a minimizzare la cross-entropy media (der10).",
+      "concepts": ["c25", "c26", "c39", "c41"],
+      "addedBy": "revisore"
+    },
+    {
+      "id": "es16",
+      "title": "Softmax: normalizzazione, rapporti e scala dei punteggi",
+      "type": "numerico",
+      "description": "Punteggi z = (3, 1, 0.2). Calcolare la softmax: e^3 = 20.086, e^1 = 2.718, e^{0.2} = 1.221, somma 24.025, quindi ŷ = (0.836, 0.113, 0.051), che sommano a 1. Verificare che ŷ_1/ŷ_2 = e^{3-1} = e^2 ≈ 7.39. Poi moltiplicare i punteggi per s = 3, z = (9, 3, 0.6): ŷ ≈ (0.9973, 0.0025, 0.0002), la distribuzione si avvicina all'argmax e il rapporto diventa e^6 ≈ 403. Randomizzabili: numero di classi 3-6, punteggi in [-3, 3], scala s tra 0.1 e 5; soluzione con Softmax(z_i) = e^{z_i}/Σ_j e^{z_j} (der11).",
+      "concepts": ["c37", "c38"],
+      "addedBy": "revisore"
+    }
+  ],
+  "examQuestions": [
+    {
+      "text": "Activation function and their diagram along with explanation all which we studied",
+      "prof": "Ricci",
+      "concepts": ["c43", "c44", "c45", "c46", "c47", "c48", "c49", "c50", "c51", "c52", "c53", "c54", "c55", "c56", "c57", "c58", "c60", "c61", "c62", "c63", "c64", "c66", "c67", "c68", "c69", "c70", "c71", "c72", "c73"]
+    },
+    {
+      "text": "Softmax unit",
+      "prof": "Ricci",
+      "concepts": ["c10", "c37", "c38", "c39", "c40", "c41", "c42"]
+    },
+    {
+      "text": "Empirical loss formula and explanation",
+      "prof": "Ricci",
+      "concepts": ["c19", "c23", "c25", "c26", "c27", "c29", "c31"]
+    },
+    {
+      "text": "Why and when to use sigmoid and tanh in LSTM, GRU and Vanilla.",
+      "prof": "Ricci",
+      "concepts": ["c44", "c45", "c47", "c50", "c52", "c53"]
+    },
+    {
+      "text": "Vanila Gradient descent and draw figure",
+      "prof": "Ricci",
+      "concepts": ["c18", "c19", "c20"],
+      "addedBy": "revisore"
+    },
+    {
+      "text": "Design phase of an ML system, difference between supervised and unsupervised classification, some examples of loss functions (for regression), cross-validation (k-fold, leave-one-out), confusion matrix (two-class/multi-class, accuracy, precision, recall). What can we do when the model has low accuracy?",
+      "prof": "Melgani",
+      "concepts": ["c27", "c28", "c29", "c30", "c31", "c32"]
+    },
+    {
+      "text": "Loss function (correlation coefficient - MSE - RMSE-absolute error)",
+      "prof": "Melgani",
+      "concepts": ["c27", "c28", "c29", "c30"]
+    },
+    {
+      "text": "Linear functions for both classification and regression: discriminant functions, classification concept, functional/geometric margin, perceptron, loss function for classification, gradient descent, regression, matrix inversion problem, pseudoinverse, loss function for regression.",
+      "prof": "Passerini",
+      "concepts": ["c11", "c18", "c20", "c23", "c24", "c27"]
+    },
+    {
+      "text": "Non-linear SVM and Kernel machines. Concept of feature map, example (homogeneous polynomial map), revisiting soft-margin SVM using feature maps, SVR definition and proof for Non-Linear soft margin SVM for classification, advantages of using feature maps; question: rule of constant C in soft-margin SVM (what happens if C=0 and if C->+infinity).",
+      "prof": "Passerini",
+      "concepts": ["c12", "c13", "c14", "c15"]
+    }
+  ],
+  "crossLinks": [
+    {"moduleId": "d02-backpropagation", "why": "La discesa del gradiente citata a pag. 8 e il calcolo dei gradienti attraverso la composizione di funzioni sono sviluppati a pag. 16-22; le derivate delle attivazioni (der02, der03, der09) sono gli ingredienti della backpropagation."},
+    {"moduleId": "d03-ottimizzazione", "why": "L'ottimizzatore è uno dei sei elementi da specificare (pag. 8); SGD e il learning rate tornano nei rimedi alla dying ReLU."},
+    {"moduleId": "d04-regolarizzazione", "why": "La regolarizzazione è uno dei sei elementi (pag. 8) contro l'overfitting; RReLU e GELU sono legate a idee di regolarizzazione (rumore, dropout, zone-out)."},
+    {"moduleId": "d05-cnn", "why": "Il design dell'architettura (pag. 15) incide sulle prestazioni: esempio esplicito CNN contro feedforward."},
+    {"moduleId": "d07-rnn", "why": "Sigmoide e tanh tornano nei gate di LSTM e GRU (domanda d'esame 'Why and when to use sigmoid and tanh in LSTM, GRU and Vanilla'); le RNN rompono il vincolo di DAG delle feedforward."},
+    {"moduleId": "d09-transformers", "why": "GELU è l'attivazione di BERT e GPT (pag. 14); softmax torna nel calcolo dell'attention."},
+    {"moduleId": "m21-errore-generalizzazione", "why": "Funzioni di loss per la regressione (MSE, MAE) e rischio empirico nel corso di Melgani."},
+    {"moduleId": "p06-discriminanti-perceptron", "why": "Il perceptron è una singola unità lineare con soglia: i limiti dei modelli lineari discussi a pag. 7."},
+    {"moduleId": "p07-regressione-multiclasse", "why": "Regressione con loss quadratica e classificazione multiclasse lineare, confrontabili con unità lineari e softmax."},
+    {"moduleId": "p10-kernel-trick", "why": "La 'φ generica' di pag. 7 con kernel RBF a dimensionalità implicita infinita è il kernel trick di Passerini."},
+    {"moduleId": "p11-kernel-machines", "why": "Kernel machines come alternativa alle reti: φ fissata e ottimizzazione convessa contro φ imparata e loss non convessa."},
+    {"moduleId": "m05-max-likelihood", "why": "La cross-entropy è la log-verosimiglianza negativa: massimizzare la log-likelihood (pag. 10) è la stima a massima verosimiglianza applicata alle uscite della rete."},
+    {"moduleId": "m17-bayes-map-ml", "why": "Le uscite sigmoide/softmax sono stime delle probabilità a posteriori delle classi, da cui la decisione MAP."}
+  ],
+  "emptyPages": [
+    {"doc": "dl", "page": 1, "reason": "copertina delle dispense (titolo 'Deep Learning, University of Trento', autori Federico Brancasi e Jacopo Manenti), nessun contenuto tecnico"}
+  ],
+  "gaps": [
+    "dl p.6: il testo dice che una rete feedforward è 'a sequence of features', con ogni elemento che rappresenta un layer, ma subito dopo parla di 'composition of these functions': si intende una sequenza di funzioni.",
+    "dl p.6: f^{(1)} è chiamato 'first layer (or input layer)', ma poco sotto si dice che l'input layer non applica calcoli né trasformazioni; non è chiaro se l'input layer conti come funzione della composizione e quindi nella profondità (vedi ex01).",
+    "dl p.7: 'While it is essential to provide only the output of the final layers during training, the hidden layers do not require specific analysis' è formulato in modo ambiguo; l'interpretazione adottata (i dati di training specificano solo il target dell'uscita, non il comportamento degli hidden layer) è quella standard di Goodfellow et al.",
+    "dl p.8: nella Categorical Cross-Entropy l'indice i e N corrono sulle classi (N = numero di classi), mentre in MSE, MAE e Huber N è il numero di esempi; inoltre la CE è scritta per un solo esempio, senza la media sul dataset.",
+    "dl p.9: secondo la fonte la Huber Loss 'avoids problems such as overfitting and steep slope of the MSE curve'; la motivazione standard è la robustezza agli outlier (gradiente limitato), il legame con l'overfitting è solo affermato.",
+    "dl p.11 (corretto dal revisore): nel grafico della sigmoide la scala verticale è esatta (σ(0) = 0.5 e picco della derivata tratteggiata a 0.25, misurato sull'immagine), mentre le etichette dell'asse orizzontale (-1, 0, 1) non sono in unità di z: la curva è già quasi a 1 all'altezza dell'etichetta 0.5 (il valore vero σ(1) è 0.73), quindi l'asse disegnato copre circa z in [-10, 10]. Una versione precedente di questo inventario affermava per errore che il picco della derivata fosse disegnato intorno a 0.4.",
+    "dl p.12: anche il grafico della tanh ha asse orizzontale qualitativo (la tanh sembra saturare a ±1 già a |z| = 1, mentre tanh(1) = 0.76).",
+    "dl p.13: 'the non-positive limitation accelerates the convergence of gradient descent' non è spiegato; 'SDG' è un refuso per SGD; l'affermazione che usare SGD mitighi la dying ReLU è riportata senza motivazione.",
+    "dl p.14: nei punti elenco di Leaky, Parametric e Randomized ReLU il parametro è scritto a_i invece di α_i come nella formula generalizzata; nel grafico della Leaky ReLU la pendenza negativa è visibilmente molto maggiore di 0.01 (per leggibilità): misurata sull'immagine è circa 0.2, sia sulla retta (≈ -0.2 in z = -1) sia sul livello sinistro della derivata tratteggiata (≈ 0.22).",
+    "dl p.14: Swish e GELU sono descritti senza formula; il nome 'Linear Units with Gaussian Error (GELU)' è una resa degli autori di 'Gaussian Error Linear Units'. Le formule standard (z·σ(z), z·Φ(z)) sono riportate solo come integrazione nei dettagli e nei widget.",
+    "dl p.15 (verificatore): la ELU è stampata come 'α·exp(z) - 1' nel primo ramo, senza condizione (z < 0 sottinteso). È un refuso di parentesi: la forma standard è α(exp(z) - 1) per z < 0, ed è quella trascritta nel latex di c70. Con la forma della fonte, per α ≠ 1, la funzione sarebbe discontinua in 0 (α - 1 contro 0), mentre il grafico mostra una curva continua; la derivata disegnata ha invece un salto in 0, coerente con α < 1 nella forma standard. Il grafico non è quantitativamente coerente: la curva vale circa -0.5 in z = -1 (con la forma standard servirebbe α ≈ 0.8), mentre la derivata tratteggiata va da circa 0.18 in z = -1 a circa 0.35 in z → 0⁻ (che corrisponderebbe a un α diverso). Va letto come illustrazione qualitativa: curva liscia che satura verso un valore negativo, derivata positiva per z < 0, salto a 1 in z = 0.",
+    "dl p.15: il teorema di Cybenko è enunciato solo a parole ('two-layer neural network with linear output'); non si specificano le ipotesi sull'attivazione (sigmoidale nell'articolo originale) né la forma della rete; 'data overlap issues' è ambiguo (probabilmente dati insufficienti/sovrapposti o overfitting). L'affermazione 'deeper networks generally generalize better' è presentata come euristica con una metafora, senza giustificazione formale.",
+    "Le derivate delle attivazioni sono disegnate (curve tratteggiate 'Derivative') ma mai scritte in formula nella fonte: le formule in der02, der03 e der09 sono integrazioni esplicative.",
+    "dl p.11-12 (verificatore): la fonte dice che la sigmoide comprime le uscite 'within the range of [0, 1]' e la tanh 'in the interval [-1, 1]'; a rigore le immagini sono gli intervalli aperti (0, 1) e (-1, 1), perché 0, 1 e ±1 sono solo limiti asintotici. Nei latex di c45 e c52 si riporta l'intervallo chiuso scritto nella fonte.",
+    "dl p.14 (verificatore): la forma generalizzata h(z, α_i) = max(0, z_i) + α_i min(0, z_i) mescola z (a sinistra) e z_i (a destra); si intende l'ingresso z_i dell'unità i. La scrittura del grafico max(α·z, z) coincide con essa solo per 0 ≤ α ≤ 1 (der09)."
+  ]
+}

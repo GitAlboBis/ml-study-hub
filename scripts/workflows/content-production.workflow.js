@@ -95,11 +95,22 @@ const FIX = {
   required: ['fixed', 'discarded', 'unresolved', 'gate', 'ok'],
 }
 
+// Limite di agenti contemporanei (args.max). Quando scatta il limite di sessione il lavoro degli agenti in volo si
+// perde: meno agenti in volo = meno lavoro perso. La coda è in ordine di richiesta, quindi rispetta le priorità.
+const MAX = (args && args.max) || 10
+let active = 0
+const waiting = []
+const acquire = () => (active < MAX ? (active++, Promise.resolve()) : new Promise((r) => waiting.push(r)))
+const release = () => { const next = waiting.shift(); if (next) next(); else active-- }
 let failures = 0
 const halted = () => failures >= 3
 const run = async (label, phase, body, schema = TASK) => {
-  if (halted()) return null
-  const r = await agent(`${CTX}\n\n${body}`, { label, phase, schema })
+  await acquire()
+  let r
+  try {
+    if (halted()) return null
+    r = await agent(`${CTX}\n\n${body}`, { label, phase, schema })
+  } finally { release() }
   if (!r) {
     failures++
     log(`Agente fallito: ${label}${halted() ? ' - terzo fallimento: probabile limite di sessione, non lancio altri agenti' : ''}`)

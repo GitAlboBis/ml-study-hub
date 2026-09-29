@@ -1,0 +1,2846 @@
+{
+  "moduleId": "d02-backpropagation",
+  "title": "Discesa del gradiente e backpropagation",
+  "stages": {
+    "inventario": "done",
+    "completezza": "done",
+    "formule": "done"
+  },
+  "pagesReviewed": [
+    {
+      "doc": "dl",
+      "from": 16,
+      "to": 22
+    }
+  ],
+  "overview": "Il modulo apre il capitolo 2 del libro di Deep Learning (corso di Ricci) e risponde alla domanda: come si addestra una rete neurale? Prima la discesa del gradiente (gradient descent): il vettore delle derivate parziali della loss, la direzione di massima discesa data dal gradiente negativo, l'iterazione fino a convergenza o a un numero prefissato di iterazioni, e i due ostacoli di un problema non convesso, i minimi locali e i punti di sella. Poi la backpropagation: perché le idee basate su perturbazioni di pesi o attivazioni erano inefficienti, i tre passi forward / stima dell'errore / propagazione all'indietro, e la derivazione passo per passo con la regola della catena su una rete a un neurone per strato, estesa a più strati (catene lunghe di derivate con il fattore ∂L/∂a^(l−1) riusato) e a più neuroni per strato (indici w_ji e somma sui percorsi), fino all'approccio matriciale. All'orale compaiono richieste come 'Vanila Gradient descent and draw figure' e la differenza tra momentum e discesa del gradiente; la backpropagation è la base di tutti i moduli successivi (ottimizzatori, CNN, RNN, GAN).",
+  "concepts": [
+    {
+      "id": "c01",
+      "name": "Addestramento: discesa del gradiente (stocastica) combinata con la backpropagation",
+      "nameEn": "(Stochastic) Gradient Descent algorithm in combination with Backpropagation",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 16
+        }
+      ],
+      "detail": "Per addestrare efficacemente le reti neurali si usa l'algoritmo di discesa del gradiente (Gradient Descent algorithm), nella versione stocastica (Stochastic, tra parentesi nella fonte), in combinazione con la backpropagation. La backpropagation è un metodo per calcolare i gradienti (a method for computing gradients) ed è cruciale per aggiornare i parametri della rete durante l'addestramento. I due pezzi hanno ruoli distinti: la backpropagation calcola il gradiente, la discesa del gradiente lo usa per spostare i parametri. La fonte presenta prima la discesa del gradiente e il suo significato, poi la backpropagation (le varianti batch, stocastica e mini-batch sono nel modulo d03).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c02",
+      "name": "Discesa del gradiente: definizione e obiettivo",
+      "nameEn": "Gradient Descent is a fundamental optimization algorithm used to minimize the loss function of a neural network by iteratively adjusting its parameters",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 16
+        }
+      ],
+      "detail": "La discesa del gradiente è un algoritmo di ottimizzazione fondamentale (fundamental optimization algorithm) usato per minimizzare la funzione di loss (loss function) di una rete neurale regolandone iterativamente i parametri (iteratively adjusting its parameters). L'obiettivo è trovare l'insieme ottimo di parametri (optimal set of parameters) che dà la loss più bassa possibile (lowest possible loss). L'algoritmo lavora muovendosi iterativamente nella direzione di massima discesa della loss rispetto ai parametri (c03). È un metodo locale: a ogni passo usa solo l'informazione del gradiente nel punto corrente.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c03",
+      "name": "Direzione di massima discesa = gradiente negativo (il segno meno)",
+      "nameEn": "direction of the steepest descent of the loss function; negative gradient",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 16
+        },
+        {
+          "doc": "dl",
+          "page": 23
+        }
+      ],
+      "detail": "L'algoritmo si muove nella direzione di massima discesa della loss (direction of the steepest descent of the loss function, in grassetto) rispetto ai parametri. Questa direzione è determinata dal gradiente negativo (negative gradient, in grassetto) della loss: per questo nell'algoritmo si usa il segno meno (which is why we will utilize the negative sign in the algorithm). Il gradiente punta nella direzione di massima salita, quindi per scendere si va nel verso opposto. La regola di aggiornamento esplicita compare nel libro a p. 23 (algoritmi BGD e SGD, modulo d03): w ← w − η ĝ, dove ĝ è la stima del gradiente e η il learning rate, cioè l'ampiezza del passo. Perché il gradiente negativo sia proprio la direzione più ripida si dimostra con lo sviluppo di Taylor al primo ordine e la disuguaglianza di Cauchy-Schwarz (der05, integrazione).",
+      "latex": [
+        "w \\leftarrow w - \\eta \\hat{g}"
+      ],
+      "symbols": [
+        {
+          "s": "\\eta",
+          "meaning": "learning rate: ampiezza del passo (definito a p. 23, modulo d03)"
+        },
+        {
+          "s": "\\hat{g}",
+          "meaning": "stima del gradiente della loss rispetto ai parametri"
+        },
+        {
+          "s": "w",
+          "meaning": "parametri (pesi) della rete"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c04",
+      "name": "Vettore gradiente della loss rispetto ai parametri",
+      "nameEn": "\\Delta_w L: the change in the loss function L with respect to the parameters w",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 16
+        }
+      ],
+      "detail": "La fonte scrive, come 'regola di aggiornamento' (update rule) dei parametri w, il vettore delle derivate parziali della loss, una per ciascuno degli N parametri: Δ_w L = [∂L/∂w_1, ∂L/∂w_2, …, ∂L/∂w_N]. Δ_w L rappresenta la variazione della loss L rispetto ai parametri w (the change in the loss function L with respect to the parameters w). Nota: la formula è il gradiente (di solito scritto ∇_w L); la regola di aggiornamento vera e propria sottrae η volte questo vettore (p. 23, c03). Il vettore ha tante componenti quanti sono i parametri (pesi e bias) della rete: migliaia in una piccola rete per cifre, milioni in una rete per immagini.",
+      "latex": [
+        "\\Delta_w L = \\left[ \\frac{\\partial L}{\\partial w_1}, \\frac{\\partial L}{\\partial w_2}, \\ldots, \\frac{\\partial L}{\\partial w_N} \\right]"
+      ],
+      "symbols": [
+        {
+          "s": "\\Delta_w L",
+          "meaning": "gradiente della loss rispetto ai parametri w (notazione della fonte, equivalente a \\nabla_w L)"
+        },
+        {
+          "s": "L",
+          "meaning": "funzione di loss (costo)"
+        },
+        {
+          "s": "w_1, \\ldots, w_N",
+          "meaning": "gli N parametri della rete"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c05",
+      "name": "Derivata parziale della loss rispetto all'i-esimo parametro",
+      "nameEn": "partial derivative of the loss function with respect to the i-th parameter w_i",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 16
+        }
+      ],
+      "detail": "∂L/∂w_i indica la derivata parziale della loss rispetto all'i-esimo parametro w_i: si fa variare solo w_i tenendo fissi tutti gli altri parametri e si misura la pendenza della loss lungo quell'asse. Ogni componente del vettore gradiente Δ_w L è una di queste derivate parziali; il segno dice se aumentare w_i fa salire (positivo) o scendere (negativo) la loss, il modulo quanto rapidamente.",
+      "latex": [
+        "\\frac{\\partial L}{\\partial w_i}"
+      ],
+      "symbols": [
+        {
+          "s": "\\frac{\\partial L}{\\partial w_i}",
+          "meaning": "derivata parziale della loss rispetto al parametro w_i"
+        }
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c06",
+      "name": "Figura: le derivate parziali in 3D e nella vista dall'alto",
+      "nameEn": "Visualization of Partial Derivatives in Two Distinct Ways",
+      "kind": "figura",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 16
+        }
+      ],
+      "detail": "La figura mostra le derivate parziali di una funzione in due modi: un grafico 3D (a sinistra) e la proiezione bidimensionale dello stesso grafico vista dall'alto (top view, a destra). La superficie rappresenta la funzione: il punto più basso è colorato di blu, il più alto di rosso (in mezzo giallo e arancio). Le frecce nere che escono dalla superficie indicano direzione e intensità (direction and intensity) della variazione del gradiente in ogni punto dello spazio. Osservando la vista dall'alto: le frecce si allontanano dal minimo blu e convergono verso il massimo rosso (sono il gradiente, che punta in salita), sono più lunghe sul fianco ripido tra le due zone e quasi nulle al centro del blu e del rosso, dove la funzione è piatta.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c07",
+      "name": "Il campo del gradiente indica la via più rapida per ridurre la loss",
+      "nameEn": "This visualization is crucial for understanding how Gradient Descent finds the fastest direction to reduce loss and update model weights",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 16
+        }
+      ],
+      "detail": "Secondo la fonte questa visualizzazione è cruciale per capire come la discesa del gradiente trova la direzione più rapida per ridurre la loss (fastest direction to reduce loss) e aggiornare i pesi del modello durante l'addestramento. Lettura operativa: in ogni punto la freccia (gradiente) indica la salita più ripida e la sua lunghezza quanto è ripida; la discesa del gradiente segue la freccia opposta. Dove le frecce sono lunghe i passi sono grandi (a η fisso), dove sono corte l'algoritmo rallenta.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c08",
+      "name": "Ogni derivata parziale misura quanto velocemente cambia la loss in una direzione",
+      "nameEn": "Each partial derivative measures how fast the loss changes in one direction",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 17
+        }
+      ],
+      "detail": "Frase in grassetto della fonte: ogni derivata parziale misura quanto velocemente cambia la loss in una direzione. ∂L/∂w_i è la pendenza della loss lungo l'asse del solo parametro w_i; il gradiente raccoglie queste pendenze asse per asse e, combinandole, dà la direzione di massima variazione.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c09",
+      "name": "Gradiente nullo: la loss non cambia in nessuna direzione",
+      "nameEn": "When the gradient is zero, the loss is not changing in any direction",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 17
+        }
+      ],
+      "detail": "Quando il gradiente è zero la loss non sta cambiando in nessuna direzione (al primo ordine): tutte le derivate parziali sono nulle, il passo di aggiornamento −η·Δ_w L si annulla e la discesa del gradiente si ferma. Questo accade nei minimi (locali e globali), ma anche nei massimi e nei punti di sella (pp. 17-18): gradiente nullo non implica minimo.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c10",
+      "name": "Figura: rappresentazione visiva dell'algoritmo della discesa del gradiente",
+      "nameEn": "Visual Representation of the Gradient Descent Algorithm",
+      "kind": "figura",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 17
+        }
+      ],
+      "detail": "Superficie 3D della loss con due valli (una azzurra più avanti a sinistra, una blu più profonda a destra) e una cresta rossa in alto. Una sequenza di frecce nere collegate parte vicino alla cima rossa e scende verso la valle blu di destra: sono il percorso (path, in grassetto) che la discesa del gradiente segue per raggiungere il minimo (to reach the minimum, in grassetto). Ogni freccia rappresenta direzione e intensità della variazione della loss in un dato punto dello spazio: ogni freccia è un passo, e la punta di una è l'origine della successiva. Da notare che a p. 16 le frecce nere indicano il gradiente (in salita), qui invece i passi di discesa. Il percorso è fatto di circa sei frecce di lunghezza simile e quasi allineate: il disegno è schematico, perché con η fisso la lunghezza di ogni passo sarebbe proporzionale alla norma del gradiente in quel punto (passi più corti vicino alla cima e al fondo, dove la superficie è piatta).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c11",
+      "name": "Iterare fino a convergenza o fino a un numero prefissato di iterazioni",
+      "nameEn": "The algorithm proceeds by iteratively updating the parameters according to the gradient direction until convergence is reached or a predefined number of iterations is completed",
+      "kind": "algoritmo",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 17
+        }
+      ],
+      "detail": "L'algoritmo procede aggiornando iterativamente i parametri secondo la direzione del gradiente finché si raggiunge la convergenza oppure si completa un numero prefissato di iterazioni (i due criteri di arresto, in grassetto nella fonte). Schema: (1) inizializza i parametri; (2) calcola il gradiente della loss nel punto corrente; (3) sposta i parametri nel verso opposto al gradiente; (4) ripeti finché uno dei due criteri scatta. In pratica la convergenza si riconosce quando il gradiente o la variazione della loss diventano trascurabili (integrazione).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c12",
+      "name": "La discesa del gradiente naviga lo spazio dei parametri",
+      "nameEn": "Gradient Descent effectively navigates the parameter space to find the optimal configuration that minimizes the loss function",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 17
+        }
+      ],
+      "detail": "Seguendo questo processo la discesa del gradiente naviga lo spazio dei parametri (parameter space) per trovare la configurazione ottima che minimizza la loss. Gli assi delle superfici disegnate nelle figure non sono le feature dei dati ma i parametri (pesi) della rete: ogni punto della superficie è un modello diverso e la sua quota è la loss di quel modello sui dati di training.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c13",
+      "name": "Problema non convesso ed esistenza di minimi locali",
+      "nameEn": "In neural networks, the optimization problem is non-convex, leading to the existence of local minima",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 17
+        }
+      ],
+      "detail": "Nelle reti neurali il problema di ottimizzazione è non convesso (non-convex), e questo porta all'esistenza di minimi locali (local minima, in grassetto): punti in cui la loss è più bassa che in tutto l'intorno ma non è la più bassa in assoluto. La discesa del gradiente, che usa solo informazione locale, può fermarsi in uno di essi, dove il gradiente è nullo.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c14",
+      "name": "I minimi locali sono spesso soluzioni efficaci",
+      "nameEn": "practitioners have found that these local minima are often still effective solutions; local minima are not typically a significant concern in neural network training",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 17
+        }
+      ],
+      "detail": "I professionisti (practitioners) hanno osservato che questi minimi locali sono spesso comunque soluzioni efficaci (often still effective solutions). Per questo i minimi locali non sono tipicamente una preoccupazione significativa nell'addestramento delle reti neurali. È un'osservazione empirica, non un teorema; la fonte mostra comunque un esempio illustrativo del problema (c15).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c15",
+      "name": "Figura: minimi locali ('trappole') e minimo globale",
+      "nameEn": "Local and Global Minima (Local Minima Trap, Global Minima)",
+      "kind": "figura",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 17
+        }
+      ],
+      "detail": "Curva di una loss in una dimensione (etichetta 'Loss Function'): due punti rossi etichettati 'Local Minima Trap', uno in una valle poco profonda a sinistra e uno in una valle stretta in alto a destra, e un punto blu 'Global Minima' nel fondo della valle più profonda al centro. Una discesa che parte vicino a un minimo locale resta intrappolata: lì la derivata è nulla e tutt'intorno la loss sale, quindi l'algoritmo non ha motivo di uscire.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c16",
+      "name": "Punto di sella: alcune direzioni curvano in su, altre in giù",
+      "nameEn": "saddle points, where some directions curve upwards and others downwards",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 18
+        }
+      ],
+      "detail": "Un'altra difficoltà di ottimizzazione nasce dai punti di sella (saddle points): punti in cui alcune direzioni curvano verso l'alto e altre verso il basso. Lungo una direzione il punto sembra un minimo, lungo un'altra un massimo, come la sella di un cavallo.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c17",
+      "name": "Nella sella il gradiente è nullo anche se il punto non è un minimo",
+      "nameEn": "At a saddle point, the gradient is zero, even if the point is not a minimum",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 18
+        }
+      ],
+      "detail": "In un punto di sella il gradiente è zero (gradient is zero, in grassetto), anche se il punto non è un minimo. Un algoritmo che guarda solo il gradiente non distingue una sella da un minimo: in entrambi i casi il passo di aggiornamento è nullo. Per distinguerli serve la curvatura, cioè le derivate seconde (autovalori dell'Hessiana di segno misto nella sella; der06, integrazione).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c18",
+      "name": "I punti di sella sono comuni in alta dimensione",
+      "nameEn": "saddle points are common in high-dimensional spaces",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 18
+        }
+      ],
+      "detail": "I punti di sella sono comuni negli spazi ad alta dimensionalità (high-dimensional spaces), come lo spazio dei parametri di una rete neurale con milioni di pesi. Intuizione (integrazione, non nella fonte): per essere un minimo la loss deve curvare verso l'alto in tutte le direzioni; con moltissime direzioni è molto più probabile che almeno una curvi verso il basso, quindi fra i punti a gradiente nullo prevalgono le selle.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c19",
+      "name": "Le selle sono un problema solo se l'algoritmo si blocca esattamente su di esse",
+      "nameEn": "they only become problematic if the optimization algorithm becomes stuck exactly at the saddle point",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 18
+        }
+      ],
+      "detail": "Le selle diventano problematiche solo se l'algoritmo di ottimizzazione resta bloccato esattamente nel punto di sella. Basta una piccola deviazione (per esempio il rumore della versione stocastica) perché la componente lungo la direzione che curva verso il basso cresca a ogni passo e l'algoritmo scivoli via (der06). Vicino alla sella però il gradiente è piccolo e i passi sono lenti (plateau), un tema ripreso dagli ottimizzatori con momentum nel modulo d03.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c20",
+      "name": "Figura: illustrazione del punto di sella",
+      "nameEn": "Saddle Point Illustration",
+      "kind": "figura",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 18
+        }
+      ],
+      "detail": "Superficie 3D a forma di sella (paraboloide iperbolico): due bordi rossi sollevati ai lati sinistro e destro, la parte centrale gialla che scende verso il blu davanti e dietro. Un punto nero al centro rappresenta il punto di sella nello scenario di ottimizzazione di una rete neurale: lungo la direzione che unisce i bordi rossi è un minimo, lungo quella perpendicolare è un massimo.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c21",
+      "name": "Come si imparano i pesi: le idee che hanno preceduto la backpropagation",
+      "nameEn": "How do we learn the weights of a neural network? Ideas that have guided the development of learning algorithms",
+      "kind": "confronto",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 18
+        }
+      ],
+      "detail": "La sezione 2.2.1 (Backpropagation Fundamentals) si chiede come imparare i pesi di una rete neurale ed esamina le idee che hanno guidato lo sviluppo degli algoritmi di apprendimento: (1) perturbare a caso un peso alla volta (c22), (2) perturbare tutti i pesi insieme (c23), (3) perturbare solo le attivazioni (c24). Sono presentate in ordine di efficienza crescente, ma tutte restano inefficienti: la risposta è la backpropagation (c25).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c22",
+      "name": "Idea 1: perturbare a caso un peso alla volta",
+      "nameEn": "randomly perturb one weight at a time",
+      "kind": "procedura",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 18
+        }
+      ],
+      "detail": "La prima idea era perturbare casualmente un peso alla volta (in grassetto), valutare se la modifica migliorava le prestazioni del modello e, in quel caso, salvarla. L'approccio, simile a un processo evolutivo (evolutionary process), si è rivelato molto inefficiente: richiede numerosi passaggi sui dati di training per ogni singola modifica dei pesi e presenta difficoltà nell'ultima fase dell'apprendimento (difficulties in the last stage of learning). Interpretazione (integrazione): quando il modello è già buono quasi tutte le perturbazioni casuali lo peggiorano, quindi i tentativi accettati diventano rarissimi.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c23",
+      "name": "Idea 2: perturbare tutti i pesi simultaneamente",
+      "nameEn": "perturbing all the weights simultaneously and correlating performance improvement with changes in the weights",
+      "kind": "procedura",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 18
+        }
+      ],
+      "detail": "Un'altra idea era perturbare tutti i pesi contemporaneamente (in grassetto) e correlare il miglioramento delle prestazioni con le variazioni dei pesi. Si è rivelata ugualmente inefficiente ed estremamente difficile da implementare: con tanti pesi mossi insieme è difficile attribuire a ciascuno il merito del miglioramento.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c24",
+      "name": "Idea 3: perturbare solo le attivazioni",
+      "nameEn": "perturb only the activations, which are fewer in number than the weights",
+      "kind": "procedura",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 18
+        }
+      ],
+      "detail": "In seguito fu proposta un'idea più efficiente: perturbare solo le attivazioni (in grassetto), che sono meno numerose dei pesi (a ogni neurone corrisponde un'attivazione ma molti pesi entranti). È un miglioramento rispetto alle idee precedenti ma resta inefficiente, perché ogni perturbazione richiede ancora di rivalutare la rete sui dati.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c25",
+      "name": "Perché serve la backpropagation: un apprendimento più efficiente",
+      "nameEn": "Therefore, how can we achieve more efficient learning? This is where backpropagation comes in.",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 18
+        }
+      ],
+      "detail": "Domanda in corsivo della fonte: come ottenere un apprendimento più efficiente? È qui che entra in gioco la backpropagation. Esplicitazione (integrazione): la backpropagation calcola in modo esatto le derivate della loss rispetto a tutti i pesi con un passaggio in avanti e uno all'indietro, invece di una rivalutazione dell'intera rete per ogni peso o attivazione perturbata; il suo costo è un piccolo multiplo di un passaggio in avanti, indipendente dal numero di parametri da trattare uno a uno.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c26",
+      "name": "Backpropagation: algoritmo in tre passi principali",
+      "nameEn": "Backpropagation is a widely used learning algorithm in neural networks, which consists of three main steps",
+      "kind": "algoritmo",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 19
+        }
+      ],
+      "detail": "Nel riquadro della fonte: la backpropagation è un algoritmo di apprendimento molto usato nelle reti neurali, composto da tre passi principali: 1. Forward Propagation (c27); 2. Error Estimation (c28); 3. Backpropagation del segnale d'errore con aggiornamento dei pesi tramite il calcolo dei gradienti (c29). I tre passi si ripetono a ogni iterazione dell'addestramento, per ogni esempio o mini-batch. Qui 'backpropagation' indica l'intero algoritmo di apprendimento e, nello stesso elenco, anche il solo passo 3, mentre a p. 16 era il solo metodo per calcolare i gradienti (c61).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c27",
+      "name": "Passo 1: propagazione in avanti",
+      "nameEn": "Forward Propagation: summation of inputs, production of activations and propagation of output through the network",
+      "kind": "procedura",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 19
+        }
+      ],
+      "detail": "Primo passo: la propagazione in avanti (Forward Propagation) consiste nella somma degli ingressi (summation of inputs, la somma pesata z), nella produzione delle attivazioni (production of activations, a = σ(z)) e nella propagazione dell'output attraverso la rete, strato dopo strato, fino alla predizione finale.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c28",
+      "name": "Passo 2: stima dell'errore",
+      "nameEn": "Error Estimation: comparison of labels with predictions obtained from the network",
+      "kind": "procedura",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 19
+        }
+      ],
+      "detail": "Secondo passo: la stima dell'errore (Error Estimation) confronta le etichette (labels) con le predizioni ottenute dalla rete, producendo il valore della loss L (per esempio l'errore quadratico o la cross-entropy, modulo d01).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c29",
+      "name": "Passo 3: propagazione all'indietro del segnale d'errore e aggiornamento dei pesi",
+      "nameEn": "Backpropagation of the error signal and using this signal to update the weights by computing gradients",
+      "kind": "procedura",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 19
+        }
+      ],
+      "detail": "Terzo passo: il segnale d'errore (error signal) viene propagato all'indietro nella rete (Backpropagation) e usato per aggiornare i pesi calcolando i gradienti. Il nome indica proprio questa propagazione a ritroso, dallo strato di uscita verso quello di ingresso (sezione 2.3).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c30",
+      "name": "Il comportamento ottimo delle unità nascoste non è noto dai dati",
+      "nameEn": "Starting from the training data, we do not directly know the optimal behavior of the hidden units within the neural network",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 19
+        }
+      ],
+      "detail": "Partendo dai dati di training non conosciamo direttamente il comportamento ottimo delle unità nascoste (hidden units): i dati danno l'uscita desiderata solo per lo strato di output. Con la backpropagation però possiamo calcolare quanto rapidamente cambia l'errore complessivo della rete quando cambiamo l'attività (activity) di queste unità nascoste.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c31",
+      "name": "Le derivate dell'errore rispetto alle attività nascoste",
+      "nameEn": "Using the derivatives of the error with respect to the hidden activities, we are able to understand how each hidden unit affects the overall error of the network",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 19
+        }
+      ],
+      "detail": "Usando le derivate dell'errore rispetto alle attività nascoste (hidden activities) capiamo come ogni unità nascosta influenza l'errore complessivo della rete (in grassetto). Questo dà una visione chiara degli effetti separati (separate effects) che ogni unità nascosta ha sull'errore e di come questi effetti si combinano per determinare la direzione ottima di aggiornamento dei pesi.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c32",
+      "name": "Dalle derivate sulle attività all'aggiornamento dei pesi di ogni connessione",
+      "nameEn": "Once we have calculated the derivatives of the error with respect to the hidden activities, we gain valuable information to update the weights associated with each connection in the network",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 19
+        }
+      ],
+      "detail": "Una volta calcolate le derivate dell'errore rispetto alle attività nascoste, si ha l'informazione per aggiornare i pesi associati a ogni connessione della rete. Questo permette di regolare i pesi in modo da minimizzare l'errore complessivo, avvicinandosi sempre più alla soluzione ottima del problema di apprendimento.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c33",
+      "name": "Backpropagation passo passo: dall'uscita all'ingresso, un neurone per strato",
+      "nameEn": "Exploring backpropagation: step by step, starting with the output layer and proceeding to the input layer; one neuron per layer",
+      "kind": "procedura",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 19
+        }
+      ],
+      "detail": "La sezione 2.3 esplora nel dettaglio la propagazione all'indietro dell'errore, partendo dallo strato di uscita e procedendo verso lo strato di ingresso. Si comincia con una rete composta da un solo neurone per strato (one neuron per layer, in grassetto), così ogni quantità è uno scalare; poi si estende a più strati (p. 20-21) e a più neuroni per strato (p. 21-22).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c34",
+      "name": "Passo forward nella catena: dall'attivazione precedente alla loss",
+      "nameEn": "After performing the forward step, we will get an output from the last activation a^(l), which will allow us to calculate the loss L using the desired output y",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 19
+        }
+      ],
+      "detail": "Dopo il passo forward otteniamo un output dall'ultima attivazione a^(l), che permette di calcolare la loss L usando l'output desiderato (desired output) y. L'attivazione a^(l) è calcolata con tre elementi: un peso w^(l), un bias b^(l) e l'attivazione del neurone precedente a^(l−1). Qui l indica l'ultimo strato e l'apice tra parentesi è l'indice di strato, non una potenza.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c35",
+      "name": "Equazioni del neurone: somma pesata z e attivazione a = σ(z)",
+      "nameEn": "z^(l) = w^(l) a^(l-1) + b^(l); a^(l) = σ(z^(l)); z^(l) is the input of a non-linear function σ, such as a sigmoid or a ReLU",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 19
+        }
+      ],
+      "detail": "Le equazioni risultanti sono z^(l) = w^(l) a^(l−1) + b^(l) e a^(l) = σ(z^(l)), dove z^(l) (somma pesata, pre-attivazione) è l'input di una funzione non lineare σ, come una sigmoide o una ReLU. σ indica quindi una generica funzione di attivazione (modulo d01), non solo la sigmoide. Colori della fonte: w^(l) blu, b^(l) arancio, z^(l) verde.",
+      "latex": [
+        "z^{(l)} = w^{(l)} a^{(l-1)} + b^{(l)}",
+        "a^{(l)} = \\sigma(z^{(l)})"
+      ],
+      "symbols": [
+        {
+          "s": "w^{(l)}",
+          "meaning": "peso dello strato l"
+        },
+        {
+          "s": "b^{(l)}",
+          "meaning": "bias dello strato l"
+        },
+        {
+          "s": "a^{(l-1)}",
+          "meaning": "attivazione del neurone dello strato precedente"
+        },
+        {
+          "s": "z^{(l)}",
+          "meaning": "somma pesata (input della non linearità)"
+        },
+        {
+          "s": "a^{(l)}",
+          "meaning": "attivazione (output) del neurone dello strato l"
+        },
+        {
+          "s": "\\sigma",
+          "meaning": "funzione di attivazione non lineare (sigmoide, ReLU, ...)"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c36",
+      "name": "Figura: concettualizzazione dei calcoli (grafo delle dipendenze)",
+      "nameEn": "Conceptualisation of Calculations",
+      "kind": "figura",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 19
+        }
+      ],
+      "detail": "Diagramma: in alto w^(l) (blu), a^(l−1) (nero) e b^(l) (arancio) convergono in z^(l) (verde); solo w^(l) vi arriva con una freccia gialla, mentre a^(l−1) e b^(l) sono collegati con semplici tratti neri; altre frecce gialle portano da z^(l) ad a^(l) e da a^(l) a L (rossa); y è collegata a L da un trattino nero. Le frecce gialle tracciano quindi il percorso del peso w^(l) fino alla loss, cioè proprio la catena che la regola della catena percorrerà a p. 20 per calcolare ∂L/∂w^(l). Il testo accanto spiega: il peso w^(l), l'attivazione precedente a^(l−1) e il bias b^(l) insieme permettono di calcolare z^(l), che a sua volta permette di calcolare a^(l), che insieme all'output desiderato y permette di calcolare la loss L (le frasi 'allow us to calculate' sono in giallo come le frecce). È un grafo computazionale: ogni nodo dipende solo da quelli sopra di lui.",
+      "latex": [
+        "\\{w^{(l)},\\ a^{(l-1)},\\ b^{(l)}\\} \\to z^{(l)} \\to a^{(l)} \\to L, \\qquad y \\;\\text{—}\\; L"
+      ],
+      "symbols": [
+        {
+          "s": "\\to",
+          "meaning": "freccia gialla o tratto del diagramma: 'permette di calcolare' (allow us to calculate)"
+        },
+        {
+          "s": "y \\;\\text{—}\\; L",
+          "meaning": "l'output desiderato y entra nel calcolo della loss (tratto nero, non una sottrazione)"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c37",
+      "name": "Obiettivo del passo backward: la sensibilità ∂L/∂w^(l)",
+      "nameEn": "how sensitive the loss L is to small changes in the weight w^(l): how much does L (numerator) change if we make a small change at w^(l) (denominator)?",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 20
+        }
+      ],
+      "detail": "Il primo obiettivo del passo backward è capire quanto la loss L è sensibile a piccole variazioni del peso w^(l), cioè calcolare la derivata ∂L/∂w^(l). Concettualmente la formula va letta come: quanto cambia L (numeratore) se facciamo una piccola variazione a w^(l) (denominatore)? (in grassetto nella fonte). Il segno dice in che verso muovere il peso, il modulo quanto conta.",
+      "latex": [
+        "\\frac{\\partial L}{\\partial w^{(l)}}"
+      ],
+      "symbols": [
+        {
+          "s": "\\frac{\\partial L}{\\partial w^{(l)}}",
+          "meaning": "sensibilità della loss a una piccola variazione del peso dell'ultimo strato"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c38",
+      "name": "Catena causale w → z → a → L: entra in gioco la regola della catena",
+      "nameEn": "a small change in weight w^(l) causes a change in z^(l), which in turn causes a change in a^(l), directly affecting the loss L; this is where the chain of derivatives rule comes into play",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 20
+        }
+      ],
+      "detail": "Calcolando la derivata si nota che una piccola variazione del peso w^(l) causa una variazione di z^(l), che a sua volta causa una variazione di a^(l), che influenza direttamente la loss L (le espressioni 'causes a change in' e 'directly affecting' sono evidenziate in giallo). È qui che entra in gioco la regola della catena delle derivate (chain of derivatives rule): w^(l) agisce su L solo attraverso z^(l) e a^(l).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c39",
+      "name": "Scomposizione di ∂L/∂w^(l) in tre fattori (chain rule)",
+      "nameEn": "we can now 'chunk' the previous derivative",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 20
+        }
+      ],
+      "detail": "La derivata viene 'spezzata' (chunk) nel prodotto di tre fattori, ciascuno annotato nella fonte con una domanda: ∂z^(l)/∂w^(l) = quanto una piccola variazione di w^(l) cambia z^(l)?; ∂a^(l)/∂z^(l) = quanto una piccola variazione di z^(l) cambia a^(l)?; ∂L/∂a^(l) = quanto una piccola variazione di a^(l) cambia L?. Il prodotto delle tre sensibilità locali dà la sensibilità complessiva. Colori della fonte: ∂L rosso, ∂w blu, ∂z verde. I valori espliciti dei tre fattori (a^(l−1), σ'(z^(l)), derivata della loss) sono in c58 e der01 (integrazione).",
+      "latex": [
+        "\\frac{\\partial L}{\\partial w^{(l)}} = \\frac{\\partial z^{(l)}}{\\partial w^{(l)}} \\frac{\\partial a^{(l)}}{\\partial z^{(l)}} \\frac{\\partial L}{\\partial a^{(l)}}"
+      ],
+      "symbols": [
+        {
+          "s": "\\frac{\\partial z^{(l)}}{\\partial w^{(l)}}",
+          "meaning": "quanto una piccola variazione di w^(l) cambia z^(l)"
+        },
+        {
+          "s": "\\frac{\\partial a^{(l)}}{\\partial z^{(l)}}",
+          "meaning": "quanto una piccola variazione di z^(l) cambia a^(l)"
+        },
+        {
+          "s": "\\frac{\\partial L}{\\partial a^{(l)}}",
+          "meaning": "quanto una piccola variazione di a^(l) cambia L"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c40",
+      "name": "Derivata rispetto al bias: stesso metodo del peso",
+      "nameEn": "What about the bias term? Easy peasy! We use the same method as for the weight term",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 20
+        }
+      ],
+      "detail": "Per il bias si usa lo stesso metodo del peso ('Easy peasy!', in corsivo): cambia solo il primo fattore, ∂z^(l)/∂b^(l) al posto di ∂z^(l)/∂w^(l); gli altri due fattori sono identici e già calcolati. Poiché z^(l) = w^(l) a^(l−1) + b^(l), questo primo fattore vale 1 (integrazione), quindi ∂L/∂b^(l) coincide con il prodotto ∂a^(l)/∂z^(l) · ∂L/∂a^(l), cioè con ∂L/∂z^(l). Colori: ∂b arancio.",
+      "latex": [
+        "\\frac{\\partial L}{\\partial b^{(l)}} = \\frac{\\partial z^{(l)}}{\\partial b^{(l)}} \\frac{\\partial a^{(l)}}{\\partial z^{(l)}} \\frac{\\partial L}{\\partial a^{(l)}}"
+      ],
+      "symbols": [
+        {
+          "s": "\\frac{\\partial z^{(l)}}{\\partial b^{(l)}}",
+          "meaning": "sensibilità della somma pesata al bias (vale 1)"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c41",
+      "name": "Figura: schema esteso a più strati",
+      "nameEn": "Conceptualisation of Calculations (Extended)",
+      "kind": "figura",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 20
+        }
+      ],
+      "detail": "Per gli altri strati ('Now what? For the other layers?') lo schema viene esteso all'indietro in orizzontale: L — a^(l) — z^(l) — a^(l−1) — z^(l−1) — a^(l−2) — z^(l−2) — a^(l−3). Sopra ogni z pende il suo bias (b^(l), b^(l−1), b^(l−2), arancio), sotto il suo peso (w^(l), w^(l−1), w^(l−2), blu); y sta sotto L (rossa). La catena mostra che ogni peso influenza la loss solo attraverso tutte le z e le a alla sua sinistra.",
+      "latex": [
+        "L \\;\\text{—}\\; a^{(l)} \\;\\text{—}\\; z^{(l)} \\;\\text{—}\\; a^{(l-1)} \\;\\text{—}\\; z^{(l-1)} \\;\\text{—}\\; a^{(l-2)} \\;\\text{—}\\; z^{(l-2)} \\;\\text{—}\\; a^{(l-3)}",
+        "z^{(k)} \\;\\text{—}\\; \\{\\,b^{(k)} \\text{ (sopra)},\\ w^{(k)} \\text{ (sotto)}\\,\\}, \\quad k = l,\\ l-1,\\ l-2; \\qquad L \\;\\text{—}\\; y"
+      ],
+      "symbols": [
+        {
+          "s": "\\text{—}",
+          "meaning": "tratto del diagramma: dipendenza tra due nodi (non una sottrazione)"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c42",
+      "name": "Strati precedenti: prima la sensibilità all'attivazione del penultimo strato",
+      "nameEn": "first consider how sensitive the cost is to the value of that activation in the penultimate layer, a^(l-1), and then consider how sensitive that value is to all the previous weights and biases",
+      "kind": "procedura",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 20
+        }
+      ],
+      "detail": "Tutti gli altri pesi e bias stanno negli strati precedenti della rete, quindi la loro influenza sul costo è meno diretta. Il modo di trattarli è: prima considerare quanto il costo è sensibile al valore dell'attivazione del penultimo strato, a^(l−1), e poi quanto questo valore è sensibile a tutti i pesi e bias precedenti. È il cuore della propagazione all'indietro: la sensibilità viaggia da un'attivazione a quella prima.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c43",
+      "name": "Derivata del costo rispetto all'attivazione precedente ∂L/∂a^(l−1)",
+      "nameEn": "The derivative of cost with respect to that activation looks a lot like what we have already seen",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 20
+        }
+      ],
+      "detail": "La derivata del costo rispetto all'attivazione del penultimo strato somiglia molto a quelle già viste: cambia solo il primo fattore, ∂z^(l)/∂a^(l−1), che vale w^(l) (integrazione, perché z^(l) = w^(l) a^(l−1) + b^(l)). Gli ultimi due fattori, ∂a^(l)/∂z^(l) e ∂L/∂a^(l), sono gli stessi già calcolati per ∂L/∂w^(l) e ∂L/∂b^(l): si riusano.",
+      "latex": [
+        "\\frac{\\partial L}{\\partial a^{(l-1)}} = \\frac{\\partial z^{(l)}}{\\partial a^{(l-1)}} \\frac{\\partial a^{(l)}}{\\partial z^{(l)}} \\frac{\\partial L}{\\partial a^{(l)}}"
+      ],
+      "symbols": [
+        {
+          "s": "\\frac{\\partial L}{\\partial a^{(l-1)}}",
+          "meaning": "sensibilità del costo all'attivazione del penultimo strato"
+        },
+        {
+          "s": "\\frac{\\partial z^{(l)}}{\\partial a^{(l-1)}}",
+          "meaning": "sensibilità della somma pesata all'attivazione in ingresso (vale w^(l))"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c44",
+      "name": "Lunga catena di dipendenze tra w^(l−1) e la loss",
+      "nameEn": "there is a long chain of dependencies between the weight w^(l-1) and the cost L; the partial derivative appears as a long chain of partial derivatives for each intermediate step",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 20
+        },
+        {
+          "doc": "dl",
+          "page": 21
+        }
+      ],
+      "detail": "Il trucco è ricordare che l'attivazione dello strato precedente è determinata dal proprio insieme di pesi e bias. Tra il peso w^(l−1) e il costo L c'è quindi una lunga catena di dipendenze: matematicamente la derivata parziale del costo rispetto a quel peso diventa una lunga catena di derivate parziali, una per ogni passo intermedio (figura 'Calculations with 3 Layers' a p. 21). Ogni strato in più aggiunge due fattori alla catena (∂z/∂a del collegamento e ∂a/∂z del neurone).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c45",
+      "name": "Scomposizione di ∂L/∂w^(l−1) con il fattore ∂L/∂a^(l−1) sotto la graffa",
+      "nameEn": "Here is how you can decompose the derivative",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 21
+        }
+      ],
+      "detail": "La derivata del costo rispetto al peso del penultimo strato è il prodotto di cinque fattori: i primi due, ∂z^(l−1)/∂w^(l−1) e ∂a^(l−1)/∂z^(l−1), sono locali allo strato l−1; gli ultimi tre, raccolti sotto una graffa, formano esattamente ∂L/∂a^(l−1) (c43), già calcolato. È il meccanismo che rende efficiente la backpropagation: ogni strato riceve dallo strato successivo la sensibilità della loss alla propria attivazione e aggiunge solo i propri fattori locali.",
+      "latex": [
+        "\\frac{\\partial L}{\\partial w^{(l-1)}} = \\frac{\\partial z^{(l-1)}}{\\partial w^{(l-1)}} \\frac{\\partial a^{(l-1)}}{\\partial z^{(l-1)}} \\underbrace{\\frac{\\partial z^{(l)}}{\\partial a^{(l-1)}} \\frac{\\partial a^{(l)}}{\\partial z^{(l)}} \\frac{\\partial L}{\\partial a^{(l)}}}_{\\frac{\\partial L}{\\partial a^{(l-1)}}}"
+      ],
+      "symbols": [
+        {
+          "s": "\\frac{\\partial z^{(l-1)}}{\\partial w^{(l-1)}}",
+          "meaning": "fattore locale: vale a^(l−2)"
+        },
+        {
+          "s": "\\frac{\\partial a^{(l-1)}}{\\partial z^{(l-1)}}",
+          "meaning": "fattore locale: vale σ'(z^(l−1))"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c46",
+      "name": "Figura: calcoli con 3 strati",
+      "nameEn": "Calculations with 3 Layers",
+      "kind": "figura",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 21
+        }
+      ],
+      "detail": "Diagramma verticale a destra: in alto w^(l−1) (blu, con freccia gialla), a^(l−2) (nero) e b^(l−1) (arancio), questi ultimi due con tratti neri, convergono in z^(l−1) (verde) → a^(l−1); poi a^(l−1) con w^(l) e b^(l) converge in z^(l) → a^(l) → L (rossa), con y collegata a L. Le frecce gialle evidenziano il percorso che parte da w^(l−1) e attraversa z^(l−1), a^(l−1), z^(l), a^(l) fino a L, mentre w^(l) e b^(l) sono collegati con semplici tratti neri: la figura visualizza la lunga catena di dipendenze del peso w^(l−1).",
+      "latex": [
+        "\\{w^{(l-1)},\\ a^{(l-2)},\\ b^{(l-1)}\\} \\to z^{(l-1)} \\to a^{(l-1)}",
+        "\\{w^{(l)},\\ a^{(l-1)},\\ b^{(l)}\\} \\to z^{(l)} \\to a^{(l)} \\to L, \\qquad y \\;\\text{—}\\; L"
+      ],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c47",
+      "name": "Derivata del costo rispetto a qualunque peso o bias della rete",
+      "nameEn": "we now can calculate the derivative of the cost with respect to any weight or bias of the entire network; we are simply applying the same idea of the chain rule",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 21
+        }
+      ],
+      "detail": "Seguendo le dipendenze attraverso l'albero (tree) e moltiplicando una lunga serie di derivate parziali, si può calcolare la derivata del costo rispetto a qualunque peso o bias dell'intera rete (in grassetto). Si sta semplicemente applicando la stessa idea della regola della catena di sempre (in corsivo): nessuno strumento nuovo, solo la chain rule applicata con ordine dall'uscita verso l'ingresso.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c48",
+      "name": "Vettore gradiente completo con pesi e bias di tutti gli strati",
+      "nameEn": "since we can get any derivative, we can calculate the entire gradient vector",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 21
+        }
+      ],
+      "detail": "Poiché si può ottenere ogni derivata, si può calcolare l'intero vettore gradiente: Δ_w L = [∂L/∂w^(1), ∂L/∂b^(1), …, ∂L/∂w^(l), ∂L/∂b^(l)], con i pesi e i bias di tutti gli strati dal primo all'ultimo (l). È lo stesso vettore di p. 16 (c04), ora con i parametri etichettati per strato e con i bias inclusi; è il vettore che la discesa del gradiente usa per l'aggiornamento. Nota di notazione: il vettore è etichettato Δ_w L ma contiene anche le derivate rispetto ai bias, quindi qui w va letto come l'insieme di tutti i parametri (pesi e bias).",
+      "latex": [
+        "\\Delta_w L = \\left[ \\frac{\\partial L}{\\partial w^{(1)}}, \\frac{\\partial L}{\\partial b^{(1)}}, \\ldots, \\frac{\\partial L}{\\partial w^{(l)}}, \\frac{\\partial L}{\\partial b^{(l)}} \\right]"
+      ],
+      "symbols": [
+        {
+          "s": "w^{(1)}, b^{(1)}",
+          "meaning": "peso e bias del primo strato"
+        },
+        {
+          "s": "w^{(l)}, b^{(l)}",
+          "meaning": "peso e bias dell'ultimo strato l"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c49",
+      "name": "Più neuroni per strato: cambia poco, servono solo più indici",
+      "nameEn": "The job is done! At least for this network ... not much changes when we give the layers more neurons: it's just a few more indexes to keep track of",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 21
+        }
+      ],
+      "detail": "'Il lavoro è fatto!' almeno per questa rete a un neurone per strato. Ora bisogna aggiungere più neuroni per strato; la fonte rassicura (in corsivo, con un'emoji) che non cambia molto quando gli strati hanno più neuroni: sono solo un po' di indici in più da tenere a mente. Le uniche novità saranno la notazione con pedici (c50, c51) e la somma sui percorsi per le attivazioni (c56).",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 1
+    },
+    {
+      "id": "c50",
+      "name": "Notazione: apice = strato, pedice = neurone",
+      "nameEn": "the superscript of each neuron indicates which layer it is in, while the subscript indicates the specific neuron",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 21
+        }
+      ],
+      "detail": "Con più neuroni per strato bisogna cambiare un po' la notazione. L'attivazione di ogni neurone viene indicata con un pedice che dà la sua posizione all'interno dello strato: l'apice di ogni neurone indica in quale strato si trova, il pedice indica il neurone specifico (in grassetto). Per esempio a_1^(0), a_2^(0), …, a_n^(0) sono gli n neuroni dello strato 0.",
+      "latex": [
+        "a_j^{(l)}"
+      ],
+      "symbols": [
+        {
+          "s": "a_j^{(l)}",
+          "meaning": "attivazione del neurone j nello strato l"
+        }
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c51",
+      "name": "Indici dei pesi w_ji^(l): dal neurone i dello strato l−1 al neurone j dello strato l",
+      "nameEn": "two subscripts indicate the edge weight connecting the neuron in layer i to the neuron in layer j; these 'ji' indices align with the way the weight matrix is usually indexed",
+      "kind": "definizione",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 21
+        }
+      ],
+      "detail": "Anche i pesi hanno bisogno di indici aggiuntivi per specificarne la posizione: oltre all'apice che indica lo strato, due pedici indicano l'arco che collega il neurone i (nello strato l−1) al neurone j (nello strato l) (la fonte scrive 'neuron in layer i to the neuron in layer j', ma i e j sono indici di neurone, come mostra la figura). Gli indici 'ji', scritti al contrario, possono sembrare strani, ma si allineano al modo in cui si indicizza di solito la matrice dei pesi: W^(l) ha una riga per ogni neurone di arrivo j e una colonna per ogni neurone di partenza i, così z^(l) = W^(l) a^(l−1) + b^(l) si scrive senza trasposte (c59).",
+      "latex": [
+        "w_{ji}^{(l)}",
+        "a_i^{(l-1)} \\xrightarrow{\\;\\; w_{ji}^{(l)} \\;\\;} a_j^{(l)}"
+      ],
+      "symbols": [
+        {
+          "s": "w_{ji}^{(l)}",
+          "meaning": "peso dell'arco dal neurone i dello strato l−1 al neurone j dello strato l"
+        },
+        {
+          "s": "j",
+          "meaning": "neurone di arrivo (strato l), riga della matrice dei pesi"
+        },
+        {
+          "s": "i",
+          "meaning": "neurone di partenza (strato l−1), colonna della matrice dei pesi"
+        }
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c52",
+      "name": "Figure: indicizzazione della rete ed esempio con strati 0 e 1",
+      "nameEn": "Neural Network Indexing; Example of Indexing",
+      "kind": "figura",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 21
+        }
+      ],
+      "detail": "Due immagini a sinistra: 'Neural Network Indexing' rappresenta formalmente nodi e archi, con un nodo verde a_i^(l−1) collegato da un arco blu etichettato w_ji^(l) a un nodo viola a_j^(l); 'Example of Indexing' mostra due strati fittizi (dummy layers) chiamati 0 e 1, con n e m nodi rispettivamente (a_1^(0), a_2^(0), …, a_n^(0) in verde; a_1^(1), …, a_m^(1) in viola). Gli archi in blu scuro entrano in a_1^(1) e sono etichettati w_11^(1), w_12^(1), w_1n^(1): il primo pedice è sempre 1 (neurone di arrivo), il secondo cambia con il neurone di partenza; gli altri archi (verso a_m^(1)) sono in viola chiaro e anche il nodo a_m^(1) è disegnato sbiadito, per concentrare l'attenzione sui pesi entranti in a_1^(1). Puntini verticali indicano i neuroni omessi in entrambi gli strati.",
+      "latex": [
+        "a_1^{(0)},\\ a_2^{(0)},\\ \\ldots,\\ a_n^{(0)} \\quad (\\text{strato } 0,\\ n \\text{ nodi})",
+        "a_1^{(1)},\\ \\ldots,\\ a_m^{(1)} \\quad (\\text{strato } 1,\\ m \\text{ nodi})",
+        "w_{11}^{(1)}: a_1^{(0)} \\to a_1^{(1)}, \\quad w_{12}^{(1)}: a_2^{(0)} \\to a_1^{(1)}, \\quad w_{1n}^{(1)}: a_n^{(0)} \\to a_1^{(1)}"
+      ],
+      "symbols": [
+        {
+          "s": "w_{1i}^{(1)}",
+          "meaning": "pesi entranti nel neurone a_1^(1): primo pedice fisso (arrivo), secondo pedice = neurone di partenza"
+        }
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c53",
+      "name": "Somma pesata con più neuroni per strato",
+      "nameEn": "The weighted sum z_j^(l) then takes the following form",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 22
+        }
+      ],
+      "detail": "Con più neuroni per strato la somma pesata del neurone j dello strato l diventa la somma, su tutti i neuroni i dello strato precedente, del peso w_ji^(l) per l'attivazione a_i^(l−1), più il bias b_j^(l) del neurone j. L'attivazione resta a_j^(l) = σ(z_j^(l)).",
+      "latex": [
+        "z_j^{(l)} = \\sum_i w_{ji}^{(l)} a_i^{(l-1)} + b_j^{(l)}"
+      ],
+      "symbols": [
+        {
+          "s": "z_j^{(l)}",
+          "meaning": "somma pesata del neurone j nello strato l"
+        },
+        {
+          "s": "b_j^{(l)}",
+          "meaning": "bias del neurone j nello strato l"
+        },
+        {
+          "s": "a_i^{(l-1)}",
+          "meaning": "attivazione del neurone i nello strato l−1"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c54",
+      "name": "Derivata rispetto a w_ji: stessa forma del caso a un neurone",
+      "nameEn": "The new equations turn out to be essentially the same with respect to the case of only one neuron per layer",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 22
+        }
+      ],
+      "detail": "Le nuove equazioni risultano essenzialmente uguali al caso con un solo neurone per strato: l'espressione della chain rule che descrive la sensibilità del costo a un particolare peso è la stessa di prima. L'unica differenza è che ora ci sono più indici, i e j, che indicano quale peso si sta considerando. Il peso w_ji^(l) entra solo in z_j^(l), quindi la catena passa solo per il neurone j.",
+      "latex": [
+        "\\frac{\\partial L}{\\partial w_{ji}^{(l)}} = \\frac{\\partial z_j^{(l)}}{\\partial w_{ji}^{(l)}} \\frac{\\partial a_j^{(l)}}{\\partial z_j^{(l)}} \\frac{\\partial L}{\\partial a_j^{(l)}}"
+      ],
+      "symbols": [
+        {
+          "s": "\\frac{\\partial z_j^{(l)}}{\\partial w_{ji}^{(l)}}",
+          "meaning": "vale a_i^(l−1): solo il termine i della somma contiene w_ji"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c55",
+      "name": "Le attivazioni precedenti influenzano il costo attraverso più percorsi",
+      "nameEn": "What changes is the derivative of the cost with respect to one of the activations in the preceding layers, because the preceding neurons influence the cost function through multiple pathways",
+      "kind": "proprieta",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 22
+        }
+      ],
+      "detail": "Ciò che cambia rispetto al caso a un neurone per strato è la derivata del costo rispetto a una delle attivazioni degli strati precedenti, perché i neuroni precedenti influenzano la funzione di costo attraverso più percorsi (multiple pathways, in grassetto): a_i^(l−1) entra nella somma pesata di ogni neurone j dello strato l. Per capire la sensibilità del costo a un certo neurone bisogna sommare le influenze lungo ciascuno di questi percorsi.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 3
+    },
+    {
+      "id": "c56",
+      "name": "Somma sui percorsi: ∂L/∂a_i^(l−1) come somma sullo strato l",
+      "nameEn": "we sum multiple expressions of different chain rules corresponding to each pathway of influence (Sum over layer l)",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 22
+        }
+      ],
+      "detail": "Si sommano più espressioni di chain rule diverse, una per ogni percorso di influenza (in grassetto): la derivata del costo rispetto all'attivazione a_i^(l−1) è la somma, su tutti i neuroni j dello strato l, del prodotto dei tre fattori ∂z_j^(l)/∂a_i^(l−1) · ∂a_j^(l)/∂z_j^(l) · ∂L/∂a_j^(l). La graffa sotto la somma è etichettata 'Sum over layer l'. È la regola della catena multivariata (derivata totale); il primo fattore vale w_ji^(l) (integrazione).",
+      "latex": [
+        "\\frac{\\partial L}{\\partial a_i^{(l-1)}} = \\underbrace{\\sum_j \\frac{\\partial z_j^{(l)}}{\\partial a_i^{(l-1)}} \\frac{\\partial a_j^{(l)}}{\\partial z_j^{(l)}} \\frac{\\partial L}{\\partial a_j^{(l)}}}_{\\text{Sum over layer } l}"
+      ],
+      "symbols": [
+        {
+          "s": "\\sum_j",
+          "meaning": "somma su tutti i neuroni j dello strato l (tutti i percorsi da a_i^(l−1) alla loss)"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c57",
+      "name": "Approccio matriciale per l'efficienza",
+      "nameEn": "it is necessary to use the matrix approach, since it allows simultaneous operations to be performed on all the parameters of the network",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 22
+        }
+      ],
+      "detail": "Il ragionamento è stato svolto con valori numerici scalari tradizionali, ma per gestire in modo efficiente pesi e bias della rete è necessario usare l'approccio matriciale (matrix approach, in grassetto), perché permette di eseguire operazioni simultanee su tutti i parametri della rete, ottimizzando molto il processo di calcolo. La fonte non scrive le formule matriciali: sono date come integrazione in c59 e der04.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2
+    },
+    {
+      "id": "c58",
+      "name": "Derivate locali esplicite dei fattori della catena (integrazione)",
+      "nameEn": "local derivatives: dz/dw = a^(l-1), dz/db = 1, dz/da^(l-1) = w^(l), da/dz = σ'(z), dL/da for the squared error",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 19
+        },
+        {
+          "doc": "dl",
+          "page": 20
+        }
+      ],
+      "detail": "Integrazione didattica, non scritta nella fonte, necessaria per fare i conti: dalle equazioni z^(l) = w^(l) a^(l−1) + b^(l) e a^(l) = σ(z^(l)) (p. 19) seguono ∂z^(l)/∂w^(l) = a^(l−1), ∂z^(l)/∂b^(l) = 1, ∂z^(l)/∂a^(l−1) = w^(l) e ∂a^(l)/∂z^(l) = σ'(z^(l)). Il terzo fattore dipende dalla loss scelta: con l'errore quadratico L = (a^(l) − y)² dell'impostazione 3Blue1Brown citata nella prefazione del libro vale 2(a^(l) − y). Per la sigmoide σ'(z) = σ(z)(1 − σ(z)) ≤ 1/4, per la ReLU σ'(z) è 1 per z > 0 e 0 per z < 0 (modulo d01). Sostituendo: ∂L/∂w^(l) = a^(l−1) σ'(z^(l)) 2(a^(l) − y).",
+      "latex": [
+        "\\frac{\\partial z^{(l)}}{\\partial w^{(l)}} = a^{(l-1)}, \\quad \\frac{\\partial z^{(l)}}{\\partial b^{(l)}} = 1, \\quad \\frac{\\partial z^{(l)}}{\\partial a^{(l-1)}} = w^{(l)}",
+        "\\frac{\\partial a^{(l)}}{\\partial z^{(l)}} = \\sigma'(z^{(l)})",
+        "L = (a^{(l)} - y)^2 \\;\\Rightarrow\\; \\frac{\\partial L}{\\partial a^{(l)}} = 2\\,(a^{(l)} - y)",
+        "\\sigma(z) = \\frac{1}{1 + e^{-z}} \\;\\Rightarrow\\; \\sigma'(z) = \\sigma(z)\\,(1 - \\sigma(z)) \\le \\frac{1}{4}",
+        "\\operatorname{ReLU}'(z) = \\begin{cases} 1 & z > 0 \\\\ 0 & z < 0 \\end{cases}"
+      ],
+      "symbols": [
+        {
+          "s": "\\sigma'(z)",
+          "meaning": "derivata della funzione di attivazione"
+        },
+        {
+          "s": "y",
+          "meaning": "output desiderato (etichetta)"
+        }
+      ],
+      "examRelevance": 3
+    },
+    {
+      "id": "c59",
+      "name": "Forma matriciale della backpropagation con il segnale d'errore δ (integrazione)",
+      "nameEn": "matrix form of backpropagation: error signal δ = ∂L/∂z, gradient δ a^T, backward pass W^T δ",
+      "kind": "formula",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 22
+        }
+      ],
+      "detail": "Integrazione che rende concreto l'approccio matriciale evocato a p. 22. Raccogliendo i pesi dello strato l nella matrice W^(l) con elemento (j, i) = w_ji^(l) (ecco perché l'ordine 'ji'), la somma pesata diventa z^(l) = W^(l) a^(l−1) + b^(l). Definito il segnale d'errore (error signal) δ^(l) = ∂L/∂z^(l) = σ'(z^(l)) ⊙ ∂L/∂a^(l), il gradiente dei pesi è il prodotto esterno δ^(l) (a^(l−1))^T (elemento j, i: δ_j a_i, cioè c54), quello dei bias è δ^(l), e la somma sui percorsi di c56 diventa ∂L/∂a^(l−1) = (W^(l))^T δ^(l). Ricorsione all'indietro: δ^(l−1) = σ'(z^(l−1)) ⊙ (W^(l))^T δ^(l). ⊙ è il prodotto elemento per elemento.",
+      "latex": [
+        "\\mathbf{z}^{(l)} = W^{(l)} \\mathbf{a}^{(l-1)} + \\mathbf{b}^{(l)}, \\quad \\big(W^{(l)}\\big)_{ji} = w_{ji}^{(l)}",
+        "\\boldsymbol{\\delta}^{(l)} \\equiv \\frac{\\partial L}{\\partial \\mathbf{z}^{(l)}} = \\sigma'(\\mathbf{z}^{(l)}) \\odot \\frac{\\partial L}{\\partial \\mathbf{a}^{(l)}}",
+        "\\frac{\\partial L}{\\partial W^{(l)}} = \\boldsymbol{\\delta}^{(l)} \\big(\\mathbf{a}^{(l-1)}\\big)^{\\top}, \\quad \\frac{\\partial L}{\\partial \\mathbf{b}^{(l)}} = \\boldsymbol{\\delta}^{(l)}",
+        "\\frac{\\partial L}{\\partial \\mathbf{a}^{(l-1)}} = \\big(W^{(l)}\\big)^{\\top} \\boldsymbol{\\delta}^{(l)}, \\quad \\boldsymbol{\\delta}^{(l-1)} = \\sigma'(\\mathbf{z}^{(l-1)}) \\odot \\big(W^{(l)}\\big)^{\\top} \\boldsymbol{\\delta}^{(l)}"
+      ],
+      "symbols": [
+        {
+          "s": "W^{(l)}",
+          "meaning": "matrice dei pesi dello strato l (righe = neuroni di arrivo j, colonne = neuroni di partenza i)"
+        },
+        {
+          "s": "\\boldsymbol{\\delta}^{(l)}",
+          "meaning": "segnale d'errore dello strato l, derivata della loss rispetto alle somme pesate"
+        },
+        {
+          "s": "\\odot",
+          "meaning": "prodotto elemento per elemento (Hadamard)"
+        }
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c60",
+      "name": "Prodotto di molti fattori: gradiente che svanisce o esplode (integrazione)",
+      "nameEn": "vanishing / exploding gradient from long chains of partial derivatives",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 20
+        },
+        {
+          "doc": "dl",
+          "page": 21
+        }
+      ],
+      "detail": "Integrazione che collega la 'lunga catena di derivate parziali' (c44, c45) a un tema ricorrente all'orale di Ricci. In una catena a un neurone per strato, ∂L/∂w^(1) contiene il prodotto di tutti i σ'(z^(k)) e di tutti i pesi w^(k) degli strati successivi. Con la sigmoide ogni σ' ≤ 1/4: con pesi vicini a 1 il segnale si riduce di almeno 4 volte per strato e dopo 10 strati ne arriva meno di un milionesimo (gradiente che svanisce, vanishing gradient); con pesi grandi il prodotto può crescere senza controllo (gradiente che esplode). La saturazione della sigmoide che ostacola la backpropagation è anticipata nel modulo d01 (p. 11-14); le connessioni residue di ResNet e la cella di memoria delle LSTM (domanda d'esame 39) creano un percorso con fattore circa 1 che attenua il problema (moduli d05, d07).",
+      "latex": [
+        "\\frac{\\partial L}{\\partial w^{(1)}} = a^{(0)} \\prod_{k=1}^{l} \\sigma'(z^{(k)}) \\prod_{k=2}^{l} w^{(k)} \\cdot \\frac{\\partial L}{\\partial a^{(l)}}",
+        "0 < \\sigma'(z) \\le \\frac{1}{4} \\;\\Rightarrow\\; \\prod_{k=1}^{10} \\sigma'(z^{(k)}) \\le 4^{-10} \\approx 10^{-6}"
+      ],
+      "symbols": [
+        {
+          "s": "\\prod_{k}",
+          "meaning": "prodotto dei fattori locali lungo la catena"
+        }
+      ],
+      "examRelevance": 2
+    },
+    {
+      "id": "c61",
+      "name": "Due accezioni di 'backpropagation': metodo per calcolare i gradienti o algoritmo di apprendimento",
+      "nameEn": "Backpropagation, a method for computing gradients (p. 16) vs Backpropagation is a widely used learning algorithm in neural networks, which consists of three main steps (p. 19)",
+      "kind": "osservazione",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 16
+        },
+        {
+          "doc": "dl",
+          "page": 19
+        }
+      ],
+      "detail": "La fonte usa il termine in due sensi. A p. 16 la backpropagation è 'a method for computing gradients', da usare in combinazione con la discesa del gradiente (stocastica), che è l'algoritmo che aggiorna i parametri (c01). A p. 19 è 'a widely used learning algorithm' in tre passi (c26), il terzo dei quali comprende anche l'aggiornamento dei pesi ('using this signal to update the weights by computing gradients', c29); nello stesso elenco 'Backpropagation' è anche il nome del solo passo 3. All'orale conviene esplicitare la distinzione: in senso stretto la backpropagation calcola le derivate ∂L/∂w e ∂L/∂b di tutti i parametri applicando la regola della catena dall'uscita verso l'ingresso (sezione 2.3); l'aggiornamento w ← w − η ĝ spetta all'ottimizzatore (discesa del gradiente batch, stocastica o mini-batch, momentum, Adam, modulo d03), che si può sostituire senza toccare la backpropagation. In senso largo si chiama 'backpropagation' l'intero ciclo forward, stima dell'errore, propagazione all'indietro e aggiornamento.",
+      "latex": [],
+      "symbols": [],
+      "examRelevance": 2,
+      "addedBy": "revisore"
+    },
+    {
+      "id": "c62",
+      "name": "Regola della catena: prodotto lungo un percorso, somma su più percorsi (richiamo, integrazione)",
+      "nameEn": "chain rule ('the chain of derivatives rule comes into play'; 'the same idea of the chain rule that we have always used')",
+      "kind": "teorema",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 20
+        },
+        {
+          "doc": "dl",
+          "page": 21
+        },
+        {
+          "doc": "dl",
+          "page": 22
+        }
+      ],
+      "detail": "La fonte invoca la regola della catena (chain of derivatives rule, p. 20; 'the same idea of the chain rule that we have always used', p. 21) senza enunciarla. Richiamo (integrazione): se L dipende da w solo attraverso la composizione w → z → a → L, la derivata di L rispetto a w è il prodotto delle derivate locali di ogni anello (forma a un percorso, usata in c39, c40, c43, c45, c54); se una variabile a_i influenza L attraverso più variabili intermedie z_1, …, z_J, la derivata totale è la somma dei contributi dei singoli percorsi, ciascuno un prodotto (forma multivariata, che è esattamente la 'Sum over layer l' di p. 22, c56). Ordine dei fattori: la fonte li scrive dall'ingresso verso l'uscita (∂z/∂w · ∂a/∂z · ∂L/∂a), al contrario della scrittura abituale dL/da · da/dz · dz/dw; con grandezze scalari il prodotto è commutativo e l'ordine non conta, mentre nella forma matriciale (c59) conta e fa comparire le trasposte. La propagazione all'indietro valuta i fattori a partire da ∂L/∂a^(l), cioè dal fattore più a destra nella scrittura della fonte.",
+      "latex": [
+        "L = L\\big(a(z(w))\\big) \\;\\Rightarrow\\; \\frac{dL}{dw} = \\frac{dz}{dw}\\, \\frac{da}{dz}\\, \\frac{dL}{da}",
+        "L = L\\big(z_1(a_i), \\ldots, z_J(a_i)\\big) \\;\\Rightarrow\\; \\frac{\\partial L}{\\partial a_i} = \\sum_{j=1}^{J} \\frac{\\partial z_j}{\\partial a_i}\\, \\frac{\\partial L}{\\partial z_j}"
+      ],
+      "symbols": [
+        {
+          "s": "z_1, \\ldots, z_J",
+          "meaning": "variabili intermedie attraverso cui a_i raggiunge la loss (le somme pesate dello strato successivo)"
+        },
+        {
+          "s": "\\sum_{j=1}^{J}",
+          "meaning": "somma sui J percorsi di influenza"
+        }
+      ],
+      "examRelevance": 3,
+      "addedBy": "revisore"
+    }
+  ],
+  "derivations": [
+    {
+      "id": "der01",
+      "title": "Regola della catena per ∂L/∂w^(l) e ∂L/∂b^(l) (un neurone per strato)",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 19
+        },
+        {
+          "doc": "dl",
+          "page": 20
+        }
+      ],
+      "goal": "Esprimere la sensibilità della loss al peso e al bias dell'ultimo strato come prodotto di derivate locali e calcolarle esplicitamente.",
+      "steps": [
+        "z^{(l)} = w^{(l)} a^{(l-1)} + b^{(l)}, \\quad a^{(l)} = \\sigma(z^{(l)}), \\quad L = L(a^{(l)}, y)",
+        "w^{(l)} \\to z^{(l)} \\to a^{(l)} \\to L",
+        "\\frac{\\partial L}{\\partial w^{(l)}} = \\frac{\\partial z^{(l)}}{\\partial w^{(l)}} \\frac{\\partial a^{(l)}}{\\partial z^{(l)}} \\frac{\\partial L}{\\partial a^{(l)}}",
+        "\\frac{\\partial z^{(l)}}{\\partial w^{(l)}} = a^{(l-1)}, \\quad \\frac{\\partial a^{(l)}}{\\partial z^{(l)}} = \\sigma'(z^{(l)})",
+        "\\frac{\\partial L}{\\partial w^{(l)}} = a^{(l-1)}\\, \\sigma'(z^{(l)})\\, \\frac{\\partial L}{\\partial a^{(l)}}",
+        "L = (a^{(l)} - y)^2 \\;\\Rightarrow\\; \\frac{\\partial L}{\\partial w^{(l)}} = a^{(l-1)}\\, \\sigma'(z^{(l)})\\, 2\\,(a^{(l)} - y)",
+        "\\frac{\\partial L}{\\partial b^{(l)}} = \\frac{\\partial z^{(l)}}{\\partial b^{(l)}} \\frac{\\partial a^{(l)}}{\\partial z^{(l)}} \\frac{\\partial L}{\\partial a^{(l)}} = 1 \\cdot \\sigma'(z^{(l)})\\, \\frac{\\partial L}{\\partial a^{(l)}}"
+      ],
+      "stepWhy": [
+        "Equazioni del passo forward della fonte (p. 19): il peso, l'attivazione precedente e il bias danno z, z dà a, a insieme a y dà la loss.",
+        "Grafo delle dipendenze (figura 'Conceptualisation of Calculations'): w agisce su L solo attraverso z e poi a, quindi la derivata passa per questi nodi intermedi.",
+        "Regola della catena (p. 20): la derivata composta è il prodotto delle derivate di ciascun anello; ogni fattore risponde a 'quanto una piccola variazione dell'anello precedente cambia il successivo?'.",
+        "Integrazione: z è lineare in w con coefficiente a^(l−1); a = σ(z) ha derivata σ'(z).",
+        "Sostituzione dei due fattori locali nella formula del passo 3; il terzo fattore dipende dalla loss scelta.",
+        "Integrazione con l'errore quadratico dell'impostazione 3Blue1Brown: la derivata di (a − y)² rispetto ad a è 2(a − y). Se la predizione è troppo bassa (a < y) il fattore è negativo e il peso va aumentato quando a^(l−1) > 0.",
+        "Per il bias (p. 20, 'Easy peasy!') cambia solo il primo fattore; poiché z = w a + b, ∂z/∂b = 1 e la derivata rispetto al bias è ∂L/∂z^(l)."
+      ],
+      "concepts": [
+        "c37",
+        "c38",
+        "c39",
+        "c40",
+        "c58"
+      ]
+    },
+    {
+      "id": "der02",
+      "title": "Propagazione allo strato precedente: ∂L/∂a^(l−1), ∂L/∂w^(l−1) e ricorsione",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 20
+        },
+        {
+          "doc": "dl",
+          "page": 21
+        }
+      ],
+      "goal": "Mostrare come la sensibilità all'attivazione del penultimo strato permette di calcolare le derivate dei pesi e bias precedenti riusando i fattori già calcolati, fino al vettore gradiente completo.",
+      "steps": [
+        "\\frac{\\partial L}{\\partial a^{(l-1)}} = \\frac{\\partial z^{(l)}}{\\partial a^{(l-1)}} \\frac{\\partial a^{(l)}}{\\partial z^{(l)}} \\frac{\\partial L}{\\partial a^{(l)}} = w^{(l)}\\, \\sigma'(z^{(l)})\\, \\frac{\\partial L}{\\partial a^{(l)}}",
+        "a^{(l-1)} = \\sigma(z^{(l-1)}), \\quad z^{(l-1)} = w^{(l-1)} a^{(l-2)} + b^{(l-1)}",
+        "\\frac{\\partial L}{\\partial w^{(l-1)}} = \\frac{\\partial z^{(l-1)}}{\\partial w^{(l-1)}} \\frac{\\partial a^{(l-1)}}{\\partial z^{(l-1)}} \\underbrace{\\frac{\\partial z^{(l)}}{\\partial a^{(l-1)}} \\frac{\\partial a^{(l)}}{\\partial z^{(l)}} \\frac{\\partial L}{\\partial a^{(l)}}}_{\\frac{\\partial L}{\\partial a^{(l-1)}}}",
+        "\\frac{\\partial L}{\\partial w^{(l-1)}} = a^{(l-2)}\\, \\sigma'(z^{(l-1)})\\, \\frac{\\partial L}{\\partial a^{(l-1)}}",
+        "\\frac{\\partial L}{\\partial b^{(l-1)}} = \\sigma'(z^{(l-1)})\\, \\frac{\\partial L}{\\partial a^{(l-1)}}",
+        "\\frac{\\partial L}{\\partial a^{(k-1)}} = w^{(k)}\\, \\sigma'(z^{(k)})\\, \\frac{\\partial L}{\\partial a^{(k)}}, \\quad k = l, l-1, \\ldots, 2",
+        "\\Delta_w L = \\left[ \\frac{\\partial L}{\\partial w^{(1)}}, \\frac{\\partial L}{\\partial b^{(1)}}, \\ldots, \\frac{\\partial L}{\\partial w^{(l)}}, \\frac{\\partial L}{\\partial b^{(l)}} \\right]"
+      ],
+      "stepWhy": [
+        "Formula della fonte (p. 20) per la sensibilità all'attivazione del penultimo strato; il primo fattore vale w^(l) perché z^(l) = w^(l) a^(l−1) + b^(l) (integrazione). Gli altri due fattori sono gli stessi già calcolati per w^(l).",
+        "L'attivazione del penultimo strato è a sua volta determinata dai propri peso e bias (p. 20, 'the trick here is to remember...').",
+        "Decomposizione della fonte (p. 21): due fattori locali allo strato l−1 per la lunga catena di dipendenze; gli ultimi tre sono raccolti sotto la graffa perché formano ∂L/∂a^(l−1).",
+        "Stessa forma del passo 5 di der01 con l'indice abbassato di uno: a^(l−2) al posto di a^(l−1), σ'(z^(l−1)) e la sensibilità ∂L/∂a^(l−1) ricevuta dallo strato successivo.",
+        "Come per l'ultimo strato, ∂z^(l−1)/∂b^(l−1) = 1.",
+        "Generalizzazione (p. 21, 'seguendo le dipendenze attraverso l'albero'): ogni strato riceve la sensibilità della propria attivazione dallo strato successivo e la passa al precedente moltiplicandola per w σ'; per questo il calcolo va dall'uscita verso l'ingresso.",
+        "Avendo ogni derivata si compone l'intero vettore gradiente (p. 21), che la discesa del gradiente usa per aggiornare tutti i pesi e bias."
+      ],
+      "concepts": [
+        "c42",
+        "c43",
+        "c44",
+        "c45",
+        "c47",
+        "c48"
+      ]
+    },
+    {
+      "id": "der03",
+      "title": "Più neuroni per strato: derivata rispetto a w_ji e somma sui percorsi",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 21
+        },
+        {
+          "doc": "dl",
+          "page": 22
+        }
+      ],
+      "goal": "Estendere la backpropagation a strati con più neuroni: la derivata rispetto a un peso conserva la forma del caso scalare, quella rispetto a un'attivazione diventa una somma su tutti i neuroni dello strato successivo.",
+      "steps": [
+        "z_j^{(l)} = \\sum_i w_{ji}^{(l)} a_i^{(l-1)} + b_j^{(l)}, \\quad a_j^{(l)} = \\sigma(z_j^{(l)})",
+        "\\frac{\\partial z_j^{(l)}}{\\partial w_{ji}^{(l)}} = a_i^{(l-1)}",
+        "\\frac{\\partial L}{\\partial w_{ji}^{(l)}} = \\frac{\\partial z_j^{(l)}}{\\partial w_{ji}^{(l)}} \\frac{\\partial a_j^{(l)}}{\\partial z_j^{(l)}} \\frac{\\partial L}{\\partial a_j^{(l)}} = a_i^{(l-1)}\\, \\sigma'(z_j^{(l)})\\, \\frac{\\partial L}{\\partial a_j^{(l)}}",
+        "a_i^{(l-1)} \\to z_1^{(l)}, z_2^{(l)}, \\ldots \\quad (\\text{un percorso per ogni neurone } j \\text{ dello strato } l)",
+        "\\frac{\\partial z_j^{(l)}}{\\partial a_i^{(l-1)}} = w_{ji}^{(l)}",
+        "\\frac{\\partial L}{\\partial a_i^{(l-1)}} = \\sum_j \\frac{\\partial z_j^{(l)}}{\\partial a_i^{(l-1)}} \\frac{\\partial a_j^{(l)}}{\\partial z_j^{(l)}} \\frac{\\partial L}{\\partial a_j^{(l)}} = \\sum_j w_{ji}^{(l)}\\, \\sigma'(z_j^{(l)})\\, \\frac{\\partial L}{\\partial a_j^{(l)}}"
+      ],
+      "stepWhy": [
+        "Somma pesata con la notazione a indici della fonte (p. 22): il neurone j somma i contributi di tutti i neuroni i dello strato precedente.",
+        "Integrazione: nella somma solo il termine con indice i contiene w_ji, tutti gli altri sono costanti rispetto a w_ji.",
+        "Formula della fonte (p. 22): stessa chain rule del caso a un neurone, perché w_ji influenza la loss solo attraverso z_j; cambiano solo gli indici. Sostituzione dei fattori locali (integrazione).",
+        "Osservazione della fonte (p. 22): un neurone dello strato precedente entra nella somma pesata di tutti i neuroni dello strato successivo, quindi influenza il costo attraverso più percorsi.",
+        "Integrazione: nella somma pesata z_j il coefficiente di a_i è w_ji.",
+        "Regola della catena multivariata (derivata totale): quando una variabile influenza l'uscita attraverso più percorsi le derivate dei singoli percorsi si sommano. La fonte etichetta la somma 'Sum over layer l'."
+      ],
+      "concepts": [
+        "c53",
+        "c54",
+        "c55",
+        "c56"
+      ]
+    },
+    {
+      "id": "der04",
+      "title": "Forma matriciale con il segnale d'errore δ (integrazione)",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 22
+        }
+      ],
+      "goal": "Riscrivere le formule scalari di p. 22 come operazioni su vettori e matrici, realizzando l'approccio matriciale richiesto dalla fonte.",
+      "steps": [
+        "\\mathbf{z}^{(l)} = W^{(l)} \\mathbf{a}^{(l-1)} + \\mathbf{b}^{(l)}, \\quad \\big(W^{(l)}\\big)_{ji} = w_{ji}^{(l)}",
+        "\\delta_j^{(l)} \\equiv \\frac{\\partial L}{\\partial z_j^{(l)}} = \\sigma'(z_j^{(l)})\\, \\frac{\\partial L}{\\partial a_j^{(l)}} \\;\\Rightarrow\\; \\boldsymbol{\\delta}^{(l)} = \\sigma'(\\mathbf{z}^{(l)}) \\odot \\frac{\\partial L}{\\partial \\mathbf{a}^{(l)}}",
+        "\\frac{\\partial L}{\\partial w_{ji}^{(l)}} = \\delta_j^{(l)}\\, a_i^{(l-1)} \\;\\Rightarrow\\; \\frac{\\partial L}{\\partial W^{(l)}} = \\boldsymbol{\\delta}^{(l)} \\big(\\mathbf{a}^{(l-1)}\\big)^{\\top}",
+        "\\frac{\\partial L}{\\partial \\mathbf{b}^{(l)}} = \\boldsymbol{\\delta}^{(l)}",
+        "\\frac{\\partial L}{\\partial a_i^{(l-1)}} = \\sum_j w_{ji}^{(l)}\\, \\delta_j^{(l)} \\;\\Rightarrow\\; \\frac{\\partial L}{\\partial \\mathbf{a}^{(l-1)}} = \\big(W^{(l)}\\big)^{\\top} \\boldsymbol{\\delta}^{(l)}",
+        "\\boldsymbol{\\delta}^{(l-1)} = \\sigma'(\\mathbf{z}^{(l-1)}) \\odot \\big(W^{(l)}\\big)^{\\top} \\boldsymbol{\\delta}^{(l)}"
+      ],
+      "stepWhy": [
+        "La somma di c53 per tutti i j insieme è un prodotto matrice-vettore; l'ordine degli indici 'ji' (p. 21) fa sì che la riga j di W contenga i pesi entranti nel neurone j.",
+        "Si raccolgono gli ultimi due fattori della catena (comuni a pesi, bias e attivazioni) in un'unica quantità per neurone, il segnale d'errore; ⊙ perché ogni neurone ha il proprio σ'.",
+        "La formula di c54 dice che l'elemento (j, i) del gradiente è δ_j a_i: tutti insieme formano il prodotto esterno colonna per riga, una matrice con la stessa forma di W.",
+        "∂z_j/∂b_j = 1, quindi il gradiente dei bias è il segnale d'errore stesso.",
+        "La somma sui percorsi di c56 con ∂z_j/∂a_i = w_ji è la colonna i di W moltiplicata per δ: per tutti gli i insieme è W trasposta per δ.",
+        "Combinando i passi 2 e 5 per lo strato l−1 si ottiene la ricorsione all'indietro: un prodotto matrice-vettore e un prodotto elemento per elemento per strato, eseguibili in parallelo su GPU."
+      ],
+      "concepts": [
+        "c57",
+        "c59",
+        "c51"
+      ]
+    },
+    {
+      "id": "der05",
+      "title": "Perché il gradiente negativo è la direzione di massima discesa (integrazione)",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 16
+        }
+      ],
+      "goal": "Giustificare l'affermazione della fonte che la direzione di massima discesa è data dal gradiente negativo e che un piccolo passo in quella direzione riduce la loss.",
+      "steps": [
+        "L(\\mathbf{w} + \\epsilon \\mathbf{u}) \\approx L(\\mathbf{w}) + \\epsilon\\, (\\nabla_{\\mathbf{w}} L)^{\\top} \\mathbf{u}, \\quad \\lVert \\mathbf{u} \\rVert = 1",
+        "(\\nabla_{\\mathbf{w}} L)^{\\top} \\mathbf{u} = \\sum_{i=1}^{N} \\frac{\\partial L}{\\partial w_i}\\, u_i",
+        "(\\nabla_{\\mathbf{w}} L)^{\\top} \\mathbf{u} \\ge -\\lVert \\nabla_{\\mathbf{w}} L \\rVert\\, \\lVert \\mathbf{u} \\rVert = -\\lVert \\nabla_{\\mathbf{w}} L \\rVert",
+        "\\mathbf{u}^{*} = -\\frac{\\nabla_{\\mathbf{w}} L}{\\lVert \\nabla_{\\mathbf{w}} L \\rVert}",
+        "w \\leftarrow w - \\eta \\hat{g}",
+        "L(\\mathbf{w} - \\eta \\nabla_{\\mathbf{w}} L) \\approx L(\\mathbf{w}) - \\eta\\, \\lVert \\nabla_{\\mathbf{w}} L \\rVert^{2} \\le L(\\mathbf{w})"
+      ],
+      "stepWhy": [
+        "Sviluppo di Taylor al primo ordine della loss per un piccolo spostamento ε lungo una direzione unitaria u; il gradiente è il vettore Δ_w L della fonte (qui scritto ∇).",
+        "Il prodotto scalare è la derivata direzionale: combina le derivate parziali (ognuna misura la variazione lungo un asse, p. 17) con i pesi u_i della direzione.",
+        "Disuguaglianza di Cauchy-Schwarz: il prodotto scalare non può essere più negativo di meno il prodotto delle norme.",
+        "L'uguaglianza vale quando u è parallelo e opposto al gradiente: è la direzione di massima discesa, da cui il segno meno nell'algoritmo (p. 16).",
+        "Regola di aggiornamento del libro (p. 23): si fa un passo di ampiezza η lungo −ĝ.",
+        "Sostituendo nel passo 1: per η abbastanza piccolo la loss diminuisce della quantità η ||∇L||², nulla solo se il gradiente è nullo (p. 17: minimi, massimi o selle)."
+      ],
+      "concepts": [
+        "c03",
+        "c04",
+        "c08",
+        "c09"
+      ]
+    },
+    {
+      "id": "der06",
+      "title": "Sella: gradiente nullo senza minimo e fuga dalla sella (esempio, integrazione)",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 18
+        }
+      ],
+      "goal": "Verificare su un esempio che in una sella il gradiente si annulla anche se il punto non è un minimo, e che la discesa del gradiente resta bloccata solo partendo esattamente sulla direzione stabile.",
+      "steps": [
+        "f(w_1, w_2) = w_1^2 - w_2^2",
+        "\\nabla f = \\left[ \\frac{\\partial f}{\\partial w_1}, \\frac{\\partial f}{\\partial w_2} \\right] = [2 w_1, \\; -2 w_2] = [0, 0] \\text{ in } (0, 0)",
+        "H = \\begin{bmatrix} 2 & 0 \\\\ 0 & -2 \\end{bmatrix}",
+        "f(w_1, 0) = w_1^2 \\ge 0, \\quad f(0, w_2) = -w_2^2 \\le 0",
+        "w_1 \\leftarrow w_1 - \\eta\\, 2 w_1 = (1 - 2\\eta)\\, w_1, \\quad w_2 \\leftarrow w_2 - \\eta\\, (-2 w_2) = (1 + 2\\eta)\\, w_2",
+        "w_2^{(0)} = 0 \\Rightarrow w_2^{(t)} = 0 \\; \\forall t, \\qquad w_2^{(0)} = \\varepsilon \\neq 0 \\Rightarrow w_2^{(t)} = (1 + 2\\eta)^{t} \\varepsilon"
+      ],
+      "stepWhy": [
+        "La sella più semplice, la stessa forma della figura di p. 18 (paraboloide iperbolico).",
+        "Entrambe le derivate parziali si annullano nell'origine: gradiente nullo come nei minimi (p. 18: 'the gradient is zero, even if the point is not a minimum').",
+        "Le derivate seconde formano l'Hessiana: un autovalore positivo (direzione che curva verso l'alto) e uno negativo (direzione che curva verso il basso), la definizione di sella della fonte.",
+        "Lungo w_1 l'origine è un minimo, lungo w_2 un massimo: non è un minimo della funzione.",
+        "Un passo di discesa del gradiente con passo η: la componente w_1 si contrae verso 0, la componente w_2 si allontana da 0.",
+        "Se si parte esattamente con w_2 = 0 l'algoritmo converge alla sella e ci resta (il caso problematico della fonte); qualunque piccola perturbazione ε cresce esponenzialmente e l'algoritmo sfugge, all'inizio lentamente perché ε è piccolo (plateau)."
+      ],
+      "concepts": [
+        "c16",
+        "c17",
+        "c19",
+        "c09"
+      ]
+    }
+  ],
+  "workedExamples": [
+    {
+      "id": "ex01",
+      "title": "Esempio di indicizzazione con due strati fittizi 0 e 1",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 21
+        }
+      ],
+      "description": "Esempio della fonte (figura 'Example of Indexing'): due strati fittizi chiamati 0 e 1, con n e m nodi rispettivamente. Le attivazioni dello strato 0 sono a_1^(0), a_2^(0), …, a_n^(0); quelle dello strato 1 sono a_1^(1), …, a_m^(1). I pesi che entrano nel neurone a_1^(1) sono w_11^(1) (da a_1^(0)), w_12^(1) (da a_2^(0)), …, w_1n^(1) (da a_n^(0)): l'apice (1) indica lo strato di arrivo, il primo pedice il neurone di arrivo, il secondo il neurone di partenza. Nella matrice dei pesi W^(1), di dimensione m × n, questi pesi formano la prima riga; la somma pesata è z_1^(1) = Σ_i w_1i^(1) a_i^(0) + b_1^(1).",
+      "concepts": [
+        "c50",
+        "c51",
+        "c52",
+        "c53"
+      ]
+    },
+    {
+      "id": "ex02",
+      "title": "Esempio illustrativo del problema dei minimi locali",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 17
+        }
+      ],
+      "description": "Esempio della fonte (figura 'Local and Global Minima'): una loss in una dimensione con due minimi locali segnati in rosso ('Local Minima Trap'), uno in una valle poco profonda a sinistra e uno in una valle stretta e alta a destra, e il minimo globale in blu ('Global Minima') nella valle profonda al centro. Una discesa del gradiente che parte sul fianco di una delle due trappole si ferma lì, dove la derivata è nulla, senza raggiungere il minimo globale. La fonte aggiunge che in pratica questi minimi locali sono spesso soluzioni comunque efficaci.",
+      "concepts": [
+        "c13",
+        "c14",
+        "c15"
+      ]
+    },
+    {
+      "id": "ex03",
+      "title": "Esempio numerico aggiunto: backpropagation su una catena 1-1-1 (salmone)",
+      "sourcePages": [
+        {
+          "doc": "dl",
+          "page": 19
+        },
+        {
+          "doc": "dl",
+          "page": 20
+        },
+        {
+          "doc": "dl",
+          "page": 21
+        }
+      ],
+      "description": "Esempio aggiunto (non nella fonte) che applica passo per passo le formule di pp. 19-21. Rete a un neurone per strato con due strati e sigmoide: ingresso x = a^(0) = 1,5 (luminosità normalizzata di un pesce), w^(1) = 0,8, b^(1) = −0,2, w^(2) = 1,2, b^(2) = −0,5, etichetta y = 1 (salmone), loss L = (a^(2) − y)². Forward: z^(1) = 0,8·1,5 − 0,2 = 1,0; a^(1) = σ(1,0) = 0,7311; z^(2) = 1,2·0,7311 − 0,5 = 0,3773; a^(2) = σ(0,3773) = 0,5932; L = (0,5932 − 1)² = 0,1655. Backward, ultimo strato: ∂L/∂a^(2) = 2(0,5932 − 1) = −0,8136; ∂a^(2)/∂z^(2) = 0,5932·0,4068 = 0,2413; ∂L/∂w^(2) = 0,7311·0,2413·(−0,8136) = −0,1435; ∂L/∂b^(2) = 0,2413·(−0,8136) = −0,1963. Strato precedente: ∂L/∂a^(1) = w^(2)·0,2413·(−0,8136) = −0,2356 (il fattore sotto la graffa); ∂a^(1)/∂z^(1) = 0,7311·0,2689 = 0,1966; ∂L/∂w^(1) = 1,5·0,1966·(−0,2356) = −0,0695; ∂L/∂b^(1) = 0,1966·(−0,2356) = −0,0463. Le differenze finite centrate danno gli stessi valori (−0,14352 e −0,06948). Vettore gradiente: [−0,0695; −0,0463; −0,1435; −0,1963]. Un passo con η = 0,5 porta a w^(1) = 0,8347, b^(1) = −0,1768, w^(2) = 1,2718, b^(2) = −0,4018 e la loss scende da 0,1655 a 0,1345.",
+      "concepts": [
+        "c39",
+        "c40",
+        "c43",
+        "c45",
+        "c48",
+        "c58"
+      ]
+    }
+  ],
+  "figures": [
+    {
+      "id": "fig01",
+      "doc": "dl",
+      "page": 16,
+      "description": "Visualizzazione delle derivate parziali in due modi: superficie 3D con frecce nere (sinistra) e vista dall'alto con campo di frecce (destra); minimo blu, massimo rosso; le frecce (gradiente) si allontanano dal blu e convergono sul rosso, più lunghe sul fianco ripido.",
+      "region": "metà inferiore della pagina, due grafici affiancati sopra la didascalia 'Visualization of Partial Derivatives in Two Distinct Ways'",
+      "concepts": [
+        "c06",
+        "c07",
+        "c04"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig02",
+      "doc": "dl",
+      "page": 17,
+      "description": "Superficie 3D della loss con una sequenza di frecce nere concatenate che scende da vicino alla cresta rossa fino alla valle blu: il percorso della discesa del gradiente.",
+      "region": "metà superiore della pagina, al centro, didascalia 'Visual Representation of the Gradient Descent Algorithm'",
+      "concepts": [
+        "c10",
+        "c11"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig03",
+      "doc": "dl",
+      "page": 17,
+      "description": "Curva 1D della loss con due minimi locali rossi 'Local Minima Trap' e il minimo globale blu 'Global Minima'.",
+      "region": "fondo della pagina, didascalia 'Local and Global Minima'",
+      "concepts": [
+        "c13",
+        "c15"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig04",
+      "doc": "dl",
+      "page": 18,
+      "description": "Superficie 3D a sella (bordi rossi sollevati, centro giallo, parti blu) con un punto nero al centro che indica il punto di sella.",
+      "region": "metà superiore della pagina, didascalia 'Saddle Point Illustration'",
+      "concepts": [
+        "c16",
+        "c17",
+        "c20"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig05",
+      "doc": "dl",
+      "page": 19,
+      "description": "Riquadro con i tre passi della backpropagation: Forward Propagation, Error Estimation, Backpropagation.",
+      "region": "in alto, riquadro con bordo nero a sinistra",
+      "concepts": [
+        "c26",
+        "c27",
+        "c28",
+        "c29"
+      ],
+      "importance": 2
+    },
+    {
+      "id": "fig06",
+      "doc": "dl",
+      "page": 19,
+      "description": "Diagramma 'Conceptualisation of Calculations': w^(l) (blu), a^(l−1), b^(l) (arancio) → z^(l) (verde) → a^(l) → L (rossa) con y; frecce gialle solo sul percorso w^(l) → z^(l) → a^(l) → L, tratti neri per a^(l−1), b^(l) e y.",
+      "region": "metà inferiore, colonna sinistra; a destra il testo con le equazioni z^(l) e a^(l)",
+      "concepts": [
+        "c34",
+        "c35",
+        "c36"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig07",
+      "doc": "dl",
+      "page": 20,
+      "description": "Formula della chain rule ∂L/∂w^(l) = ∂z/∂w · ∂a/∂z · ∂L/∂a con tre frecce curve che collegano ogni fattore alla sua domanda ('How much does a little variation to ... changes ...?') e, sotto, la formula analoga per il bias.",
+      "region": "terzo superiore della pagina",
+      "concepts": [
+        "c39",
+        "c40"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig08",
+      "doc": "dl",
+      "page": 20,
+      "description": "Schema esteso 'Conceptualisation of Calculations (Extended)': catena orizzontale L — a^(l) — z^(l) — a^(l−1) — z^(l−1) — a^(l−2) — z^(l−2) — a^(l−3) con i bias sopra e i pesi sotto, y sotto L.",
+      "region": "centro della pagina, su tutta la larghezza",
+      "concepts": [
+        "c41",
+        "c42"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig09",
+      "doc": "dl",
+      "page": 21,
+      "description": "Formula di ∂L/∂w^(l−1) con cinque fattori e la graffa sotto gli ultimi tre etichettata ∂L/∂a^(l−1).",
+      "region": "in alto a sinistra",
+      "concepts": [
+        "c45"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig10",
+      "doc": "dl",
+      "page": 21,
+      "description": "Diagramma verticale 'Calculations with 3 Layers': w^(l−1), a^(l−2), b^(l−1) → z^(l−1) → a^(l−1); con w^(l), b^(l) → z^(l) → a^(l) → L con y; frecce gialle lungo il percorso da w^(l−1) a L.",
+      "region": "metà superiore, colonna destra",
+      "concepts": [
+        "c44",
+        "c46"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig11",
+      "doc": "dl",
+      "page": 21,
+      "description": "'Neural Network Indexing': nodo verde a_i^(l−1) collegato dall'arco w_ji^(l) al nodo viola a_j^(l).",
+      "region": "metà pagina, colonna sinistra",
+      "concepts": [
+        "c51",
+        "c52"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig12",
+      "doc": "dl",
+      "page": 21,
+      "description": "'Example of Indexing': strato 0 con n nodi verdi e strato 1 con m nodi viola; archi blu scuro w_11^(1), w_12^(1), w_1n^(1) entranti in a_1^(1), altri archi e il nodo a_m^(1) in viola chiaro sbiadito.",
+      "region": "terzo inferiore, colonna sinistra",
+      "concepts": [
+        "c50",
+        "c51",
+        "c52"
+      ],
+      "importance": 3
+    },
+    {
+      "id": "fig13",
+      "doc": "dl",
+      "page": 22,
+      "description": "Formula della somma sui percorsi ∂L/∂a_i^(l−1) = Σ_j ... con la graffa 'Sum over layer l'.",
+      "region": "metà pagina, al centro",
+      "concepts": [
+        "c55",
+        "c56"
+      ],
+      "importance": 3
+    }
+  ],
+  "widgets": [
+    {
+      "id": "d02-backprop-calcola-discesa-aggiorna",
+      "title": "Due attori: la backprop calcola, la discesa aggiorna",
+      "concepts": [
+        "c01",
+        "c02",
+        "c61"
+      ],
+      "scenario": "cifre",
+      "realExample": "Una piccola rete 64-16-10 impara a riconoscere cifre scritte a mano 8×8 (500 immagini sintetiche stile MNIST). A ogni iterazione la backpropagation produce un gradiente con 64·16 + 16 + 16·10 + 10 = 1.210 componenti e la discesa del gradiente lo usa per spostare i pesi: due ruoli distinti che la fonte presenta insieme.",
+      "storyboard": [
+        "Due corsie orizzontali etichettate 'Backpropagation: calcola il gradiente' e 'Discesa del gradiente: aggiorna i parametri'. A sinistra la rete (64 → 16 → 10 nodi) con pesi iniziali casuali a seed; in alto una cifra '3' 8×8 entra nella rete e la loss iniziale vale 2,30 (cross-entropy su 10 classi, circa ln 10).",
+        "Play o Passo: nella prima corsia compare un nastro di 1.210 barrette (una per parametro) che si colorano da destra a sinistra in 1,2 s, strato per strato: prima le 170 dello strato di uscita (16·10 pesi + 10 bias), poi le 1.040 del primo strato (64·16 pesi + 16 bias); altezza proporzionale a ∂L/∂w_i (blu positive, arancio negative); al termine un'etichetta dice 'gradiente pronto'.",
+        "Il nastro scivola nella seconda corsia in 400 ms: ogni parametro si sposta di −η volte la sua barretta; gli spessori degli archi della rete cambiano in 300 ms, la loss in alto scende (per esempio da 2,30 a 2,21) e sotto la formula compare un parametro campione con i numeri sostituiti (per esempio w_17 ← 0,42 − 0,1·0,35 = 0,385).",
+        "Il ciclo si ripete (Play: 5 iterazioni al secondo, animazioni accorciate a 150 ms) e una curva della loss per iterazione si allunga sotto; l'interruttore 'Stocastica' usa una cifra alla volta (curva rumorosa), 'Batch' usa tutte le 500 cifre (curva liscia).",
+        "Pulsante 'Spegni la backprop': la corsia del gradiente resta vuota e quella di aggiornamento ferma con il messaggio 'senza gradiente non so dove andare'. Pulsante 'Spegni la discesa': il nastro del gradiente viene calcolato a ogni iterazione ma i pesi non cambiano e la loss resta piatta, mentre il contatore del tempo di calcolo continua a salire.",
+        "Scheda 'Due accezioni' (aggiunta dal revisore): le due citazioni della fonte affiancate, 'a method for computing gradients' (p. 16) e 'a widely used learning algorithm ... three main steps' (p. 19). Cliccando la prima si illumina (in 300 ms) solo la corsia del gradiente; cliccando la seconda si illumina l'intero ciclo forward → errore → backward → aggiornamento.",
+        "Selettore 'Ottimizzatore: SGD / Momentum / Adam': cambia solo la corsia di aggiornamento (traiettoria e curva della loss diverse, sovrapposte in tre colori), mentre il nastro del gradiente prodotto dalla backpropagation per la stessa cifra resta identico barretta per barretta."
+      ],
+      "interactions": [
+        "Play/Pausa (5 iterazioni al secondo) e Passo singolo (una iterazione completa animata, circa 2 s)",
+        "interruttore Stocastica (1 cifra per iterazione) / Batch (tutte le 500 cifre)",
+        "pulsanti 'Spegni la backprop' e 'Spegni la discesa'",
+        "slider η da 0,01 a 1 (default 0,1, passo 0,01)",
+        "clic sulle due citazioni della fonte nella scheda 'Due accezioni'",
+        "selettore dell'ottimizzatore SGD / Momentum / Adam",
+        "clic su una barretta del nastro: evidenzia l'arco o il bias corrispondente e ne mostra l'aggiornamento con i numeri"
+      ],
+      "visual": "Rete a sinistra con archi di spessore proporzionale a |w|; due corsie con il nastro di barrette; curva della loss in basso; contatori di iterazioni e di accuratezza sul training aggiornati live; formula dell'aggiornamento con η sostituito.",
+      "aha": "La backpropagation da sola non impara nulla: calcola le derivate. È la discesa del gradiente che, usando quelle derivate, sposta i pesi e fa scendere la loss.",
+      "formulasShown": [
+        "\\Delta_w L = \\left[ \\frac{\\partial L}{\\partial w_1}, \\ldots, \\frac{\\partial L}{\\partial w_N} \\right]",
+        "w \\leftarrow w - \\eta \\hat{g}",
+        "w_{17} \\leftarrow 0{,}42 - 0{,}1 \\cdot 0{,}35 = 0{,}385"
+      ],
+      "challenge": "Prevedi quale dei due pulsanti di spegnimento lascia la loss invariata pur consumando tempo di calcolo a ogni iterazione (spegnere la discesa).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d02-bussola-del-gradiente",
+      "title": "La bussola del gradiente: perché il segno meno",
+      "concepts": [
+        "c03",
+        "c04",
+        "c05"
+      ],
+      "scenario": "case",
+      "realExample": "Un neurone lineare stima il prezzo di una casa (migliaia di euro) da superficie e numero di stanze normalizzati con due pesi w1, w2 (40 case sintetiche, dichiarate come tali). La loss MSE L(w1, w2) = (1/40) Σ_n (w1 x_n1 + w2 x_n2 − y_n)² è una ciotola sul piano (w1, w2): il gradiente dice quale combinazione di pesi cambiare e di quanto per ridurre l'errore di stima.",
+      "storyboard": [
+        "Heatmap con curve di livello della loss sul riquadro w1, w2 ∈ [−1, 4] (blu = loss bassa, rosso = alta); un punto trascinabile parte in (0,5; 3). Etichetta 'dati sintetici: 40 case'.",
+        "Due pannelli laterali mostrano le fette: L in funzione di w1 con w2 fisso e L in funzione di w2 con w1 fisso; su ciascuna una retta tangente con la pendenza numerica, cioè ∂L/∂w1 e ∂L/∂w2; fette e tangenti si aggiornano a ogni frame mentre si trascina il punto.",
+        "Le due pendenze si compongono in una freccia rossa (gradiente, perpendicolare alla curva di livello) e nella sua opposta verde (−gradiente), che crescono dal punto in 300 ms; il vettore [∂L/∂w1, ∂L/∂w2] è scritto con i valori live (valori indicativi in (0,5; 3): [−1,8; 2,4], norma 3,0).",
+        "Modalità bussola: un ago ruota su 360° attorno al punto e un grafico polare (disegnato in 600 ms) mostra la derivata direzionale (∇L)ᵀu per ogni direzione unitaria u; il minimo dell'anello, −||∇L||, cade esattamente sulla freccia verde, il massimo, +||∇L||, sulla rossa.",
+        "Clic 'Fai un passo': il punto scivola in 400 ms di −η∇L, la loss cala e la formula w ← w − ηĝ mostra i numeri sostituiti (con i valori indicativi e η = 0,1: da (0,5; 3) a (0,68; 2,76)); con η troppo grande il punto scavalca la valle e la nuova loss, più alta, lampeggia in rosso."
+      ],
+      "interactions": [
+        "trascina il punto nel riquadro w1, w2 ∈ [−1, 4]",
+        "ruota l'ago della bussola da 0° a 360° (passo 1°)",
+        "pulsante 'Mostra −∇L' (rivela la freccia verde, serve per la sfida)",
+        "pulsante 'Fai un passo'",
+        "slider η da 0,001 a 0,5 (default 0,1, scala logaritmica)"
+      ],
+      "visual": "Heatmap blu-rosso con curve di livello; due mini-grafici delle fette con tangenti; frecce rossa e verde; grafico polare della derivata direzionale; formula del gradiente e dell'aggiornamento con valori sostituiti.",
+      "aha": "Il gradiente è solo la lista delle pendenze lungo ogni asse, ma messe insieme puntano in salita: il segno meno trasforma la salita più ripida nella discesa più ripida.",
+      "formulasShown": [
+        "\\Delta_w L = \\left[ \\frac{\\partial L}{\\partial w_1}, \\frac{\\partial L}{\\partial w_2} \\right]",
+        "\\frac{\\partial L}{\\partial w_k} = \\frac{2}{40} \\sum_{n=1}^{40} (w_1 x_{n1} + w_2 x_{n2} - y_n)\\, x_{nk}",
+        "L(\\mathbf{w} + \\epsilon \\mathbf{u}) \\approx L(\\mathbf{w}) + \\epsilon\\, (\\nabla L)^{\\top} \\mathbf{u}",
+        "w \\leftarrow w - \\eta \\hat{g}",
+        "\\mathbf{w} \\leftarrow (0{,}5;\\ 3) - 0{,}1 \\cdot (-1{,}8;\\ 2{,}4) = (0{,}68;\\ 2{,}76)"
+      ],
+      "challenge": "Ruota l'ago nella direzione in cui la loss scende più in fretta prima di premere 'Mostra −∇L'; il punteggio dipende dall'errore angolare.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d02-campo-del-gradiente-3d",
+      "title": "Il campo delle frecce: 3D e vista dall'alto",
+      "concepts": [
+        "c06",
+        "c07",
+        "c08"
+      ],
+      "scenario": "pesce",
+      "realExample": "Superficie di loss sintetica (dichiarata come tale) ispirata alla figura della fonte, sul piano di due pesi di un classificatore salmone/spigola basato su luminosità e larghezza: una valle dove i pesi separano bene le due specie e una collina dove sbagliano con sicurezza. Forma usata: L(w1, w2) = 0,5 − 0,4 e^{−[(w1+1)² + w2²]} + 0,4 e^{−[(w1−1)² + w2²]} su w1, w2 ∈ [−3, 3], con minimo blu vicino a (−1, 0) (L ≈ 0,11) e massimo rosso vicino a (1, 0) (L ≈ 0,89). Serve a leggere le derivate parziali come pendenze e il gradiente come campo di frecce.",
+      "storyboard": [
+        "Vista 3D ruotabile (sinistra) e vista dall'alto (destra) della stessa superficie, con i colori della fonte dal blu (minimo) al rosso (massimo).",
+        "Compare una griglia di frecce nere (15×15 di default), prima sulla superficie 3D e poi proiettata nella vista dall'alto, con 20 ms di sfasamento tra una freccia e l'altra (circa 1 s in tutto); la lunghezza di ciascuna è proporzionale a ||∇L|| e il verso è quello del gradiente (in salita), come nella figura della fonte: le frecce si allontanano dal blu e convergono sul rosso.",
+        "Passando il mouse su un punto della vista dall'alto, un mirino appare anche in 3D; due mini-grafici mostrano le fette lungo w1 e w2 con le tangenti e i valori live, per esempio in (−1; 1): ∂L/∂w1 = 0,011, ∂L/∂w2 = 0,289, ||∇L|| = 0,289 (freccia quasi parallela all'asse w2, rivolta lontano dal minimo).",
+        "Interruttore '+∇ / −∇': le frecce ruotano di 180° in 400 ms; con −∇ tutte scorrono verso il blu.",
+        "Pulsante 'Segui le frecce': le particelle (30 di default) rilasciate in punti casuali scivolano lungo −∇ con passo η = 0,3 (60 passi in 2 s, con scia) e si raccolgono nella zona blu; quelle partite vicino alla cima rossa restano quasi ferme all'inizio perché lì le frecce sono cortissime."
+      ],
+      "interactions": [
+        "rotazione della vista 3D con trascinamento (azimut 0-360°, elevazione 10-80°)",
+        "hover sulla vista dall'alto con mirino sincronizzato in 3D",
+        "interruttore +∇ / −∇",
+        "pulsante 'Segui le frecce' e slider numero di particelle da 10 a 100",
+        "slider densità della griglia di frecce da 8×8 a 24×24"
+      ],
+      "visual": "Superficie colorata blu-giallo-rosso con frecce nere; heatmap dall'alto con campo vettoriale; due fette con tangenti e valori numerici; particelle bianche con scia.",
+      "aha": "Ogni freccia combina due pendenze, una per asse; il gradiente punta verso il rosso, quindi la discesa va nel verso opposto, e dove le frecce sono lunghe la loss cambia in fretta.",
+      "formulasShown": [
+        "L(w_1, w_2) = 0{,}5 - 0{,}4\\, e^{-[(w_1+1)^2 + w_2^2]} + 0{,}4\\, e^{-[(w_1-1)^2 + w_2^2]}",
+        "\\frac{\\partial L}{\\partial w_1}, \\; \\frac{\\partial L}{\\partial w_2}",
+        "\\Delta_w L = \\left[ \\frac{\\partial L}{\\partial w_1}, \\frac{\\partial L}{\\partial w_2} \\right]",
+        "\\Delta_w L(-1;\\ 1) = [\\,0{,}011;\\ 0{,}289\\,], \\quad \\lVert \\Delta_w L \\rVert = 0{,}289"
+      ],
+      "challenge": "Trova nella vista dall'alto un punto dove ∂L/∂w1 = 0 ma ∂L/∂w2 ≠ 0 (freccia parallela all'asse w2) e spiega cosa succede a w1 nel prossimo aggiornamento.",
+      "size": "M",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "d02-passi-verso-il-minimo",
+      "title": "Passo dopo passo: dallo spazio dei parametri alla retta",
+      "concepts": [
+        "c10",
+        "c11",
+        "c12"
+      ],
+      "scenario": "energia",
+      "realExample": "Previsione della radiazione solare di mezzogiorno dalla nuvolosità con un modello y = w·x + b su 60 giorni sintetici (x = nuvolosità in [0, 1], y in kW/m², y ≈ −0,75 x + 0,9 più rumore). La discesa del gradiente parte da una retta sbagliata, (w, b) = (0,5; 0), e la corregge: nello spazio dei parametri (w, b) disegna un percorso di frecce, nello spazio dei dati la retta ruota e si sposta.",
+      "storyboard": [
+        "Due pannelli: a sinistra lo spazio dei dati (nuvolosità in ascissa, radiazione in ordinata, 60 punti e la retta rossa iniziale w = 0,5, b = 0); a destra lo spazio dei parametri (w, b) con le curve di livello della MSE, il punto di partenza (loss ≈ 0,21) e una croce sul minimo (w ≈ −0,75, b ≈ 0,90, loss ≈ 0,009).",
+        "Passo: a destra compare in 250 ms una freccia nera dal punto corrente al nuovo (direzione −∇, lunghezza η||∇||); a sinistra la retta si aggiorna in 250 ms; una tabella registra iterazione, w, b, L e ||∇||; la formula mostra i numeri (primo passo con η = 0,5: ∇L = [−0,062; −0,531], w ← 0,5 − 0,5·(−0,062) = 0,531, b ← 0 − 0,5·(−0,531) = 0,266).",
+        "Play: un passo ogni 300 ms; le frecce si concatenano come nella figura della fonte e si accorciano avvicinandosi al minimo, perché il gradiente si riduce.",
+        "Criteri di arresto: 'convergenza' (||∇|| sotto la tolleranza) e 'numero massimo di iterazioni'; quando uno scatta l'animazione si ferma e compare un cartellino che dice quale ha fermato l'algoritmo.",
+        "Clic su un punto qualsiasi dello spazio dei parametri: la retta corrispondente appare tratteggiata nello spazio dei dati (dissolvenza di 200 ms), a mostrare che ogni punto della superficie è un modello diverso."
+      ],
+      "interactions": [
+        "pulsanti Passo, Play (un passo ogni 300 ms) e Reset",
+        "slider η da 0,001 a 1,2 (default 0,5; attorno a 0,8, cioè 2 diviso la curvatura massima della MSE, il percorso comincia a oscillare e oltre diverge)",
+        "slider tolleranza da 10^-1 a 10^-5 (scala logaritmica)",
+        "slider numero massimo di iterazioni da 5 a 500",
+        "clic nello spazio dei parametri"
+      ],
+      "visual": "Scatter con retta animata; mappa di livello con percorso di frecce nere; tabella delle iterazioni; indicatore del criterio di arresto; formula dell'aggiornamento con i numeri correnti.",
+      "aha": "La discesa del gradiente si muove tra i modelli, non tra i dati: ogni freccia è un aggiornamento dei parametri, e l'algoritmo si ferma quando il gradiente è quasi nullo o quando finisce il budget di iterazioni.",
+      "formulasShown": [
+        "L(w, b) = \\frac{1}{60} \\sum_{n=1}^{60} (w\\, x_n + b - y_n)^2",
+        "\\frac{\\partial L}{\\partial w} = \\frac{2}{60} \\sum_{n=1}^{60} (w\\, x_n + b - y_n)\\, x_n, \\quad \\frac{\\partial L}{\\partial b} = \\frac{2}{60} \\sum_{n=1}^{60} (w\\, x_n + b - y_n)",
+        "w \\leftarrow w - \\eta \\hat{g}",
+        "b \\leftarrow 0 - 0{,}5 \\cdot (-0{,}531) = 0{,}266",
+        "\\lVert \\Delta_w L \\rVert < \\text{tol}",
+        "t = t_{\\max}"
+      ],
+      "challenge": "Con un budget di 50 iterazioni da (0,5; 0), scegli η in modo da arrivare con L entro l'1% del minimo: con η ≤ 0,4 non arriva (resta sopra di oltre l'8%), con η ≥ 0,78 oscilla e poi diverge; la finestra buona è circa 0,6-0,75 (il valore esatto dipende dai dati a seed).",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d02-trappole-dei-minimi-locali",
+      "title": "Trappole locali: quanto sono pericolose?",
+      "concepts": [
+        "c13",
+        "c14",
+        "c15"
+      ],
+      "scenario": "cifre",
+      "realExample": "Si addestra più volte la stessa rete per cifre scritte a mano con inizializzazioni diverse: la loss non convessa ha più valli, ogni run finisce in un minimo diverso, ma le accuratezze sul test risultano quasi uguali (valori sintetici).",
+      "storyboard": [
+        "La curva 1D della loss è ridisegnata come nella figura della fonte, con la curva sintetica L(w) = 1 + 0,03 w² − 0,35 e^{−(w+2)²/0,5} − 0,9 e^{−(w−0,5)²/0,3} − 0,3 e^{−(w−2,6)²/0,08} su w ∈ [−3,5; 3,5]: trappola larga e poco profonda in w ≈ −1,92 (L ≈ 0,77), minimo globale in w ≈ 0,50 (L ≈ 0,11), trappola stretta e alta in w ≈ 2,58 (L ≈ 0,90); punti rossi 'Local Minima Trap' e punto blu 'Global Minima' come nella fonte.",
+        "Clic su un punto della curva: una pallina cade lì in 300 ms e scende seguendo −dL/dw, un passo ogni 120 ms, con la formula del passo e i numeri sostituiti (per esempio da w = −1,200 con η = 0,1: dL/dw = 0,239, nuovo w = −1,224); si ferma quando |dL/dw| < 10^-4 e il minimo raggiunto si colora di rosso (trappola) o di blu (globale).",
+        "Pulsante 'Lancia 50 inizializzazioni': 50 palline partono da punti uniformi su [−3,5; 3,5] con 20 ms di sfasamento; un istogramma a destra conta quante finiscono in ciascuna valle (attese circa 39% a sinistra, 40% al centro, 21% a destra, come le ampiezze dei bacini separati dai massimi in w ≈ −0,77 e w ≈ 2,08).",
+        "Pannello 'Quanto conta?': per ogni valle una scheda mostra loss finale e accuratezza sul test di una rete di cifre sintetica (per esempio 97,6%, 97,9%, 98,1%): le trappole sono vicine all'ottimo globale, come osservano i practitioners citati dalla fonte.",
+        "Interruttore 'Paesaggio convesso': in 600 ms la curva si trasforma in una sola ciotola L(w) = 0,1 + 0,1 (w − 0,5)² e tutte le palline arrivano nello stesso punto, per confronto."
+      ],
+      "interactions": [
+        "clic sulla curva per lanciare una pallina",
+        "pulsante 'Lancia 50 inizializzazioni'",
+        "slider η da 0,01 a 0,5 (default 0,1)",
+        "interruttore convesso/non convesso"
+      ],
+      "visual": "Curva nera con punti rossi e blu etichettati come nella fonte; palline con scia; istogramma degli arrivi; schede con loss e accuratezza.",
+      "aha": "La non convessità crea trappole, ma nelle reti neurali i minimi locali sono di solito soluzioni già buone: finire in una valle diversa cambia poco l'accuratezza.",
+      "formulasShown": [
+        "L(w) = 1 + 0{,}03\\, w^2 - 0{,}35\\, e^{-(w+2)^2/0{,}5} - 0{,}9\\, e^{-(w-0{,}5)^2/0{,}3} - 0{,}3\\, e^{-(w-2{,}6)^2/0{,}08}",
+        "\\frac{dL}{dw} = 0",
+        "w \\leftarrow w - \\eta \\frac{dL}{dw}",
+        "w_{t+1} = -1{,}200 - 0{,}1 \\cdot 0{,}239 = -1{,}224"
+      ],
+      "challenge": "Prevedi in quale valle finirà una pallina che parte da un punto indicato (i confini dei bacini sono i due massimi, w ≈ −0,77 e w ≈ 2,08); poi, prima di premere 'Lancia 50 inizializzazioni', stima la frazione che raggiungerà il minimo globale (circa 40%).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d02-sella-con-pallina",
+      "title": "La sella: gradiente nullo ma non è un minimo",
+      "concepts": [
+        "c09",
+        "c16",
+        "c17",
+        "c20"
+      ],
+      "scenario": "cifre",
+      "realExample": "Due pesi di una rete per cifre scritte a mano attorno a un punto stazionario: lungo un peso la loss curva verso l'alto, lungo l'altro verso il basso. Superficie sintetica L = w1² − w2² + 0,25 w2⁴: il termine quartico contiene la discesa e crea due valli blu in w2 = ±√2 (L = −1). Serve a capire perché l'addestramento può rallentare vicino a una sella.",
+      "storyboard": [
+        "Superficie 3D a sella come nella figura della fonte (bordi rossi, centro giallo, parti blu) con il punto nero al centro, nell'origine.",
+        "Due fette sincronizzate: lungo w1 la curva è una parabola verso l'alto (sembra un minimo), lungo w2 verso il basso (sembra un massimo); nel punto nero entrambe hanno tangente orizzontale.",
+        "Badge del gradiente: [∂L/∂w1, ∂L/∂w2] = [0, 0] in rosso nel centro, con la scritta 'la loss non cambia in nessuna direzione (al primo ordine)'; badge della curvatura (nascosto finché non si preme 'Rivela gli autovalori'): autovalori dell'Hessiana +2 e −2, 'sella, non minimo'.",
+        "Pulsante 'Metti esattamente sulla cresta' (partenza (1,5; 0), cioè w2 = 0): la pallina scende lungo w1, un passo ogni 100 ms, e si ferma sulla sella. Spostandola di 0,001 in w2, la componente w2 cresce del fattore (1 + 2η) a ogni passo (con η = 0,1: 0,001 → 0,0012 → 0,00144 …, circa 38 passi quasi fermi per arrivare a 1) e poi la pallina scivola in una delle due valli blu.",
+        "Un grafico sotto mostra ||∇L|| per iterazione, aggiornato a ogni passo: un lungo plateau vicino a zero seguito da un picco e da una discesa, la firma tipica del passaggio vicino a una sella."
+      ],
+      "interactions": [
+        "trascina la pallina sul piano (w1, w2) ∈ [−2, 2]²",
+        "pulsante 'Metti esattamente sulla cresta'",
+        "slider rumore del gradiente da 0 a 0,05 (deviazione standard aggiunta a ogni componente; 0 = deterministico)",
+        "slider η da 0,01 a 0,4 (default 0,1)",
+        "pulsante 'Rivela gli autovalori'"
+      ],
+      "visual": "Superficie a sella con pallina e scia; due fette con tangenti; badge del gradiente e degli autovalori; grafico della norma del gradiente nel tempo.",
+      "aha": "Gradiente nullo non vuol dire minimo: sulla sella la discesa del gradiente si ferma solo se ci sta esattamente sopra, e basta un piccolo rumore per scappare.",
+      "formulasShown": [
+        "L = w_1^2 - w_2^2 + 0{,}25\\, w_2^4, \\quad \\nabla L = [\\,2 w_1,\\; -2 w_2 + w_2^3\\,] \\approx [\\,2 w_1,\\; -2 w_2\\,]",
+        "H = \\begin{bmatrix} 2 & 0 \\\\ 0 & -2 \\end{bmatrix}",
+        "w_2 \\leftarrow (1 + 2\\eta)\\, w_2",
+        "w_2 \\leftarrow (1 + 2 \\cdot 0{,}1) \\cdot 0{,}001 = 0{,}0012"
+      ],
+      "challenge": "Classifica tre punti a gradiente nullo (minimo, massimo, sella) guardando solo le due fette, prima che il widget riveli gli autovalori.",
+      "size": "M",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "d02-selle-in-alta-dimensione",
+      "title": "In alta dimensione quasi tutto è sella",
+      "concepts": [
+        "c18",
+        "c19"
+      ],
+      "scenario": "immagini",
+      "realExample": "Una rete per classificare immagini ha milioni di pesi. In un punto a gradiente nullo la loss dovrebbe curvare verso l'alto in tutte le direzioni per essere un minimo; più direzioni ci sono, più è probabile che almeno una curvi verso il basso. Modello giocattolo sintetico con curvature di segno casuale.",
+      "storyboard": [
+        "Slider della dimensione d da 1 a 1.000; per ogni d il widget genera 2.000 punti stazionari sintetici con curvature di segno casuale (+ o − con probabilità 1/2) e li colora: blu se tutte le curvature sono positive (minimo), grigio se miste (sella); la nuvola si ridisegna in 300 ms a ogni cambio di d.",
+        "Una barra mostra la frazione di minimi: 50% per d = 1, 25% per d = 2, circa 0,1% per d = 10, praticamente zero oltre d = 30; la formula 2^{-d} si aggiorna con il valore di d sostituito.",
+        "Clic su un punto grigio: un mini-istogramma mostra le sue d curvature con le negative in arancio.",
+        "Seconda scheda 'Bloccati?': 100 run di discesa del gradiente partono vicino a una sella in d = 50 (200 passi ciascuno, animati in 2 s); un contatore mostra quante restano esattamente sulla sella: nessuna con rumore > 0, tutte solo con rumore 0 e partenza esattamente sulla direzione stabile."
+      ],
+      "interactions": [
+        "slider d da 1 a 1.000 (scala logaritmica)",
+        "clic su un punto stazionario",
+        "slider rumore del gradiente da 0 a 0,1",
+        "pulsante 'Lancia 100 run'"
+      ],
+      "visual": "Nuvola di punti blu e grigi, barra della frazione di minimi con scala logaritmica, istogramma delle curvature, contatore dei run bloccati.",
+      "aha": "In alta dimensione quasi tutti i punti a gradiente nullo sono selle, ma una sella blocca l'algoritmo solo se ci si ferma esattamente sopra: il rumore basta a ripartire.",
+      "formulasShown": [
+        "P(\\text{minimo}) \\approx 2^{-d} \\;\\; (\\text{modello giocattolo})",
+        "P(\\text{minimo}) = 2^{-10} \\approx 0{,}00098"
+      ],
+      "challenge": "Trova il più piccolo d per cui meno di un punto stazionario su mille è un minimo (d = 10, perché 2^{-10} ≈ 0,00098).",
+      "size": "M",
+      "tech": "canvas2d"
+    },
+    {
+      "id": "d02-tre-idee-prima-della-backprop",
+      "title": "Prima della backprop: tre idee lente",
+      "concepts": [
+        "c22",
+        "c23",
+        "c24"
+      ],
+      "scenario": "cifre",
+      "realExample": "Una rete 64-16-10 per cifre 8×8 ha 1.210 parametri ma solo 16 + 10 = 26 attivazioni. Tre modi storici di imparare i pesi senza backpropagation messi in gara su 500 cifre sintetiche: ogni tentativo costa un passaggio completo sui dati.",
+      "storyboard": [
+        "Tre corsie, una per idea, ciascuna con la stessa rete e un contatore 'passaggi sul training set'.",
+        "Corsia 1 'Un peso alla volta': un arco lampeggia, il suo peso cambia di ±0,05 a caso, la rete rielabora tutte le 500 cifre (barra di avanzamento, 200 ms per tentativo a velocità ×1); se la loss scende l'arco diventa verde e la modifica resta, altrimenti torna indietro in rosso. Il contatore sale di 1 a ogni tentativo.",
+        "Corsia 2 'Tutti i pesi insieme': tutti gli archi tremano insieme; un grafico a dispersione correla variazione dei pesi e variazione della loss, ma i punti formano una nuvola confusa: è difficile capire quale peso ha aiutato.",
+        "Corsia 3 'Solo le attivazioni': si perturbano i 26 neuroni invece dei 1.210 pesi; servono meno tentativi per ciclo, ma ogni tentativo richiede ancora un passaggio sui dati.",
+        "Dopo 1.000 passaggi (circa 20 s a velocità ×10) le tre curve di loss si confrontano; nella fase finale la corsia 1 accetta quasi nessuna modifica (tasso di accettazione sotto il 2%, mostrato con i numeri): la difficoltà dell'ultima fase dell'apprendimento citata dalla fonte."
+      ],
+      "interactions": [
+        "Play/Pausa con velocità ×1 / ×10 / ×100",
+        "slider ampiezza della perturbazione da 0,01 a 0,5 (default 0,05)",
+        "selettore dimensione della rete: 16-6-10, 64-16-10 (default), 784-128-10",
+        "pulsante 'Aggiungi la backprop' che fa comparire una quarta corsia di confronto"
+      ],
+      "visual": "Tre corsie con reti miniaturizzate, contatori di passaggi, archi verdi/rossi, scatter della correlazione, curve di loss sovrapposte e tasso di accettazione.",
+      "aha": "Perturbare e riprovare richiede un passaggio sui dati per ogni tentativo; anche perturbando solo le attivazioni, meno numerose dei pesi, il costo resta enorme.",
+      "formulasShown": [
+        "\\#\\text{parametri} = 64 \\cdot 16 + 16 + 16 \\cdot 10 + 10 = 1210",
+        "\\#\\text{attivazioni} = 16 + 10 = 26",
+        "\\text{tasso di accettazione} = \\frac{\\#\\text{modifiche accettate}}{\\#\\text{tentativi}} = \\frac{3}{200} = 1{,}5\\%"
+      ],
+      "challenge": "Prevedi quale corsia arriva prima a loss 1,0 e con quanti passaggi; poi ingrandisci la rete e osserva come si allarga il distacco.",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d02-quanto-costa-un-gradiente",
+      "title": "Quanto costa un gradiente senza backprop?",
+      "concepts": [
+        "c21",
+        "c25"
+      ],
+      "scenario": "immagini",
+      "realExample": "Stimare il gradiente perturbando un parametro alla volta costa circa un passaggio sui dati per parametro. Per una rete di classificazione di immagini con 25 milioni di pesi (l'ordine di grandezza di una ResNet-50) è impraticabile; la backpropagation ottiene tutte le derivate con un passaggio in avanti e uno all'indietro.",
+      "storyboard": [
+        "Asse logaritmico del numero di parametri P da 10 a 10^9 con uno slider; sopra, icone di reti ai valori tipici (percettrone, MLP per cifre, CNN, grande modello).",
+        "Tre contatori: 'perturba un peso alla volta' ≈ P + 1 passaggi in avanti, 'perturba le attivazioni' ≈ numero di attivazioni + 1, 'backpropagation' ≈ 1 passaggio in avanti + 1 all'indietro.",
+        "Un cronometro converte i passaggi in tempo con il tempo per passaggio scelto (default 10 ms); i contatori scorrono fino al valore in 800 ms: per P = 25·10^6 la prima strategia richiede circa 69 ore per un solo gradiente, la backpropagation circa 20-30 ms.",
+        "Una tabella di confronto dei quattro approcci (cosa si perturba, quante valutazioni servono, problema principale) si riempie una cella alla volta.",
+        "La domanda della fonte 'come ottenere un apprendimento più efficiente?' compare in corsivo e la risposta 'backpropagation' si illumina."
+      ],
+      "interactions": [
+        "slider P logaritmico da 10 a 10^9",
+        "slider tempo per passaggio da 1 ms a 1 s (default 10 ms, scala logaritmica)",
+        "clic sulle celle della tabella"
+      ],
+      "visual": "Asse logaritmico con icone, tre contatori e cronometri, tabella comparativa, formula dei costi con i numeri sostituiti.",
+      "aha": "Il costo dei metodi a perturbazione cresce con il numero di parametri, quello della backpropagation resta un piccolo multiplo di un passaggio in avanti.",
+      "formulasShown": [
+        "\\text{costo}_{\\text{perturbazione}} \\approx (P + 1)\\, C_{\\text{forward}}",
+        "\\text{costo}_{\\text{backprop}} \\approx 2\\text{-}3\\, C_{\\text{forward}}",
+        "(25 \\cdot 10^{6} + 1) \\cdot 10\\ \\text{ms} \\approx 2{,}5 \\cdot 10^{5}\\ \\text{s} \\approx 69\\ \\text{h}"
+      ],
+      "challenge": "Trova il valore di P oltre il quale un solo gradiente per perturbazione richiede più di un giorno con 10 ms per passaggio (circa 8,6 milioni).",
+      "size": "S",
+      "tech": "html+motion"
+    },
+    {
+      "id": "d02-tre-tempi-della-backprop",
+      "title": "Avanti, errore, indietro: i tre tempi della backprop",
+      "concepts": [
+        "c26",
+        "c27",
+        "c28",
+        "c29"
+      ],
+      "scenario": "pesce",
+      "realExample": "Una rete 2-3-1 riceve luminosità e larghezza di un pesce sul nastro dell'impianto e deve dire se è un salmone (1) o una spigola (0). Per ogni pesce etichettato si eseguono i tre passi della backpropagation (dati sintetici).",
+      "storyboard": [
+        "Un pesce scorre sul nastro; le sue due feature (luminosità 0,62, larghezza 0,48) entrano nei due nodi di ingresso.",
+        "Fase 1 Forward (sfondo blu, 1,5 s): particelle scorrono sugli archi da sinistra a destra; in ogni nodo nascosto compare la somma pesata z e poi l'attivazione a; l'uscita vale per esempio 0,31 ('spigola').",
+        "Fase 2 Error estimation (sfondo giallo, 0,8 s): accanto all'uscita appare l'etichetta vera 1 (salmone) e il confronto L = (0,31 − 1)² = 0,48 con una barra rossa.",
+        "Fase 3 Backpropagation (sfondo rosso, 1,5 s): un'onda rossa percorre la rete da destra a sinistra; ogni arco mostra la sua derivata ∂L/∂w; poi (0,5 s) gli archi cambiano spessore e colore secondo w ← w − η ∂L/∂w e la predizione per lo stesso pesce sale (per esempio a 0,39).",
+        "Il ciclo ricomincia con il pesce successivo; un contatore di epoche e la curva della loss media mostrano l'apprendimento."
+      ],
+      "interactions": [
+        "pulsanti Passo (una fase alla volta) e Play (ciclo completo di circa 4 s)",
+        "selettore del pesce (salmone o spigola)",
+        "slider η da 0,1 a 2 (default 1)",
+        "interruttore 'mostra numeri'"
+      ],
+      "visual": "Nastro con il pesce, rete 2-3-1 con particelle blu in avanti e onda rossa all'indietro, barra della loss, etichette delle derivate sugli archi, curva della loss per epoca.",
+      "aha": "La backpropagation è un ciclo in tre tempi: avanti per predire, confronto con l'etichetta, indietro per assegnare a ogni peso la sua parte di responsabilità.",
+      "formulasShown": [
+        "z^{(l)} = w^{(l)} a^{(l-1)} + b^{(l)}",
+        "L = (a^{(l)} - y)^2",
+        "L = (0{,}31 - 1)^2 = 0{,}48",
+        "w \\leftarrow w - \\eta \\frac{\\partial L}{\\partial w}"
+      ],
+      "challenge": "Rimetti in ordine le tre fasi mescolate e indica in quale fase la rete 'scopre' di aver sbagliato (la stima dell'errore).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d02-sensibilita-delle-unita-nascoste",
+      "title": "Cosa sanno le unità nascoste",
+      "concepts": [
+        "c30",
+        "c31",
+        "c32"
+      ],
+      "scenario": "cifre",
+      "realExample": "In una rete per cifre scritte a mano i dati dicono solo quale cifra è (etichetta di uscita), non cosa devono fare i 6 neuroni nascosti. La backpropagation calcola quanto l'errore cambia se si ritocca l'attività di ciascun neurone nascosto, e da lì come aggiornare i pesi che vi entrano.",
+      "storyboard": [
+        "Rete 16-6-10 con i 6 neuroni nascosti disegnati in grande; ingresso: un '7' sintetico 4×4; uscite sigmoidi con loss quadratica sommata sulle 10 uscite (così vale esattamente la formula a percorsi della fonte); in alto le 10 uscite e il valore di L.",
+        "Ogni neurone nascosto ha una manopola 'attività' da 0 a 1: girandola la loss cambia live e un grafico a barre registra ΔL/Δa per quel neurone, misurata con Δa = ±0,01 (derivata numerica a mano).",
+        "Pulsante 'Calcola con backprop': in 500 ms compaiono sulle 6 barre i valori esatti ∂L/∂a_k, sovrapposti a quelli misurati; il segno dice in che verso spostare ciascuna attività.",
+        "Ogni barra si scompone nei contributi delle 10 uscite (effetti separati che si combinano); poi una freccia 'dalle attività ai pesi' distribuisce ogni ∂L/∂a_k sugli archi entranti, colorandoli.",
+        "Aggiorna: i pesi entranti cambiano, la loss scende e le barre si ricalcolano."
+      ],
+      "interactions": [
+        "manopole per le 6 attività nascoste (da 0 a 1, passo 0,01)",
+        "pulsante 'Calcola con backprop'",
+        "pulsante Aggiorna (η = 0,5)",
+        "selettore della cifra in ingresso (0-9)"
+      ],
+      "visual": "Rete con neuroni nascosti grandi e manopole, grafico a barre doppio (misurato vs backprop), barre scomposte per uscita, archi colorati per segno della derivata.",
+      "aha": "Anche senza sapere cosa deve fare un neurone nascosto, sappiamo quanto e in che verso il suo cambiamento sposterebbe l'errore: è questa informazione che arriva ai suoi pesi.",
+      "formulasShown": [
+        "L = \\sum_{j=1}^{10} \\big(a_j^{(2)} - y_j\\big)^2",
+        "\\frac{\\Delta L}{\\Delta a_k} = \\frac{L(a_k + 0{,}01) - L(a_k - 0{,}01)}{0{,}02}",
+        "\\frac{\\partial L}{\\partial a_k^{(1)}} = \\sum_{j=1}^{10} \\frac{\\partial z_j^{(2)}}{\\partial a_k^{(1)}} \\frac{\\partial a_j^{(2)}}{\\partial z_j^{(2)}} \\frac{\\partial L}{\\partial a_j^{(2)}}"
+      ],
+      "challenge": "Senza premere 'Calcola', individua con al massimo 5 prove delle manopole il neurone nascosto con la derivata più grande in valore assoluto.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d02-catena-un-neurone-per-strato",
+      "title": "La catena a un neurone per strato",
+      "concepts": [
+        "c33",
+        "c34",
+        "c35",
+        "c36"
+      ],
+      "scenario": "pesce",
+      "realExample": "Il neurone di uscita di una piccola rete riceve dall'ultimo strato nascosto l'attivazione a^(l−1) (una sintesi di luminosità e larghezza del pesce) e deve produrre a^(l) vicino a 1 per i salmoni e a 0 per le spigole. Con un solo neurone per strato si vedono tutti i conti.",
+      "storyboard": [
+        "Il diagramma della fonte si costruisce animato in 1,2 s (un nodo ogni 200 ms): w^(l) (blu), a^(l−1) (nero) e b^(l) (arancio) scendono e si uniscono in z^(l) (verde); frecce gialle portano ad a^(l) e poi a L (rossa), collegata a y.",
+        "Slider per w^(l), b^(l) e a^(l−1): z^(l) = w a + b si aggiorna con i numeri sostituiti (valori iniziali: 1,2 · 0,7 − 0,5 = 0,34); il nodo a^(l) mostra σ(z^(l)) = 0,584 e un mini-grafico di σ con un punto che scorre.",
+        "Selettore σ: sigmoide o ReLU; il mini-grafico e il valore di a^(l) cambiano.",
+        "Interruttore y = 1 (salmone) / y = 0 (spigola): il nodo L calcola (a^(l) − y)² e la sua barra passa dal verde al rosso.",
+        "Pulsante 'Allunga la catena': a sinistra compaiono a^(l−2) e z^(l−1) con i loro peso e bias, per preparare la propagazione a ritroso dall'uscita verso l'ingresso."
+      ],
+      "interactions": [
+        "slider w^(l) da −3 a 3 (default 1,2)",
+        "slider b^(l) da −3 a 3 (default −0,5)",
+        "slider a^(l−1) da 0 a 1 (default 0,7)",
+        "selettore sigmoide/ReLU",
+        "interruttore y = 1 / y = 0",
+        "pulsante 'Allunga la catena'"
+      ],
+      "visual": "Diagramma con i colori della fonte (blu, arancio, verde, rosso, frecce gialle), valori numerici nei nodi, mini-grafico di σ, barra della loss.",
+      "aha": "Un neurone è solo due conti, una somma pesata z e una non linearità a = σ(z); la loss dipende dal peso soltanto attraverso questa catena.",
+      "formulasShown": [
+        "z^{(l)} = w^{(l)} a^{(l-1)} + b^{(l)}",
+        "a^{(l)} = \\sigma(z^{(l)})",
+        "L = (a^{(l)} - y)^2",
+        "z^{(l)} = 1{,}2 \\cdot 0{,}7 + (-0{,}5) = 0{,}34, \\quad a^{(l)} = \\sigma(0{,}34) = 0{,}584, \\quad L = (0{,}584 - 1)^2 = 0{,}173"
+      ],
+      "challenge": "Trova w^(l) e b^(l) che portino L sotto 0,01 per un salmone con a^(l−1) = 0,7, prima con la sigmoide (serve z > 2,2) e poi con la ReLU.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d02-quanto-cambia-L",
+      "title": "Quanto cambia L se tocco w?",
+      "concepts": [
+        "c37",
+        "c38",
+        "c39",
+        "c62"
+      ],
+      "scenario": "pesce",
+      "realExample": "Lo stesso neurone di uscita su un salmone (y = 1) con a^(l−1) = 0,7, w^(l) = 1,2, b^(l) = −0,5: z = 0,34, a = 0,584, L = 0,173. La rete lo classifica male e bisogna sapere di quanto e in che verso muovere il peso.",
+      "storyboard": [
+        "Catena w → z → a → L disegnata in orizzontale con quattro misuratori a lancetta.",
+        "L'utente imposta una piccola variazione Δw: la lancetta di z si sposta di Δz, poi quella di a di Δa, poi quella di L di ΔL, in cascata con 150 ms di ritardo tra una e l'altra (la catena causale della fonte).",
+        "Sotto ogni collegamento compaiono i rapporti Δz/Δw, Δa/Δz, ΔL/Δa con le domande della fonte ('quanto una piccola variazione di w cambia z?' ecc.).",
+        "Pulsante 'Δw → 0': Δw scende da 0,2 a 0,001 in 2 s e i rapporti convergono ai valori esatti 0,700; 0,243; −0,832, il cui prodotto −0,141 coincide con la derivata numerica ΔL/Δw.",
+        "Una lente sulla formula colora i fattori come nella fonte (∂L rosso, ∂w blu, ∂z verde) ed evidenzia il fattore del collegamento su cui passa il mouse.",
+        "Pulsante 'Ordine dei fattori' (aggiunto dal revisore): la formula della fonte ∂z/∂w · ∂a/∂z · ∂L/∂a si riordina con un'animazione nella scrittura abituale ∂L/∂a · ∂a/∂z · ∂z/∂w e il prodotto numerico resta −0,141; una nota ricorda che con le matrici l'ordine conterà."
+      ],
+      "interactions": [
+        "slider Δw da −0,2 a 0,2 (passo 0,001)",
+        "slider w e b da −3 a 3, a^(l−1) da 0 a 1 (default 1,2; −0,5; 0,7)",
+        "hover sui collegamenti",
+        "pulsante 'Δw → 0'",
+        "pulsante 'Ordine dei fattori'"
+      ],
+      "visual": "Quattro misuratori in fila con lancette animate, rapporti numerici sotto i collegamenti, formula colorata con i valori sostituiti, confronto prodotto vs derivata numerica.",
+      "aha": "∂L/∂w risponde a 'quanto cambia L se tocco w?'; siccome w agisce su L solo attraverso z e a, la risposta è il prodotto di tre sensibilità locali.",
+      "formulasShown": [
+        "\\frac{\\partial L}{\\partial w^{(l)}} = \\frac{\\partial z^{(l)}}{\\partial w^{(l)}} \\frac{\\partial a^{(l)}}{\\partial z^{(l)}} \\frac{\\partial L}{\\partial a^{(l)}}",
+        "0{,}700 \\cdot 0{,}243 \\cdot (-0{,}832) = -0{,}141"
+      ],
+      "challenge": "Prima di muovere lo slider, prevedi il segno di ∂L/∂w per questo salmone classificato male e stima di quanto scende L con Δw = +0,1 (circa 0,014).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d02-bias-e-derivate-locali",
+      "title": "Il bias e le derivate locali",
+      "concepts": [
+        "c40",
+        "c58"
+      ],
+      "scenario": "pesce",
+      "realExample": "Sullo stesso neurone di uscita del classificatore salmone/spigola si confrontano la derivata rispetto al peso e quella rispetto al bias, e si scoprono i valori concreti dei fattori della catena per sigmoide e ReLU e per due funzioni di loss.",
+      "storyboard": [
+        "Stessa catena del widget precedente (w = 1,2, b = −0,5, a^(l−1) = 0,7, y = 1) con un selettore 'rispetto a w' / 'rispetto a b': cambiando selettore solo il primo fattore della formula si trasforma in 400 ms (∂z/∂w = 0,7 → ∂z/∂b = 1), gli altri due (0,243 e −0,832) restano fermi e brillano per indicare il riuso.",
+        "Scheda 'derivate locali': quattro tessere che si girano al clic (300 ms) e mostrano ∂z/∂w = a^(l−1), ∂z/∂b = 1, ∂z/∂a^(l−1) = w, ∂a/∂z = σ'(z), ciascuna con una mini-animazione (per esempio la retta z(b) con pendenza 1).",
+        "Grafico di σ'(z): per la sigmoide una campana con massimo 0,25 in z = 0, per la ReLU un gradino 0/1; un punto mobile segue il valore corrente di z.",
+        "Selettore della loss: errore quadratico (∂L/∂a = 2(a − y) = −0,832) oppure cross-entropy binaria (∂L/∂a = −y/a + (1 − y)/(1 − a) = −1,712, anticipo di d01); il terzo fattore si aggiorna e, con la sigmoide, il prodotto σ'(z)·∂L/∂a diventa semplicemente a − y = −0,416.",
+        "Barra finale con ∂L/∂w e ∂L/∂b affiancate e il rapporto (∂L/∂w)/(∂L/∂b) = a^(l−1) evidenziato."
+      ],
+      "interactions": [
+        "selettore w/b",
+        "clic sulle tessere",
+        "selettore sigmoide/ReLU",
+        "selettore della loss (quadratica / cross-entropy)",
+        "slider z da −6 a 6 (passo 0,01)"
+      ],
+      "visual": "Formula a tre fattori con il primo che si trasforma, tessere girevoli, grafico di σ' con punto mobile, barre affiancate delle due derivate.",
+      "aha": "Il bias è il caso più facile: ∂z/∂b = 1, quindi la sua derivata è il prodotto degli altri due fattori, gli stessi già calcolati per il peso.",
+      "formulasShown": [
+        "\\frac{\\partial L}{\\partial b^{(l)}} = \\frac{\\partial z^{(l)}}{\\partial b^{(l)}} \\frac{\\partial a^{(l)}}{\\partial z^{(l)}} \\frac{\\partial L}{\\partial a^{(l)}}",
+        "\\frac{\\partial z^{(l)}}{\\partial w^{(l)}} = a^{(l-1)}, \\quad \\frac{\\partial z^{(l)}}{\\partial b^{(l)}} = 1",
+        "\\sigma'(z) = \\sigma(z)(1 - \\sigma(z))",
+        "\\frac{\\partial L}{\\partial w^{(l)}} = 0{,}7 \\cdot 0{,}243 \\cdot (-0{,}832) = -0{,}141, \\quad \\frac{\\partial L}{\\partial b^{(l)}} = 1 \\cdot 0{,}243 \\cdot (-0{,}832) = -0{,}202",
+        "L = -[\\,y \\ln a + (1-y) \\ln(1-a)\\,] \\;\\Rightarrow\\; \\frac{\\partial L}{\\partial a} = -\\frac{y}{a} + \\frac{1-y}{1-a}"
+      ],
+      "challenge": "Trova il valore di z per cui, con la sigmoide e ∂L/∂a fissato, la derivata rispetto al bias è massima (z = 0, dove σ' = 0,25).",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d02-risalire-la-catena",
+      "title": "Risalire la catena strato per strato",
+      "concepts": [
+        "c41",
+        "c42",
+        "c43",
+        "c44"
+      ],
+      "scenario": "energia",
+      "realExample": "Una rete a un neurone per strato con quattro strati prevede il consumo elettrico giornaliero di un edificio da un indice di temperatura (dati sintetici). Per aggiornare i pesi dei primi strati bisogna far risalire la sensibilità della loss lungo tutta la catena.",
+      "storyboard": [
+        "Lo schema esteso della fonte in orizzontale: L — a^(l) — z^(l) — a^(l−1) — z^(l−1) — a^(l−2) — z^(l−2) — a^(l−3), con i bias in alto (arancio) e i pesi in basso (blu), y sotto L.",
+        "Passo indietro 1: una luce rossa parte da L e si ferma su a^(l), poi su z^(l) (300 ms per nodo); da lì si divide: un ramo va a w^(l) e b^(l), l'altro prosegue su a^(l−1) mostrando ∂L/∂a^(l−1) = w^(l) σ'(z^(l)) ∂L/∂a^(l) con i numeri (valori a seed, per esempio 0,9 · 0,21 · (−0,6) = −0,113).",
+        "Un 'cassetto' in basso conserva ogni sensibilità appena calcolata (∂L/∂a^(l), ∂L/∂a^(l−1), …): al passo successivo il valore viene preso dal cassetto invece che ricalcolato, con un contatore delle moltiplicazioni risparmiate.",
+        "Selezionando w^(l−2) il widget evidenzia in giallo la catena di dipendenze fino a L (w^(l−2) → z^(l−2) → a^(l−2) → z^(l−1) → a^(l−1) → z^(l) → a^(l) → L) e mostra il numero di fattori: 7.",
+        "Slider 'profondità' da 2 a 8 strati: la catena si allunga e il numero di fattori per il peso più lontano cresce di 2 a ogni strato."
+      ],
+      "interactions": [
+        "Passo indietro (300 ms per nodo) / Play",
+        "clic su un peso o un bias per evidenziarne la catena",
+        "slider profondità da 2 a 8 strati",
+        "interruttore 'usa il cassetto' (riuso dei fattori)"
+      ],
+      "visual": "Catena orizzontale con i colori della fonte, luce rossa che viaggia all'indietro, cassetto con i valori memorizzati, contatori di fattori e di moltiplicazioni.",
+      "aha": "Per i pesi lontani non si ricomincia da capo: si calcola prima quanto L è sensibile all'attivazione intermedia e poi si scende; la catena è lunga ma ogni pezzo è già pronto.",
+      "formulasShown": [
+        "\\frac{\\partial L}{\\partial a^{(l-1)}} = \\frac{\\partial z^{(l)}}{\\partial a^{(l-1)}} \\frac{\\partial a^{(l)}}{\\partial z^{(l)}} \\frac{\\partial L}{\\partial a^{(l)}}",
+        "\\frac{\\partial L}{\\partial a^{(l-1)}} = 0{,}9 \\cdot 0{,}21 \\cdot (-0{,}6) = -0{,}113",
+        "\\#\\text{fattori}\\big(w^{(l-k)}\\big) = 2k + 3"
+      ],
+      "challenge": "Quanti fattori ha ∂L/∂b^(l−3)? (9, e il primo è ∂z^(l−3)/∂b^(l−3) = 1).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d02-graffa-e-vettore-gradiente",
+      "title": "La graffa che si ricicla e il vettore gradiente",
+      "concepts": [
+        "c45",
+        "c46",
+        "c47",
+        "c48"
+      ],
+      "scenario": "pesce",
+      "realExample": "Esempio numerico ex03: catena di due neuroni con sigmoide che riceve la luminosità normalizzata x = 1,5 di un salmone (y = 1). Si calcolano tutte e quattro le derivate, si compone il vettore gradiente e si fa un passo di aggiornamento.",
+      "storyboard": [
+        "Diagramma verticale 'Calculations with 3 Layers' della fonte con i valori dell'esempio nei nodi dopo il forward: z^(1) = 1,0; a^(1) = 0,731; z^(2) = 0,377; a^(2) = 0,593; L = 0,165.",
+        "La formula di ∂L/∂w^(l−1) si compone da destra: i fattori 1,2 · 0,241 · (−0,814) si raccolgono sotto una graffa animata (500 ms) che si chiude con l'etichetta ∂L/∂a^(l−1) = −0,236.",
+        "Si aggiungono a sinistra ∂a^(l−1)/∂z^(l−1) = 0,197 e ∂z^(l−1)/∂w^(l−1) = 1,5: risultato −0,0695; il pulsante 'Verifica' confronta con la differenza finita (−0,0695).",
+        "Il vettore gradiente [∂L/∂w^(1), ∂L/∂b^(1), ∂L/∂w^(2), ∂L/∂b^(2)] si riempie casella per casella: [−0,069; −0,046; −0,144; −0,196].",
+        "Pulsante 'Aggiorna con η = 0,5': i quattro parametri si spostano (w^(1) 0,835; b^(1) −0,177; w^(2) 1,272; b^(2) −0,402) e L scende da 0,165 a 0,134."
+      ],
+      "interactions": [
+        "Passo/Play della composizione (un fattore ogni 400 ms)",
+        "clic su un parametro per costruirne la catena",
+        "pulsante 'Verifica' (differenza finita centrata con h = 10^-4)",
+        "slider η da 0,1 a 2 (default 0,5)",
+        "pulsante Aggiorna"
+      ],
+      "visual": "Diagramma verticale con frecce gialle sul percorso del parametro scelto, formula con la graffa animata e i numeri, vettore gradiente a caselle, confronto prima/dopo della loss.",
+      "aha": "Qualunque peso o bias si tratta allo stesso modo: si segue la catena fino a L e si moltiplicano i fattori, e il pezzo sotto la graffa è già stato calcolato per lo strato successivo.",
+      "formulasShown": [
+        "\\frac{\\partial L}{\\partial w^{(l-1)}} = \\frac{\\partial z^{(l-1)}}{\\partial w^{(l-1)}} \\frac{\\partial a^{(l-1)}}{\\partial z^{(l-1)}} \\underbrace{\\frac{\\partial z^{(l)}}{\\partial a^{(l-1)}} \\frac{\\partial a^{(l)}}{\\partial z^{(l)}} \\frac{\\partial L}{\\partial a^{(l)}}}_{\\frac{\\partial L}{\\partial a^{(l-1)}}}",
+        "\\frac{\\partial L}{\\partial w^{(1)}} = 1{,}5 \\cdot 0{,}1966 \\cdot \\underbrace{1{,}2 \\cdot 0{,}2413 \\cdot (-0{,}8136)}_{-0{,}2356} \\approx -0{,}0695",
+        "\\Delta_w L = \\left[ \\frac{\\partial L}{\\partial w^{(1)}}, \\frac{\\partial L}{\\partial b^{(1)}}, \\ldots, \\frac{\\partial L}{\\partial w^{(l)}}, \\frac{\\partial L}{\\partial b^{(l)}} \\right]"
+      ],
+      "challenge": "Prima di premere Aggiorna, prevedi quale dei quattro parametri cambierà di più (b^(2), che ha la derivata più grande in valore assoluto).",
+      "size": "L",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d02-gradiente-che-svanisce",
+      "title": "Moltiplicare tanti fattori: il gradiente che svanisce",
+      "concepts": [
+        "c60"
+      ],
+      "scenario": "cifre",
+      "realExample": "Una rete profonda a sigmoide per cifre scritte a mano: il segnale d'errore deve attraversare 10 strati per arrivare ai primi pesi. Il widget mostra perché i primi strati imparano lentamente e perché ReLU e connessioni residue aiutano (dati sintetici).",
+      "storyboard": [
+        "Catena di l neuroni (slider da 2 a 20) con sigmoide; ogni collegamento mostra il suo fattore w^(k) σ'(z^(k)).",
+        "Il gradiente parte da L con valore 1 e, andando verso l'ingresso, viene moltiplicato fattore per fattore: le barre compaiono da destra a sinistra (150 ms per strato) e mostrano |∂L/∂w^(k)| su scala logaritmica, con il prodotto parziale scritto sopra.",
+        "Con sigmoide e pesi vicini a 1 le barre si accorciano di almeno 4 volte per strato (σ' ≤ 0,25): con 10 strati il primo riceve circa un milionesimo del segnale (0,25^10 ≈ 9,5·10^-7).",
+        "Selettore ReLU: σ' = 1 per z > 0 e le barre restano alte. Slider del modulo dei pesi: con l'interruttore 'pre-attivazioni in z = 0' attivo (default: i bias compensano, quindi σ' = 0,25 esatto) e |w| > 4 anche con la sigmoide le barre crescono verso l'ingresso (gradiente che esplode); disattivandolo, i pesi grandi saturano la sigmoide e σ' crolla.",
+        "Interruttore 'scorciatoia': un collegamento a^(k) = a^(k−1) + σ(z^(k)) che salta la non linearità (come la connessione residua di ResNet o la cella di memoria di una LSTM) aggiunge un percorso con fattore 1, ∂a^(k)/∂a^(k−1) = 1 + w^(k) σ'(z^(k)), e il gradiente arriva quasi intatto."
+      ],
+      "interactions": [
+        "slider profondità da 2 a 20",
+        "selettore sigmoide/ReLU",
+        "slider modulo dei pesi da 0,1 a 6",
+        "interruttore 'pre-attivazioni in z = 0'",
+        "interruttore 'scorciatoia'"
+      ],
+      "visual": "Catena di nodi con i fattori sui collegamenti, barre logaritmiche per strato colorate dal verde (sano) al grigio (svanito) o al rosso (esploso), formula del prodotto con i numeri.",
+      "aha": "La backpropagation moltiplica tanti fattori: se sono piccoli il segnale svanisce prima di arrivare ai primi strati, se sono grandi esplode.",
+      "formulasShown": [
+        "\\frac{\\partial L}{\\partial w^{(1)}} = a^{(0)} \\prod_{k=1}^{l} \\sigma'(z^{(k)}) \\prod_{k=2}^{l} w^{(k)} \\cdot \\frac{\\partial L}{\\partial a^{(l)}}",
+        "(0{,}25 \\cdot 1)^{10} \\approx 9{,}5 \\cdot 10^{-7}",
+        "a^{(k)} = a^{(k-1)} + \\sigma(z^{(k)}) \\;\\Rightarrow\\; \\frac{\\partial a^{(k)}}{\\partial a^{(k-1)}} = 1 + w^{(k)} \\sigma'(z^{(k)})"
+      ],
+      "challenge": "Con la sigmoide in z = 0, trova il modulo dei pesi che mantiene costante il gradiente lungo la catena (|w| σ'(0) = 1, cioè |w| = 4).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d02-indici-ji",
+      "title": "Chi collega chi: gli indici ji",
+      "concepts": [
+        "c49",
+        "c50",
+        "c51",
+        "c52"
+      ],
+      "scenario": "cifre",
+      "realExample": "Il primo strato di una rete per cifre: n = 4 pixel in ingresso (strato 0) e m = 3 neuroni (strato 1). I 12 pesi si leggono come una matrice 3×4: riga j = neurone di arrivo, colonna i = neurone di partenza.",
+      "storyboard": [
+        "Si parte dalla catena a un neurone per strato; pulsante 'Aggiungi neuroni': in 600 ms gli strati si allargano (4 e 3 nodi) e le etichette acquistano un pedice (a_1^(0) … a_4^(0), a_1^(1) … a_3^(1)); compare il messaggio 'solo qualche indice in più'.",
+        "Passando su un arco, l'arco si evidenzia e compare w^(1)_ji con j e i colorati come i nodi di arrivo e di partenza; nella matrice W^(1) (3×4) si illumina la cella in riga j, colonna i.",
+        "Clic sul neurone di arrivo a_1^(1): si accendono i suoi archi entranti w^(1)_11, w^(1)_12, …, w^(1)_14 come nella figura 'Example of Indexing' della fonte, nella matrice l'intera riga 1, e la somma z_1^(1) si scrive termine per termine (un termine ogni 250 ms).",
+        "Interruttore 'ordine ij': le etichette si invertono e la matrice si traspone, mostrando che con 'ji' il prodotto W a si scrive senza trasposte.",
+        "Mini-quiz: il widget accende un arco a caso e lo studente scrive l'indice; poi il contrario (dato w^(1)_23, clicca l'arco giusto)."
+      ],
+      "interactions": [
+        "pulsante 'Aggiungi neuroni'",
+        "hover sugli archi",
+        "clic su un neurone di arrivo",
+        "interruttore ordine ij/ji",
+        "slider n e m da 1 a 6 (default n = 4, m = 3)",
+        "mini-quiz a 5 domande (arco → indice e indice → arco)"
+      ],
+      "visual": "Nodi verdi (strato 0) e viola (strato 1) come nella fonte, archi blu evidenziati, matrice W affiancata con celle che si illuminano, etichette con apici e pedici.",
+      "aha": "L'apice dice lo strato, il pedice il neurone; nei pesi il primo pedice è il neurone di arrivo e il secondo quello di partenza, così w_ji è la cella (riga j, colonna i) della matrice dei pesi.",
+      "formulasShown": [
+        "a_j^{(l)}",
+        "w_{ji}^{(l)}",
+        "w_{11}^{(1)},\\ w_{12}^{(1)},\\ \\ldots,\\ w_{1n}^{(1)} \\;\\to\\; a_1^{(1)}",
+        "z_1^{(1)} = w_{11}^{(1)} a_1^{(0)} + w_{12}^{(1)} a_2^{(0)} + w_{13}^{(1)} a_3^{(0)} + w_{14}^{(1)} a_4^{(0)} + b_1^{(1)}",
+        "W^{(1)} \\in \\mathbb{R}^{m \\times n}"
+      ],
+      "challenge": "Quanti pesi e bias ha lo strato 1 per n = 784 pixel e m = 128 neuroni? (784·128 = 100.352 pesi e 128 bias).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d02-somma-pesata-multi",
+      "title": "Somma pesata con più neuroni",
+      "concepts": [
+        "c53",
+        "c54"
+      ],
+      "scenario": "case",
+      "realExample": "Uno strato nascosto con 3 neuroni riceve superficie, numero di stanze e distanza dal centro di una casa (normalizzate: 0,8; 0,5; 0,3; dati sintetici) e calcola tre somme pesate z_j; la rete predice il prezzo.",
+      "storyboard": [
+        "Tre ingressi a sinistra con i loro valori, tre neuroni a destra; cliccando il neurone j gli archi entranti si accendono e la somma Σ_i w_ji a_i + b_j si scrive termine per termine con i numeri, un termine ogni 250 ms (per esempio z_1 = 0,5·0,8 + (−0,3)·0,5 + 0,8·0,3 + 0,1 = 0,59).",
+        "Barre impilate mostrano il contributo di ciascun ingresso (w_ji a_i) a z_j, più il bias; cambiando un peso con lo slider cambia solo la barra corrispondente.",
+        "Selezionando un peso w_ji compare la formula ∂L/∂w_ji = ∂z_j/∂w_ji · ∂a_j/∂z_j · ∂L/∂a_j accanto alla versione a un neurone per strato, con i fattori allineati: identiche tranne gli indici.",
+        "Il primo fattore ∂z_j/∂w_ji = a_i si illumina sulla barra dell'ingresso i; gli altri termini della somma, che non dipendono da w_ji, si oscurano."
+      ],
+      "interactions": [
+        "clic su un neurone",
+        "slider dei 9 pesi da −2 a 2 (passo 0,1) e dei 3 bias da −1 a 1",
+        "clic su un peso per mostrarne la derivata"
+      ],
+      "visual": "Rete 3-3 con archi colorati, barre impilate dei contributi, due formule allineate (scalare e con indici) con i valori numerici.",
+      "aha": "Con più neuroni la derivata rispetto a un peso non cambia forma: dei tanti termini della somma solo quello con w_ji dipende da w_ji, quindi ∂z_j/∂w_ji = a_i.",
+      "formulasShown": [
+        "z_j^{(l)} = \\sum_i w_{ji}^{(l)} a_i^{(l-1)} + b_j^{(l)}",
+        "z_1^{(1)} = 0{,}5 \\cdot 0{,}8 + (-0{,}3) \\cdot 0{,}5 + 0{,}8 \\cdot 0{,}3 + 0{,}1 = 0{,}59",
+        "\\frac{\\partial L}{\\partial w_{ji}^{(l)}} = \\frac{\\partial z_j^{(l)}}{\\partial w_{ji}^{(l)}} \\frac{\\partial a_j^{(l)}}{\\partial z_j^{(l)}} \\frac{\\partial L}{\\partial a_j^{(l)}}",
+        "\\frac{\\partial z_j^{(l)}}{\\partial w_{ji}^{(l)}} = a_i^{(l-1)}"
+      ],
+      "challenge": "Dati gli ingressi e i valori di σ'(z_j) ∂L/∂a_j, indovina quale dei 9 pesi ha la derivata più grande in valore assoluto.",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d02-tutte-le-strade-portano-a-L",
+      "title": "Tutte le strade portano alla loss",
+      "concepts": [
+        "c55",
+        "c56",
+        "c62"
+      ],
+      "scenario": "medicina",
+      "realExample": "Una rete legge feature di un ECG (frequenza cardiaca, durata del QRS, intervallo QT) e produce i punteggi di tre classi (normale, fibrillazione, altra aritmia). Un neurone nascosto a_i^(l−1) influenza la loss attraverso tutti e tre i neuroni dello strato successivo (dati sintetici).",
+      "storyboard": [
+        "Il neurone a_i^(l−1) è evidenziato a sinistra; da esso partono 3 percorsi colorati verso z_1^(l), z_2^(l), z_3^(l) e da lì verso L.",
+        "Pulsante 'Percorso per percorso': un impulso viaggia su ciascun percorso (600 ms l'uno, in sequenza) e deposita il suo contributo w_ji σ'(z_j) ∂L/∂a_j come barra colorata: 0,5·0,25·0,4 = 0,050; (−1,0)·0,2·(−0,3) = 0,060; 0,8·0,1·0,6 = 0,048.",
+        "Le tre barre si impilano: la somma 0,158 è la derivata totale ∂L/∂a_i^(l−1); una lancetta 'derivata numerica', misurata perturbando a_i, conferma il valore.",
+        "Interruttori per spegnere un percorso: la somma perde quel contributo e non coincide più con la misura numerica, a mostrare che vanno sommati tutti i percorsi.",
+        "La graffa 'Sum over layer l' della fonte si disegna sotto la formula mentre le barre si impilano.",
+        "Confronto finale (aggiunto dal revisore): a sinistra la catena a un solo percorso (prodotto di fattori, un'unica barra), a destra la rete a più percorsi (somma di prodotti, barre impilate), con la regola della catena nelle due forme scritta sotto ciascun pannello."
+      ],
+      "interactions": [
+        "pulsante 'Percorso per percorso'",
+        "interruttori on/off per ogni percorso",
+        "slider dei pesi w_ji da −2 a 2 (passo 0,1)",
+        "slider numero di neuroni nello strato l da 1 a 6 (default 3)"
+      ],
+      "visual": "Neurone evidenziato con percorsi colorati e impulsi animati, barre impilate dei contributi, lancetta della derivata numerica, formula con graffa e numeri sostituiti.",
+      "aha": "Un neurone nascosto non ha una sola strada verso la loss ma una per ogni neurone dello strato successivo: la sua sensibilità è la somma dei contributi di tutte le strade.",
+      "formulasShown": [
+        "\\frac{\\partial L}{\\partial a_i^{(l-1)}} = \\underbrace{\\sum_j \\frac{\\partial z_j^{(l)}}{\\partial a_i^{(l-1)}} \\frac{\\partial a_j^{(l)}}{\\partial z_j^{(l)}} \\frac{\\partial L}{\\partial a_j^{(l)}}}_{\\text{Sum over layer } l}",
+        "0{,}050 + 0{,}060 + 0{,}048 = 0{,}158"
+      ],
+      "challenge": "Scegli i pesi in modo che due percorsi si annullino e la derivata totale sia zero anche se nessun percorso da solo è nullo.",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d02-dalla-somma-alla-matrice",
+      "title": "Dalla somma alla matrice",
+      "concepts": [
+        "c57",
+        "c59"
+      ],
+      "scenario": "cifre",
+      "realExample": "Una rete 784-128-10 per MNIST: calcolare le derivate peso per peso con cicli annidati significa 100.352 + 1.280 moltiplicazioni δ_j a_i (una per peso) per il solo gradiente dei pesi; in forma matriciale lo stesso calcolo è un prodotto esterno δ a^T eseguito in parallelo (tempi sintetici).",
+      "storyboard": [
+        "A sinistra il 'modo scalare': un cursore visita una cella alla volta della matrice ∂L/∂W^(2) (10×128) e la riempie con δ_j a_i (20 ms per cella a velocità ×1, accelerabile ×10 e ×100); un contatore di operazioni sale.",
+        "A destra il 'modo matriciale': il vettore colonna δ^(2) (10) e il vettore riga (a^(1))^T (128) si moltiplicano e l'intera matrice si riempie in un colpo (400 ms).",
+        "Poi (W^(2))^T δ^(2) porta il segnale allo strato precedente: la matrice ruota di 90° (trasposta), si moltiplica per δ e produce ∂L/∂a^(1); il prodotto elemento per elemento con σ'(z^(1)) dà δ^(1).",
+        "Contatori di tempo sintetici per il ciclo scalare e per l'operazione matriciale su CPU e GPU; uno slider del batch trasforma i vettori in matrici (più esempi in parallelo)."
+      ],
+      "interactions": [
+        "Play per i due modi (velocità ×1 / ×10 / ×100)",
+        "selettore dimensioni: 4-3-2 (celle visibili con i numeri) o 784-128-10 (celle come heatmap)",
+        "slider batch size da 1 a 256 (potenze di 2)",
+        "hover su una cella per vedere δ_j, a_i e il loro prodotto"
+      ],
+      "visual": "Due pannelli affiancati con griglie di celle che si riempiono (una alla volta vs tutte insieme), vettori colonna e riga colorati, animazione della trasposta, contatori di operazioni e tempo.",
+      "aha": "Le formule scalari della fonte diventano tre operazioni matriciali: il calcolo è lo stesso, ma fatto su tutti i parametri insieme.",
+      "formulasShown": [
+        "\\boldsymbol{\\delta}^{(l)} = \\sigma'(\\mathbf{z}^{(l)}) \\odot \\frac{\\partial L}{\\partial \\mathbf{a}^{(l)}}",
+        "\\frac{\\partial L}{\\partial W^{(l)}} = \\boldsymbol{\\delta}^{(l)} \\big(\\mathbf{a}^{(l-1)}\\big)^{\\top}",
+        "\\frac{\\partial L}{\\partial w_{37}^{(2)}} = \\delta_3^{(2)}\\, a_7^{(1)} = 0{,}12 \\cdot 0{,}85 = 0{,}102",
+        "\\frac{\\partial L}{\\partial \\mathbf{a}^{(l-1)}} = \\big(W^{(l)}\\big)^{\\top} \\boldsymbol{\\delta}^{(l)}"
+      ],
+      "challenge": "Scrivi le dimensioni di δ^(1), W^(2) e ∂L/∂W^(1) per la rete 784-128-10 (128; 10×128; 128×784).",
+      "size": "M",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d02-disegna-la-discesa-orale",
+      "title": "All'orale: disegna la discesa del gradiente",
+      "concepts": [
+        "c03",
+        "c10",
+        "c11"
+      ],
+      "scenario": "energia",
+      "realExample": "Domanda d'orale reale: 'Vanila Gradient descent and draw figure'. Lo studente disegna sulle curve di livello della loss il percorso della discesa e il widget lo confronta con quello vero. Loss sintetica a curve di livello ellittiche, come la MSE del modello della radiazione solare con feature di scala diversa: L(w1, w2) = (w1 − 2)² + 5 (w2 − 1)².",
+      "storyboard": [
+        "Mappa di curve di livello della loss (ellissi allungate, minimo in (2; 1)) con il punto di partenza segnato, per esempio (−1; 2,5).",
+        "Lo studente disegna con mouse o dito una spezzata di 5 passi (ogni clic fissa un vertice).",
+        "Confronta: il percorso vero si disegna in 1,5 s (300 ms per passo) con frecce perpendicolari alle curve di livello e la formula del primo passo con i numeri; per ogni segmento dello studente il widget misura l'angolo rispetto alla direzione −∇L nel suo punto di partenza e lo colora in verde (entro 20°) o rosso.",
+        "Scheda di ripasso: le frasi da dire all'orale (definizione, gradiente negativo, iterazione fino a convergenza o a un numero prefissato di iterazioni, minimi locali e selle) si accendono una alla volta, 400 ms l'una."
+      ],
+      "interactions": [
+        "disegno a mano libera (5 vertici)",
+        "pulsante Confronta",
+        "slider η del percorso vero da 0,01 a 0,25 (default 0,05; oltre 0,1 la componente w2 oscilla, oltre 0,2 diverge)",
+        "pulsante 'Nuova mappa' (nuovo punto di partenza e nuovo rapporto tra gli assi delle ellissi)"
+      ],
+      "visual": "Curve di livello, spezzata dello studente, percorso vero con frecce nere, segmenti colorati verde/rosso, scheda di ripasso.",
+      "aha": "Il disegno giusto ha frecce perpendicolari alle curve di livello, sempre più corte man mano che ci si avvicina al minimo.",
+      "formulasShown": [
+        "L(w_1, w_2) = (w_1 - 2)^2 + 5\\, (w_2 - 1)^2",
+        "w \\leftarrow w - \\eta \\hat{g}",
+        "\\Delta_w L = \\left[ \\frac{\\partial L}{\\partial w_1}, \\ldots, \\frac{\\partial L}{\\partial w_N} \\right]",
+        "(w_1, w_2) \\leftarrow (-1;\\ 2{,}5) - 0{,}05 \\cdot (-6;\\ 15) = (-0{,}7;\\ 1{,}75)"
+      ],
+      "challenge": "Ottieni almeno 4 segmenti verdi su 5 senza guardare il percorso vero.",
+      "size": "S",
+      "tech": "svg+motion"
+    },
+    {
+      "id": "d02-backprop-a-mano",
+      "title": "Backprop a mano: esercizio guidato",
+      "concepts": [
+        "c39",
+        "c43",
+        "c45",
+        "c58"
+      ],
+      "scenario": "pesce",
+      "realExample": "Esercizio da orale con numeri casuali: una catena di due neuroni a sigmoide classifica un pesce dalla luminosità; lo studente calcola forward, derivate locali, fattore sotto la graffa e derivate dei pesi, e il widget corregge ogni casella.",
+      "storyboard": [
+        "Il widget estrae x in [−2, 2], w^(1), b^(1), w^(2), b^(2) in [−2, 2] (una cifra decimale) e y ∈ {0, 1}; mostra la catena disegnata come nella fonte con caselle vuote nei nodi.",
+        "Fase forward: lo studente scrive z^(1), a^(1), z^(2), a^(2), L; ogni casella si colora di verde se corretta entro 0,005, altrimenti mostra un suggerimento (la formula da usare).",
+        "Fase backward: caselle per ∂L/∂a^(2), σ'(z^(2)), ∂L/∂w^(2), ∂L/∂b^(2), poi ∂L/∂a^(1) (evidenziata sotto una graffa), σ'(z^(1)), ∂L/∂w^(1), ∂L/∂b^(1).",
+        "Alla fine il widget mostra la verifica con differenze finite, la formula di ogni derivata con i numeri sostituiti (per l'esempio ex03: ∂L/∂w^(2) = 0,7311 · 0,2413 · (−0,8136) ≈ −0,1435) e una barra del tempo impiegato; il pulsante 'Nuovo esercizio' rigenera i numeri."
+      ],
+      "interactions": [
+        "caselle numeriche da compilare (tolleranza ±0,005)",
+        "pulsante 'Suggerimento' (mostra la formula del passo, poi i numeri da sostituire)",
+        "pulsante 'Nuovo esercizio'",
+        "selettore loss (errore quadratico / cross-entropy)"
+      ],
+      "visual": "Catena verticale con caselle, colori verde/rosso di correzione, formula del passo corrente con i valori sostituiti, riepilogo finale.",
+      "aha": "Una volta capito lo schema, la backpropagation è una sequenza meccanica di moltiplicazioni: ogni strato usa il valore sotto la graffa arrivato dallo strato dopo.",
+      "formulasShown": [
+        "\\frac{\\partial L}{\\partial w^{(l)}} = a^{(l-1)}\\, \\sigma'(z^{(l)})\\, \\frac{\\partial L}{\\partial a^{(l)}}",
+        "\\frac{\\partial L}{\\partial a^{(l-1)}} = w^{(l)}\\, \\sigma'(z^{(l)})\\, \\frac{\\partial L}{\\partial a^{(l)}}",
+        "\\frac{\\partial L}{\\partial w^{(2)}} = 0{,}7311 \\cdot 0{,}2413 \\cdot (-0{,}8136) \\approx -0{,}1435"
+      ],
+      "challenge": "Completa tre esercizi di fila senza suggerimenti in meno di 5 minuti.",
+      "size": "M",
+      "tech": "html+motion"
+    }
+  ],
+  "exercises": [
+    {
+      "id": "es01",
+      "title": "Derivata rispetto al peso e al bias di un neurone",
+      "type": "numerico",
+      "description": "Dato un neurone con sigmoide e loss quadratica: a^(l−1), w^(l), b^(l), y. Calcolare z^(l), a^(l), L, i tre fattori della catena e ∂L/∂w^(l), ∂L/∂b^(l). Parametri randomizzabili: a^(l−1) in [0, 1], w^(l) e b^(l) in [−2, 2] con una cifra decimale, y ∈ {0, 1}. Soluzione: z = w a^(l−1) + b; a = σ(z); L = (a − y)²; ∂z/∂w = a^(l−1); ∂a/∂z = a(1 − a); ∂L/∂a = 2(a − y); ∂L/∂w = prodotto dei tre; ∂L/∂b = a(1 − a)·2(a − y). Esempio: a^(l−1) = 0,7, w = 1,2, b = −0,5, y = 1: z = 0,34, a = 0,5842, L = 0,1729, fattori 0,700; 0,2429; −0,8316, ∂L/∂w = −0,1414, ∂L/∂b = −0,2020.",
+      "concepts": [
+        "c35",
+        "c39",
+        "c40",
+        "c58"
+      ]
+    },
+    {
+      "id": "es02",
+      "title": "Backpropagation completa su una catena di due neuroni",
+      "type": "numerico",
+      "description": "Catena 1-1-1 con sigmoide e loss quadratica (ex03): dati x, w^(1), b^(1), w^(2), b^(2), y calcolare forward, ∂L/∂a^(1) (il fattore sotto la graffa), le quattro derivate e il vettore gradiente, poi un passo di discesa con η dato e la nuova loss. Parametri randomizzabili: x in [−2, 2], pesi e bias in [−2, 2], y ∈ {0, 1}, η in {0,1; 0,5; 1}. Soluzione con der01 e der02; esempio x = 1,5, w^(1) = 0,8, b^(1) = −0,2, w^(2) = 1,2, b^(2) = −0,5, y = 1, η = 0,5: gradiente [−0,0695; −0,0463; −0,1435; −0,1963], nuova loss 0,1345 (da 0,1655). Verifica con differenze finite centrate.",
+      "concepts": [
+        "c43",
+        "c45",
+        "c47",
+        "c48",
+        "c58"
+      ]
+    },
+    {
+      "id": "es03",
+      "title": "Gradiente e un passo di discesa su una loss a due parametri",
+      "type": "numerico",
+      "description": "Loss L(w1, w2) = (w1 − c1)² + k (w2 − c2)². Calcolare Δ_w L nel punto iniziale, il nuovo punto dopo un passo w ← w − η Δ_w L e la loss prima e dopo. Parametri randomizzabili: c1, c2 in [−3, 3], k in {1, 2, 5}, punto iniziale e η in [0,05; 0,3]. Soluzione: Δ_w L = [2(w1 − c1), 2k(w2 − c2)]. Esempio: c = (3, −1), k = 2, w = (0, 0), η = 0,1: gradiente [−6, 4], nuovo punto (0,6; −0,4), loss da 11 a 6,48. Variante: trovare il valore di η oltre il quale la componente w2 oscilla (η > 1/(2k)) e diverge (η > 1/k).",
+      "concepts": [
+        "c03",
+        "c04",
+        "c05",
+        "c11"
+      ]
+    },
+    {
+      "id": "es04",
+      "title": "Minimo, massimo o sella?",
+      "type": "concettuale",
+      "description": "Per le funzioni f1 = w1² + w2², f2 = −w1² − w2², f3 = w1² − w2², f4 = w1² (tutte con gradiente nullo nell'origine) dire che tipo di punto è l'origine, cosa fa la discesa del gradiente partendo vicino all'origine e partendo esattamente sull'asse w1. Spiegare perché 'gradiente nullo' non basta a dire 'minimo' e perché in alta dimensione le selle sono più frequenti dei minimi.",
+      "concepts": [
+        "c09",
+        "c16",
+        "c17",
+        "c18",
+        "c19"
+      ]
+    },
+    {
+      "id": "es05",
+      "title": "Minimi locali e selle nelle reti neurali",
+      "type": "concettuale",
+      "description": "Spiegare perché il problema di ottimizzazione di una rete neurale è non convesso, perché i minimi locali di solito non sono un problema serio secondo la fonte e in quale caso preciso i punti di sella diventano problematici. Disegnare la figura 'Local and Global Minima' e indicare da quali punti di partenza la discesa del gradiente arriva al minimo globale.",
+      "concepts": [
+        "c13",
+        "c14",
+        "c15",
+        "c19"
+      ]
+    },
+    {
+      "id": "es06",
+      "title": "Quanto costano le idee a perturbazione",
+      "type": "numerico",
+      "description": "Per una rete con strati di dimensioni n0-n1-n2 (randomizzabili, per esempio 64-16-10 o 784-128-10) contare pesi, bias e attivazioni; stimare quanti passaggi sul training set servono per stimare un gradiente perturbando un peso alla volta (P + 1), perturbando le attivazioni (numero di attivazioni + 1) e con la backpropagation (circa 2-3 passaggi equivalenti). Con un tempo per passaggio dato (per esempio 10 ms) convertire in tempo. Esempio 64-16-10: P = 1.210, attivazioni = 26.",
+      "concepts": [
+        "c21",
+        "c22",
+        "c23",
+        "c24",
+        "c25"
+      ]
+    },
+    {
+      "id": "es07",
+      "title": "Indici dei pesi e dimensioni delle matrici",
+      "type": "numerico",
+      "description": "Per uno strato con n neuroni in ingresso e m in uscita (randomizzabili fra 2 e 6, o reali come 784 e 128): scrivere l'etichetta del peso che collega il neurone i dello strato 0 al neurone j dello strato 1, la dimensione della matrice W^(1) (m × n), il numero di pesi (m n) e di bias (m), e la riga di W^(1) che contiene i pesi entranti nel neurone j. Esempio: n = 4, m = 3: W^(1) è 3×4, 12 pesi e 3 bias; w_23^(1) collega a_3^(0) ad a_2^(1).",
+      "concepts": [
+        "c50",
+        "c51",
+        "c52",
+        "c53"
+      ]
+    },
+    {
+      "id": "es08",
+      "title": "Somma sui percorsi",
+      "type": "numerico",
+      "description": "Un neurone a_i^(l−1) è collegato a J neuroni dello strato l (J randomizzabile da 2 a 5). Dati i pesi w_ji, i valori σ'(z_j) e ∂L/∂a_j, calcolare il contributo di ogni percorso e la derivata totale ∂L/∂a_i^(l−1) = Σ_j w_ji σ'(z_j) ∂L/∂a_j. Esempio: w = (0,5; −1,0; 0,8), σ' = (0,25; 0,2; 0,1), ∂L/∂a = (0,4; −0,3; 0,6): contributi 0,050; 0,060; 0,048; totale 0,158. Domanda aggiuntiva: quale sarebbe l'errore se si considerasse un solo percorso?",
+      "concepts": [
+        "c55",
+        "c56"
+      ]
+    },
+    {
+      "id": "es09",
+      "title": "Derivare ∂L/∂w^(l−1) con la regola della catena",
+      "type": "dimostrazione",
+      "description": "Partendo da z^(l) = w^(l) a^(l−1) + b^(l), a^(l) = σ(z^(l)) e dalle analoghe per lo strato l−1, derivare la scomposizione di ∂L/∂w^(l−1) in cinque fattori, identificare quali tre formano ∂L/∂a^(l−1) e spiegare perché questo rende efficiente il calcolo all'indietro. Estendere al caso con più neuroni per strato mostrando da dove nasce la somma su j.",
+      "concepts": [
+        "c42",
+        "c43",
+        "c44",
+        "c45",
+        "c56"
+      ]
+    },
+    {
+      "id": "es10",
+      "title": "Forma matriciale della backpropagation",
+      "type": "dimostrazione",
+      "description": "Mostrare che, con W^(l) di elemento (j, i) = w_ji^(l) e δ^(l) = ∂L/∂z^(l), valgono ∂L/∂W^(l) = δ^(l) (a^(l−1))^T, ∂L/∂b^(l) = δ^(l) e ∂L/∂a^(l−1) = (W^(l))^T δ^(l), partendo dalle formule scalari di p. 22. Spiegare perché l'ordine 'ji' degli indici rende naturale questa scrittura.",
+      "concepts": [
+        "c51",
+        "c57",
+        "c59"
+      ]
+    },
+    {
+      "id": "es11",
+      "title": "Domanda d'orale: discesa del gradiente con figura",
+      "type": "concettuale",
+      "description": "Rispondere a 'Vanila Gradient descent and draw figure': definire la discesa del gradiente, scrivere il vettore gradiente e la regola di aggiornamento, spiegare il segno meno, disegnare il percorso su una superficie o su curve di livello (frecce perpendicolari alle curve di livello, sempre più corte vicino al minimo), citare i criteri di arresto e i problemi di minimi locali e selle.",
+      "concepts": [
+        "c02",
+        "c03",
+        "c04",
+        "c10",
+        "c11",
+        "c13",
+        "c16"
+      ]
+    },
+    {
+      "id": "es12",
+      "title": "Gradiente che svanisce in una catena profonda",
+      "type": "numerico",
+      "description": "In una catena di l neuroni a sigmoide con tutti i pesi uguali a w e tutte le pre-attivazioni in z = 0 (σ' = 0,25), calcolare il rapporto |∂L/∂w^(1)| / |∂L/∂w^(l)| in funzione di l e w. Parametri randomizzabili: l da 3 a 20, w in [0,5; 6]. Soluzione: il rapporto vale (a^(0)/a^(l−1))·(w·0,25)^(l−1); con attivazioni simili conta (0,25 w)^(l−1). Per w = 1 e l = 11: 0,25^10 ≈ 9,5·10^-7. Dire per quale w il rapporto resta 1 (w = 4).",
+      "concepts": [
+        "c44",
+        "c60"
+      ]
+    },
+    {
+      "id": "es13",
+      "title": "La backpropagation è un algoritmo di ottimizzazione?",
+      "type": "concettuale",
+      "description": "Domanda trabocchetto da orale. Spiegare le due accezioni del termine nella fonte ('a method for computing gradients', p. 16; 'a widely used learning algorithm' in tre passi, p. 19), elencare i tre passi e dire in quale avviene l'aggiornamento dei pesi. Dire che cosa cambia nella backpropagation se si sostituisce la discesa del gradiente stocastica con Adam (nulla: cambia solo come si usa il gradiente) e perché la backpropagation è più efficiente delle idee a perturbazione di p. 18.",
+      "concepts": [
+        "c01",
+        "c25",
+        "c26",
+        "c29",
+        "c61"
+      ],
+      "addedBy": "revisore"
+    },
+    {
+      "id": "es14",
+      "title": "Prodotto o somma? Regola della catena sui percorsi",
+      "type": "concettuale",
+      "description": "Dato un piccolo grafo computazionale (per esempio una rete 1-2-1: a^(0) → z_1^(1), z_2^(1) → a_1^(1), a_2^(1) → z^(2) → a^(2) → L), scrivere ∂L/∂w_{11}^{(1)} (un solo percorso: prodotto di fattori) e ∂L/∂a^{(0)} (due percorsi: somma di due prodotti). Parametri randomizzabili: numero di neuroni nascosti da 2 a 4 e la variabile rispetto a cui derivare; la soluzione conta i percorsi dal nodo scelto a L e scrive un prodotto per percorso. Spiegare perché la fonte scrive i fattori nell'ordine ∂z/∂w · ∂a/∂z · ∂L/∂a e perché con scalari l'ordine non conta.",
+      "concepts": [
+        "c39",
+        "c54",
+        "c56",
+        "c62"
+      ],
+      "addedBy": "revisore"
+    }
+  ],
+  "examQuestions": [
+    {
+      "text": "Vanila Gradient descent and draw figure",
+      "prof": "Ricci",
+      "concepts": [
+        "c02",
+        "c03",
+        "c04",
+        "c06",
+        "c10",
+        "c11",
+        "c13",
+        "c16"
+      ]
+    },
+    {
+      "text": "Difference between Momentum and gradient descent",
+      "prof": "Ricci",
+      "concepts": [
+        "c02",
+        "c03",
+        "c11",
+        "c16",
+        "c19"
+      ]
+    },
+    {
+      "text": "Also she was asking xyz network use which optimization algorithm and why",
+      "prof": "Ricci",
+      "concepts": [
+        "c01",
+        "c02",
+        "c61"
+      ]
+    },
+    {
+      "text": "Draw LSTM structure and explain how it captures the same concept of the residual connections in ResNet (answer: the gradient descent passes through the internal memory cell that has no activation, so the vanishing gradient problem is not so severe)",
+      "prof": "Ricci",
+      "concepts": [
+        "c44",
+        "c45",
+        "c60"
+      ]
+    },
+    {
+      "text": "Linear functions for both classification and regression: discriminant functions, classification concept, functional/geometric margin, perceptron, loss function for classification, gradient descent, regression, matrix inversion problem, pseudoinverse, loss function for regression.",
+      "prof": "Passerini",
+      "concepts": [
+        "c02",
+        "c03",
+        "c11"
+      ]
+    },
+    {
+      "text": "Linear Classifiers. Questions: (1) when do we use (and why) primal or dual (2) meaning of adapting learning rate",
+      "prof": "Passerini",
+      "concepts": [
+        "c03",
+        "c11"
+      ]
+    }
+  ],
+  "crossLinks": [
+    {
+      "moduleId": "d01-reti-feedforward",
+      "why": "Funzioni di attivazione σ (sigmoide, tanh, ReLU e varianti) e loro derivate, che sono il fattore ∂a/∂z della catena; saturazione della sigmoide e ReLU 'morte' che bloccano il flusso del gradiente nella backpropagation; funzioni di costo che danno il fattore ∂L/∂a."
+    },
+    {
+      "moduleId": "d03-ottimizzazione",
+      "why": "Regola di aggiornamento esplicita w ← w − η ĝ con il learning rate (p. 23), varianti batch, stocastica e mini-batch della discesa del gradiente, momentum e ottimizzatori adattivi (AdaGrad, RMSProp, Adam) che affrontano plateau, selle e direzioni di diversa pendenza."
+    },
+    {
+      "moduleId": "d04-regolarizzazione",
+      "why": "La regolarizzazione L2 (weight decay) e L1 aggiunge un termine al gradiente calcolato con la backpropagation, modificando la regola di aggiornamento."
+    },
+    {
+      "moduleId": "d05-cnn",
+      "why": "Le connessioni residue di ResNet creano un percorso con fattore circa 1 nella catena delle derivate e attenuano il gradiente che svanisce (c60)."
+    },
+    {
+      "moduleId": "d07-rnn",
+      "why": "La backpropagation through time somma i contributi lungo tutta la sequenza; il prodotto di molti fattori spiega il gradiente che svanisce nelle RNN e il ruolo della cella di memoria delle LSTM (domanda d'esame 39)."
+    },
+    {
+      "moduleId": "p06-discriminanti-perceptron",
+      "why": "Passerini usa la discesa del gradiente per addestrare discriminanti lineari e percettrone: stesso principio del gradiente negativo e del learning rate, su un modello senza strati nascosti."
+    },
+    {
+      "moduleId": "m05-max-likelihood",
+      "why": "Massimizzare la verosimiglianza annullando la derivata è il duale della discesa del gradiente; il widget m05-massimo-o-trappola mostra selle e massimi locali della log-verosimiglianza, analoghi ai minimi locali e alle selle della loss."
+    },
+    {
+      "moduleId": "m10-em-dati-incompleti",
+      "why": "Anche l'EM ottimizza un obiettivo non convesso e può fermarsi in ottimi locali o selle, dipendendo dall'inizializzazione come la discesa del gradiente."
+    }
+  ],
+  "emptyPages": [],
+  "gaps": [
+    "p. 16: la fonte presenta Δ_w L = [∂L/∂w_1, …, ∂L/∂w_N] come 'update rule' dei parametri, ma la formula è il gradiente (notazione standard ∇_w L); la regola di aggiornamento vera e propria w ← w − η ĝ compare solo a p. 23 (modulo d03). Nel modulo si usa la notazione Δ della fonte e si richiama la regola di p. 23.",
+    "pp. 16-17: le frecce nere indicano a p. 16 il gradiente (nella vista dall'alto puntano verso il massimo rosso, cioè in salita) e a p. 17 i passi della discesa (in discesa verso il blu); la fonte usa lo stesso simbolo per due cose opposte senza segnalarlo.",
+    "p. 17: l'affermazione che i minimi locali sono spesso soluzioni efficaci è empirica ('practitioners have found'), senza riferimenti o dimostrazioni.",
+    "p. 18: la fonte non spiega come distinguere una sella da un minimo né perché le selle siano comuni in alta dimensione; aggiunti come integrazione l'Hessiana con autovalori di segno misto (der06) e l'intuizione del conteggio delle direzioni (c18, modello giocattolo 2^{-d} nel widget).",
+    "p. 18: 'difficulties in the last stage of learning' dell'idea di perturbare un peso alla volta non è spiegato; l'interpretazione (perturbazioni casuali quasi sempre peggiorative su un modello già buono) è un'integrazione.",
+    "pp. 19-21: la fonte non esplicita i valori delle derivate locali (∂z/∂w = a^(l−1), ∂z/∂b = 1, ∂z/∂a^(l−1) = w^(l), ∂a/∂z = σ'(z)) né sceglie una loss; sono aggiunti come integrazione (c58, der01) con l'errore quadratico dell'impostazione 3Blue1Brown citata nella prefazione del libro.",
+    "pp. 19-22: la lettera l indica sia l'ultimo strato (catena a un neurone per strato e vettore gradiente [∂L/∂w^(1), ∂L/∂b^(1), …, ∂L/∂w^(l), ∂L/∂b^(l)]) sia uno strato generico (p. 22, 'Sum over layer l'); L è la loss, non il numero di strati.",
+    "p. 21: il testo dice che i due pedici indicano l'arco che collega 'the neuron in layer i to the neuron in layer j', ma i e j sono indici di neurone (i nello strato l−1, j nello strato l), come mostra la figura 'Neural Network Indexing'.",
+    "p. 22: l'approccio matriciale è solo evocato; la forma con il segnale d'errore δ, il prodotto esterno δ a^T e la trasposta W^T δ (c59, der04) è un'integrazione.",
+    "Il gradiente che svanisce o esplode (c60) non è trattato in queste pagine: è collegato come integrazione alla 'lunga catena di derivate' di pp. 20-21 per preparare la domanda d'esame 39 (LSTM e connessioni residue).",
+    "pp. 16 e 19 (revisore): il termine 'backpropagation' è usato sia come metodo per calcolare i gradienti da combinare con la discesa del gradiente (p. 16) sia come algoritmo di apprendimento in tre passi che include l'aggiornamento dei pesi (p. 19), dove 'Backpropagation' è anche il nome del solo terzo passo; la distinzione è esplicitata in c61.",
+    "p. 17 (revisore): nella figura 'Visual Representation of the Gradient Descent Algorithm' le frecce del percorso hanno lunghezza simile, mentre con η fisso il passo è proporzionale alla norma del gradiente: la figura è schematica e non va letta come una traiettoria calcolata.",
+    "pp. 20-22 (revisore): la regola della catena non è enunciata, e i fattori sono scritti dall'ingresso verso l'uscita (∂z/∂w · ∂a/∂z · ∂L/∂a), in ordine inverso rispetto alla scrittura abituale; l'enunciato nelle forme a un percorso e a più percorsi è aggiunto come integrazione in c62.",
+    "p. 21 (verificatore): il vettore gradiente completo è indicato con Δ_w L ma include anche le derivate rispetto ai bias ∂L/∂b^(k): il pedice w va inteso come 'tutti i parametri'. Stessa notazione Δ (di solito incremento) usata per il gradiente, di norma ∇ (vedi anche il gap su p. 16)."
+  ]
+}

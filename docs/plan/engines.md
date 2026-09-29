@@ -480,7 +480,7 @@ export type CovLayer =
   | 'points' | 'mean' | 'ellipses' | 'trueEllipse' | 'estEllipse' | 'repEllipses' | 'eigen' | 'deviations'
   | 'quadrants' | 'outer' | 'mahalanobis' | 'euclidean' | 'probe' | 'marginals' | 'whiten' | 'charPoly'
   | 'matrix' | 'eigenBars' | 'fields' | 'pairs' | 'globalMean' | 'lever' | 'mixedEllipse' | 'termBars'
-  // 'mixedEllipse': ellisse di sΣ_i + (1 − s)Σ_j che si trasforma con s (Chernoff); 'termBars': termini delle medie e delle covarianze impilati
+  // 'mixedEllipse': ellisse della covarianza mescolata M di chernoffMu (campo M: (1 − s)Σ_i + sΣ_j con 'correct', sΣ_i + (1 − s)Σ_j con 'slide') che si trasforma con s (Chernoff); 'termBars': termini delle medie e delle covarianze impilati
 
 export interface CovariancePreset extends BasePreset<CovLayer, CovPhase, CovCtx, CovState> {
   data: CovData
@@ -510,7 +510,7 @@ export type CovPhase =
 
 **Sfide**: `custom` (cambia il segno di σ12 trascinando un solo punto; due autovalori entro il 2%; S_i singolare con 4 pixel allineati), `compute` (λ1, λ2, φ1 a mano), `find` (punto di errore relativo massimo fra congiunta e prodotto delle marginali), `predict` (percentuale della prima barra prima di "Ruota").
 
-**Primitive del kit**: `Dots` trascinabili, `Contours`, `FieldCanvas`, `Arrow`, `Bars`, `LinePath`, `LiveFormula`, `Readout`. **Da scrivere**: `Ellipse` con maniglie, `MatrixGrid` (frazioni esatte, celle che volano), autovalori e autovettori 2×2 e 3×3 (il Jacobi n × n sta in `engines/shared/linalg.ts`, condiviso con `spectrum-nd`), misure fra gaussiane (condivise con `twoclass1d` in `engines/shared/gaussMeasures.ts`), `Knob`.
+**Primitive del kit**: `Dots` trascinabili, `Contours`, `FieldCanvas`, `Arrow`, `Bars`, `LinePath`, `LiveFormula`, `Readout`. **Da scrivere**: `Ellipse` con maniglie, `MatrixGrid` (frazioni esatte, celle che volano), autovalori e autovettori 2×2 e 3×3 (il Jacobi n × n sta in `engines/shared/math/linalg.ts`, condiviso con `spectrum-nd`), misure fra gaussiane (condivise con `twoclass1d` in `engines/shared/math/gauss.ts`), `Knob`.
 
 **Confini.** Matrici n × n, spettri lunghi, rango e ricostruzione con m componenti sono di `spectrum-nd`, che importa da qui la stima di Σ e le ellissi per il suo riquadro 2D. Il poligono chiuso dei vettori pesati (`m15-rango-c-meno-uno`) e la tabella 4D editabile della ricetta LDA sono su misura; la matrice multiclasse di divergenze è di `subset-search`.
 
@@ -1243,7 +1243,7 @@ export type SpPhase =
 
 **Sfide**: `find` (m minima per il 95% della varianza; N minimo per classe che rende S_W invertibile), `predict` (se la m del 95% cresce alzando il rumore; la m del 90% sulle cifre), `compute` (campioni per avere 10 campioni per elemento di Σ), `custom`.
 
-**Primitive del kit**: `FieldCanvas`, `Bars`, `LinePath`, `AreaPath`, `Dots`, `Slider` su indici log, `PlayControls`, `LiveFormula`, `Readout`, `Challenge`. **Da scrivere**: Jacobi simmetrico n × n in `engines/shared/linalg.ts` (fino a n = 200: al clic o a lotti, mai a ogni render; oltre 50 ms in un Web Worker), `MatrixGrid` in versione canvas per n grandi, generatori di spettri e di cifre 8 × 8 a seed, `Flight` delle componenti verso la ricostruzione.
+**Primitive del kit**: `FieldCanvas`, `Bars`, `LinePath`, `AreaPath`, `Dots`, `Slider` su indici log, `PlayControls`, `LiveFormula`, `Readout`, `Challenge`. **Da scrivere**: Jacobi simmetrico n × n in `engines/shared/math/linalg.ts` (fino a n = 200: al clic o a lotti, mai a ogni render; oltre 50 ms in un Web Worker), `MatrixGrid` in versione canvas per n grandi, generatori di spettri e di cifre 8 × 8 a seed, `Flight` delle componenti verso la ricostruzione.
 
 **Confini.** Le matrici 2 × 2 e 3 × 3 con i loro numeri esatti restano a `covariance`; il poligono chiuso dei vettori pesati e lo spettro di S_W⁻¹S_B al variare delle classi (`m15-rango-c-meno-uno`) restano su misura, ma importano da qui barre e Jacobi; le bande PCA/LDA come immagini (`m15-bande-pca-lda-dal-satellite`) sono di `raster-lab`.
 
